@@ -1227,3 +1227,70 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
     }
   }
 }
+
+/* Link dialog: OBS source size and the full page preview */
+dialog.generated .obs-size,
+dialog.generated .obs-preview {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  background: #151516;
+  border: 1px solid #2b2b2e;
+  border-radius: 8px;
+}
+dialog.generated .obs-size-head,
+dialog.generated .obs-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+dialog.generated .obs-size-value {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #ff7d33;
+}
+dialog.generated .obs-size p,
+dialog.generated .obs-preview p {
+  margin: 6px 0 0;
+}
+dialog.generated .obs-size-copy,
+dialog.generated .obs-preview-sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  button {
+    width: auto;
+    margin: 0;
+    padding: 5px 11px;
+    font-size: 11px;
+    color: #cfcfd6;
+    background: #1d1d1f;
+    border: 1px solid #3a3a3e;
+    border-radius: 6px;
+    cursor: pointer;
+    &[aria-pressed='true'] {
+      color: #fff;
+      background: #ff5900;
+      border-color: #ff5900;
+    }
+    &:hover {
+      border-color: #ff7d33;
+    }
+  }
+}
+dialog.generated .obs-preview-sizes {
+  margin-top: 0;
+}
+dialog.generated .obs-frame {
+  max-width: 100%;
+  max-height: min(52vh, 520px);
+  overflow: auto;
+  margin: 10px 0 0;
+  background:
+    repeating-conic-gradient(#1c1c1f 0% 25%, #151517 0% 50%) 50% / 20px 20px;
+  border: 1px solid #2b2b2e;
+  border-radius: 6px;
+}

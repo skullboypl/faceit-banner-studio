@@ -4,7 +4,7 @@
   --auto-width: 280px;
 }
 .halo-theme:extend(.normal-theme all) {
-  --auto-width: 580px;
+  --auto-width: 620px;
 }
 .pulse-theme:extend(.normal-theme all) {
   --auto-width: 320px;
@@ -255,8 +255,13 @@
       height: 48px;
     }
     .average {
-      grid-template-columns: repeat(2, 64px);
+      grid-template-columns: repeat(2, 86px);
       gap: 5px;
+      .stat p:first-child {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
       .stat {
         padding: 4px 8px;
         border-radius: 10px;
@@ -482,4 +487,11 @@ html.generator .settings .broadcast-presets .broadcast-preset {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
+}
+
+/* Stat labels never break in the middle of a word */
+.wrapper.banner-design-2026:is([data-layout='orbit'], [data-layout='halo'], [data-layout='pulse'], [data-layout='prime']) .widget .average .stat p:first-child {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }

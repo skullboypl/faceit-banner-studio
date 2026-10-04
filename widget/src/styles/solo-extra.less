@@ -4,7 +4,7 @@
   --auto-width: 480px;
 }
 .gauge-theme:extend(.normal-theme all) {
-  --auto-width: 300px;
+  --auto-width: 340px;
 }
 .card-theme:extend(.normal-theme all) {
   --auto-width: 340px;
@@ -63,6 +63,8 @@
     }
     .solo-elo {
       display: flex;
+      flex-wrap: nowrap;
+      white-space: nowrap;
       align-items: baseline;
       gap: 6px;
       b {
@@ -78,8 +80,23 @@
         opacity: 0.55;
       }
       .diff {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
         font-size: 12px;
         font-weight: 700;
+        &.gain {
+          color: #3ddc84;
+        }
+        &.loss {
+          color: #ff5a5a;
+        }
+        svg {
+          position: static;
+          width: 12px;
+          height: 12px;
+          margin: 0;
+        }
       }
     }
     .solo-stats {
@@ -144,21 +161,27 @@
 
 /* Gauge: dial */
 .wrapper.banner-design-2026[data-layout='gauge'] .solo-gauge {
+  /* everything inside scales with the width the layout gets */
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   text-align: center;
+  h2 {
+    font-size: clamp(15px, 5cqw, 36px);
+  }
   .gauge-dial {
     position: relative;
     width: 100%;
-    max-width: 230px;
+    max-width: 640px;
     svg {
       display: block;
       width: 100%;
       overflow: visible;
     }
-    path {
+    .gauge-track,
+    .gauge-fill {
       fill: none;
       stroke-width: 12;
       stroke-linecap: round;
@@ -178,12 +201,46 @@
     flex-direction: column;
     align-items: center;
     gap: 2px;
+    .gauge-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 2px;
+    }
+    .gauge-avatar {
+      display: grid;
+      place-items: center;
+      width: clamp(50px, 16cqw, 110px);
+      height: clamp(50px, 16cqw, 110px);
+      border-radius: 50%;
+      background: #171717;
+      box-shadow: 0 0 0 3px #ffffff1c;
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+      }
+      .gauge-initial {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--faceit-level);
+      }
+    }
     .gauge-level {
-      width: 34px;
-      height: 34px;
+      width: clamp(40px, 12.5cqw, 86px);
+      height: clamp(40px, 12.5cqw, 86px);
+      padding: 3px;
+      box-sizing: border-box;
+      border-radius: 50%;
+      background: #0b0b0c;
+      box-shadow: 0 0 0 2px #ffffff22;
     }
     .solo-elo {
       justify-content: center;
+      b {
+        font-size: clamp(28px, 10.5cqw, 76px);
+      }
     }
   }
   .solo-pills {
@@ -192,11 +249,11 @@
     span {
       padding: 3px 12px;
       border-radius: 99px;
-      font-size: 11px;
+      font-size: clamp(11px, 3.6cqw, 22px);
       font-weight: 600;
       background: #ffffff0d;
       b {
-        font-size: 14px;
+        font-size: clamp(14px, 4.6cqw, 28px);
       }
       &.win b {
         color: #3ddc84;

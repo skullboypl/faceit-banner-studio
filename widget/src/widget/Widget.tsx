@@ -729,9 +729,8 @@ export const Widget = ({
   const getEloDiff = useCallback(() => {
     let diff = 0;
 
-    if (!preview) {
-      diff = elo - startingElo;
-    }
+    /* The preview shows a sample gain so the arrow is part of what you tune */
+    diff = preview ? 24 : elo - startingElo;
 
     let diffArrow: ReactElement | null = null;
     let diffStyle: string = '';
@@ -1818,7 +1817,16 @@ export const Widget = ({
               />
             </svg>
             <div className={'gauge-center'}>
-              {levelBadge && <span className={'gauge-level'}>{levelBadge}</span>}
+              <span className={'gauge-profile'}>
+                <span className={'gauge-avatar'}>
+                  {avatarSrc ? (
+                    <img src={avatarSrc} alt="" />
+                  ) : (
+                    <span className={'gauge-initial'}>{name.charAt(0).toUpperCase()}</span>
+                  )}
+                </span>
+                {levelBadge && <span className={'gauge-level'}>{levelBadge}</span>}
+              </span>
               {eloLine}
             </div>
           </div>

@@ -405,5 +405,14 @@
   "generator.theme.design.legacy_locked": "VERSUS mode only works with the FACEIT 2026 look.",
   "studio.docs": "Documentation",
   "style.prime": "Prime",
-  "style.prime.description": "The base 2026 card: avatar, level, ranking and every statistic"
+  "style.prime.description": "The base 2026 card: avatar, level, ranking and every statistic",
+  "obs.size.title": "Source size in OBS",
+  "obs.size.hint": "Enter this width and height in the Browser source properties. The size is measured from the real widget, so the banner fits completely.",
+  "obs.size.auto": "Width or height is on AUTO: the banner fits the source window, so set the source to any size, e.g. 1920 × 1080.",
+  "obs.size.width": "Width",
+  "obs.size.height": "Height",
+  "obs.size.copy_both": "Copy size",
+  "obs.preview.title": "Widget page preview",
+  "obs.preview.recommended": "Recommended",
+  "obs.preview.hint": "This is how the widget page looks in a source of that size. Scroll the preview when the source is larger than the window."
 }
