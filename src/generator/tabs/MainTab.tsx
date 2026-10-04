@@ -1,7 +1,6 @@
 import { Language, languages } from '../../translations/translations.ts';
 import { Checkbox } from '../../components/Checkbox.tsx';
 import { Dispatch, useContext, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { LanguageContext, SettingsContext } from '../Generator.tsx';
 import { InfoBox } from '../../components/InfoBox.tsx';
 import {
@@ -54,7 +53,6 @@ export const MainTab = ({
   opponent,
   setOpponent,
 }: Props) => {
-  const navigate = useNavigate();
   const tl = useContext(LanguageContext);
   const settings = useContext(SettingsContext);
   const [opponentStatus, setOpponentStatus] = useState<
@@ -283,7 +281,6 @@ export const MainTab = ({
                   ) || languages[0];
                 setLanguage(language);
                 localStorage.setItem('fcw_lang', language.id);
-                navigate(`?lang=${language.id}`);
               }}
             >
               {languages.map((language) => {
@@ -353,6 +350,10 @@ export const MainTab = ({
             setting={'showEloDiff'}
           />
           <Checkbox
+            text={tl('generator.settings.show_wins_losses')}
+            setting={'showWinsLosses'}
+          />
+          <Checkbox
             text={tl('generator.settings.show_elo_progress_bar')}
             setting={'showEloProgressBar'}
           />
@@ -363,6 +364,10 @@ export const MainTab = ({
           <Checkbox
             text={tl('generator.settings.show_kd')}
             setting={'showStatistics'}
+          />
+          <Checkbox
+            text={tl('generator.settings.hide_banner_header')}
+            setting={'hideBannerHeader'}
           />
           <div className={'setting'}>
             <p>{tl('generator.settings.show_ranking')}</p>

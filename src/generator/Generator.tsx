@@ -584,6 +584,31 @@ export const Generator = () => {
               <StudioIcon name="arrow" />
             </a>
           </nav>
+          <div
+            className="sidebar-lang"
+            role="group"
+            aria-label={tl('generator.settings.language')}
+          >
+            {languages.map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                aria-pressed={entry.id === language.id}
+                title={tl(`language.label.${entry.id}`)}
+                onClick={() => {
+                  setLanguage(entry);
+                  localStorage.setItem('fcw_lang', entry.id);
+                }}
+              >
+                <img
+                  className="flag"
+                  src={`https://flagcdn.com/${entry.id === 'en' ? 'gb' : entry.id}.svg`}
+                  alt=""
+                />
+                <span>{tl(`language.label.${entry.id}`)}</span>
+              </button>
+            ))}
+          </div>
           <div className="sidebar-note">
             <span className="game-label">CS2</span>
             <p>{tl('studio.sidebar_note')}</p>

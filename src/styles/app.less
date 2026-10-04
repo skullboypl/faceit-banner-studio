@@ -1162,6 +1162,47 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
 .studio-sidebar .tabs {
   flex: 1 1 auto;
 }
+.studio-sidebar .sidebar-lang {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 0;
+    height: auto;
+    margin: 0;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: left;
+    color: #a3a3ab;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    .flag {
+      width: 18px;
+      height: 12px;
+      flex: 0 0 18px;
+      object-fit: cover;
+      border-radius: 2px;
+    }
+    &[aria-pressed='true'] {
+      color: #f4f4f4;
+      background: #1b1b1e;
+      border-color: #ff6b18;
+    }
+    &:hover {
+      color: #f4f4f4;
+      background: #1b1b1e;
+    }
+  }
+}
 .studio-sidebar .tabs .docs-tab {
   position: relative;
   margin-top: auto;
@@ -1193,6 +1234,13 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
   }
 }
 @media (max-width: 1280px) and (min-width: 1001px) {
+  .studio-sidebar .sidebar-lang button {
+    justify-content: center;
+    padding: 8px;
+    span {
+      display: none;
+    }
+  }
   .studio-sidebar .tabs .docs-tab {
     justify-content: center;
     padding: 14px;
@@ -1203,6 +1251,14 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
   }
 }
 @media (max-width: 1000px) {
+  .studio-sidebar .sidebar-lang {
+    flex-direction: row;
+    margin: 0 0 10px;
+    button {
+      flex: 1;
+      justify-content: center;
+    }
+  }
   .studio-sidebar .tabs .docs-tab {
     flex: 1;
     justify-content: center;
@@ -1215,6 +1271,9 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
   }
 }
 @media (max-width: 600px) {
+  .studio-sidebar .sidebar-lang button span {
+    display: none;
+  }
   /* Phone: the docs link keeps only its icon so all four tabs fit */
   .studio-sidebar .tabs .docs-tab {
     flex: 0 0 48px;

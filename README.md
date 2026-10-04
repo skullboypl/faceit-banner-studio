@@ -4,7 +4,7 @@
 
 # FACEIT Banner Studio
 
-**Twój ELO. Twój styl.** Generator banerów i widżetów FACEIT do OBS Studio i Streamlabs.
+**Baner FACEIT do OBS: ELO, level i statystyki CS2 na streamie.** Darmowy generator banerów i widżetów FACEIT do OBS Studio i Streamlabs. Twój ELO. Twój styl.
 
 [![Live](https://img.shields.io/badge/live-faceitbanner.vxh.pl-ff5900?style=for-the-badge)](https://faceitbanner.vxh.pl/)
 [![Docs](https://img.shields.io/badge/docs-PL%20%C2%B7%20EN-111?style=for-the-badge)](https://faceitbanner.vxh.pl/docs/)

@@ -1400,6 +1400,16 @@ export const SETTINGS_DEFINITIONS = {
     defaultValue: true,
     query: ['diff'],
   },
+  showWinsLosses: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['wins'],
+  },
+  hideBannerHeader: {
+    type: 'boolean',
+    defaultValue: false,
+    query: ['hide_header'],
+  },
   showIcons: {
     type: 'boolean',
     defaultValue: false,

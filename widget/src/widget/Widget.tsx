@@ -751,6 +751,9 @@ export const Widget = ({
     );
   }, [language, elo, startingElo, SETTINGS]);
 
+  const showStats = Boolean(SETTINGS.get('showStatistics'));
+  const showMatches = SETTINGS.get('showWinsLosses') !== false;
+  const showBannerHeader = !SETTINGS.get('hideBannerHeader');
   const hasStatsToShow =
     preview || stats.some((stat) => getStat(stat) !== null);
   const hasMatchesToShow = preview || wins > 0 || losses > 0;
@@ -774,7 +777,7 @@ export const Widget = ({
       key: 'matches' as AnimatedCardKey,
       order: Number(SETTINGS.get('animatedDeckOrderMatches') || 3),
       visible:
-        Boolean(SETTINGS.get('animatedDeckShowMatches')) && hasMatchesToShow,
+        Boolean(SETTINGS.get('animatedDeckShowMatches')) && showMatches && hasMatchesToShow,
     },
   ]
     .filter((entry) => entry.visible)
@@ -1148,21 +1151,33 @@ export const Widget = ({
         id: 'today',
         title: translate('widget.ticker.today'),
         cells: [
-          cell(String(wins), translate('widget.wins'), 'win'),
-          cell(String(losses), translate('widget.losses'), 'loss'),
-          cell(pair(StatisticType.KILLS, StatisticType.ADR), translate('widget.ticker.kills_adr')),
-          cell(getStat(StatisticType.KD), 'K/D'),
+          ...(showMatches
+            ? [
+                cell(String(wins), translate('widget.wins'), 'win'),
+                cell(String(losses), translate('widget.losses'), 'loss'),
+              ]
+            : []),
+          ...(showStats
+            ? [
+                cell(pair(StatisticType.KILLS, StatisticType.ADR), translate('widget.ticker.kills_adr')),
+                cell(getStat(StatisticType.KD), 'K/D'),
+              ]
+            : []),
         ],
       },
-      {
-        id: 'last',
-        title: translate('widget.ticker.last'),
-        cells: [
-          cell(getStat(StatisticType.WINRATIO), translate('widget.ticker.winrate')),
-          cell(pair(StatisticType.KILLS, StatisticType.ADR), translate('widget.ticker.kills_adr')),
-          cell(pair(StatisticType.KD, StatisticType.KR), 'K/D / K/R'),
-        ],
-      },
+      ...(showStats
+        ? [
+            {
+              id: 'last',
+              title: translate('widget.ticker.last'),
+              cells: [
+                cell(getStat(StatisticType.WINRATIO), translate('widget.ticker.winrate')),
+                cell(pair(StatisticType.KILLS, StatisticType.ADR), translate('widget.ticker.kills_adr')),
+                cell(pair(StatisticType.KD, StatisticType.KR), 'K/D / K/R'),
+              ],
+            },
+          ]
+        : []),
     ];
     const page = pages[tickerPage % pages.length];
     return (
@@ -1192,10 +1207,12 @@ export const Widget = ({
               {String(elo)}
             </span>
           </div>
-          <div className={'ticker-center'}>
-            <b>{getStat(headStat) || <span className={'skeleton'}>?.??</span>}</b>
-            <span>{headStat === StatisticType.KD ? 'KDR' : translate(`widget.${headStat.toLowerCase()}`)}</span>
-          </div>
+          {showStats && (
+            <div className={'ticker-center'}>
+              <b>{getStat(headStat) || <span className={'skeleton'}>?.??</span>}</b>
+              <span>{headStat === StatisticType.KD ? 'KDR' : translate(`widget.${headStat.toLowerCase()}`)}</span>
+            </div>
+          )}
           <div className={'ticker-right'}>
             <img className={'flag'} src={`https://flagcdn.com/${flagCode}.svg`} alt={flagCode} />
             <span>#{countryPlace || '?'}</span>
@@ -1327,6 +1344,7 @@ export const Widget = ({
             {diffBadge}
             {side(rival, 'rival')}
           </div>
+          {showStats && (
           <div className={'vs-rows'}>
             {rows.slice(1).map((row) => (
               <div className={'vs-row'} key={row.label}>
@@ -1340,6 +1358,7 @@ export const Widget = ({
               </div>
             ))}
           </div>
+          )}
         </div>
       );
     }
@@ -1367,8 +1386,9 @@ export const Widget = ({
     );
 
     if (resolvedStyle === 'tally') {
-      const mine = cmpRows.filter((row) => row.a > row.b).length;
-      const theirs = cmpRows.filter((row) => row.b > row.a).length;
+      const rows = showStats ? cmpRows : cmpRows.slice(0, 1);
+      const mine = rows.filter((row) => row.a > row.b).length;
+      const theirs = rows.filter((row) => row.b > row.a).length;
       return (
         <div className={'versus versus-tally'} style={vsStyle}>
           <div className={'vs-top'}>
@@ -1382,7 +1402,7 @@ export const Widget = ({
             {side(rival, 'rival')}
           </div>
           <div className={'tally-chips'}>
-            {cmpRows.map((row) => (
+            {rows.map((row) => (
               <div
                 className={`tally-chip ${row.a > row.b ? 'me' : row.b > row.a ? 'rival' : 'even'}`}
                 key={row.label}
@@ -1425,6 +1445,7 @@ export const Widget = ({
             {side(me, 'me')}
             {side(rival, 'rival')}
           </div>
+          {showStats && (
           <svg viewBox="0 0 260 240" className={'ov-radar'} aria-hidden="true">
             {[0.25, 0.5, 0.75, 1].map((ring) => (
               <polygon
@@ -1473,6 +1494,7 @@ export const Widget = ({
               );
             })}
           </svg>
+          )}
         </div>
       );
     }
@@ -1532,6 +1554,7 @@ export const Widget = ({
             {diffBadge}
             {side(rival, 'rival')}
           </div>
+          {showStats && (
           <div className={'vs-butterfly'}>
             {cmpRows.slice(1).map((row) => {
               const top = Math.max(row.a, row.b, 1);
@@ -1550,6 +1573,7 @@ export const Widget = ({
               );
             })}
           </div>
+          )}
         </div>
       );
     }
@@ -1558,7 +1582,7 @@ export const Widget = ({
       return (
         <div className={'versus versus-scoreboard'} style={vsStyle}>
           {side(me, 'me')}
-          <div className={'vs-cells'}>{cmpRows.slice(0, 4).map(cmpCell)}</div>
+          <div className={'vs-cells'}>{(showStats ? cmpRows.slice(0, 4) : cmpRows.slice(0, 1)).map(cmpCell)}</div>
           {side(rival, 'rival')}
         </div>
       );
@@ -1567,8 +1591,12 @@ export const Widget = ({
     if (resolvedStyle === 'cycle') {
       const pages = [
         { id: 'elo', title: 'ELO', rows: [cmpRows[0]] },
-        { id: 'aim', title: translate('widget.versus.aim'), rows: [cmpRows[1], cmpRows[2]] },
-        { id: 'results', title: translate('widget.versus.results'), rows: [cmpRows[3], cmpRows[4]] },
+        ...(showStats
+          ? [
+              { id: 'aim', title: translate('widget.versus.aim'), rows: [cmpRows[1], cmpRows[2]] },
+              { id: 'results', title: translate('widget.versus.results'), rows: [cmpRows[3], cmpRows[4]] },
+            ]
+          : []),
       ];
       const page = pages[versusPage % pages.length];
       return (
@@ -1719,15 +1747,19 @@ export const Widget = ({
             </div>
           </div>
           <div className={'solo-stats'}>
-            <div className={'solo-stat win'}>
-              <small>{translate('widget.wins')}</small>
-              <b>{String(wins)}</b>
-            </div>
-            <div className={'solo-stat loss'}>
-              <small>{translate('widget.losses')}</small>
-              <b>{String(losses)}</b>
-            </div>
-            {stats.map(statCell)}
+            {showMatches && (
+              <div className={'solo-stat win'}>
+                <small>{translate('widget.wins')}</small>
+                <b>{String(wins)}</b>
+              </div>
+            )}
+            {showMatches && (
+              <div className={'solo-stat loss'}>
+                <small>{translate('widget.losses')}</small>
+                <b>{String(losses)}</b>
+              </div>
+            )}
+            {showStats && stats.map(statCell)}
           </div>
         </div>
       );
@@ -1739,18 +1771,22 @@ export const Widget = ({
           {renderOrb(avatarSrc, name, level, elo, levelBadge ?? undefined)}
           <h2>{name}</h2>
           {eloLine}
-          <div className={'tower-rows'}>
-            {stats.map((stat) => (
-              <div className={'tower-row'} key={`tower-${stat}`}>
-                <small>{translate(`widget.${stat.toLowerCase()}`)}</small>
-                <b>{getStat(stat) || <span className={'skeleton'}>??</span>}</b>
-              </div>
-            ))}
-          </div>
-          <div className={'solo-pills'}>
-            <span className={'win'}><b>{String(wins)}</b> {translate('widget.wins')}</span>
-            <span className={'loss'}><b>{String(losses)}</b> {translate('widget.losses')}</span>
-          </div>
+          {showStats && (
+            <div className={'tower-rows'}>
+              {stats.map((stat) => (
+                <div className={'tower-row'} key={`tower-${stat}`}>
+                  <small>{translate(`widget.${stat.toLowerCase()}`)}</small>
+                  <b>{getStat(stat) || <span className={'skeleton'}>??</span>}</b>
+                </div>
+              ))}
+            </div>
+          )}
+          {showMatches && (
+            <div className={'solo-pills'}>
+              <span className={'win'}><b>{String(wins)}</b> {translate('widget.wins')}</span>
+              <span className={'loss'}><b>{String(losses)}</b> {translate('widget.losses')}</span>
+            </div>
+          )}
         </div>
       );
     }
@@ -1763,25 +1799,31 @@ export const Widget = ({
             <h2>{name}</h2>
             {eloLine}
           </div>
-          <div className={'dials-row'}>
-            {dial(translate('widget.winratio'), `${winNumber}%`, winNumber / 100)}
-            {dial('HS %', `${Math.round(hsNumber)}%`, hsNumber / 100)}
-            {dial('K/D', kdNumber ? kdNumber.toFixed(2) : '?', kdNumber / 2)}
-          </div>
+          {showStats && (
+            <div className={'dials-row'}>
+              {dial(translate('widget.winratio'), `${winNumber}%`, winNumber / 100)}
+              {dial('HS %', `${Math.round(hsNumber)}%`, hsNumber / 100)}
+              {dial('K/D', kdNumber ? kdNumber.toFixed(2) : '?', kdNumber / 2)}
+            </div>
+          )}
         </div>
       );
     }
 
     if (resolvedStyle === 'marquee') {
       const chips = [
-        <span className={'marq-chip win'} key="w"><small>{translate('widget.wins')}</small><b>{String(wins)}</b></span>,
-        <span className={'marq-chip loss'} key="l"><small>{translate('widget.losses')}</small><b>{String(losses)}</b></span>,
-        ...stats.map((stat) => (
+        ...(showMatches
+          ? [
+              <span className={'marq-chip win'} key="w"><small>{translate('widget.wins')}</small><b>{String(wins)}</b></span>,
+              <span className={'marq-chip loss'} key="l"><small>{translate('widget.losses')}</small><b>{String(losses)}</b></span>,
+            ]
+          : []),
+        ...(showStats ? stats.map((stat) => (
           <span className={'marq-chip'} key={stat}>
             <small>{translate(`widget.${stat.toLowerCase()}`)}</small>
             <b>{getStat(stat) || '??'}</b>
           </span>
-        )),
+        )) : []),
       ];
       return (
         <div className={'solo solo-marquee'}>
@@ -1831,10 +1873,12 @@ export const Widget = ({
             </div>
           </div>
           <h2>{name}</h2>
-          <div className={'solo-pills'}>
-            <span className={'win'}><b>{String(wins)}</b> {translate('widget.wins')}</span>
-            <span className={'loss'}><b>{String(losses)}</b> {translate('widget.losses')}</span>
-          </div>
+          {showMatches && (
+            <div className={'solo-pills'}>
+              <span className={'win'}><b>{String(wins)}</b> {translate('widget.wins')}</span>
+              <span className={'loss'}><b>{String(losses)}</b> {translate('widget.losses')}</span>
+            </div>
+          )}
         </div>
       );
     }
@@ -1851,7 +1895,7 @@ export const Widget = ({
           <div className={'card-body'}>
             <h2>{name}</h2>
             {eloLine}
-            <div className={'solo-stats'}>{stats.map(statCell)}</div>
+            {showStats && <div className={'solo-stats'}>{stats.map(statCell)}</div>}
           </div>
         </div>
       );
@@ -1868,17 +1912,19 @@ export const Widget = ({
               {eloLine}
             </div>
           </div>
-          <div className={'reel-window'}>
-            <div className={'reel-item'} key={`${active}-${reelIndex}`}>
-              <small>{translate(`widget.${active.toLowerCase()}`)}</small>
-              <b>{getStat(active) || <span className={'skeleton'}>??</span>}</b>
+          {showStats && (
+            <div className={'reel-window'}>
+              <div className={'reel-item'} key={`${active}-${reelIndex}`}>
+                <small>{translate(`widget.${active.toLowerCase()}`)}</small>
+                <b>{getStat(active) || <span className={'skeleton'}>??</span>}</b>
+              </div>
+              <div className={'reel-dots'}>
+                {stats.map((stat, index) => (
+                  <i key={`dot-${stat}`} className={index === reelIndex % stats.length ? 'on' : ''} />
+                ))}
+              </div>
             </div>
-            <div className={'reel-dots'}>
-              {stats.map((stat, index) => (
-                <i key={`dot-${stat}`} className={index === reelIndex % stats.length ? 'on' : ''} />
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       );
     }
@@ -1890,7 +1936,7 @@ export const Widget = ({
           <h2>{name}</h2>
           {eloLine}
         </div>
-        <div className={'solo-stats'}>{stats.slice(0, 3).map(statCell)}</div>
+        {showStats && <div className={'solo-stats'}>{stats.slice(0, 3).map(statCell)}</div>}
       </div>
     );
   };
@@ -1917,14 +1963,14 @@ export const Widget = ({
         content: <div className={'deck-profile'}>{renderHeaderCard(true)}</div>,
       });
     }
-    if (pageOn('Form')) {
+    if (pageOn('Form') && showStats) {
       deckSlides.push({
         id: 'form',
         label: translate('widget.page.form'),
         content: renderStatGrid(stats, 'form'),
       });
     }
-    if (pageOn('Tactics')) {
+    if (pageOn('Tactics') && showStats) {
       const tacticStats = [1, 2, 3, 4].map(
         (slot) =>
           SETTINGS.get(`${resolvedStyle}Stat${slot}` as SettingKey) as StatisticType
@@ -1935,7 +1981,7 @@ export const Widget = ({
         content: renderStatGrid(tacticStats, 'tactics'),
       });
     }
-    if (pageOn('Session')) {
+    if (pageOn('Session') && showMatches) {
       deckSlides.push({
         id: 'session',
         label: translate('widget.page.session'),
@@ -2205,7 +2251,7 @@ export const Widget = ({
             </div>
           ) : (
             <>
-              {isStaticPreset && (
+              {isStaticPreset && showBannerHeader && (
                 <div className="broadcast-kicker">
                   <span>
                     FACEIT <b>/</b> CS2
@@ -2215,6 +2261,7 @@ export const Widget = ({
               )}
               <div className={'player-stats'}>
                 {renderHeaderCard(false)}
+                {showMatches && (
                 <div className={'matches'}>
                   <div className={'stats'}>
                     <Statistic
@@ -2229,6 +2276,7 @@ export const Widget = ({
                     />
                   </div>
                 </div>
+                )}
               </div>
               {SETTINGS.get('showStatistics') && (
                 <div className={'average'}>
