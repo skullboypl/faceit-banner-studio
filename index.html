@@ -1,33 +1,112 @@
 <!doctype html>
-<html lang="en">
+<html lang="pl">
   <head>
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="/fonts/kick-font.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FACEIT Stats Widget for OBS STUDIO - Skull rewrite version</title>
+    <title>FACEIT Banner – generator widżetu ELO i statystyk FACEIT do OBS</title>
     <meta
       name="description"
-      content="A customizable FACEIT ELO widget for OBS Studio that displays level, ELO and other stats on your stream!"
+      content="Darmowy generator banerów FACEIT do OBS i Streamlabs: level, ELO, statystyki CS2, tryb VERSUS z rywalem, animowane układy i własny rozmiar. Link gotowy w kilka sekund."
     />
     <meta
       name="keywords"
-      content="faceit, widget, obs, faceit elo, faceit stats, faceit widget, faceit obs widget"
+      content="faceit, baner faceit, widget faceit obs, faceit elo obs, faceit stats widget, generator faceit, cs2 stream overlay, faceit versus"
     />
+    <meta
+      name="robots"
+      content="index, follow, max-snippet:-1, max-image-preview:large"
+    />
+    <meta name="theme-color" content="#0b0e14" />
     <link rel="canonical" href="https://faceitbanner.vxh.pl/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="FACEIT Banner" />
+    <meta
+      property="og:title"
+      content="FACEIT Banner – generator widżetu ELO i statystyk do OBS"
+    />
+    <meta
+      property="og:description"
+      content="Level, ELO i statystyki CS2 na Twoim streamie. Banery solo i VERSUS, animacje, własny rozmiar."
+    />
+    <meta property="og:url" content="https://faceitbanner.vxh.pl/" />
+    <meta property="og:locale" content="pl_PL" />
+    <meta name="twitter:card" content="summary" />
+    <meta
+      name="twitter:title"
+      content="FACEIT Banner – generator widżetu ELO i statystyk do OBS"
+    />
+    <meta
+      name="twitter:description"
+      content="Level, ELO i statystyki CS2 na Twoim streamie. Banery solo i VERSUS, animacje, własny rozmiar."
+    />
+
     <link
       rel="alternate"
       hreflang="pl"
-      href="https://faceitbanner.vxh.pl/?lang=pl"
+      href="https://faceitbanner.vxh.pl/docs/"
     />
     <link
       rel="alternate"
-      hreflang="de"
-      href="https://faceitbanner.vxh.pl/?lang=de"
+      hreflang="en"
+      href="https://faceitbanner.vxh.pl/en/docs/"
     />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebApplication",
+            "name": "FACEIT Banner",
+            "url": "https://faceitbanner.vxh.pl/",
+            "applicationCategory": "MultimediaApplication",
+            "operatingSystem": "Web, OBS Studio, Streamlabs",
+            "description": "Generator banerów FACEIT do OBS: level, ELO, statystyki CS2, tryb VERSUS i animowane układy.",
+            "inLanguage": ["pl", "en", "de"],
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "PLN" },
+            "isAccessibleForFree": true,
+            "author": {
+              "@type": "Person",
+              "name": "Skull",
+              "sameAs": [
+                "https://github.com/skullboypl",
+                "https://www.twitch.tv/skullboypl",
+                "https://www.tiktok.com/@skullboypl"
+              ]
+            }
+          },
+          {
+            "@type": "WebSite",
+            "name": "FACEIT Banner",
+            "url": "https://faceitbanner.vxh.pl/"
+          }
+        ]
+      }
+    </script>
   </head>
 
   <body>
     <div id="root"></div>
+    <noscript>
+      <h1>FACEIT Banner – generator widżetu ELO i statystyk FACEIT do OBS</h1>
+      <p>
+        Darmowy generator banerów FACEIT do OBS Studio i Streamlabs. Pokazuje
+        level, ELO i statystyki CS2, ma tryb VERSUS z rywalem, animowane układy
+        i własny rozmiar. Włącz JavaScript, aby użyć generatora.
+      </p>
+      <ul>
+        <li><a href="/docs/">Dokumentacja</a></li>
+        <li><a href="/docs/baner-faceit-do-obs/">Baner FACEIT do OBS</a></li>
+        <li><a href="/docs/elo-faceit-na-streamie/">ELO FACEIT na streamie</a></li>
+        <li><a href="/docs/o-projekcie/">O projekcie</a></li>
+        <li><a href="/docs/szybki-start/">Jak dodać baner FACEIT do OBS</a></li>
+        <li><a href="/docs/banery-solo/">Banery solo</a></li>
+        <li><a href="/docs/banery-versus/">Banery VERSUS</a></li>
+        <li><a href="/en/docs/">Documentation (English)</a></li>
+      </ul>
+    </noscript>
     <script type="module" src="/src/App.tsx"></script>
   </body>
 </html>

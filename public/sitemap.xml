@@ -1,39 +1,345 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://faceitbanner.vxh.pl/</loc>
-    <lastmod>2026-05-01</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://faceitbanner.vxh.pl/wiki/</loc>
-    <lastmod>2026-05-01</lastmod>
+    <loc>https://faceitbanner.vxh.pl/docs/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/" />
+    <lastmod>2026-10-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/baner-faceit-do-obs/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/baner-faceit-do-obs/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/faceit-banner-for-obs/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/baner-faceit-do-obs/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/szybki-start/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/szybki-start/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/quick-start/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/szybki-start/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/banery-solo/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/banery-solo/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/solo-banners/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/banery-solo/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/banery-versus/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/banery-versus/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/versus-banners/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/banery-versus/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/rozmiar-banera/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/rozmiar-banera/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/banner-size/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/rozmiar-banera/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/elo-faceit-na-streamie/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/elo-faceit-na-streamie/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/faceit-elo-on-stream/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/elo-faceit-na-streamie/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/parametry-url/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/parametry-url/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/url-parameters/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/parametry-url/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/faq/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/faq/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/faq/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/faq/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/o-projekcie/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/o-projekcie/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/about/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/o-projekcie/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/dev/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/dev/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/dev/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/dev/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/dev/uruchomienie/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/dev/uruchomienie/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/dev/setup/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/dev/uruchomienie/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/dev/ustawienia/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/dev/ustawienia/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/dev/settings/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/dev/ustawienia/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/dev/nowy-uklad/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/dev/nowy-uklad/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/dev/new-layout/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/dev/nowy-uklad/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/dev/widzet/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/dev/widzet/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/dev/widget/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/dev/widzet/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/dev/build-i-wdrozenie/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/dev/build-i-wdrozenie/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/dev/build-and-deploy/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/dev/build-i-wdrozenie/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/docs/dev/wspoltworzenie/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/dev/wspoltworzenie/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/dev/contributing/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/dev/wspoltworzenie/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/faceit-banner-for-obs/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/baner-faceit-do-obs/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/faceit-banner-for-obs/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/baner-faceit-do-obs/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/quick-start/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/szybki-start/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/quick-start/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/szybki-start/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/solo-banners/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/banery-solo/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/solo-banners/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/banery-solo/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/versus-banners/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/banery-versus/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/versus-banners/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/banery-versus/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/banner-size/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/rozmiar-banera/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/banner-size/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/rozmiar-banera/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/faceit-elo-on-stream/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/elo-faceit-na-streamie/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/faceit-elo-on-stream/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/elo-faceit-na-streamie/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/url-parameters/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/parametry-url/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/url-parameters/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/parametry-url/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/faq/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/faq/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/faq/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/faq/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/about/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/o-projekcie/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/about/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/o-projekcie/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/dev/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/dev/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/dev/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/dev/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/dev/setup/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/dev/uruchomienie/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/dev/setup/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/dev/uruchomienie/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/dev/settings/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/dev/ustawienia/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/dev/settings/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/dev/ustawienia/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/dev/new-layout/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/dev/nowy-uklad/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/dev/new-layout/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/dev/nowy-uklad/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/dev/widget/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/dev/widzet/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/dev/widget/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/dev/widzet/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/dev/build-and-deploy/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/dev/build-i-wdrozenie/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/dev/build-and-deploy/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/dev/build-i-wdrozenie/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/en/docs/dev/contributing/</loc>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://faceitbanner.vxh.pl/docs/dev/wspoltworzenie/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://faceitbanner.vxh.pl/en/docs/dev/contributing/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://faceitbanner.vxh.pl/docs/dev/wspoltworzenie/" />
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/wiki/</loc>
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://faceitbanner.vxh.pl/wiki/bannerfaceit/</loc>
-    <lastmod>2026-05-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://faceitbanner.vxh.pl/wiki/jak-dodac-faceit-do-obs/</loc>
-    <lastmod>2026-05-01</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://faceitbanner.vxh.pl/wiki/konfiguracja-widzetu-faceit/</loc>
-    <lastmod>2026-05-01</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://faceitbanner.vxh.pl/wiki/faq-faceit-widget/</loc>
-    <lastmod>2026-05-01</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/wiki/jak-dodac-faceit-do-obs/</loc>
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://faceitbanner.vxh.pl/wiki/konfiguracja-widzetu-faceit/</loc>
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
 </urlset>

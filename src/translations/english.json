@@ -147,7 +147,7 @@
   "generator.settings.refresh_delay.normal": "{{0}} seconds",
   "generator.settings.refresh_delay.slow": "{{0}} seconds (Slow)",
   "generator.settings.save_session": "Store statistics for two hours after closing the widget",
-  "generator.settings.save_session.help": "If enabled, the player stats (ELO difference, matches won/lost) will reset after two hours of inactivity. If disabled, player stats will reset instantly after closing the widget.",
+  "generator.settings.save_session.help": "When on, wins, losses and the ELO change are kept in the browser data (in OBS: the browser source data). After restarting OBS they come back if less than two hours have passed since the widget was closed. After two hours they start from zero. When off, statistics reset as soon as the widget closes.",
   "generator.settings.player_not_found": "This player does not exist or has never played Counter-Strike 2 on FACEIT.",
   "generator.settings.adjust_style": "More style settings",
   "generator.theme.title": "Style",
@@ -402,5 +402,8 @@
   "style.ladder.description": "Level ladder with both players placed on it",
   "widget.versus.categories": "categories",
   "preset.marquee_speed": "One pass takes: {{0}} s",
-  "generator.theme.design.legacy_locked": "VERSUS mode only works with the FACEIT 2026 look."
+  "generator.theme.design.legacy_locked": "VERSUS mode only works with the FACEIT 2026 look.",
+  "studio.docs": "Documentation",
+  "style.prime": "Prime",
+  "style.prime.description": "The base 2026 card: avatar, level, ranking and every statistic"
 }

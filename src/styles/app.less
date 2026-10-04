@@ -1157,3 +1157,73 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
     background: transparent;
   }
 }
+
+/* Link to the documentation, styled like the tabs and collapsing with them */
+.studio-sidebar .tabs {
+  flex: 1 1 auto;
+}
+.studio-sidebar .tabs .docs-tab {
+  position: relative;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #a3a3ab;
+  text-decoration: none;
+  background: transparent;
+  border: 1px solid #2c2c2c;
+  border-radius: 6px;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s;
+  > .studio-icon:last-child {
+    margin-left: auto;
+    width: 13px;
+    opacity: 0.5;
+  }
+  &:hover {
+    color: #f4f4f4;
+    background: #1b1b1e;
+    border-color: #ff6b18;
+  }
+}
+@media (max-width: 1280px) and (min-width: 1001px) {
+  .studio-sidebar .tabs .docs-tab {
+    justify-content: center;
+    padding: 14px;
+    > span,
+    > .studio-icon:last-child {
+      display: none;
+    }
+  }
+}
+@media (max-width: 1000px) {
+  .studio-sidebar .tabs .docs-tab {
+    flex: 1;
+    justify-content: center;
+    border-color: transparent;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    > .studio-icon:last-child {
+      display: none;
+    }
+  }
+}
+@media (max-width: 600px) {
+  /* Phone: the docs link keeps only its icon so all four tabs fit */
+  .studio-sidebar .tabs .docs-tab {
+    flex: 0 0 48px;
+    padding: 11px 6px;
+    > span {
+      display: none;
+    }
+    > .studio-icon {
+      width: 17px;
+    }
+  }
+}

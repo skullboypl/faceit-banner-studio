@@ -4,6 +4,7 @@ export const styles: {
   experimental?: boolean;
   modernOnly?: boolean;
 }[] = [
+  { id: 'prime', modernOnly: true },
   { id: 'showcase', modernOnly: true },
   { id: 'spotlight', modernOnly: true },
   { id: 'broadcast', modernOnly: true },
@@ -81,6 +82,7 @@ export const broadcastPresets: readonly {
   /** Two-player banner, offered only in VERSUS mode. */
   versus?: boolean;
 }[] = [
+  { id: 'prime', width: 540, height: 250 },
   { id: 'showcase', width: 500, height: 180, animated: true },
   { id: 'spotlight', width: 500, height: 200, animated: true },
   { id: 'broadcast', width: 500, height: 188 },
@@ -118,7 +120,7 @@ export const isVersusStyle = (style: string) =>
 
 export function resolveBannerStyle(style: string, design: string) {
   const modern = styles.some((entry) => entry.id === style && entry.modernOnly);
-  if (design === '2026') return modern ? style : 'showcase';
+  if (design === '2026') return modern ? style : 'prime';
   return modern ? 'rounded' : style;
 }
 

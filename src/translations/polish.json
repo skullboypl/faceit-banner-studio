@@ -147,7 +147,7 @@
   "generator.settings.refresh_delay.normal": "{{0}} sekund",
   "generator.settings.refresh_delay.slow": "{{0}} sekund (Wolno)",
   "generator.settings.save_session": "Zapisuj statystyki na dwie godziny od zamknięcia widżetu",
-  "generator.settings.save_session.help": "Jeżeli włączone, statystyki gracza (różnica ELO, wygrane/przegrane mecze) zresetują się po dwóch godzinach braku aktywności. Jeżeli wyłączone, statystyki zresetują się od razu po zamknięciu widżetu.",
+  "generator.settings.save_session.help": "Jeżeli włączone, wygrane, przegrane i różnica ELO zapisują się w danych przeglądarki (w OBS: w danych źródła przeglądarki). Po restarcie OBS wrócą, o ile od zamknięcia widżetu minęło mniej niż dwie godziny. Po dwóch godzinach liczą się od zera. Jeżeli wyłączone, statystyki zerują się od razu po zamknięciu widżetu.",
   "generator.settings.player_not_found": "Ten gracz nie istnieje lub nigdy nie grał w Counter-Strike 2 na FACEIT.",
   "generator.settings.adjust_style": "Więcej ustawień wyglądu",
   "generator.theme.title": "Wygląd",
@@ -402,5 +402,8 @@
   "style.ladder.description": "Drabinka leveli z pozycją obu graczy",
   "widget.versus.categories": "kategorie",
   "preset.marquee_speed": "Czas jednego przejścia: {{0}} s",
-  "generator.theme.design.legacy_locked": "Tryb VERSUS działa tylko z wyglądem FACEIT 2026."
+  "generator.theme.design.legacy_locked": "Tryb VERSUS działa tylko z wyglądem FACEIT 2026.",
+  "studio.docs": "Dokumentacja",
+  "style.prime": "Prime",
+  "style.prime.description": "Bazowa karta 2026: avatar, level, ranking i wszystkie statystyki"
 }

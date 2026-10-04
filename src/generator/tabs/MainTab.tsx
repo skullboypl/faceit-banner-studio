@@ -107,7 +107,7 @@ export const MainTab = ({
         settings.set('style', 'duel');
       }
     } else if (isVersusStyle(String(settings.get('style')))) {
-      settings.set('style', 'showcase');
+      settings.set('style', 'prime');
     }
   };
 

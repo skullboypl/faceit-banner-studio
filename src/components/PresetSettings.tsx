@@ -61,7 +61,7 @@ export function PresetSettings() {
           <input id="preset-level-glow" type="range" min="2" max="20" step="1" value={Number(settings.get(key('LevelGlowStrength')))} onChange={(event) => settings.set(key('LevelGlowStrength'), Number(event.target.value))} />
         </div>
       )}
-      {!['rail', 'focus', 'orbit', 'halo', 'pulse', 'ticker', 'slab', 'gauge', 'card', 'reel', 'ribbon', 'tower', 'dials', 'marquee'].includes(style) && select('RankPlace', 'rank_place', ['beside', 'under'])}
+      {!['rail', 'focus', 'orbit', 'halo', 'pulse', 'ticker', 'slab', 'gauge', 'card', 'reel', 'ribbon', 'tower', 'dials', 'marquee', 'prime'].includes(style) && select('RankPlace', 'rank_place', ['beside', 'under'])}
       {style === 'broadcast' && <>{select('Density', 'density', ['comfortable', 'compact'])}<Checkbox text={tl('preset.tiles')} setting={key('Tiles')} /></>}
       {style === 'rail' && <>{select('StatsPosition', 'stats_position', ['right', 'below'])}<Checkbox text={tl('preset.labels')} setting={key('ShowLabels')} /></>}
       {style === 'focus' && <>{select('StatsLayout', 'stats_layout', ['grid', 'rows'])}<Checkbox text={tl('preset.large_elo')} setting={key('LargeElo')} /></>}

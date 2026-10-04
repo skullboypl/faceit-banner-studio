@@ -11,12 +11,15 @@ function wikiDevRewritePlugin(): Plugin {
     const [pathname, query] = url.split('?');
     const suffix = query ? `?${query}` : '';
 
-    if (pathname === '/wiki' || pathname === '/wiki/') {
-      return `/wiki/index.html${suffix}`;
+    const section = ['/wiki', '/docs', '/en/docs'].find(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    );
+    if (!section) {
+      return url;
     }
 
-    if (!pathname.startsWith('/wiki/')) {
-      return url;
+    if (pathname === section || pathname === `${section}/`) {
+      return `${section}/index.html${suffix}`;
     }
 
     if (path.extname(pathname)) {

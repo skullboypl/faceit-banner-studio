@@ -9,11 +9,15 @@
 .pulse-theme:extend(.normal-theme all) {
   --auto-width: 320px;
 }
+.prime-theme:extend(.normal-theme all) {
+  --auto-width: 540px;
+}
 
 .wrapper.banner-design-2026:is(
     [data-layout='orbit'],
     [data-layout='halo'],
-    [data-layout='pulse']
+    [data-layout='pulse'],
+    [data-layout='prime']
   ) {
   --banner-radius: 20px;
   --border-width: 1px;
@@ -402,6 +406,80 @@ html.generator .settings .broadcast-presets .broadcast-preset {
     .sketch-stats {
       left: 62%;
       bottom: 10px;
+    }
+  }
+}
+
+/* Prime: the base 2026 card, avatar with everything laid out */
+.wrapper.banner-design-2026[data-layout='prime'] {
+  --orb-size: 108px;
+  --orb-ring: 6px;
+  .widget {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px 20px 16px;
+    .broadcast-kicker {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--subtext);
+      > span:first-child {
+        color: var(--preset-accent, #ff5900);
+      }
+      b {
+        margin: 0 6px;
+        opacity: 0.35;
+      }
+      > span:last-child {
+        opacity: 0.6;
+      }
+    }
+    .progress-bar {
+      display: block;
+      width: 100%;
+      margin: 0;
+      height: 4px;
+      border-radius: 99px;
+      background: #ffffff14;
+      .progress {
+        height: 4px;
+        border-radius: 99px;
+        background: var(--preset-accent, #ff5900);
+      }
+    }
+    .player-stats {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 18px;
+    }
+    .level {
+      gap: 0;
+    }
+    .level .elo {
+      p {
+        font-size: 38px;
+      }
+      h2 {
+        font-size: 18px;
+      }
+    }
+    .matches .stats {
+      flex-direction: column;
+      gap: 6px;
+    }
+    .matches .stat {
+      width: 74px;
+      height: 44px;
+      border-radius: 10px;
+    }
+    .average {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 }

@@ -33,7 +33,7 @@ export const Footer = () => {
           </a>
         </small>
         <small>
-          <a href="/wiki/">Wiki</a>
+          <a href="/docs/">Docs</a> · <a href="/wiki/">Wiki</a>
         </small>
       </div>
       <div className="footer-right">

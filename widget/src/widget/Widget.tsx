@@ -231,6 +231,9 @@ const hexToRgba = (hexColor: string, opacity: number) => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
+/** How long the session survives after the widget was last open. */
+const SESSION_KEEP_MS = 1000 * 60 * 60 * 2;
+
 const percentToFontScale = (value: number) => {
   const clamped = Math.max(0, Math.min(100, value));
   return 0.5 + clamped / 100;
@@ -398,7 +401,7 @@ export const Widget = ({
     observer.observe(parent);
     return () => observer.disconnect();
   }, [preview, !!bannerSize]);
-  const isAvatarPreset = resolvedStyle === 'orbit' || resolvedStyle === 'halo' || resolvedStyle === 'pulse';
+  const isAvatarPreset = resolvedStyle === 'orbit' || resolvedStyle === 'halo' || resolvedStyle === 'pulse' || resolvedStyle === 'prime';
   const isStaticPreset = resolvedStyle === 'broadcast' || resolvedStyle === 'rail' || resolvedStyle === 'focus' || isAvatarPreset;
   const isBroadcastPreset = broadcastPresets.some((preset) => preset.id === resolvedStyle);
   const presetAccent = isBroadcastPreset
@@ -490,17 +493,42 @@ export const Widget = ({
   /* Update player stats */
   useEffect(() => {
     if (preview) return;
-    let startDate = new Date();
-    const savedStartDate = localStorage.getItem('fcw_session_start');
-    const savedPlayerId = localStorage.getItem('fcw_session_player-id');
     const saveSession = SETTINGS.get('saveSession');
     const playerId = SETTINGS.get('playerId');
-    if (saveSession && savedStartDate && savedPlayerId === playerId) {
-      startDate = new Date(savedStartDate);
-    }
     if (!playerId) {
       return;
     }
+
+    /*
+     * The session lives in this browser's own storage (the OBS browser data), so
+     * a restarted OBS keeps wins, losses and the ELO change for 2 hours after the
+     * widget was last open. After that, or for another player, it starts from zero.
+     */
+    const now = Date.now();
+    let startDate = new Date(now);
+    let sessionExpired = true;
+    if (saveSession) {
+      const savedStart = Date.parse(localStorage.getItem('fcw_session_start') ?? '');
+      const savedEnd = Date.parse(localStorage.getItem('fcw_session_end') ?? '');
+      const samePlayer = localStorage.getItem('fcw_session_player-id') === playerId;
+      if (samePlayer && !Number.isNaN(savedStart) && !Number.isNaN(savedEnd) && now <= savedEnd) {
+        startDate = new Date(savedStart);
+        sessionExpired = false;
+      } else {
+        localStorage.setItem('fcw_session_start', new Date(now).toISOString());
+        localStorage.setItem('fcw_session_player-id', playerId);
+        localStorage.removeItem('fcw_session_starting-elo');
+      }
+    }
+    const extendSession = () => {
+      if (!saveSession) return;
+      localStorage.setItem(
+        'fcw_session_end',
+        new Date(Date.now() + SESSION_KEEP_MS).toISOString()
+      );
+    };
+    extendSession();
+    window.addEventListener('pagehide', extendSession);
     const getStats = (firstTime?: boolean) => {
       getPlayerStats(
         playerId,
@@ -516,49 +544,19 @@ export const Widget = ({
 
         if (!player || !player.elo || !player.level) return;
         if (firstTime) {
-          if (saveSession) {
-            let expired = false;
-            const sessionEnd = localStorage.getItem('fcw_session_end');
-            const startingElo = localStorage.getItem(
-              'fcw_session_starting-elo'
-            );
-            if (!sessionEnd) {
-              expired = true;
-            } else {
-              const sessionEndDate = new Date(sessionEnd);
-              if (new Date() > sessionEndDate) {
-                expired = true;
-              }
-            }
-            if (playerId !== savedPlayerId) {
-              expired = true;
-            }
-            if (expired) {
-              localStorage.setItem(
-                'fcw_session_starting-elo',
-                String(player.elo)
-              );
-              localStorage.setItem('fcw_session_start', new Date().toString());
-              localStorage.setItem('fcw_session_player-id', playerId);
-            }
-            const currentDate = new Date();
-            currentDate.setTime(currentDate.getTime() + 1000 * 60 * 60 * 2);
-            localStorage.setItem('fcw_session_end', currentDate.toString());
-            /* Load saved session ELO */
-            if (startingElo && !expired) {
-              setStartingElo(Number(startingElo));
-            } else {
-              setStartingElo(player.elo);
-            }
+          const startingElo = saveSession
+            ? Number(localStorage.getItem('fcw_session_starting-elo'))
+            : 0;
+          if (saveSession && !sessionExpired && startingElo) {
+            setStartingElo(startingElo);
           } else {
+            if (saveSession) {
+              localStorage.setItem('fcw_session_starting-elo', String(player.elo));
+            }
             setStartingElo(player.elo);
           }
-        }
-
-        if (!firstTime && saveSession) {
-          const currentDate = new Date();
-          currentDate.setTime(currentDate.getTime() + 1000 * 60 * 60 * 2);
-          localStorage.setItem('fcw_session_end', currentDate.toString());
+        } else {
+          extendSession();
         }
 
         setElo(player.elo);
@@ -633,6 +631,7 @@ export const Widget = ({
     );
     return () => {
       clearInterval(interval);
+      window.removeEventListener('pagehide', extendSession);
       document
         .getElementsByTagName('html')[0]
         .classList.remove(`${resolvedStyle}-theme`);

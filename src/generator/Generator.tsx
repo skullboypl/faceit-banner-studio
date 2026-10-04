@@ -573,6 +573,16 @@ export const Generator = () => {
                 </button>
               );
             })}
+            <a
+              className="docs-tab"
+              href="/docs/"
+              title={tl('studio.docs')}
+              aria-label={tl('studio.docs')}
+            >
+              <StudioIcon name="book" />
+              <span>{tl('studio.docs')}</span>
+              <StudioIcon name="arrow" />
+            </a>
           </nav>
           <div className="sidebar-note">
             <span className="game-label">CS2</span>

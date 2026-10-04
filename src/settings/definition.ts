@@ -451,6 +451,27 @@ export const SETTINGS_DEFINITIONS = {
     "query": ["marquee_seconds"],
     "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "marquee" }]
   },
+  "primeAccent": {
+    "type": "string",
+    "defaultValue": "ff5900",
+    "query": ["prime_accent"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "prime" }],
+    "regex": HEX_REGEXP
+  },
+  "primeLevelGlow": {
+    "type": "boolean",
+    "defaultValue": false,
+    "query": ["prime_level_glow"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "prime" }]
+  },
+  "primeLevelGlowStrength": {
+    "type": "number",
+    "defaultValue": 8,
+    "min": 2,
+    "max": 20,
+    "query": ["prime_level_glow_strength"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "prime" }, { "setting": "primeLevelGlow", "value": true }]
+  },
   "broadcastAccent": {
     "type": "string",
     "defaultValue": "ff5900",
@@ -1924,7 +1945,7 @@ export const SETTINGS_DEFINITIONS = {
   },
   style: {
     type: 'string',
-    defaultValue: 'showcase',
+    defaultValue: 'prime',
     defaultWidgetValue: 'rounded',
     options: styles.map((style) => style.id),
     query: ['style'],

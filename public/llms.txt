@@ -1,0 +1,45 @@
+# FACEIT Banner
+
+> Free, independent generator of FACEIT widgets (ELO, level, CS2 statistics) for OBS Studio and Streamlabs. Open source (MIT), by Skull.
+
+Home: https://faceitbanner.vxh.pl/
+
+## Dokumentacja (PL)
+
+- [Dokumentacja FACEIT Banner](https://faceitbanner.vxh.pl/docs/): Dokumentacja generatora banerów FACEIT do OBS: 18 układów solo, 13 układów VERSUS, rozmiar, parametry linku i FAQ.
+- [Jak dodać baner FACEIT do OBS](https://faceitbanner.vxh.pl/docs/szybki-start/): Krok po kroku: wygeneruj link w generatorze FACEIT Banner i dodaj go do OBS jako Browser Source. Zajmuje około dwóch minut.
+- [Banery solo](https://faceitbanner.vxh.pl/docs/banery-solo/): Przegląd 18 układów banerów solo FACEIT 2026 z rozmiarami OBS: Prime, Showcase, Spotlight, Broadcast, Rail, Focus, Orbit, Halo, Pulse, Ticker, Slab, Gauge, Card, Reel, Ribbon, Tower, Dials, Marquee.
+- [Banery VERSUS](https://faceitbanner.vxh.pl/docs/banery-versus/): Tryb VERSUS: porównaj swoje ELO i statystyki z rywalem na streamie. 13 układów: Duel, Edge, Faceoff, Clash, Tug, Rivals, Tally, Overlay, Ladder, Matchup, Scoreboard, Cycle, Surge.
+- [Rozmiar i responsywność banera](https://faceitbanner.vxh.pl/docs/rozmiar-banera/): Tryby rozmiaru AUTO, Zalecane i Ręcznie, limity szerokości i wysokości dla każdego banera oraz zalecane rozmiary źródła w OBS.
+- [Parametry linku widżetu](https://faceitbanner.vxh.pl/docs/parametry-url/): Wszystkie parametry adresu widżetu FACEIT Banner: nazwy, dozwolone wartości i wartości domyślne. Przydatne do ręcznej edycji linku.
+- [Baner FACEIT do OBS](https://faceitbanner.vxh.pl/docs/baner-faceit-do-obs/): Jak zrobić baner FACEIT do OBS: darmowy generator pokazuje level, ELO, wygrane i statystyki CS2. Link do źródła Przeglądarka w dwie minuty, bez instalowania wtyczek.
+- [ELO FACEIT na streamie](https://faceitbanner.vxh.pl/docs/elo-faceit-na-streamie/): Jak pokazać ELO FACEIT na streamie na Twitchu, YouTube i Kicku: widżet w źródle przeglądarki OBS lub Streamlabs, sesja z wygranymi i porażkami, ranking challengera.
+- [Czym jest FACEIT Banner](https://faceitbanner.vxh.pl/docs/o-projekcie/): FACEIT Banner: darmowy, niezależny generator widżetów FACEIT dla streamerów CS2. Autor, licencja, obsługiwane programy, źródło danych i ograniczenia.
+- [FAQ](https://faceitbanner.vxh.pl/docs/faq/): Najczęstsze pytania o baner FACEIT do OBS: aktualizacja ELO, rozmiar źródła, tryb VERSUS, animacje i bezpieczeństwo.
+- [Dokumentacja developerska](https://faceitbanner.vxh.pl/docs/dev/): Architektura, uruchomienie lokalne, system ustawień, dodawanie nowych układów banerów, działanie widżetu i wdrożenie FACEIT Banner.
+- [Uruchomienie lokalne](https://faceitbanner.vxh.pl/docs/dev/uruchomienie/): Jak uruchomić FACEIT Banner lokalnie: wymagania, instalacja zależności, klucz API FACEIT, serwer deweloperski i skrypty.
+- [System ustawień](https://faceitbanner.vxh.pl/docs/dev/ustawienia/): Jak działają ustawienia: definicje w SETTINGS_DEFINITIONS, adres URL jako źródło prawdy, localStorage generatora i dodawanie nowego ustawienia.
+- [Nowy układ banera](https://faceitbanner.vxh.pl/docs/dev/nowy-uklad/): Lista kroków dodania nowego układu banera: preset, ustawienia, render w widżecie, style LESS, tłumaczenia i miniatura.
+- [Działanie widżetu](https://faceitbanner.vxh.pl/docs/dev/widzet/): Działanie widżetu w OBS: pobieranie danych z API FACEIT, odświeżanie, sesja zapisana w przeglądarce, algorytm rozmiaru banera i animacje.
+- [Build i wdrożenie](https://faceitbanner.vxh.pl/docs/dev/build-i-wdrozenie/): Jak budowany i wdrażany jest FACEIT Banner: Dockerfile, CapRover, nginx, render dokumentacji do HTML, sitemapa i llms.txt.
+- [Współtworzenie](https://faceitbanner.vxh.pl/docs/dev/wspoltworzenie/): Jak współtworzyć FACEIT Banner: dodawanie tłumaczeń, styl kodu, konwencja commitów, wersjonowanie i licencja.
+
+## Documentation (EN)
+
+- [FACEIT Banner documentation](https://faceitbanner.vxh.pl/en/docs/): Documentation for the FACEIT banner generator for OBS: 18 solo layouts, 13 VERSUS layouts, size options, URL parameters and FAQ.
+- [How to add a FACEIT banner to OBS](https://faceitbanner.vxh.pl/en/docs/quick-start/): Step by step: generate a link in the FACEIT Banner generator and add it to OBS as a Browser Source. Takes about two minutes.
+- [Solo banners](https://faceitbanner.vxh.pl/en/docs/solo-banners/): Overview of 18 FACEIT 2026 solo banner layouts with OBS sizes: Prime, Showcase, Spotlight, Broadcast, Rail, Focus, Orbit, Halo, Pulse, Ticker, Slab, Gauge, Card, Reel, Ribbon, Tower, Dials, Marquee.
+- [VERSUS banners](https://faceitbanner.vxh.pl/en/docs/versus-banners/): VERSUS mode: compare your ELO and statistics with a rival on stream. 13 layouts: Duel, Edge, Faceoff, Clash, Tug, Rivals, Tally, Overlay, Ladder, Matchup, Scoreboard, Cycle, Surge.
+- [Banner size and responsiveness](https://faceitbanner.vxh.pl/en/docs/banner-size/): AUTO, Recommended and Manual size modes, width and height limits for every banner and the recommended OBS source sizes.
+- [Widget URL parameters](https://faceitbanner.vxh.pl/en/docs/url-parameters/): Every FACEIT Banner widget URL parameter: names, allowed values and defaults. Handy for editing a link by hand.
+- [FACEIT banner for OBS](https://faceitbanner.vxh.pl/en/docs/faceit-banner-for-obs/): How to make a FACEIT banner for OBS: a free generator shows level, ELO, wins and CS2 statistics. A Browser Source link in two minutes, no plugins to install.
+- [FACEIT ELO on stream](https://faceitbanner.vxh.pl/en/docs/faceit-elo-on-stream/): How to show FACEIT ELO on a Twitch, YouTube or Kick stream: a widget in an OBS or Streamlabs browser source, a session with wins and losses, challenger ranking.
+- [What is FACEIT Banner](https://faceitbanner.vxh.pl/en/docs/about/): FACEIT Banner: a free, independent FACEIT widget generator for CS2 streamers. Author, licence, supported software, data source and limitations.
+- [FAQ](https://faceitbanner.vxh.pl/en/docs/faq/): The most common questions about the FACEIT banner for OBS: ELO updates, source size, VERSUS mode, animations and safety.
+- [Developer documentation](https://faceitbanner.vxh.pl/en/docs/dev/): Architecture, local setup, the settings system, adding new banner layouts, how the widget works and how FACEIT Banner is deployed.
+- [Local setup](https://faceitbanner.vxh.pl/en/docs/dev/setup/): How to run FACEIT Banner locally: requirements, installing dependencies, the FACEIT API key, the dev server and scripts.
+- [Settings system](https://faceitbanner.vxh.pl/en/docs/dev/settings/): How settings work: definitions in SETTINGS_DEFINITIONS, the URL as the source of truth, the generator’s localStorage and adding a new setting.
+- [New banner layout](https://faceitbanner.vxh.pl/en/docs/dev/new-layout/): A checklist for adding a new banner layout: preset, settings, widget rendering, LESS styles, translations and the thumbnail.
+- [How the widget works](https://faceitbanner.vxh.pl/en/docs/dev/widget/): How the widget works in OBS: loading data from the FACEIT API, refreshing, the session stored in the browser, the banner size algorithm and animations.
+- [Build and deployment](https://faceitbanner.vxh.pl/en/docs/dev/build-and-deploy/): How FACEIT Banner is built and deployed: the Dockerfile, CapRover, nginx, rendering the documentation to HTML, the sitemap and llms.txt.
+- [Contributing](https://faceitbanner.vxh.pl/en/docs/dev/contributing/): How to contribute to FACEIT Banner: adding translations, code style, commit convention, versioning and the licence.

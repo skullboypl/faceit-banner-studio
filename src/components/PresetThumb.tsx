@@ -72,6 +72,19 @@ const make = (w: number, h: number): Draw => {
 
 /** One drawing per layout, in fractions of that banner's own size. */
 const DRAWINGS: Record<string, (d: Draw) => ReactNode> = {
+  prime: (d) => (
+    <>
+      {d.r(0.05, 0.07, 0.2, 0.05, ACCENT, 0.5)}
+      {d.ring(0.14, 0.38, 0.19)}
+      {d.r(0.3, 0.22, 0.26, 0.09, MID)}
+      {d.r(0.3, 0.37, 0.3, 0.17, LIGHT)}
+      {d.r(0.3, 0.6, 0.2, 0.05, MID)}
+      {d.cells(0.74, 0.22, 0.2, 0.36, 2)}
+      {d.cells(0.05, 0.72, 0.9, 0.14, 4)}
+      {d.r(0.05, 0.92, 0.9, 0.025, DIM, 0.5)}
+      {d.r(0.05, 0.92, 0.35, 0.025, ACCENT, 0.5)}
+    </>
+  ),
   showcase: (d) => (
     <>
       {d.ring(0.1, 0.38, 0.2)}

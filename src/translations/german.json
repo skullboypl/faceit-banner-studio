@@ -147,7 +147,7 @@
   "generator.settings.refresh_delay.normal": "{{0}}s",
   "generator.settings.refresh_delay.slow": "{{0}}s (Langsam)",
   "generator.settings.save_session": "Speichern der Statistiken für zwei Stunden nach dem Schließen des Widgets",
-  "generator.settings.save_session.help": "Falls aktiviert, Spieler Statistik (Unterschied ELO, gewinnts/verlusts match) Rücksetzung nach zwei Stunden Inaktivität. Wenn deaktiviert, Die Statistik wird zurückgesetzt, sobald das Widget geschlossen wird.",
+  "generator.settings.save_session.help": "Wenn aktiv, werden Siege, Niederlagen und die ELO-Änderung in den Browserdaten gespeichert (in OBS: Daten der Browserquelle). Nach einem OBS-Neustart sind sie wieder da, wenn seit dem Schließen weniger als zwei Stunden vergangen sind. Danach beginnen sie bei null. Wenn aus, werden die Statistiken sofort beim Schließen zurückgesetzt.",
   "generator.settings.player_not_found": "Dieser Spieler existiert nicht oder hat noch nie gespielt in Counter-Strike 2 auf FACEIT.",
   "generator.settings.adjust_style": "Widget-Stil anpassen",
   "generator.theme.title": "Stil",
@@ -402,5 +402,8 @@
   "style.ladder.description": "Level-Leiter mit beiden Spielern",
   "widget.versus.categories": "Kategorien",
   "preset.marquee_speed": "Ein Durchlauf dauert: {{0}} s",
-  "generator.theme.design.legacy_locked": "Der VERSUS-Modus funktioniert nur mit dem FACEIT-2026-Look."
+  "generator.theme.design.legacy_locked": "Der VERSUS-Modus funktioniert nur mit dem FACEIT-2026-Look.",
+  "studio.docs": "Dokumentation",
+  "style.prime": "Prime",
+  "style.prime.description": "Die 2026-Basiskarte: Avatar, Level, Ranking und alle Statistiken"
 }
