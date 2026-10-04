@@ -22,6 +22,7 @@ export const Statistic = ({
       <div className={'setting'}>
         <p>{tl('generator.stats.slot', [slot])}</p>
         <select
+          aria-label={tl('generator.stats.slot', [slot])}
           value={settings.get(setting) as StatisticType}
           onChange={(event) => {
             settings.set(setting, event.target.value as StatisticType);

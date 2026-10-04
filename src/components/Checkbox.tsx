@@ -25,7 +25,10 @@ export const Checkbox = ({
   }
 
   return (
-    <div
+    <button
+      type="button"
+      role="switch"
+      aria-checked={Boolean(state ?? (setting && settings.get(setting)))}
       className={'checkbox'}
       onClick={
         setState !== undefined
@@ -37,12 +40,13 @@ export const Checkbox = ({
             : () => {}
       }
     >
-      <div
-        className={`check${state || (setting && settings.get(setting)) ? ' checked' : ''}`}
+      <span
+        aria-hidden="true"
+        className={`check${(state ?? (setting && settings.get(setting))) ? ' checked' : ''}`}
       >
         <CheckIcon />
-      </div>
-      <p>
+      </span>
+      <span>
         {text}
         {experimental && (
           <span className={'badge'} title={tl('generator.experimental.help')}>
@@ -54,7 +58,7 @@ export const Checkbox = ({
             ?
           </span>
         )}
-      </p>
-    </div>
+      </span>
+    </button>
   );
 };

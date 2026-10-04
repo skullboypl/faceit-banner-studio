@@ -1,10 +1,21 @@
-import { colorSchemes, styles } from '../../../widget/src/styles/styles';
+import {
+  broadcastPresets,
+  colorSchemes,
+  resolveBannerStyle,
+  styles,
+} from '../../../widget/src/styles/styles';
 import { ColorPicker } from '../../components/ColorPicker.tsx';
-import { useContext, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { Checkbox } from '../../components/Checkbox.tsx';
 import { InfoBox } from '../../components/InfoBox.tsx';
 import { LanguageContext, SettingsContext } from '../Generator.tsx';
 import { ShowRanking } from '../../../widget/src/widget/Widget.tsx';
+import { PresetSettings } from '../../components/PresetSettings';
+import { PresetCards } from '../../components/PresetCards';
+import {
+  BannerRadiusControl,
+  BannerSizeControls,
+} from '../../components/BannerSizeControls';
 
 export const StyleTab = ({
   username,
@@ -21,63 +32,74 @@ export const StyleTab = ({
   const [isEditingInlineCss, setIsEditingInlineCss] = useState(false);
   const tl = useContext(LanguageContext);
   const settings = useContext(SettingsContext);
+  const bannerDesign = settings?.get('bannerDesign');
+  const currentStyle = settings?.get('style');
+
+  useEffect(() => {
+    if (!settings || !bannerDesign || !currentStyle) return;
+    const resolved = resolveBannerStyle(currentStyle, bannerDesign);
+    if (resolved !== currentStyle) {
+      settings.set('style', resolved);
+    }
+  }, [settings, bannerDesign, currentStyle]);
+
   if (!settings || !tl) {
     return null;
   }
 
-const bannerFonts: { id: string; name: string }[] = [
-  { id: 'dm_sans', name: 'DM Sans' }, // Zostawione na początku
-  { id: 'arial', name: 'Arial' },
-  { id: 'comic_sans_ms', name: 'Comic Sans MS' },
-  { id: 'courier_new', name: 'Courier New' },
-  { id: 'garamond', name: 'Garamond' },
-  { id: 'georgia', name: 'Georgia' },
-  { id: 'helvetica', name: 'Helvetica' },
-  { id: 'impact', name: 'Impact' },
-  { id: 'inter', name: 'Inter' },
-  { id: 'kick_font', name: 'Kick Font' },
-  { id: 'lucida_sans', name: 'Lucida Sans' },
-  { id: 'merriweather', name: 'Merriweather' },
-  { id: 'montserrat', name: 'Montserrat' },
-  { id: 'open_sans', name: 'Open Sans' },
-  { id: 'oswald', name: 'Oswald' },
-  { id: 'palatino_linotype', name: 'Palatino Linotype' },
-  { id: 'playfair_display', name: 'Playfair Display' },
-  { id: 'poppins', name: 'Poppins' },
-  { id: 'roboto', name: 'Roboto' },
-  { id: 'segoe_ui', name: 'Segoe UI' },
-  { id: 'tahoma', name: 'Tahoma' },
-  { id: 'times_new_roman', name: 'Times New Roman' },
-  { id: 'trebuchet_ms', name: 'Trebuchet MS' },
-  { id: 'verdana', name: 'Verdana' },
-];
+  const bannerFonts: { id: string; name: string }[] = [
+    { id: 'dm_sans', name: 'DM Sans' }, // Zostawione na początku
+    { id: 'arial', name: 'Arial' },
+    { id: 'comic_sans_ms', name: 'Comic Sans MS' },
+    { id: 'courier_new', name: 'Courier New' },
+    { id: 'garamond', name: 'Garamond' },
+    { id: 'georgia', name: 'Georgia' },
+    { id: 'helvetica', name: 'Helvetica' },
+    { id: 'impact', name: 'Impact' },
+    { id: 'inter', name: 'Inter' },
+    { id: 'kick_font', name: 'Kick Font' },
+    { id: 'lucida_sans', name: 'Lucida Sans' },
+    { id: 'merriweather', name: 'Merriweather' },
+    { id: 'montserrat', name: 'Montserrat' },
+    { id: 'open_sans', name: 'Open Sans' },
+    { id: 'oswald', name: 'Oswald' },
+    { id: 'palatino_linotype', name: 'Palatino Linotype' },
+    { id: 'playfair_display', name: 'Playfair Display' },
+    { id: 'poppins', name: 'Poppins' },
+    { id: 'roboto', name: 'Roboto' },
+    { id: 'segoe_ui', name: 'Segoe UI' },
+    { id: 'tahoma', name: 'Tahoma' },
+    { id: 'times_new_roman', name: 'Times New Roman' },
+    { id: 'trebuchet_ms', name: 'Trebuchet MS' },
+    { id: 'verdana', name: 'Verdana' },
+  ];
 
- const bannerFontFamilies: Record<string, string> = {
-  dm_sans: "'DM Sans', sans-serif",
-  arial: 'Arial, sans-serif',
-  comic_sans_ms: "'Comic Sans MS', cursive",
-  courier_new: "'Courier New', monospace",
-  garamond: 'Garamond, serif',
-  georgia: 'Georgia, serif',
-  helvetica: 'Helvetica, Arial, sans-serif',
-  impact: 'Impact, sans-serif',
-  inter: "'Inter', sans-serif",
-  kick_font: "'KickFont', sans-serif",
-  lucida_sans: "'Lucida Sans', sans-serif",
-  merriweather: "'Merriweather', serif",
-  montserrat: "'Montserrat', sans-serif",
-  open_sans: "'Open Sans', sans-serif",
-  oswald: "'Oswald', sans-serif",
-  palatino_linotype: "'Palatino Linotype', 'Book Antiqua', Palatino, serif",
-  playfair_display: "'Playfair Display', serif",
-  poppins: "'Poppins', sans-serif",
-  roboto: "'Roboto', sans-serif",
-  segoe_ui: "'Segoe UI', sans-serif",
-  tahoma: 'Tahoma, sans-serif',
-  times_new_roman: "'Times New Roman', serif",
-  trebuchet_ms: "'Trebuchet MS', sans-serif",
-  verdana: 'Verdana, sans-serif',
-};
+  const bannerFontFamilies: Record<string, string> = {
+    dm_sans: "'DM Sans', sans-serif",
+    arial: 'Arial, sans-serif',
+    comic_sans_ms: "'Comic Sans MS', cursive",
+    courier_new: "'Courier New', monospace",
+    garamond: 'Garamond, serif',
+    georgia: 'Georgia, serif',
+    helvetica: 'Helvetica, Arial, sans-serif',
+    impact: 'Impact, sans-serif',
+    inter: "'Inter', sans-serif",
+    kick_font: "'KickFont', sans-serif",
+    lucida_sans: "'Lucida Sans', sans-serif",
+    merriweather: "'Merriweather', serif",
+    montserrat: "'Montserrat', sans-serif",
+    open_sans: "'Open Sans', sans-serif",
+    oswald: "'Oswald', sans-serif",
+    palatino_linotype: "'Palatino Linotype', 'Book Antiqua', Palatino, serif",
+    playfair_display: "'Playfair Display', serif",
+    poppins: "'Poppins', sans-serif",
+    roboto: "'Roboto', sans-serif",
+    segoe_ui: "'Segoe UI', sans-serif",
+    tahoma: 'Tahoma, sans-serif',
+    times_new_roman: "'Times New Roman', serif",
+    trebuchet_ms: "'Trebuchet MS', sans-serif",
+    verdana: 'Verdana, sans-serif',
+  };
 
   const defaultHiddenStyleIds = new Set<string>([
     'terminal',
@@ -133,12 +155,62 @@ const bannerFonts: { id: string; name: string }[] = [
 
   return (
     <>
+      <div className={'settings design-version'}>
+        <h3 className="card-heading">{tl('studio.design_version')}</h3>
+        <div
+          className="design-switch"
+          role="group"
+          aria-label={tl('generator.theme.design')}
+        >
+          {(['2026', 'legacy'] as const).map((design) => (
+            <button
+              key={design}
+              type="button"
+              className="design-switch-option"
+              aria-pressed={settings.get('bannerDesign') === design}
+              disabled={design === 'legacy' && settings.get('widgetMode') === 'versus'}
+              title={
+                design === 'legacy' && settings.get('widgetMode') === 'versus'
+                  ? tl('generator.theme.design.legacy_locked')
+                  : undefined
+              }
+              onClick={() => {
+                settings.set('bannerDesign', design);
+                settings.set(
+                  'style',
+                  resolveBannerStyle(settings.get('style'), design)
+                );
+              }}
+            >
+              <span className="design-switch-mark" aria-hidden="true">
+                {design === '2026' ? '26' : 'Cl'}
+              </span>
+              <span className="design-switch-text">
+                <strong>{tl(`generator.theme.design.${design}`)}</strong>
+                <small>{tl(`generator.theme.design.${design}.tagline`)}</small>
+              </span>
+            </button>
+          ))}
+        </div>
+        <p className="subtext">
+          {settings.get('widgetMode') === 'versus'
+            ? tl('generator.theme.design.legacy_locked')
+            : tl('generator.theme.design.help')}
+        </p>
+      </div>
       <div className={'settings'}>
+        <h3 className="card-heading">{tl('studio.appearance')}</h3>
+        {settings.get('bannerDesign') === '2026' && (
+          <PresetCards versus={settings.get('widgetMode') === 'versus'} />
+        )}
+        <BannerSizeControls />
+        <BannerRadiusControl />
         <div className={'setting'}>
           <div className={'flex style-mode-row'}>
             <div>
               <p>{tl('generator.theme.color_scheme')}</p>
               <select
+                aria-label={tl('generator.theme.color_scheme')}
                 value={settings.get('colorScheme') as string}
                 onChange={(e) => settings.set('colorScheme', e.target.value)}
               >
@@ -151,20 +223,25 @@ const bannerFonts: { id: string; name: string }[] = [
                 })}
               </select>
             </div>
-            <div>
+            {settings.get('bannerDesign') !== '2026' && <div>
               <p>{tl('generator.theme.style')}</p>
               <select
-                value={settings.get('style') as string}
+                aria-label={tl('generator.theme.style')}
+                value={resolveBannerStyle(
+                  settings.get('style'),
+                  settings.get('bannerDesign')
+                )}
                 onChange={(e) => settings.set('style', e.target.value)}
               >
-                {styles.map((style) => { if (
-                    (style.hidden)
+                {styles.map((style) => {
+                  if (style.hidden) return;
+                  if (settings.get('bannerDesign') === '2026' && !style.modernOnly) return;
+                  if (
+                    style.modernOnly &&
+                    settings.get('bannerDesign') !== '2026'
                   )
                     return;
-                  if (
-                    !showHiddenStyles &&
-                    (defaultHiddenStyleIds.has(style.id))
-                  )
+                  if (!showHiddenStyles && defaultHiddenStyleIds.has(style.id))
                     return;
                   return (
                     <option key={style.id} value={style.id}>
@@ -176,11 +253,11 @@ const bannerFonts: { id: string; name: string }[] = [
                   );
                 })}
               </select>
-              <Checkbox
+              {settings.get('bannerDesign') !== '2026' && <Checkbox
                 text={tl('generator.theme.style.show_hidden')}
                 state={showHiddenStyles}
                 setState={setShowHiddenStyles}
-              />
+              />}
 
               {settings.get('style') === 'animated' && (
                 <div
@@ -194,9 +271,15 @@ const bannerFonts: { id: string; name: string }[] = [
                       settings.set('animatedDeckAnimation', event.target.value);
                     }}
                   >
-                    <option value={'fade'}>{tl('generator.theme.animated.animation.fade')}</option>
-                    <option value={'slide_up'}>{tl('generator.theme.animated.animation.slide_up')}</option>
-                    <option value={'zoom'}>{tl('generator.theme.animated.animation.zoom')}</option>
+                    <option value={'fade'}>
+                      {tl('generator.theme.animated.animation.fade')}
+                    </option>
+                    <option value={'slide_up'}>
+                      {tl('generator.theme.animated.animation.slide_up')}
+                    </option>
+                    <option value={'zoom'}>
+                      {tl('generator.theme.animated.animation.zoom')}
+                    </option>
                   </select>
 
                   <p style={{ marginTop: '8px' }}>
@@ -223,7 +306,9 @@ const bannerFonts: { id: string; name: string }[] = [
                     <div className={'animated-order-item'}>
                       <p>{tl('generator.theme.animated.section.header')}</p>
                       <select
-                        value={settings.get('animatedDeckOrderHeader') as number}
+                        value={
+                          settings.get('animatedDeckOrderHeader') as number
+                        }
                         onChange={(event) => {
                           settings.set(
                             'animatedDeckOrderHeader',
@@ -259,7 +344,9 @@ const bannerFonts: { id: string; name: string }[] = [
                     <div className={'animated-order-item'}>
                       <p>{tl('generator.theme.animated.section.matches')}</p>
                       <select
-                        value={settings.get('animatedDeckOrderMatches') as number}
+                        value={
+                          settings.get('animatedDeckOrderMatches') as number
+                        }
                         onChange={(event) => {
                           settings.set(
                             'animatedDeckOrderMatches',
@@ -277,7 +364,7 @@ const bannerFonts: { id: string; name: string }[] = [
                   </div>
                 </div>
               )}
-            </div>
+            </div>}
           </div>
         </div>
 
@@ -310,6 +397,7 @@ const bannerFonts: { id: string; name: string }[] = [
         )}
       </div>
 
+      <PresetSettings />
       <div className={'settings'}>
         <Checkbox
           text={tl('generator.theme.banner_font.adjust')}
@@ -336,11 +424,15 @@ const bannerFonts: { id: string; name: string }[] = [
                 );
               })}
             </select>
+          </div>
+        )}
 
-            <p style={{ fontWeight: 700, margin: '12px 0 8px' }}>
-              {tl('generator.theme.banner_font_weight.title')}
-            </p>
-
+        <Checkbox
+          text={tl('generator.theme.banner_font_size.adjust')}
+          setting={'adjustBannerFontSize'}
+        />
+        {settings.get('adjustBannerFontSize') && (
+          <div className={'setting'}>
             <p style={{ fontWeight: 700, margin: '8px 0 6px' }}>
               {tl('generator.theme.banner_font_size.category')}
             </p>
@@ -629,6 +721,10 @@ const bannerFonts: { id: string; name: string }[] = [
               </>
             )}
 
+          </div>
+        )}
+        {settings.get('adjustBannerFont') && (
+          <div className={'setting'}>
             <p style={{ fontWeight: 700, margin: '14px 0 6px' }}>
               {tl('generator.theme.banner_font_weight.category')}
             </p>
@@ -639,7 +735,9 @@ const bannerFonts: { id: string; name: string }[] = [
             />
             {settings.get('adjustBannerFontWeightNickname') && (
               <div className={'flex'} style={{ alignItems: 'center' }}>
-                <p style={{ whiteSpace: 'nowrap' }}>{tl('generator.theme.banner_font_weight.percent')}</p>
+                <p style={{ whiteSpace: 'nowrap' }}>
+                  {tl('generator.theme.banner_font_weight.percent')}
+                </p>
                 <input
                   type={'range'}
                   value={settings.get('bannerFontWeightNickname')}
@@ -647,7 +745,10 @@ const bannerFonts: { id: string; name: string }[] = [
                   max={100}
                   step={1}
                   onChange={(event) => {
-                    settings.set('bannerFontWeightNickname', parseFloat(event.currentTarget.value));
+                    settings.set(
+                      'bannerFontWeightNickname',
+                      parseFloat(event.currentTarget.value)
+                    );
                   }}
                 />
                 <p style={{ width: '50px', textAlign: 'right' }}>
@@ -661,7 +762,9 @@ const bannerFonts: { id: string; name: string }[] = [
             />
             {settings.get('adjustBannerFontWeightElo') && (
               <div className={'flex'} style={{ alignItems: 'center' }}>
-                <p style={{ whiteSpace: 'nowrap' }}>{tl('generator.theme.banner_font_weight.percent')}</p>
+                <p style={{ whiteSpace: 'nowrap' }}>
+                  {tl('generator.theme.banner_font_weight.percent')}
+                </p>
                 <input
                   type={'range'}
                   value={settings.get('bannerFontWeightElo')}
@@ -669,7 +772,10 @@ const bannerFonts: { id: string; name: string }[] = [
                   max={100}
                   step={1}
                   onChange={(event) => {
-                    settings.set('bannerFontWeightElo', parseFloat(event.currentTarget.value));
+                    settings.set(
+                      'bannerFontWeightElo',
+                      parseFloat(event.currentTarget.value)
+                    );
                   }}
                 />
                 <p style={{ width: '50px', textAlign: 'right' }}>
@@ -683,7 +789,9 @@ const bannerFonts: { id: string; name: string }[] = [
             />
             {settings.get('adjustBannerFontWeightEloSuffix') && (
               <div className={'flex'} style={{ alignItems: 'center' }}>
-                <p style={{ whiteSpace: 'nowrap' }}>{tl('generator.theme.banner_font_weight.percent')}</p>
+                <p style={{ whiteSpace: 'nowrap' }}>
+                  {tl('generator.theme.banner_font_weight.percent')}
+                </p>
                 <input
                   type={'range'}
                   value={settings.get('bannerFontWeightEloSuffix')}
@@ -691,7 +799,10 @@ const bannerFonts: { id: string; name: string }[] = [
                   max={100}
                   step={1}
                   onChange={(event) => {
-                    settings.set('bannerFontWeightEloSuffix', parseFloat(event.currentTarget.value));
+                    settings.set(
+                      'bannerFontWeightEloSuffix',
+                      parseFloat(event.currentTarget.value)
+                    );
                   }}
                 />
                 <p style={{ width: '50px', textAlign: 'right' }}>
@@ -705,7 +816,9 @@ const bannerFonts: { id: string; name: string }[] = [
             />
             {settings.get('adjustBannerFontWeightEloDiff') && (
               <div className={'flex'} style={{ alignItems: 'center' }}>
-                <p style={{ whiteSpace: 'nowrap' }}>{tl('generator.theme.banner_font_weight.percent')}</p>
+                <p style={{ whiteSpace: 'nowrap' }}>
+                  {tl('generator.theme.banner_font_weight.percent')}
+                </p>
                 <input
                   type={'range'}
                   value={settings.get('bannerFontWeightEloDiff')}
@@ -713,7 +826,10 @@ const bannerFonts: { id: string; name: string }[] = [
                   max={100}
                   step={1}
                   onChange={(event) => {
-                    settings.set('bannerFontWeightEloDiff', parseFloat(event.currentTarget.value));
+                    settings.set(
+                      'bannerFontWeightEloDiff',
+                      parseFloat(event.currentTarget.value)
+                    );
                   }}
                 />
                 <p style={{ width: '50px', textAlign: 'right' }}>
@@ -727,7 +843,9 @@ const bannerFonts: { id: string; name: string }[] = [
             />
             {settings.get('adjustBannerFontWeightWinsValue') && (
               <div className={'flex'} style={{ alignItems: 'center' }}>
-                <p style={{ whiteSpace: 'nowrap' }}>{tl('generator.theme.banner_font_weight.percent')}</p>
+                <p style={{ whiteSpace: 'nowrap' }}>
+                  {tl('generator.theme.banner_font_weight.percent')}
+                </p>
                 <input
                   type={'range'}
                   value={settings.get('bannerFontWeightWinsValue')}
@@ -735,7 +853,10 @@ const bannerFonts: { id: string; name: string }[] = [
                   max={100}
                   step={1}
                   onChange={(event) => {
-                    settings.set('bannerFontWeightWinsValue', parseFloat(event.currentTarget.value));
+                    settings.set(
+                      'bannerFontWeightWinsValue',
+                      parseFloat(event.currentTarget.value)
+                    );
                   }}
                 />
                 <p style={{ width: '50px', textAlign: 'right' }}>
@@ -749,7 +870,9 @@ const bannerFonts: { id: string; name: string }[] = [
             />
             {settings.get('adjustBannerFontWeightWinsLabel') && (
               <div className={'flex'} style={{ alignItems: 'center' }}>
-                <p style={{ whiteSpace: 'nowrap' }}>{tl('generator.theme.banner_font_weight.percent')}</p>
+                <p style={{ whiteSpace: 'nowrap' }}>
+                  {tl('generator.theme.banner_font_weight.percent')}
+                </p>
                 <input
                   type={'range'}
                   value={settings.get('bannerFontWeightWinsLabel')}
@@ -757,7 +880,10 @@ const bannerFonts: { id: string; name: string }[] = [
                   max={100}
                   step={1}
                   onChange={(event) => {
-                    settings.set('bannerFontWeightWinsLabel', parseFloat(event.currentTarget.value));
+                    settings.set(
+                      'bannerFontWeightWinsLabel',
+                      parseFloat(event.currentTarget.value)
+                    );
                   }}
                 />
                 <p style={{ width: '50px', textAlign: 'right' }}>
@@ -766,12 +892,16 @@ const bannerFonts: { id: string; name: string }[] = [
               </div>
             )}
             <Checkbox
-              text={tl('generator.theme.banner_font_weight.losses_value.adjust')}
+              text={tl(
+                'generator.theme.banner_font_weight.losses_value.adjust'
+              )}
               setting={'adjustBannerFontWeightLossesValue'}
             />
             {settings.get('adjustBannerFontWeightLossesValue') && (
               <div className={'flex'} style={{ alignItems: 'center' }}>
-                <p style={{ whiteSpace: 'nowrap' }}>{tl('generator.theme.banner_font_weight.percent')}</p>
+                <p style={{ whiteSpace: 'nowrap' }}>
+                  {tl('generator.theme.banner_font_weight.percent')}
+                </p>
                 <input
                   type={'range'}
                   value={settings.get('bannerFontWeightLossesValue')}
@@ -779,7 +909,10 @@ const bannerFonts: { id: string; name: string }[] = [
                   max={100}
                   step={1}
                   onChange={(event) => {
-                    settings.set('bannerFontWeightLossesValue', parseFloat(event.currentTarget.value));
+                    settings.set(
+                      'bannerFontWeightLossesValue',
+                      parseFloat(event.currentTarget.value)
+                    );
                   }}
                 />
                 <p style={{ width: '50px', textAlign: 'right' }}>
@@ -788,12 +921,16 @@ const bannerFonts: { id: string; name: string }[] = [
               </div>
             )}
             <Checkbox
-              text={tl('generator.theme.banner_font_weight.losses_label.adjust')}
+              text={tl(
+                'generator.theme.banner_font_weight.losses_label.adjust'
+              )}
               setting={'adjustBannerFontWeightLossesLabel'}
             />
             {settings.get('adjustBannerFontWeightLossesLabel') && (
               <div className={'flex'} style={{ alignItems: 'center' }}>
-                <p style={{ whiteSpace: 'nowrap' }}>{tl('generator.theme.banner_font_weight.percent')}</p>
+                <p style={{ whiteSpace: 'nowrap' }}>
+                  {tl('generator.theme.banner_font_weight.percent')}
+                </p>
                 <input
                   type={'range'}
                   value={settings.get('bannerFontWeightLossesLabel')}
@@ -801,7 +938,10 @@ const bannerFonts: { id: string; name: string }[] = [
                   max={100}
                   step={1}
                   onChange={(event) => {
-                    settings.set('bannerFontWeightLossesLabel', parseFloat(event.currentTarget.value));
+                    settings.set(
+                      'bannerFontWeightLossesLabel',
+                      parseFloat(event.currentTarget.value)
+                    );
                   }}
                 />
                 <p style={{ width: '50px', textAlign: 'right' }}>
@@ -815,7 +955,9 @@ const bannerFonts: { id: string; name: string }[] = [
             />
             {settings.get('adjustBannerFontWeightStatistics') && (
               <div className={'flex'} style={{ alignItems: 'center' }}>
-                <p style={{ whiteSpace: 'nowrap' }}>{tl('generator.theme.banner_font_weight.percent')}</p>
+                <p style={{ whiteSpace: 'nowrap' }}>
+                  {tl('generator.theme.banner_font_weight.percent')}
+                </p>
                 <input
                   type={'range'}
                   value={settings.get('bannerFontWeightStatistics')}
@@ -823,7 +965,10 @@ const bannerFonts: { id: string; name: string }[] = [
                   max={100}
                   step={1}
                   onChange={(event) => {
-                    settings.set('bannerFontWeightStatistics', parseFloat(event.currentTarget.value));
+                    settings.set(
+                      'bannerFontWeightStatistics',
+                      parseFloat(event.currentTarget.value)
+                    );
                   }}
                 />
                 <p style={{ width: '50px', textAlign: 'right' }}>
@@ -833,43 +978,49 @@ const bannerFonts: { id: string; name: string }[] = [
             )}
           </div>
         )}
-        
-      {settings.get('showEloSuffix') && (
-        <> 
-          <div style={{ margin: '16px 0 8px 0', fontWeight: 'bold', fontSize: '16px' }}>
-            {tl('generator.theme.banner_font_size.elo_suffix.category')}
-          </div>
-          
-          <Checkbox
-            text={tl('generator.theme.elo_suffix_spacing.adjust')}
-            setting={'adjustEloSuffixSpacing'}
-          />
 
-          {settings.get('adjustEloSuffixSpacing') && (
-            <div className={'flex'} style={{ alignItems: 'center' }}>
-              <p style={{ whiteSpace: 'nowrap' }}>
-                {tl('generator.theme.elo_suffix_spacing')}
-              </p>
-              <input
-                type={'range'}
-                value={settings.get('eloSuffixSpacing')}
-                min={0}
-                max={20}
-                step={1}
-                onChange={(event) => {
-                  settings.set(
-                    'eloSuffixSpacing',
-                    parseFloat(event.currentTarget.value)
-                  );
-                }}
-              />
-              <p style={{ width: '50px', textAlign: 'right' }}>
-                {settings.get('eloSuffixSpacing')}px
-              </p>
+        {settings.get('showEloSuffix') && (
+          <>
+            <div
+              style={{
+                margin: '16px 0 8px 0',
+                fontWeight: 'bold',
+                fontSize: '16px',
+              }}
+            >
+              {tl('generator.theme.banner_font_size.elo_suffix.category')}
             </div>
-          )}
-        </>
-      )}
+
+            <Checkbox
+              text={tl('generator.theme.elo_suffix_spacing.adjust')}
+              setting={'adjustEloSuffixSpacing'}
+            />
+
+            {settings.get('adjustEloSuffixSpacing') && (
+              <div className={'flex'} style={{ alignItems: 'center' }}>
+                <p style={{ whiteSpace: 'nowrap' }}>
+                  {tl('generator.theme.elo_suffix_spacing')}
+                </p>
+                <input
+                  type={'range'}
+                  value={settings.get('eloSuffixSpacing')}
+                  min={0}
+                  max={20}
+                  step={1}
+                  onChange={(event) => {
+                    settings.set(
+                      'eloSuffixSpacing',
+                      parseFloat(event.currentTarget.value)
+                    );
+                  }}
+                />
+                <p style={{ width: '50px', textAlign: 'right' }}>
+                  {settings.get('eloSuffixSpacing')}px
+                </p>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       <div className={'settings'}>
@@ -1320,7 +1471,9 @@ const bannerFonts: { id: string; name: string }[] = [
                 style={'info'}
                 content={
                   <div>
-                    <p>{tl('generator.theme.custom_inline_css.editing_info')}</p>
+                    <p>
+                      {tl('generator.theme.custom_inline_css.editing_info')}
+                    </p>
                     <div className={'css-selector-chips'}>
                       {inlineCssSelectors.map((selector) => (
                         <button

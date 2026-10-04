@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Language, tl } from '../translations/translations.ts';
 
 import nukePreview from '../assets/previews/nuke.png';
@@ -30,39 +29,29 @@ export const PreviewCarousel = ({
   previewBackground: string;
   setPreviewBackground: (id: string) => void;
 }) => {
-  const currentIndex = previews.findIndex((p) => p.id === previewBackground);
-  const [index, setIndex] = useState<number>(
-    currentIndex >= 0 ? currentIndex : 0
-  );
-
-  const handlePrev = () => {
-    const newIndex = (index - 1 + previews.length) % previews.length;
-    setIndex(newIndex);
-    setPreviewBackground(previews[newIndex].id);
-  };
-
-  const handleNext = () => {
-    const newIndex = (index + 1) % previews.length;
-    setIndex(newIndex);
-    setPreviewBackground(previews[newIndex].id);
-  };
-
-  const current = previews[index];
-
   return (
-    <div className="preview-carousel">
-      <button onClick={handlePrev} className="arrow left">
-        ‹
-      </button>
-
-      <div className="preview-item">
-        <img src={current.img} alt={current.label} />
-        <p>{tl(language, `generator.preview.${current.id}`)}</p>
+    <div
+      className="map-selector"
+      role="group"
+      aria-label={tl(language, 'studio.background')}
+    >
+      <div className="map-selector-label">
+        {tl(language, 'studio.background')}
+        <span>{tl(language, 'studio.preview_only')}</span>
       </div>
-
-      <button onClick={handleNext} className="arrow right">
-        ›
-      </button>
+      <div className="map-options">
+        {previews.map((preview) => (
+          <button
+            type="button"
+            key={preview.id}
+            aria-pressed={previewBackground === preview.id}
+            onClick={() => setPreviewBackground(preview.id)}
+          >
+            <img src={preview.img} alt="" />
+            <span>{tl(language, `generator.preview.${preview.id}`)}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 };

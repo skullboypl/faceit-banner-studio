@@ -19,6 +19,7 @@ import { GeneratedWidgetModal } from '../components/GeneratedWidgetModal.tsx';
 import { InfoBox } from '../components/InfoBox.tsx';
 import { Footer } from '../components/Footer.tsx';
 import { PreviewCarousel } from '../components/PreviewCarousel.tsx';
+import { StudioIcon } from '../components/StudioIcon.tsx';
 import { TimelineIcon } from '../assets/icons/tabler/TimelineIcon.tsx';
 import { ShareIcon } from '../assets/icons/tabler/ShareIcon.tsx';
 import { BrandTwitchIcon } from '../assets/icons/tabler/BrandTwitchIcon.tsx';
@@ -41,6 +42,8 @@ import {
   useSettings,
 } from '../settings/manager.ts';
 import { SETTINGS_DEFINITIONS } from '../settings/definition.ts';
+import { resolveBannerStyle } from '../../widget/src/styles/styles';
+import type { VersusPlayer } from '../../widget/src/widget/Widget.tsx';
 import { VerifiedBadgeType } from '../../widget/src/utils/faceit_util.ts';
 import { getPlayerProfile } from '../../widget/src/utils/faceit_util.ts';
 
@@ -54,6 +57,13 @@ export const SettingsContext = createContext<{
 } | null>(null);
 
 const DEFAULT_GENERATOR_USERNAME = 'donk666';
+const PREVIEW_BACKGROUNDS: Record<string, string> = {
+  nuke: nukePreview,
+  mirage: miragePreview,
+  ancient: ancientPreview,
+  dust2: dust2Preview,
+  overpass: overpassPreview,
+};
 
 export const Generator = () => {
   const [playerExists, setPlayerExists] = useState<boolean>(true);
@@ -64,13 +74,15 @@ export const Generator = () => {
   const [username, setUsername] = useState<string>(
     localStorage.getItem('fcw_generator_username') || DEFAULT_GENERATOR_USERNAME
   );
+  const [opponent, setOpponent] = useState<VersusPlayer | undefined>();
   const [playerElo, setPlayerElo] = useState<number>(100);
   const [playerLevel, setPlayerLevel] = useState<number>(1);
   const [playerAvatar, setPlayerAvatar] = useState<string | undefined>();
   const [playerBanner, setPlayerBanner] = useState<string | undefined>();
   const [playerRegion, setPlayerRegion] = useState<string | undefined>();
   const [playerCountry, setPlayerCountry] = useState<string | undefined>();
-  const [playerVerifiedBadge, setPlayerVerifiedBadge] = useState<VerifiedBadgeType>('none');
+  const [playerVerifiedBadge, setPlayerVerifiedBadge] =
+    useState<VerifiedBadgeType>('none');
   const [searchParams] = useSearchParams();
   const [language, setLanguage] = useState<Language>(
     languages.find((language) => language.id === searchParams.get('lang')) ||
@@ -90,6 +102,19 @@ export const Generator = () => {
   );
 
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
+  const [introReplay, setIntroReplay] = useState(0);
+  const selectTab = useCallback((index: number) => {
+    setSelectedTabIndex(index);
+    if (window.matchMedia('(max-width: 1000px)').matches) {
+      requestAnimationFrame(() => {
+        document
+          .getElementById('studio-settings-title')
+          ?.scrollIntoView({ block: 'start' });
+      });
+    } else {
+      document.getElementById('root')?.scrollTo({ top: 0 });
+    }
+  }, []);
 
   const tl = useCallback(
     (text: string, args?: string[]) => {
@@ -98,10 +123,8 @@ export const Generator = () => {
     [language]
   );
 
-  const { settings, getSetting, setSetting, loadSettingsFromQuery } = useSettings(
-    false,
-    'fcw_generator_settings'
-  );
+  const { settings, getSetting, setSetting, loadSettingsFromQuery } =
+    useSettings(false, 'fcw_generator_settings');
 
   useLayoutEffect(() => {
     const description = document.getElementsByName('description');
@@ -124,6 +147,14 @@ export const Generator = () => {
 
   useEffect(() => {
     loadSettingsFromQuery();
+
+    // A saved widget link without a design version must keep its original look.
+    if (
+      !searchParams.has('design') &&
+      ['player_id', 'style', 'stats'].some((key) => searchParams.has(key))
+    ) {
+      setSetting('bannerDesign', 'legacy');
+    }
 
     const queryUsername = searchParams.get('username');
     if (queryUsername) {
@@ -229,8 +260,7 @@ export const Generator = () => {
   const copySettingsURLToClipboard = useCallback(async () => {
     const params = buildSettingsQueryParams();
     params.username = username;
-    const settingsURL =
-      `${window.location.protocol}//${window.location.host}/${jsonToQuery(params)}`;
+    const settingsURL = `${window.location.protocol}//${window.location.host}/${jsonToQuery(params)}`;
 
     try {
       await navigator.clipboard.writeText(settingsURL);
@@ -367,12 +397,7 @@ export const Generator = () => {
           }
         }
 
-        if (
-          setSetting(
-            key,
-            parsedValue as SettingValueType<typeof key>
-          )
-        ) {
+        if (setSetting(key, parsedValue as SettingValueType<typeof key>)) {
           importedAnyValue = true;
         }
         break;
@@ -419,6 +444,10 @@ export const Generator = () => {
       return;
     }
 
+    setSetting(
+      'bannerDesign',
+      params.get('design') === '2026' ? '2026' : 'legacy'
+    );
     setImportStatus('success');
     setImportStatusText(tl('generator.import.success'));
   }, [importLinkValue, language, setSetting, tl, username]);
@@ -462,7 +491,9 @@ export const Generator = () => {
           setPlayerVerifiedBadge={setPlayerVerifiedBadge}
           setPlayerExists={setPlayerExists}
           setLanguage={setLanguage}
-          setSelectedTabIndex={setSelectedTabIndex}
+          setSelectedTabIndex={selectTab}
+          opponent={opponent}
+          setOpponent={setOpponent}
         />
       ),
     },
@@ -494,7 +525,20 @@ export const Generator = () => {
           mode={generatedURLMode}
           setURL={setGeneratedURL}
         />
-        <header>
+        <header className="studio-sidebar">
+          <a
+            className="studio-brand"
+            href="/"
+            aria-label="FACEIT Banner Studio"
+          >
+            <span className="studio-mark" aria-hidden="true">
+              <StudioIcon name="layers" />
+            </span>
+            <span>
+              Banner<span className="brand-subtitle">STUDIO / FACEIT</span>
+            </span>
+          </a>
+          <p className="nav-caption">{tl('studio.workspace')}</p>
           {import.meta.env.VITE_IS_TESTING && (
             <InfoBox
               content={
@@ -508,183 +552,272 @@ export const Generator = () => {
               style={'info'}
             />
           )}
-          <div className={'tabs'}>
+          <nav className={'tabs'} aria-label={tl('studio.workspace')}>
             {tabs.map((tab, index) => {
               return (
                 <button
                   key={tab.name}
+                  aria-label={tab.name}
+                  title={tab.name}
+                  aria-current={index === selectedTabIndex ? 'page' : undefined}
                   onClick={() => {
-                    setSelectedTabIndex(index);
+                    selectTab(index);
                   }}
                   className={index === selectedTabIndex ? 'active' : ''}
                 >
-                  {tab.name}
+                  <StudioIcon
+                    name={(['settings', 'palette', 'stats'] as const)[index]}
+                  />
+                  <span>{tab.name}</span>
+                  <StudioIcon name="chevron" />
                 </button>
               );
             })}
+          </nav>
+          <div className="sidebar-note">
+            <span className="game-label">CS2</span>
+            <p>{tl('studio.sidebar_note')}</p>
+            <small>by Skull</small>
           </div>
         </header>
-        <main>
-          <section className={'fixed-width'}>
-            {tabs[selectedTabIndex].component}
-            <div className={'cache-reset-row'}>
-              <button className={'cache-reset-button'} onClick={clearCache}>
-                {tl('generator.cache.clear')}
-              </button>
+        <div className="studio-workspace">
+          <div className="studio-topbar">
+            <span>
+              {tl('studio.workspace')}{' '}
+              <span className="breadcrumb-divider">/</span>{' '}
+              <strong>{tabs[selectedTabIndex].name}</strong>
+            </span>
+            <span className="obs-tag">
+              <StudioIcon name="monitor" />
+              OBS STUDIO
+            </span>
+          </div>
+          <div className="studio-heading">
+            <div>
+              <p className="studio-eyebrow">FACEIT / COUNTER-STRIKE 2</p>
+              <h1>{tl('studio.title')}</h1>
+              <p>{tl('studio.description')}</p>
             </div>
-            <br />
-            <Footer />
-          </section>
-          <section className={'preview'}>
-            <div className={'settings'}>
-              <h4 style={{ marginBottom: '6px' }}>
-                {translate(language, 'generator.preview.title')}
-              </h4>
-              <style>{`
-		      div.preview.nuke {--preview-background: url(${nukePreview})}
-		      div.preview.mirage {--preview-background: url(${miragePreview})}
-		      div.preview.ancient {--preview-background: url(${ancientPreview})}
-		      div.preview.dust2 {--preview-background: url(${dust2Preview})}
-		      div.preview.overpass {--preview-background: url(${overpassPreview})}
-		      `}</style>
-              <div
-                className={`${getSetting('style')}-theme ${getSetting('colorScheme')}-scheme preview ${previewBackground}`}
-              >
-                {(getSetting('style') !== 'custom' ||
-                  (getSetting('style') === 'custom' &&
-                    getSetting('customCSS') !== 'https://example.com')) && (
-                  <Widget
-                    preview={true}
-                    previewAvatar={playerAvatar}
-                    previewBanner={playerBanner}
-                    previewUsername={username}
-                    previewRegion={playerRegion}
-                    previewCountry={playerCountry}
-                    previewVerifiedBadge={playerVerifiedBadge}
-                    previewElo={playerElo}
-                    previewLevel={playerLevel}
-                    previewLanguage={language}
+            <span className="studio-heading-symbol" aria-hidden="true">
+              <StudioIcon name="layers" />
+            </span>
+          </div>
+          <main className="studio-main">
+            <section
+              className={'fixed-width'}
+              aria-labelledby="studio-settings-title"
+            >
+              <div className="section-heading">
+                <h2 id="studio-settings-title">
+                  {tabs[selectedTabIndex].name}
+                </h2>
+                <span>{tl('studio.settings_hint')}</span>
+              </div>
+              <div className="tab-content" key={selectedTabIndex}>
+                {tabs[selectedTabIndex].component}
+              </div>
+              <div className={'cache-reset-row'}>
+                <button className={'cache-reset-button'} onClick={clearCache}>
+                  {tl('generator.cache.clear')}
+                </button>
+              </div>
+            </section>
+            <section className={'preview'}>
+              <div className={'settings preview-card'}>
+                <div className="preview-heading">
+                  <h2>
+                    <StudioIcon name="monitor" />
+                    {translate(language, 'generator.preview.title')}
+                  </h2>
+                  <span className="live-label">
+                    <i />
+                    {tl('studio.live')}
+                  </span>
+                </div>
+                <div className="preview-stage">
+                  <div
+                    key={previewBackground}
+                    className="preview-scene"
+                    style={{
+                      backgroundImage: `url(${PREVIEW_BACKGROUNDS[previewBackground]})`,
+                    }}
                   />
+                  <span className="scene-label">
+                    CS2<span>/</span>
+                    {tl(`generator.preview.${previewBackground}`)}
+                  </span>
+                  <div
+                    className={`${resolveBannerStyle(getSetting('style'), getSetting('bannerDesign'))}-theme ${getSetting('colorScheme')}-scheme preview ${previewBackground}`}
+                  >
+                    {(getSetting('style') !== 'custom' ||
+                      (getSetting('style') === 'custom' &&
+                        getSetting('customCSS') !== 'https://example.com')) && (
+                      <Widget
+                        preview={true}
+                        introReplay={introReplay}
+                        previewAvatar={playerAvatar}
+                        previewBanner={playerBanner}
+                        previewUsername={username}
+                        previewRegion={playerRegion}
+                        previewCountry={playerCountry}
+                        previewVerifiedBadge={playerVerifiedBadge}
+                        previewElo={playerElo}
+                        previewLevel={playerLevel}
+                        previewLanguage={language}
+                        previewOpponent={opponent}
+                      />
+                    )}
+                  </div>
+                </div>
+                <PreviewCarousel
+                  language={language}
+                  previewBackground={previewBackground}
+                  setPreviewBackground={setPreviewBackground}
+                />
+                <p className="preview-caption">{tl('studio.preview_hint')}</p>
+                {getSetting('showUpdateIntro') && (
+                  <button
+                    className="secondary-link intro-replay"
+                    onClick={() => setIntroReplay((value) => value + 1)}
+                  >
+                    {tl('studio.replay_intro')}
+                  </button>
+                )}
+                <div className="export-heading">
+                  <h3>{tl('studio.export_title')}</h3>
+                  <span>OBS · Streamlabs</span>
+                </div>
+                <div className={'flex export-actions'}>
+                  <button
+                    className={'with-icon primary-action'}
+                    onClick={() => {
+                      generateWidgetURL();
+                    }}
+                  >
+                    <TimelineIcon />
+                    {tl('studio.generate')}
+                    <StudioIcon name="arrow" />
+                  </button>
+                  <button
+                    className={'with-icon'}
+                    onClick={() => {
+                      copySettingsURLToClipboard();
+                    }}
+                  >
+                    <ShareIcon />
+                    {tl('generator.share.button')}
+                  </button>
+                </div>
+                <details className="import-settings">
+                  <summary>{tl('studio.import')}</summary>
+                  <div className={'import-link-row'}>
+                    <input
+                      type={'text'}
+                      aria-label={tl('generator.import.placeholder')}
+                      value={importLinkValue}
+                      onChange={(event) => {
+                        setImportLinkValue(event.target.value);
+                        if (importStatus) {
+                          setImportStatus(null);
+                          setImportStatusText('');
+                        }
+                      }}
+                      placeholder={tl('generator.import.placeholder')}
+                    />
+                    <button onClick={importSettingsFromBannerURL}>
+                      {tl('generator.import.button')}
+                    </button>
+                  </div>
+                </details>
+                {shareCopied && (
+                  <small style={{ display: 'block', marginTop: '8px' }}>
+                    {tl('generator.share.copied_to_clipboard')}
+                  </small>
+                )}
+                {importStatus && (
+                  <small
+                    className={
+                      importStatus === 'success'
+                        ? 'import-status success'
+                        : 'import-status error'
+                    }
+                  >
+                    {importStatusText}
+                  </small>
                 )}
               </div>
-             <PreviewCarousel
-  language={language} // albo po prostu language, zależy jak masz kontekst
-  previewBackground={previewBackground}
-  setPreviewBackground={setPreviewBackground}
-/>
-              <div className={'flex'}>
-                <button
-                  className={'with-icon'}
-                  onClick={() => {
-                    generateWidgetURL();
-                  }}
-                >
-                  <TimelineIcon />
-                  {tl('generator.generate.button')}
-                </button>
-                <button
-                  className={'with-icon'}
-                  onClick={() => {
-                    copySettingsURLToClipboard();
-                  }}
-                >
-                  <ShareIcon />
-                  {tl('generator.share.button')}
-                </button>
+              <div className="obs-guide">
+                <span className="guide-icon">
+                  <StudioIcon name="monitor" />
+                </span>
+                <div>
+                  <h3>{tl('studio.obs_title')}</h3>
+                  <p>{tl('studio.obs_help')}</p>
+                </div>
               </div>
-              <div className={'import-link-row'}>
-                <input
-                  type={'text'}
-                  value={importLinkValue}
-                  onChange={(event) => {
-                    setImportLinkValue(event.target.value);
-                    if (importStatus) {
-                      setImportStatus(null);
-                      setImportStatusText('');
-                    }
-                  }}
-                  placeholder={tl('generator.import.placeholder')}
-                />
-                <button onClick={importSettingsFromBannerURL}>
-                  {tl('generator.import.button')}
-                </button>
+              <div className={'social-links-wrap'}>
+                <p className={'social-links-label'}>
+                  {tl('generator.socials')}
+                </p>
+                <div className={'social-links'}>
+                  <a
+                    href={'https://www.twitch.tv/skullboypl'}
+                    target={'_blank'}
+                    rel={'noreferrer'}
+                    title={'Twitch'}
+                  >
+                    <BrandTwitchIcon />
+                  </a>
+                  <a
+                    href={'https://www.youtube.com/watch?v=IcJNgxAH2Ps'}
+                    target={'_blank'}
+                    rel={'noreferrer'}
+                    title={'YouTube'}
+                  >
+                    <BrandYoutubeIcon />
+                  </a>
+                  <a
+                    href={'https://discord.skullmedia.pl'}
+                    target={'_blank'}
+                    rel={'noreferrer'}
+                    title={'Discord'}
+                  >
+                    <BrandDiscordIcon />
+                  </a>
+                  <a
+                    href={'https://www.tiktok.com/@skullboypl'}
+                    target={'_blank'}
+                    rel={'noreferrer'}
+                    title={'TikTok'}
+                  >
+                    <BrandTiktokIcon />
+                  </a>
+                </div>
+                <div className={'mini-promo'}>
+                  <p>{tl('generator.recommended')}</p>
+                  <a
+                    className={'smoothwizard-promo'}
+                    href={'https://smoothwizard.com/'}
+                    target={'_blank'}
+                    rel={'noreferrer'}
+                  >
+                    <img
+                      src={
+                        'https://smoothwizard.com/wp-content/uploads/2023/12/SmoothWizard-Logo-e1701539638732.png'
+                      }
+                      alt={'SmoothWizard'}
+                    />
+                    <span>
+                      <strong>{tl('generator.smoothwizard.title')}</strong>
+                      <small>{tl('generator.smoothwizard.subtitle')}</small>
+                    </span>
+                  </a>
+                </div>
               </div>
-              {shareCopied && (
-                <small style={{ display: 'block', marginTop: '8px' }}>
-                  {tl('generator.share.copied_to_clipboard')}
-                </small>
-              )}
-              {importStatus && (
-                <small
-                  className={
-                    importStatus === 'success'
-                      ? 'import-status success'
-                      : 'import-status error'
-                  }
-                >
-                  {importStatusText}
-                </small>
-              )}
-            </div>
-            <div className={'social-links-wrap'}>
-              <p className={'social-links-label'}>{tl('generator.socials')}</p>
-              <div className={'social-links'}>
-                <a
-                  href={'https://www.twitch.tv/skullboypl'}
-                  target={'_blank'}
-                  rel={'noreferrer'}
-                  title={'Twitch'}
-                >
-                  <BrandTwitchIcon />
-                </a>
-                <a
-                  href={'https://www.youtube.com/watch?v=IcJNgxAH2Ps'}
-                  target={'_blank'}
-                  rel={'noreferrer'}
-                  title={'YouTube'}
-                >
-                  <BrandYoutubeIcon />
-                </a>
-                <a
-                  href={'https://discord.skullmedia.pl'}
-                  target={'_blank'}
-                  rel={'noreferrer'}
-                  title={'Discord'}
-                >
-                  <BrandDiscordIcon />
-                </a>
-                <a
-                  href={'https://www.tiktok.com/@skullboypl'}
-                  target={'_blank'}
-                  rel={'noreferrer'}
-                  title={'TikTok'}
-                >
-                  <BrandTiktokIcon />
-                </a>
-              </div>
-              <div className={'mini-promo'}>
-                <p>{tl('generator.recommended')}</p>
-                <a
-                  className={'smoothwizard-promo'}
-                  href={'https://smoothwizard.com/'}
-                  target={'_blank'}
-                  rel={'noreferrer'}
-                >
-                  <img
-                    src={
-                      'https://smoothwizard.com/wp-content/uploads/2023/12/SmoothWizard-Logo-e1701539638732.png'
-                    }
-                    alt={'SmoothWizard'}
-                  />
-                  <span>
-                    <strong>{tl('generator.smoothwizard.title')}</strong>
-                    <small>{tl('generator.smoothwizard.subtitle')}</small>
-                  </span>
-                </a>
-              </div>
-            </div>
-          </section>
-        </main>
+            </section>
+          </main>
+          <Footer />
+        </div>
       </SettingsContext.Provider>
     </LanguageContext.Provider>
   );

@@ -15,6 +15,10 @@ export enum StatisticType {
   HSPERCENT = 'HSPERCENT',
   KD = 'KD',
   RANKING = 'RANKING',
+  WINSTREAK = 'WINSTREAK',
+  ENTRYRATE = 'ENTRYRATE',
+  UTILITY = 'UTILITY',
+  FLASHRATE = 'FLASHRATE',
 }
 
 export const StatisticsTab = () => {
@@ -26,6 +30,7 @@ export const StatisticsTab = () => {
   return (
     <>
       <div className={'settings'}>
+        <h3 className="card-heading">{tl('studio.stat_slots')}</h3>
         {!settings.get('showStatistics') && (
           <InfoBox
             content={<p>{tl('generator.stats.disabled')}</p>}
@@ -46,9 +51,11 @@ export const StatisticsTab = () => {
         </div>
       </div>
       <div className={'settings'}>
+        <h3 className="card-heading">{tl('studio.data_settings')}</h3>
         <div className={'setting'}>
           <p>{tl('generator.stats.match_count')}</p>
           <select
+            aria-label={tl('generator.stats.match_count')}
             value={settings.get('averageStatsMatchCount')}
             onChange={(e) => {
               settings.set(
@@ -68,6 +75,7 @@ export const StatisticsTab = () => {
         <div className={'setting'}>
           <p>{tl('generator.settings.refresh_delay')}</p>
           <select
+            aria-label={tl('generator.settings.refresh_delay')}
             value={settings.get('refreshInterval')}
             onChange={(event) => {
               settings.set(

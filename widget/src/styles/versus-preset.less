@@ -1,0 +1,925 @@
+@import 'themes/normal.less';
+
+.duel-theme:extend(.normal-theme all) {
+  --auto-width: 500px;
+}
+.edge-theme:extend(.normal-theme all) {
+  --auto-width: 480px;
+}
+.faceoff-theme:extend(.normal-theme all) {
+  --auto-width: 420px;
+}
+.clash-theme:extend(.normal-theme all) {
+  --auto-width: 580px;
+}
+.tug-theme:extend(.normal-theme all) {
+  --auto-width: 480px;
+}
+.rivals-theme:extend(.normal-theme all) {
+  --auto-width: 380px;
+}
+.matchup-theme:extend(.normal-theme all) {
+  --auto-width: 460px;
+}
+.scoreboard-theme:extend(.normal-theme all) {
+  --auto-width: 760px;
+}
+.cycle-theme:extend(.normal-theme all) {
+  --auto-width: 520px;
+}
+.surge-theme:extend(.normal-theme all) {
+  --auto-width: 480px;
+}
+
+@keyframes vs-grow {
+  from {
+    width: 0;
+  }
+}
+@keyframes vs-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes vs-shimmer {
+  to {
+    background-position: 200% 0;
+  }
+}
+@keyframes vs-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--faceit-level) 55%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 18px 4px color-mix(in srgb, var(--faceit-level) 55%, transparent);
+  }
+}
+
+.wrapper.banner-design-2026:is(
+    [data-layout='duel'],
+    [data-layout='edge'],
+    [data-layout='faceoff'],
+    [data-layout='clash'],
+    [data-layout='tug'],
+    [data-layout='rivals'],
+    [data-layout='matchup'],
+    [data-layout='scoreboard'],
+    [data-layout='cycle'],
+    [data-layout='surge'],
+    [data-layout='tally'],
+    [data-layout='overlay'],
+    [data-layout='ladder']
+  ) {
+  --banner-radius: 16px;
+  --border-width: 1px;
+  --text-shadow: transparent;
+  --orb-size: 84px;
+  --orb-ring: 5px;
+  border-radius: 17px;
+
+  .widget {
+    padding: 14px 18px;
+    border-radius: 16px;
+    color: var(--text);
+    box-shadow: inset 0 2px 0 var(--preset-accent, #ff5900);
+  }
+
+  .versus {
+    display: grid;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .vs-side {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    &.vs-rival {
+      flex-direction: row-reverse;
+      text-align: right;
+      .vs-id h2,
+      .vs-id p {
+        justify-content: flex-end;
+      }
+      .vs-id p b {
+        color: var(--vs-rival);
+      }
+    }
+    &.vs-me .vs-id p b {
+      color: var(--vs-me);
+    }
+  }
+  .vs-id {
+    min-width: 0;
+    h2 {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.2;
+      span {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+      .flag {
+        height: 12px;
+        width: auto;
+        margin: 0;
+        border-radius: 2px;
+        flex: none;
+      }
+    }
+    p {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      b {
+        font-family: 'Inter', 'DM Sans', sans-serif;
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: -1px;
+        line-height: 1.1;
+      }
+      small {
+        font-size: 10px;
+        letter-spacing: 0.6px;
+        opacity: 0.55;
+      }
+    }
+  }
+
+  .vs-diff {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    .vs-badge {
+      padding: 2px 9px;
+      border-radius: 99px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      background: #ffffff14;
+    }
+    b {
+      font-family: 'Inter', 'DM Sans', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+    small {
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      opacity: 0.6;
+    }
+  }
+  .lead-me b {
+    color: #3ddc84;
+  }
+  .lead-rival b {
+    color: #ff5a5a;
+  }
+  .lead-even b {
+    color: var(--subtext);
+  }
+
+  /* Avatar with the level ring */
+  .versus .avatar-orb {
+    position: relative;
+    flex: 0 0 var(--orb-size);
+    width: var(--orb-size);
+    height: var(--orb-size);
+    .orb-ring {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      .orb-track {
+        fill: none;
+        stroke: #ffffff24;
+        stroke-width: 6;
+      }
+      .orb-progress {
+        fill: none;
+        stroke: var(--faceit-level);
+        stroke-width: 6;
+        stroke-linecap: round;
+        animation: orb-fill 0.9s ease-out both;
+      }
+    }
+    .orb-photo {
+      position: absolute;
+      inset: calc(var(--orb-ring) + 4px);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border-radius: 50%;
+      background: #171717;
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .orb-fallback {
+        font-size: calc(var(--orb-size) * 0.4);
+        font-weight: 700;
+        color: var(--faceit-level);
+      }
+    }
+    .orb-level {
+      position: absolute;
+      right: -4px;
+      bottom: -4px;
+      display: grid;
+      place-items: center;
+      width: calc(var(--orb-size) * 0.38);
+      height: calc(var(--orb-size) * 0.38);
+      border-radius: 50%;
+      background: #111;
+      box-shadow:
+        0 0 0 2px #ffffff14,
+        0 2px 8px #0008;
+      svg.faceit-level {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 3px;
+        box-sizing: border-box;
+        * {
+          color: var(--faceit-level);
+        }
+      }
+    }
+  }
+
+  /* Duel: two players with the gap in the middle */
+  .versus-duel {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  /* Edge: slim bar with a meter between the players */
+  .versus-edge {
+    --orb-size: 52px;
+    --orb-ring: 4px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 16px;
+    .vs-id p b {
+      font-size: 20px;
+    }
+    .vs-id h2 {
+      font-size: 13px;
+    }
+    .vs-meter {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      min-width: 0;
+    }
+    .vs-bar {
+      display: flex;
+      width: 100%;
+      height: 8px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: #ffffff14;
+      i {
+        display: block;
+        height: 100%;
+        transition: width 0.6s ease;
+      }
+      .vs-bar-me {
+        background: var(--vs-me);
+      }
+      .vs-bar-rival {
+        background: var(--vs-rival);
+      }
+    }
+    .vs-edge-diff {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      span {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 1.4px;
+        opacity: 0.6;
+      }
+      b {
+        font-family: 'Inter', 'DM Sans', sans-serif;
+        font-size: 18px;
+        font-weight: 800;
+      }
+    }
+  }
+
+  /* Faceoff: head to head table */
+  .versus-faceoff {
+    --orb-size: 60px;
+    --orb-ring: 4px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    .vs-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+    }
+    .vs-id p b {
+      font-size: 22px;
+    }
+    .vs-id h2 {
+      font-size: 13px;
+    }
+    .vs-diff b {
+      font-size: 20px;
+    }
+    .vs-rows {
+      display: grid;
+      gap: 6px;
+    }
+    .vs-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      padding: 6px 12px;
+      border-radius: 10px;
+      background: #ffffff0a;
+      b {
+        font-size: 16px;
+        font-weight: 700;
+        &:first-child {
+          text-align: left;
+        }
+        &:last-child {
+          text-align: right;
+        }
+        &.win {
+          color: #3ddc84;
+        }
+        &.lose {
+          color: #ff5a5a;
+          opacity: 0.85;
+        }
+      }
+      span {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--subtext);
+      }
+    }
+  }
+}
+
+/* Clash: the banner is split in two player colours */
+.wrapper.banner-design-2026[data-layout='clash'] {
+  .widget {
+    padding: 0;
+    overflow: hidden;
+    box-shadow: none;
+    background-image: linear-gradient(
+      100deg,
+      color-mix(in srgb, var(--vs-me, #ff5900) 30%, transparent) 0 50%,
+      color-mix(in srgb, var(--vs-rival, #3b82f6) 30%, transparent) 50% 100%
+    );
+  }
+  .versus-clash {
+    --orb-size: 70px;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 0;
+    min-height: 100%;
+    .vs-side {
+      padding: 16px 18px;
+    }
+    .vs-diff {
+      align-self: stretch;
+      justify-content: center;
+      padding: 0 14px;
+      background: #0b0e14cc;
+      clip-path: polygon(14% 0, 100% 0, 86% 100%, 0 100%);
+    }
+  }
+}
+
+/* Tug: tug of war between the two ELOs */
+.wrapper.banner-design-2026[data-layout='tug'] {
+  .versus-tug {
+    --orb-size: 56px;
+    --orb-ring: 4px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    .vs-tug-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 10px;
+    }
+    .vs-id p b {
+      font-size: 22px;
+    }
+    .vs-id h2 {
+      font-size: 13px;
+    }
+    .vs-tug-bar {
+      position: relative;
+      display: flex;
+      height: 14px;
+      margin: 0 6px;
+      border-radius: 99px;
+      background: #ffffff14;
+      i {
+        display: block;
+        height: 100%;
+        transition: width 0.6s ease;
+        &.vs-bar-me {
+          border-radius: 99px 0 0 99px;
+          background: var(--vs-me);
+        }
+        &.vs-bar-rival {
+          border-radius: 0 99px 99px 0;
+          background: var(--vs-rival);
+        }
+      }
+      .vs-tug-diff {
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        padding: 2px 10px;
+        border-radius: 99px;
+        background: #0b0e14;
+        box-shadow: 0 0 0 2px #ffffff22;
+        b {
+          font-family: 'Inter', 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 800;
+        }
+      }
+    }
+  }
+}
+
+/* Rivals: two rows with ELO bars */
+.wrapper.banner-design-2026[data-layout='rivals'] {
+  .versus-rivals {
+    --orb-size: 46px;
+    --orb-ring: 3px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    .vs-line {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      h2 {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        .flag {
+          height: 11px;
+          width: auto;
+          margin: 0;
+          border-radius: 2px;
+        }
+        span {
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+      }
+    }
+    .vs-line-main {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+    .vs-line-bar {
+      height: 8px;
+      border-radius: 99px;
+      background: #ffffff14;
+      overflow: hidden;
+      i {
+        display: block;
+        height: 100%;
+        border-radius: 99px;
+        transition: width 0.6s ease;
+      }
+    }
+    .vs-me .vs-line-bar i {
+      background: var(--vs-me);
+    }
+    .vs-rival .vs-line-bar i {
+      background: var(--vs-rival);
+    }
+    .vs-line-elo {
+      font-family: 'Inter', 'DM Sans', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .vs-foot {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #ffffff14;
+      span {
+        font-size: 12px;
+        font-weight: 600;
+      }
+      b {
+        font-size: 18px;
+        font-weight: 800;
+      }
+      small {
+        font-size: 9px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        opacity: 0.6;
+      }
+    }
+  }
+}
+
+/* Matchup: stat bars growing out of the middle */
+.wrapper.banner-design-2026[data-layout='matchup'] {
+  .versus-matchup {
+    --orb-size: 60px;
+    --orb-ring: 4px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    .vs-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+    }
+    .vs-id p b {
+      font-size: 22px;
+    }
+    .vs-id h2 {
+      font-size: 13px;
+    }
+    .vs-diff b {
+      font-size: 20px;
+    }
+    .vs-butterfly {
+      display: grid;
+      gap: 8px;
+    }
+    .vs-bfrow {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) 48px minmax(0, 1fr) 44px;
+      align-items: center;
+      gap: 8px;
+      b {
+        font-size: 14px;
+        font-weight: 700;
+        &:first-child {
+          text-align: left;
+        }
+        &:last-child {
+          text-align: right;
+        }
+        &.win {
+          color: #3ddc84;
+        }
+        &.lose {
+          color: #ff5a5a;
+          opacity: 0.85;
+        }
+      }
+      span {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        text-align: center;
+        text-transform: uppercase;
+        color: var(--subtext);
+      }
+    }
+    .vs-bf-half {
+      display: flex;
+      height: 8px;
+      border-radius: 99px;
+      background: #ffffff10;
+      overflow: hidden;
+      i {
+        display: block;
+        height: 100%;
+        border-radius: 99px;
+        animation: vs-grow 0.8s ease-out both;
+      }
+      &.vs-bf-left {
+        justify-content: flex-end;
+        i {
+          background: var(--vs-me);
+        }
+      }
+      &.vs-bf-right i {
+        background: var(--vs-rival);
+      }
+    }
+  }
+}
+
+/* Scoreboard: one wide strip */
+.wrapper.banner-design-2026[data-layout='scoreboard'] {
+  .versus-scoreboard {
+    --orb-size: 58px;
+    --orb-ring: 4px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 16px;
+    .vs-id p {
+      display: none;
+    }
+    .vs-id h2 {
+      font-size: 14px;
+    }
+    .vs-cells {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+    /* Each column is a small table: the label, then you above the rival */
+    .vs-cell {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        'label'
+        'a'
+        'b';
+      justify-items: stretch;
+      gap: 3px;
+      padding: 8px 10px;
+      text-align: left;
+      small {
+        overflow: hidden;
+        margin-bottom: 2px;
+        text-align: left;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      b {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 15px;
+        &::before {
+          content: '';
+          flex: none;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+        }
+        &:nth-of-type(1)::before {
+          background: var(--vs-me);
+        }
+        &:nth-of-type(2)::before {
+          background: var(--vs-rival);
+        }
+      }
+    }
+  }
+}
+.wrapper.banner-design-2026:is([data-layout='scoreboard'], [data-layout='cycle']) {
+  .vs-cell {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'label label'
+      'a b';
+    justify-items: center;
+    gap: 2px 6px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    background: #ffffff0a;
+    small {
+      grid-area: label;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.9px;
+      text-transform: uppercase;
+      color: var(--subtext);
+    }
+    b {
+      font-size: 15px;
+      font-weight: 700;
+      &:nth-of-type(1) {
+        grid-area: a;
+      }
+      &:nth-of-type(2) {
+        grid-area: b;
+      }
+      &.win {
+        color: #3ddc84;
+      }
+      &.lose {
+        color: #ff5a5a;
+        opacity: 0.85;
+      }
+    }
+  }
+}
+
+/* Cycle: animated pages between the two players */
+.wrapper.banner-design-2026[data-layout='cycle'] {
+  .versus-cycle {
+    --orb-size: 66px;
+    --orb-ring: 4px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 16px;
+    .vs-id p b {
+      font-size: 22px;
+    }
+    .vs-id h2 {
+      font-size: 13px;
+    }
+    .vs-cycle-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      animation: vs-fade-in 0.45s ease-out both;
+    }
+    .vs-cycle-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      color: var(--subtext);
+    }
+    .vs-cells {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
+      gap: 8px;
+      width: 100%;
+    }
+    .vs-edge-diff {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      span {
+        font-size: 10px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        opacity: 0.6;
+      }
+      b {
+        font-size: 20px;
+        font-weight: 800;
+      }
+    }
+    &[data-lead='me'] .vs-me .avatar-orb,
+    &[data-lead='rival'] .vs-rival .avatar-orb {
+      border-radius: 50%;
+      animation: vs-pulse 2.4s ease-in-out infinite;
+    }
+  }
+}
+
+/* Surge: tug of war with an alive bar */
+.wrapper.banner-design-2026[data-layout='surge'] {
+  .versus-surge {
+    --orb-size: 56px;
+    --orb-ring: 4px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    .vs-tug-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 10px;
+    }
+    .vs-id p b {
+      font-size: 22px;
+    }
+    .vs-id h2 {
+      font-size: 13px;
+    }
+    .vs-tug-bar {
+      position: relative;
+      display: flex;
+      height: 14px;
+      margin: 0 6px;
+      border-radius: 99px;
+      background: #ffffff14;
+      i {
+        display: block;
+        height: 100%;
+        transition: width 0.6s ease;
+        background-size: 200% 100%;
+        animation: vs-shimmer 2.6s linear infinite;
+        &.vs-bar-me {
+          border-radius: 99px 0 0 99px;
+          background-image: linear-gradient(
+            90deg,
+            var(--vs-me) 0 40%,
+            #ffffffcc 50%,
+            var(--vs-me) 60% 100%
+          );
+        }
+        &.vs-bar-rival {
+          border-radius: 0 99px 99px 0;
+          background-image: linear-gradient(
+            90deg,
+            var(--vs-rival) 0 40%,
+            #ffffffcc 50%,
+            var(--vs-rival) 60% 100%
+          );
+        }
+      }
+      .vs-tug-diff {
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        padding: 2px 10px;
+        border-radius: 99px;
+        background: #0b0e14;
+        box-shadow: 0 0 0 2px #ffffff22;
+        b {
+          font-family: 'Inter', 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 800;
+        }
+      }
+    }
+    &[data-lead='me'] .vs-me .avatar-orb,
+    &[data-lead='rival'] .vs-rival .avatar-orb {
+      border-radius: 50%;
+      animation: vs-pulse 2.4s ease-in-out infinite;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wrapper.banner-design-2026 .versus * {
+    animation: none !important;
+  }
+}
+
+/* Cards in the generator list */
+html.generator .settings .broadcast-presets .broadcast-preset {
+  .preset-sketch--duel,
+  .preset-sketch--edge,
+  .preset-sketch--faceoff,
+  .preset-sketch--clash,
+  .preset-sketch--tug,
+  .preset-sketch--rivals,
+  .preset-sketch--matchup,
+  .preset-sketch--scoreboard,
+  .preset-sketch--cycle,
+  .preset-sketch--surge {
+    .sketch-badge {
+      width: 14px;
+      height: 14px;
+      top: 10px;
+      left: 8px;
+    }
+    .sketch-player {
+      top: 12px;
+      left: 28px;
+      width: 18%;
+    }
+    .sketch-score {
+      top: 12px;
+      left: auto;
+      right: 28px;
+      width: 18%;
+      height: 4px;
+      background: #6b8fc9;
+    }
+    .sketch-stats {
+      display: none;
+    }
+    &:after {
+      content: '';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #3b82f6;
+      border-radius: 50%;
+    }
+  }
+  .preset-sketch--faceoff .sketch-stats {
+    display: flex;
+    i:nth-child(n + 3) {
+      display: none;
+    }
+  }
+}

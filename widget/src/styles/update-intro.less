@@ -1,0 +1,251 @@
+// Absolute overlay: never changes the dimensions of existing OBS sources.
+.wrapper > .banner-update-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 24px;
+  box-sizing: border-box;
+  overflow: hidden;
+  pointer-events: none;
+  border: 1px solid #39312c;
+  border-radius: inherit;
+  background: linear-gradient(110deg, #26180f, #141414 48%, #101010);
+  color: #f5f5f5;
+  font-family: 'DM Sans', sans-serif;
+  animation: banner-intro-lifecycle var(--intro-duration) both;
+
+  // Isolate from the typography and animations of each legacy theme.
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: inherit;
+    color: inherit;
+    filter: none;
+  }
+
+  .update-mark {
+    display: grid;
+    place-items: center;
+    flex: 0 0 46px;
+    height: 46px;
+    border: 1px solid #6b3417;
+    border-radius: 12px;
+    background: #ff590014;
+    color: #ff6a1b;
+    transform: rotate(-6deg);
+    svg {
+      width: 29px;
+      height: 29px;
+    }
+  }
+
+  .update-copy {
+    min-width: 0;
+    text-align: left;
+  }
+  .update-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+    color: #ff884c;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    span:last-child {
+      color: #a7a29e;
+      letter-spacing: 0;
+    }
+  }
+  .update-title {
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.4px;
+  }
+  .update-description {
+    margin-top: 5px;
+    max-width: 390px;
+    color: #bcb8b4;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .update-date {
+    display: block;
+    margin-top: 8px;
+    color: #8e8985;
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .update-countdown {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #ff5900;
+    transform-origin: left;
+    animation: banner-intro-countdown var(--intro-duration) linear both;
+  }
+
+  &.banner-update-intro--compact {
+    padding: 8px 16px;
+    gap: 12px;
+    .update-mark {
+      flex-basis: 32px;
+      height: 32px;
+      border-radius: 8px;
+      svg {
+        width: 22px;
+        height: 22px;
+      }
+    }
+    .update-meta {
+      margin-bottom: 3px;
+      font-size: 9px;
+    }
+    .update-title {
+      font-size: 14px;
+    }
+    .update-description {
+      display: none;
+    }
+    .update-date {
+      margin-top: 4px;
+      font-size: 10px;
+    }
+  }
+
+  &.banner-update-intro--tiny {
+    padding: 3px 10px;
+    gap: 8px;
+    .update-mark,
+    .update-description,
+    .update-meta span:first-child,
+    .update-date span {
+      display: none;
+    }
+    .update-meta {
+      order: 1;
+      margin: 0;
+      font-size: 9px;
+    }
+    .update-date {
+      order: 2;
+    }
+    .update-copy {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 3px 8px;
+    }
+    .update-title {
+      font-size: 11px;
+      letter-spacing: 0;
+    }
+    .update-date {
+      margin: 0;
+      font-size: 10px;
+      color: #bcb8b4;
+    }
+  }
+}
+
+.wrapper > .banner-update-intro {
+  .update-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 5px 16px;
+    margin-top: 8px;
+  }
+  .update-date {
+    margin: 0;
+  }
+  .update-site {
+    color: #ff9a62;
+    font-size: 11px;
+    font-weight: 700;
+    text-decoration: none;
+    pointer-events: auto;
+  }
+  .update-site:focus-visible {
+    outline: 2px solid #ff9a62;
+    outline-offset: 2px;
+  }
+  &.banner-update-intro--compact {
+    .update-footer {
+      margin-top: 5px;
+      gap: 4px 10px;
+    }
+    .update-site {
+      font-size: 10px;
+    }
+    .update-date {
+      margin: 0;
+    }
+  }
+  &.banner-update-intro--tiny {
+    .update-footer {
+      display: contents;
+    }
+    .update-site {
+      flex-basis: 100%;
+      order: 3;
+      font-size: 9px;
+    }
+  }
+}
+
+.wrapper.banner-load-enter {
+  animation: banner-load-enter 650ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes banner-load-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes banner-intro-lifecycle {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  7%,
+  88% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+@keyframes banner-intro-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wrapper.banner-load-enter {
+    animation: none;
+  }
+  .wrapper > .banner-update-intro {
+    animation: none;
+    .update-countdown {
+      animation: none;
+    }
+  }
+}

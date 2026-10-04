@@ -1,0 +1,407 @@
+@import 'themes/normal.less';
+
+.orbit-theme:extend(.normal-theme all) {
+  --auto-width: 280px;
+}
+.halo-theme:extend(.normal-theme all) {
+  --auto-width: 580px;
+}
+.pulse-theme:extend(.normal-theme all) {
+  --auto-width: 320px;
+}
+
+.wrapper.banner-design-2026:is(
+    [data-layout='orbit'],
+    [data-layout='halo'],
+    [data-layout='pulse']
+  ) {
+  --banner-radius: 20px;
+  --border-width: 1px;
+  --text-shadow: transparent;
+  --orb-size: 112px;
+  --orb-ring: 6px;
+  border-radius: 21px;
+
+  .widget {
+    padding: 22px;
+    border-radius: 20px;
+    color: var(--text);
+    box-shadow: inset 0 2px 0 var(--preset-accent, #ff5900);
+
+    .broadcast-kicker,
+    .progress-bar {
+      display: none;
+    }
+    .level {
+      min-width: 0;
+      flex: 1;
+    }
+    .level .elo {
+      min-width: 0;
+      h2 {
+        font-size: 16px;
+        line-height: 1.25;
+        font-weight: 600;
+        letter-spacing: -0.2px;
+        margin-bottom: 2px;
+      }
+      p {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        font-size: 34px;
+        line-height: 1.1;
+        gap: 0;
+      }
+      .elo-value {
+        font-family: 'Inter', 'DM Sans', sans-serif;
+        font-weight: 700;
+        letter-spacing: -1.5px;
+      }
+      .elo-suffix {
+        font-size: 10px;
+        margin-left: 7px;
+        letter-spacing: 0.6px;
+        opacity: 0.5;
+      }
+      .diff {
+        font-size: 11px;
+        font-weight: 700;
+        margin-left: 8px;
+      }
+      .ranking {
+        margin-top: 5px;
+        font-size: 10px;
+        opacity: 0.7;
+      }
+    }
+    .matches .stats {
+      gap: 6px;
+    }
+    .average {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      .stat {
+        min-width: 0;
+        padding: 7px 10px;
+        border-radius: 12px;
+        background: #ffffff0a;
+        box-shadow: inset 0 0 0 1px #ffffff0d;
+        p:first-child {
+          font-size: 9px;
+          letter-spacing: 0.8px;
+          text-transform: uppercase;
+          opacity: 0.6;
+        }
+        p:last-child {
+          font-size: 18px;
+          font-weight: 700;
+        }
+      }
+    }
+  }
+
+  /* Avatar with a level ring around it */
+  .widget .level .avatar-orb {
+    position: relative;
+    flex: 0 0 var(--orb-size);
+    width: var(--orb-size);
+    height: var(--orb-size);
+    margin: 0 14px 0 0;
+
+    .orb-ring {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      .orb-track {
+        fill: none;
+        stroke: #ffffff24;
+        stroke-width: 6;
+      }
+      .orb-progress {
+        fill: none;
+        stroke: var(--faceit-level);
+        stroke-width: 6;
+        stroke-linecap: round;
+        animation: orb-fill 0.9s ease-out both;
+      }
+    }
+    .orb-photo {
+      position: absolute;
+      inset: calc(var(--orb-ring) + 4px);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border-radius: 50%;
+      background: #171717;
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .orb-fallback {
+        font-size: calc(var(--orb-size) * 0.4);
+        font-weight: 700;
+        color: var(--faceit-level);
+      }
+    }
+    .orb-level {
+      position: absolute;
+      right: -6px;
+      bottom: -6px;
+      display: grid;
+      place-items: center;
+      width: calc(var(--orb-size) * 0.38);
+      height: calc(var(--orb-size) * 0.38);
+      border-radius: 50%;
+      background: #111;
+      box-shadow:
+        0 0 0 2px #ffffff14,
+        0 2px 8px #0008;
+      svg.faceit-level {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 3px;
+        box-sizing: border-box;
+      }
+    }
+  }
+  &[data-level-glow='on'] .widget .level .avatar-orb .orb-progress {
+    filter: drop-shadow(0 0 var(--level-glow, 8px) var(--faceit-level));
+  }
+}
+
+@keyframes orb-fill {
+  from {
+    stroke-dasharray: 0 100;
+  }
+}
+
+/* Orbit: vertical card, avatar on top */
+.wrapper.banner-design-2026[data-layout='orbit'] {
+  --orb-size: 120px;
+  .widget {
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    text-align: center;
+    .player-stats {
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+    .level {
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      flex: none;
+      .avatar-orb {
+        margin: 0;
+      }
+      .elo {
+        h2,
+        p {
+          justify-content: center;
+        }
+      }
+    }
+    .matches .stats {
+      justify-content: center;
+    }
+    .average {
+      width: 100%;
+    }
+  }
+}
+
+/* Halo: low pill with the avatar on the left */
+.wrapper.banner-design-2026[data-layout='halo'] {
+  --orb-size: 92px;
+  --orb-ring: 5px;
+  --banner-radius: 26px;
+  border-radius: 27px;
+  .widget {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 18px;
+    padding: 16px 26px 16px 22px;
+    border-radius: 26px;
+    .player-stats {
+      gap: 12px;
+      min-width: 0;
+    }
+    .level .elo {
+      h2 {
+        display: block;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+      p {
+        font-size: 28px;
+      }
+    }
+    .matches .stat {
+      width: 46px;
+      height: 48px;
+    }
+    .average {
+      grid-template-columns: repeat(2, 64px);
+      gap: 5px;
+      .stat {
+        padding: 4px 8px;
+        border-radius: 10px;
+        p:last-child {
+          font-size: 14px;
+        }
+      }
+    }
+  }
+}
+
+/* Pulse: round medal */
+.wrapper.banner-design-2026[data-layout='pulse'] {
+  --orb-size: 132px;
+  --banner-radius: 50%;
+  border-radius: 50%;
+  .widget {
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 36px 44px;
+    border-radius: 50%;
+    text-align: center;
+    box-shadow: inset 0 3px 0 var(--preset-accent, #ff5900);
+    .average {
+      display: none;
+    }
+    .player-stats {
+      flex-direction: column;
+      gap: 6px;
+    }
+    .level {
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      flex: none;
+      .avatar-orb {
+        margin: 0;
+      }
+      .elo {
+        h2,
+        p {
+          justify-content: center;
+        }
+        p {
+          font-size: 30px;
+        }
+      }
+    }
+    .matches .stats {
+      justify-content: center;
+    }
+  }
+}
+
+/* The layout fills the chosen box */
+.wrapper.banner-design-2026.banner-fill:is(
+    [data-layout='orbit'],
+    [data-layout='pulse']
+  )
+  > .widget {
+  justify-content: space-between;
+}
+.wrapper.banner-design-2026.banner-fill[data-layout='pulse'] > .widget {
+  justify-content: center;
+}
+.wrapper.banner-design-2026.banner-fill[data-layout='halo'] > .widget {
+  display: grid;
+}
+
+/* Cards in the generator list */
+html.generator .settings .broadcast-presets .broadcast-preset {
+  .anim-chip {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    font-size: 8px;
+    font-style: normal;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    vertical-align: 1px;
+    color: #ffb48a;
+    background: #ff6b182b;
+    border: 1px solid #ff6b1866;
+    border-radius: 999px;
+  }
+  .preset-sketch--orbit,
+  .preset-sketch--pulse,
+  .preset-sketch--halo {
+    .sketch-badge {
+      border-width: 3px;
+      box-shadow: 0 0 6px #ff6b1866;
+    }
+  }
+  .preset-sketch--orbit,
+  .preset-sketch--pulse {
+    .sketch-badge {
+      top: 8px;
+      left: 50%;
+      width: 24px;
+      height: 24px;
+      margin-left: -12px;
+    }
+    .sketch-player {
+      top: 38px;
+      left: 50%;
+      width: 28px;
+      margin-left: -14px;
+    }
+    .sketch-score {
+      display: none;
+    }
+    .sketch-stats {
+      left: 14px;
+      right: 14px;
+      bottom: 6px;
+      i {
+        height: 6px;
+      }
+    }
+  }
+  .preset-sketch--pulse {
+    border-radius: 50%;
+    max-width: 62px;
+    height: 62px;
+    margin-left: auto;
+    margin-right: auto;
+    .sketch-stats {
+      display: none;
+    }
+  }
+  .preset-sketch--halo {
+    height: 35px;
+    margin-top: 13px;
+    margin-bottom: 18px;
+    border-radius: 9px;
+    .sketch-badge {
+      width: 16px;
+      height: 16px;
+      top: 8px;
+      left: 9px;
+    }
+    .sketch-player,
+    .sketch-score {
+      left: 34px;
+    }
+    .sketch-stats {
+      left: 62%;
+      bottom: 10px;
+    }
+  }
+}

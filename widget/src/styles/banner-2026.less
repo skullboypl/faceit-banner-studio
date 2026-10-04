@@ -1,0 +1,262 @@
+// Opt-in only. URLs without design=2026 never match this layer.
+.wrapper.banner-design-2026 {
+  --banner-radius: 10px;
+  --border-width: 1px;
+  --border-1: #393939;
+  --border-2: #242424;
+  --text-shadow: transparent;
+
+  .widget {
+    font-variant-numeric: tabular-nums;
+    .elo h2 {
+      letter-spacing: -0.025em;
+      overflow-wrap: anywhere;
+    }
+    .elo-value {
+      font-weight: 700;
+      letter-spacing: -0.045em;
+    }
+    .elo-suffix {
+      font-size: 0.7em;
+      opacity: 0.65;
+      letter-spacing: 0.05em;
+    }
+    .average .stat {
+      min-width: 0;
+    }
+    .average .stat p:first-child {
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  // Main broadcast layouts share the same information hierarchy.
+  &:is(
+      [data-layout='normal'],
+      [data-layout='rounded'],
+      [data-layout='banner'],
+      [data-layout='amoled'],
+      [data-layout='animated']
+    ) {
+    &::after {
+      border-radius: 11px;
+    }
+    .widget {
+      padding: 18px 20px;
+      border-radius: 10px;
+      &::after,
+      &.banner::before {
+        border-radius: inherit;
+      }
+      .player-stats {
+        gap: 16px;
+        margin-bottom: 0;
+      }
+      .level {
+        min-width: 0;
+        gap: 0;
+      }
+      .level svg.faceit-level {
+        width: 56px;
+        height: 56px;
+        flex-shrink: 0;
+        margin-right: 14px;
+      }
+      .level .elo {
+        min-width: 0;
+        h2 {
+          font-size: 1rem;
+          line-height: 1.25;
+          margin: 0 0 4px;
+          font-weight: 500;
+        }
+        p {
+          font-size: 1.7rem;
+          line-height: 1.1;
+        }
+        .elo-value {
+          color: var(--text);
+        }
+        .elo-suffix {
+          font-size: 0.4em;
+          margin-left: 6px;
+        }
+        .diff {
+          font-size: 0.45em;
+          margin-left: 8px;
+          font-weight: 700;
+        }
+        .ranking {
+          font-size: 0.66rem;
+          margin-top: 5px;
+          opacity: 0.75;
+        }
+      }
+      .matches {
+        flex-shrink: 0;
+      }
+      .matches .stats {
+        display: flex;
+        gap: 6px;
+      }
+      .matches .stats .stat {
+        width: 58px;
+        height: auto;
+        min-height: 50px;
+        margin: 0;
+        padding: 5px;
+        box-sizing: border-box;
+        border-radius: 6px;
+        border: 1px solid var(--border-1);
+        background: transparent;
+        box-shadow: none;
+        outline: none;
+        p {
+          font-size: 1.15rem;
+          line-height: 1.2;
+          font-weight: 700;
+        }
+        small {
+          display: block;
+          font-size: 0.56rem;
+          line-height: 1.4;
+          font-weight: 500;
+          color: var(--subtext);
+        }
+        &.green p {
+          color: var(--wins-text);
+        }
+        &.red p {
+          color: var(--losses-text);
+        }
+      }
+      .average {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0;
+        margin-top: 15px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-1);
+        .stat {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          justify-content: flex-start;
+          gap: 4px;
+          padding: 0 12px;
+          border-radius: 0;
+          background: transparent;
+          box-shadow: none;
+          border-right: var(--stats-separator-width, 1px) solid
+            var(--stats-separator-color, var(--border-1));
+          &:first-child {
+            padding-left: 0;
+          }
+          &:last-child {
+            border-right: none;
+            padding-right: 0;
+          }
+          p:first-child {
+            font-size: 0.61rem;
+            font-weight: 500;
+            margin: 0;
+            opacity: 0.75;
+          }
+          p:last-child {
+            font-size: 1.02rem;
+            line-height: 1.1;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+          }
+        }
+      }
+      .progress-bar {
+        width: 100%;
+        height: 3px;
+        margin-top: 13px;
+        background: var(--border-1);
+        border: none;
+        border-radius: 1px;
+        overflow: hidden;
+        .progress {
+          height: 3px;
+          border-radius: 1px;
+          background: var(--faceit-level);
+        }
+      }
+    }
+  }
+
+  &:is([data-layout='compact'], [data-layout='rounded-compact']) {
+    .widget .level .elo {
+      justify-content: flex-start;
+      gap: 5px;
+    }
+    .widget .level .elo h2 {
+      font-weight: 500;
+    }
+    .widget .level .elo .elo-value {
+      font-size: 1.15em;
+    }
+    .widget .average {
+      padding-top: 7px;
+      margin-top: 5px;
+      border-top: 1px solid var(--border-1);
+      gap: 5px;
+    }
+    .widget .average .stat {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 0 5px;
+      gap: 3px;
+      white-space: normal;
+    }
+    .widget .average .stat p:first-child {
+      font-size: 0.7em !important;
+      margin: 0;
+      opacity: 0.7;
+    }
+    .widget .average .stat p:last-child {
+      font-size: 0.95em !important;
+    }
+    .widget .player-stats .stat {
+      border-radius: 5px;
+      border: none;
+    }
+  }
+
+  &[data-layout='animated'] .widget .animated-card.stats .average {
+    margin-top: 0;
+    border-top: 0;
+    padding-top: 0;
+    width: 100%;
+  }
+
+  @media (max-width: 400px) {
+    &:is(
+        [data-layout='normal'],
+        [data-layout='rounded'],
+        [data-layout='banner'],
+        [data-layout='amoled']
+      )
+      .widget {
+      padding: 12px;
+      .player-stats {
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .level svg.faceit-level {
+        width: 40px;
+        height: 40px;
+        margin-right: 8px;
+      }
+      .matches .stats .stat {
+        width: 46px;
+        min-height: 40px;
+      }
+      .average .stat {
+        padding: 0 6px;
+      }
+    }
+  }
+}

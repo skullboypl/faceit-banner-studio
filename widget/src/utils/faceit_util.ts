@@ -73,6 +73,10 @@ interface FaceitPlayer {
     kd: number;
     wins: number;
     matches: number;
+    winStreak: number;
+    entryRate: number;
+    utilityDamagePerRound: number;
+    flashSuccessRate: number;
   };
 }
 
@@ -111,7 +115,9 @@ async function getPlayerRankingPosition(
     const item = data.items.find((i) => i.player_id === id);
     return item ? item.position : undefined;
   } else {
-    console.error(`Failed to fetch ranking: ${response.status} ${await response.text()}`);
+    console.error(
+      `Failed to fetch ranking: ${response.status} ${await response.text()}`
+    );
     return undefined;
   }
 }
@@ -161,6 +167,10 @@ export function getPlayerStats(
       let deaths: number = 0;
       let wrWins: number = 0;
       let kd: number = 0;
+      let winStreak = 0;
+      let entryRate = 0;
+      let utilityDamagePerRound = 0;
+      let flashSuccessRate = 0;
 
       let matchesLength: number = 0;
 
@@ -221,8 +231,27 @@ export function getPlayerStats(
         );
       }
 
+      const lifetimeStats = await fetch(
+        `https://open.faceit.com/data/v4/players/${playerId}/stats/cs2`,
+        { headers: HEADERS }
+      );
+      if (lifetimeStats.ok) {
+        const lifetime = (await lifetimeStats.json()) as {
+          lifetime?: Record<string, string | number>;
+        };
+        const value = (key: string) => Number(lifetime.lifetime?.[key] || 0);
+        winStreak = value('Current Win Streak');
+        entryRate = value('Entry Success Rate') * 100;
+        utilityDamagePerRound = value('Utility Damage per Round');
+        flashSuccessRate = value('Flash Success Rate') * 100;
+      }
+
       ranking = await getPlayerRankingPosition(playerId, region);
-      countryRanking = await getPlayerRankingPosition(playerId, region, country);
+      countryRanking = await getPlayerRankingPosition(
+        playerId,
+        region,
+        country
+      );
 
       resolve({
         id: playerId,
@@ -249,6 +278,10 @@ export function getPlayerStats(
           wins: wrWins,
           matches: matchesLength,
           kd,
+          winStreak,
+          entryRate,
+          utilityDamagePerRound,
+          flashSuccessRate,
         },
       });
     });

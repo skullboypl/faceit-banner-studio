@@ -1,5 +1,6 @@
 import { Language, tl } from '../translations/translations.ts';
 import { Dispatch, useEffect, useRef, useCallback } from 'react';
+import { broadcastPresets } from '../../widget/src/styles/styles';
 
 export const GeneratedWidgetModal = ({
   language,
@@ -14,6 +15,11 @@ export const GeneratedWidgetModal = ({
 }) => {
   const urlInputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const query = url ? new URL(url).searchParams : undefined;
+  const preset =
+    query?.get('design') === '2026'
+      ? broadcastPresets.find((entry) => entry.id === query.get('style'))
+      : undefined;
 
   // Otwieranie/zamykanie + auto-focus na polu z linkiem
   useEffect(() => {
@@ -23,7 +29,11 @@ export const GeneratedWidgetModal = ({
     // bezpieczne showModal (Safari/nieobsługiwane dialogi)
     if (url) {
       if (typeof dlg.showModal === 'function') {
-        try { dlg.showModal(); } catch { dlg.setAttribute('open', 'true'); }
+        try {
+          dlg.showModal();
+        } catch {
+          dlg.setAttribute('open', 'true');
+        }
       } else {
         dlg.setAttribute('open', 'true');
       }
@@ -33,10 +43,17 @@ export const GeneratedWidgetModal = ({
         if (!urlInputRef.current) return;
         urlInputRef.current.focus();
         urlInputRef.current.select();
-        urlInputRef.current.setSelectionRange(0, (urlInputRef.current.value || '').length);
+        urlInputRef.current.setSelectionRange(
+          0,
+          (urlInputRef.current.value || '').length
+        );
       }, 0);
     } else {
-      try { dlg.close(); } catch { dlg.removeAttribute('open'); }
+      try {
+        dlg.close();
+      } catch {
+        dlg.removeAttribute('open');
+      }
     }
   }, [url]);
 
@@ -61,7 +78,9 @@ export const GeneratedWidgetModal = ({
       try {
         urlInputRef.current?.select();
         document.execCommand('copy');
-      } catch {/* no-op */}
+      } catch {
+        /* no-op */
+      }
     }
   }, [url]);
 
@@ -71,6 +90,7 @@ export const GeneratedWidgetModal = ({
       className="generated"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="generated-widget-title"
       onCancel={(e) => {
         e.preventDefault();
         close();
@@ -82,7 +102,7 @@ export const GeneratedWidgetModal = ({
       }}
     >
       <div className="content">
-        <h1>
+        <h1 id="generated-widget-title">
           {mode === 'settings'
             ? tl(language, 'modals.generated_settings.title')
             : tl(language, 'modals.generated.title')}
@@ -95,7 +115,12 @@ export const GeneratedWidgetModal = ({
         <p>
           {mode === 'settings'
             ? tl(language, 'generator.share.info.1')
-            : tl(language, 'generator.generate.info.1')}
+            : preset
+              ? tl(language, 'generator.generate.size', [
+                  String(preset.width),
+                  String(preset.height),
+                ])
+              : tl(language, 'generator.generate.info.1')}
         </p>
 
         <input
