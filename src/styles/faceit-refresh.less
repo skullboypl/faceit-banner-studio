@@ -36,6 +36,27 @@
     transform: translate(-50%, -50%) scale(1);
   }
 }
+@keyframes online-ring {
+  0% {
+    opacity: 0.65;
+    transform: scale(0.55);
+  }
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(1.75);
+  }
+}
+@keyframes online-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 html.generator {
   color-scheme: dark;
@@ -188,6 +209,103 @@ html.generator {
   .sidebar-note small {
     color: #aaa;
     font-size: 11px;
+  }
+  .online-banners {
+    position: relative;
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    align-items: center;
+    gap: 9px;
+    min-height: 58px;
+    margin-top: 12px;
+    padding: 10px 11px;
+    overflow: hidden;
+    border: 1px solid #303033;
+    border-radius: 8px;
+    background:
+      linear-gradient(112deg, rgba(49, 255, 130, 0.075), transparent 48%),
+      #18181a;
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.025);
+    animation: online-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    &:after {
+      content: '';
+      position: absolute;
+      inset: auto 0 0;
+      height: 1px;
+      background: linear-gradient(90deg, #36e77c, transparent 72%);
+      opacity: 0.55;
+    }
+    > small {
+      position: absolute;
+      top: 9px;
+      right: 9px;
+      padding: 3px 5px;
+      border: 1px solid rgba(66, 224, 126, 0.2);
+      border-radius: 3px;
+      color: #69dc96;
+      background: rgba(39, 185, 96, 0.08);
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.75px;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+    &.unavailable {
+      background: #18181a;
+      &:after {
+        background: #55555b;
+      }
+      .online-pulse {
+        background: #717179;
+        box-shadow: none;
+        i {
+          display: none;
+        }
+      }
+      > small {
+        display: none;
+      }
+    }
+  }
+  .online-pulse {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 9px;
+    height: 9px;
+    margin-left: 4px;
+    border-radius: 50%;
+    background: #48ee88;
+    box-shadow: 0 0 14px rgba(72, 238, 136, 0.6);
+    i {
+      position: absolute;
+      width: 17px;
+      height: 17px;
+      border: 1px solid #48ee88;
+      border-radius: inherit;
+      animation: online-ring 2.1s ease-out infinite;
+    }
+  }
+  .online-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 1px;
+    line-height: 1.15;
+    strong {
+      color: #f6f6f7;
+      font-size: 18px;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.55px;
+    }
+    > span {
+      overflow: hidden;
+      color: #8f8f98;
+      font-size: 9px;
+      letter-spacing: 0.25px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
   .game-label {
     display: inline-block;
@@ -431,7 +549,8 @@ html.generator {
   .settings textarea {
     line-height: 1.7;
   }
-  .settings button:not(.checkbox):not([aria-pressed]):not(.deck-tab):not(.deck-pause),
+  .settings
+    button:not(.checkbox):not([aria-pressed]):not(.deck-tab):not(.deck-pause),
   .cache-reset-button,
   dialog button {
     min-height: 39px;
@@ -1059,6 +1178,23 @@ html.generator {
     .sidebar-note {
       display: none;
     }
+    .online-banners {
+      display: flex;
+      min-height: 0;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 7px;
+      .online-pulse {
+        margin-left: 0;
+      }
+      .online-copy strong {
+        font-size: 13px;
+      }
+      .online-copy > span,
+      > small {
+        display: none;
+      }
+    }
     .tabs {
       margin-top: 58px;
     }
@@ -1117,6 +1253,29 @@ html.generator {
     .nav-caption,
     .sidebar-note {
       display: none;
+    }
+    .online-banners {
+      position: absolute;
+      top: 18px;
+      right: 24px;
+      display: flex;
+      min-height: 30px;
+      width: auto;
+      margin: 0;
+      padding: 5px 8px;
+      .online-pulse {
+        margin-left: 2px;
+      }
+      .online-copy {
+        display: block;
+      }
+      .online-copy strong {
+        font-size: 13px;
+      }
+      .online-copy > span,
+      > small {
+        display: none;
+      }
     }
     .tabs {
       flex-direction: row;
@@ -1306,6 +1465,10 @@ html.generator {
     .preview-scene,
     .import-link-row,
     dialog.generated[open] {
+      animation: none;
+    }
+    .online-banners,
+    .online-pulse i {
       animation: none;
     }
     .tabs button,

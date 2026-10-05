@@ -45,6 +45,7 @@ import { SETTINGS_DEFINITIONS } from '../settings/definition.ts';
 import { resolveBannerStyle } from '../../widget/src/styles/styles';
 import type { VersusPlayer } from '../../widget/src/widget/Widget.tsx';
 import { VerifiedBadgeType } from '../../widget/src/utils/faceit_util.ts';
+import { OnlineBannerCount } from '../components/OnlineBannerCount.tsx';
 import { getPlayerProfile } from '../../widget/src/utils/faceit_util.ts';
 
 export const LanguageContext = createContext<
@@ -609,6 +610,7 @@ export const Generator = () => {
               </button>
             ))}
           </div>
+          <OnlineBannerCount />
           <div className="sidebar-note">
             <span className="game-label">CS2</span>
             <p>{tl('studio.sidebar_note')}</p>

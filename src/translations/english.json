@@ -1,4 +1,7 @@
 {
+  "studio.online_banners": "banners online",
+  "studio.online_now": "now",
+  "studio.online_unavailable": "counter unavailable",
   "studio.presets": "Stream layouts",
   "style.broadcast": "Broadcast",
   "style.broadcast.description": "Full card below your camera",
