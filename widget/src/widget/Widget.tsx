@@ -418,7 +418,8 @@ export const Widget = ({
 
   const [searchParams] = useSearchParams();
   useEffect(() => {
-    if (preview) return;
+    /* The preview frames inside the generator are not people using the banner */
+    if (preview || new URLSearchParams(window.location.search).get('presence') === 'off') return;
     return startPresenceHeartbeat();
   }, [preview]);
   // Dynamicznie dodaj/usuń link do Kick Font
