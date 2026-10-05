@@ -3,6 +3,19 @@ import react from '@vitejs/plugin-react-swc';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createPresenceMiddleware } from './server/presence.mjs';
+
+function presenceDevPlugin(): Plugin {
+  return {
+    name: 'presence-dev-api',
+    configureServer(server) {
+      server.middlewares.use(createPresenceMiddleware());
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(createPresenceMiddleware());
+    },
+  };
+}
 
 function wikiDevRewritePlugin(): Plugin {
   const publicDir = fileURLToPath(new URL('./public', import.meta.url));
@@ -59,7 +72,7 @@ function wikiDevRewritePlugin(): Plugin {
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), wikiDevRewritePlugin()],
+  plugins: [react(), presenceDevPlugin(), wikiDevRewritePlugin()],
   build: {
     rollupOptions: {
       input: {

@@ -119,6 +119,7 @@ import {
 } from '../styles/styles';
 import { BroadcastDeck, BroadcastSlide } from '../components/BroadcastDeck';
 import { SettingsContext } from '../../../src/generator/Generator.tsx';
+import { startPresenceHeartbeat } from '../../../src/utils/presence.ts';
 import { SettingKey, useSettings } from '../../../src/settings/manager.ts';
 import { TimelineIcon } from '../../../src/assets/icons/tabler/TimelineIcon.tsx';
 import { ArrowUpIcon } from '../../../src/assets/icons/tabler/ArrowUpIcon.tsx';
@@ -416,6 +417,10 @@ export const Widget = ({
   );
 
   const [searchParams] = useSearchParams();
+  useEffect(() => {
+    if (preview) return;
+    return startPresenceHeartbeat();
+  }, [preview]);
   // Dynamicznie dodaj/usuń link do Kick Font
   useEffect(() => {
     if (SETTINGS.get('bannerFont') === 'kick_font') {
