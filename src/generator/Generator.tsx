@@ -580,9 +580,8 @@ export const Generator = () => {
               title={tl('studio.hub')}
               aria-label={tl('studio.hub')}
             >
-              <StudioIcon name="back" />
+              <StudioIcon name="home" />
               <span>{tl('studio.hub')}</span>
-              <StudioIcon name="arrow" />
             </a>
             <a
               className="docs-tab"

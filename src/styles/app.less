@@ -1353,7 +1353,32 @@ dialog.generated .obs-frame {
   border-radius: 6px;
 }
 
-/* The two bottom links stick to the bottom of the menu: the hub link first, the docs right under it */
+/* The hub link: a plain gold row with a house icon above the docs link, separated by a line */
 .studio-sidebar .tabs .hub-tab {
   margin-top: auto;
+  padding: 16px 12px 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #d9a441;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid #29292c;
+  border-radius: 0;
+  &:hover {
+    color: #f0c46a;
+    background: transparent;
+  }
+  > .studio-icon {
+    width: 22px;
+    height: 22px;
+    stroke-width: 1.7;
+  }
+}
+@media (max-width: 1000px) {
+  .studio-sidebar .tabs .hub-tab {
+    padding: 12px;
+    border-top: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
 }
