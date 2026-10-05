@@ -277,7 +277,7 @@ export const GeneratedWidgetModal = ({
               <iframe
                 ref={frameRef}
                 title={'Widget preview from generated link'}
-                src={url}
+                src={`${url}${url.includes('?') ? '&' : '?'}presence=off`}
                 style={{
                   border: 0,
                   width: `${frameSize.width}px`,
