@@ -422,5 +422,6 @@
   "obs.size.copy_both": "Größe kopieren",
   "obs.preview.title": "Vorschau der Widget-Seite",
   "obs.preview.recommended": "Empfohlen",
-  "obs.preview.hint": "So sieht die Widget-Seite in einer Quelle dieser Größe aus. Scrolle die Vorschau, wenn die Quelle größer als das Fenster ist."
+  "obs.preview.hint": "So sieht die Widget-Seite in einer Quelle dieser Größe aus. Scrolle die Vorschau, wenn die Quelle größer als das Fenster ist.",
+  "studio.hub": "Zurück zum Visual eXtras Hub"
 }
