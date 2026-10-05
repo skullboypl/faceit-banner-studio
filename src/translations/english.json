@@ -422,5 +422,6 @@
   "obs.size.copy_both": "Copy size",
   "obs.preview.title": "Widget page preview",
   "obs.preview.recommended": "Recommended",
-  "obs.preview.hint": "This is how the widget page looks in a source of that size. Scroll the preview when the source is larger than the window."
+  "obs.preview.hint": "This is how the widget page looks in a source of that size. Scroll the preview when the source is larger than the window.",
+  "studio.hub": "Back to Visual eXtras Hub"
 }

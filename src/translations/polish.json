@@ -422,5 +422,6 @@
   "obs.size.copy_both": "Kopiuj rozmiar",
   "obs.preview.title": "Podgląd strony widżetu",
   "obs.preview.recommended": "Zalecany",
-  "obs.preview.hint": "Tak wygląda strona widżetu w źródle o danym rozmiarze. Przewijaj podgląd, gdy źródło jest większe niż okno."
+  "obs.preview.hint": "Tak wygląda strona widżetu w źródle o danym rozmiarze. Przewijaj podgląd, gdy źródło jest większe niż okno.",
+  "studio.hub": "Wróć do Visual eXtras Hub"
 }

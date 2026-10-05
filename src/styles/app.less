@@ -1205,7 +1205,6 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
 }
 .studio-sidebar .tabs .docs-tab {
   position: relative;
-  margin-top: auto;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1352,4 +1351,9 @@ dialog.generated .obs-frame {
     repeating-conic-gradient(#1c1c1f 0% 25%, #151517 0% 50%) 50% / 20px 20px;
   border: 1px solid #2b2b2e;
   border-radius: 6px;
+}
+
+/* The two bottom links stick to the bottom of the menu: the hub link first, the docs right under it */
+.studio-sidebar .tabs .hub-tab {
+  margin-top: auto;
 }

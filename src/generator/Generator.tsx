@@ -575,6 +575,16 @@ export const Generator = () => {
               );
             })}
             <a
+              className="docs-tab hub-tab"
+              href="https://vxh.pl/"
+              title={tl('studio.hub')}
+              aria-label={tl('studio.hub')}
+            >
+              <StudioIcon name="back" />
+              <span>{tl('studio.hub')}</span>
+              <StudioIcon name="arrow" />
+            </a>
+            <a
               className="docs-tab"
               href="/docs/"
               title={tl('studio.docs')}
