@@ -7,7 +7,8 @@ type IconName =
   | 'chevron'
   | 'layers'
   | 'book'
-  | 'back';
+  | 'back'
+  | 'home';
 
 const paths: Record<IconName, string> = {
   settings: 'M4 7h9m4 0h3M4 17h3m4 0h9M13 4v6M7 14v6',
@@ -19,6 +20,7 @@ const paths: Record<IconName, string> = {
   chevron: 'm9 5 7 7-7 7',
   layers: 'm12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5',
   back: 'M19 12H5m6-6-6 6 6 6',
+  home: 'M4 11.5 12 4l8 7.5M6 10v10h12V10M10 20v-6h4v6',
   book: 'M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5v-15ZM5 19.5A1.5 1.5 0 0 0 6.5 21H19M9 7.5h6M9 11h4',
 };
 
