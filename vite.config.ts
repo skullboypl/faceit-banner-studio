@@ -1,18 +1,21 @@
-import { defineConfig, Plugin } from 'vite';
+import { defineConfig, loadEnv, Plugin } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createPresenceMiddleware } from './server/presence.mjs';
+import { createAuthMiddleware } from './server/auth.mjs';
 
 function presenceDevPlugin(): Plugin {
   return {
     name: 'presence-dev-api',
     configureServer(server) {
       server.middlewares.use(createPresenceMiddleware());
+      server.middlewares.use(createAuthMiddleware());
     },
     configurePreviewServer(server) {
       server.middlewares.use(createPresenceMiddleware());
+      server.middlewares.use(createAuthMiddleware());
     },
   };
 }
@@ -69,6 +72,15 @@ function wikiDevRewritePlugin(): Plugin {
     },
   };
 }
+
+/** Backend keys (DATABASE_URL, REDIS_URL, FACEIT_OAUTH_*) live in .env but are not VITE_-prefixed. */
+function loadServerEnv() {
+  const env = loadEnv('development', process.cwd(), '');
+  for (const [key, value] of Object.entries(env)) {
+    if (process.env[key] === undefined) process.env[key] = value;
+  }
+}
+loadServerEnv();
 
 // https://vitejs.dev/config/
 export default defineConfig({

@@ -17,3 +17,9 @@ SAMPLE/*
 .ssr
 public/docs/
 public/en/
+
+# lokalne dane dostępowe (hasła) - nie commitować
+LOCALDATA/
+
+# scratch of the plan executor
+.superpowers/

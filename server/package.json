@@ -1,0 +1,9 @@
+{
+  "name": "faceitbanner-server",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ioredis": "^5.4.1",
+    "pg": "^8.13.0"
+  }
+}

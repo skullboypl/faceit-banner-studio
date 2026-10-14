@@ -12,6 +12,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "dev:services": "docker compose -f docker-compose.dev.yml up -d --wait",
+    "dev:services:down": "docker compose -f docker-compose.dev.yml down",
     "docs": "vite build --ssr src/docs/render.tsx --outDir .ssr --emptyOutDir && node .ssr/render.js",
     "build": "tsc && pnpm run docs && vite build",
     "build-pre": "tsc && pnpm run docs && VITE_IS_TESTING=true vite build",

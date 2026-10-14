@@ -1,13 +1,18 @@
 import { createServer } from 'node:http';
 import { createPresenceMiddleware } from './presence.mjs';
+import { createAuthMiddleware } from './auth.mjs';
 
 const port = Number(process.env.PRESENCE_PORT) || 3001;
 const presence = createPresenceMiddleware();
 
+const auth = createAuthMiddleware();
+
 const server = createServer((req, res) => {
   presence(req, res, () => {
-    res.statusCode = 404;
-    res.end();
+    auth(req, res, () => {
+      res.statusCode = 404;
+      res.end();
+    });
   });
 });
 

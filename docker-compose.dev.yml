@@ -1,0 +1,40 @@
+# Lokalne usługi pod dev: PostgreSQL (historia logowań) i Redis (sesje).
+# Start: pnpm dev:services   Stop: pnpm dev:services:down  (porty: Postgres 5434, Redis 6381)
+# Hasła są tylko do lokalnego developmentu; porty nasłuchują wyłącznie na 127.0.0.1.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: faceitbanner-dev-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: faceitbanner
+    ports:
+      - '127.0.0.1:5434:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d faceitbanner']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: faceitbanner-dev-redis
+    restart: unless-stopped
+    command: ['redis-server', '--requirepass', 'dev']
+    ports:
+      - '127.0.0.1:6381:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', 'dev', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:
+  redis-data:
