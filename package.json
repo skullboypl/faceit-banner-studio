@@ -22,6 +22,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "dev:https": "vite --host 0.0.0.0 --mode https",
     "dev:services": "docker compose -f docker-compose.dev.yml up -d --wait",
     "gen:schema": "tsx scripts/gen-settings-schema.ts",
     "test": "node --test \"tests/*.test.mjs\"",
@@ -54,6 +55,7 @@
     "@types/react-dom": "^18.3.5",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-react-swc": "^3.8.0",
     "eslint": "^9.20.1",
     "eslint-plugin-react-hooks": "^4.6.2",

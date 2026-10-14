@@ -18,13 +18,26 @@ export const fail = (status: number, error: string, message: string, extra: Reco
 export const isFail = (value: unknown): value is Fail =>
   typeof value === 'object' && value !== null && 'response' in value;
 
+/** PUBLIC_URL may list several origins (comma separated), e.g. local http and https. */
+const allowedOrigins = (): string[] =>
+  String(process.env.PUBLIC_URL ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .flatMap((value) => {
+      try {
+        return [new URL(value).origin];
+      } catch {
+        return [];
+      }
+    });
+
 /** Same-origin check for state-changing requests (CSRF). Browsers always send Origin on these. */
 export function originAllowed(request: Request): boolean {
-  const publicUrl = process.env.PUBLIC_URL;
   const origin = request.headers.get('origin');
-  if (!publicUrl || !origin) return false;
+  if (!origin) return false;
   try {
-    return new URL(origin).origin === new URL(publicUrl).origin;
+    return allowedOrigins().includes(new URL(origin).origin);
   } catch {
     return false;
   }

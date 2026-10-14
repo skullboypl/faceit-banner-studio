@@ -1,4 +1,5 @@
 import { defineConfig, loadEnv, Plugin } from 'vite';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react-swc';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
@@ -74,13 +75,15 @@ function wikiDevRewritePlugin(): Plugin {
 }
 
 /** Backend keys (DATABASE_URL, REDIS_URL, FACEIT_OAUTH_*) live in .env but are not VITE_-prefixed. */
-function loadServerEnv() {
-  const env = loadEnv('development', process.cwd(), '');
+function loadServerEnv(mode: string) {
+  const env = loadEnv(mode, process.cwd(), '');
   for (const [key, value] of Object.entries(env)) {
     if (process.env[key] === undefined) process.env[key] = value;
   }
 }
-loadServerEnv();
+/** `vite --mode https` serves the generator over https (FACEIT only accepts https redirect URIs). */
+const mode = process.argv.includes('--mode') ? process.argv[process.argv.indexOf('--mode') + 1] : 'development';
+loadServerEnv(mode);
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -93,7 +96,7 @@ export default defineConfig({
       '/api/admin/comments': 'http://127.0.0.1:3100',
     },
   },
-  plugins: [react(), presenceDevPlugin(), wikiDevRewritePlugin()],
+  plugins: [react(), presenceDevPlugin(), wikiDevRewritePlugin(), ...(mode === 'https' ? [basicSsl()] : [])],
   build: {
     rollupOptions: {
       input: {
