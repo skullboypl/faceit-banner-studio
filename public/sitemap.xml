@@ -344,8 +344,14 @@
   </url>
   <url>
     <loc>https://faceitbanner.vxh.pl/terms/</loc>
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
   <url>
     <loc>https://faceitbanner.vxh.pl/privacy/</loc>
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 </urlset>

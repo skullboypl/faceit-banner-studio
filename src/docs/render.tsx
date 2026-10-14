@@ -62,6 +62,11 @@ for (const path of wikiPaths) {
   entries.push(url(path, '0.7', 'monthly'));
 }
 
+/* Legal pages are plain HTML in public/ */
+for (const path of ['/terms/', '/privacy/']) {
+  entries.push(url(path, '0.3', 'yearly'));
+}
+
 /* llms.txt: a plain summary for AI assistants and search engines */
 const llmsLines: string[] = [
   '# FACEIT Banner',
