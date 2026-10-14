@@ -23,3 +23,13 @@ LOCALDATA/
 
 # scratch of the plan executor
 .superpowers/
+
+# local plans, agent notes and generated graphs — not part of the app
+/docs/
+/Skills/
+/skills/
+/graphify-out/
+.claude/
+.codex/
+AGENTS.md
+*.tsbuildinfo
