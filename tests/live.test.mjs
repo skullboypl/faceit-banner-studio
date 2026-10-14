@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { publicRanking, sanitizeInfo } from '../server/live.mjs';
+import { playerIdFromReferer, publicRanking, sanitizeInfo } from '../server/live.mjs';
 import { createPresenceMiddleware } from '../server/presence.mjs';
 
 test('sanitizeInfo keeps a valid banner and drops a bad elo, level and player id', () => {
@@ -49,6 +49,13 @@ async function serve(middleware) {
   return { base: `http://127.0.0.1:${server.address().port}`, close: () => new Promise((resolve) => server.close(resolve)) };
 }
 
+test('playerIdFromReferer reads only a FACEIT id from the banner address', () => {
+  const id = '10b53a6d-5fc9-4095-920c-2953cfa62486';
+  assert.equal(playerIdFromReferer(`https://faceitbanner.vxh.pl/widget/?style=prime&player_id=${id}`), id);
+  assert.equal(playerIdFromReferer('https://faceitbanner.vxh.pl/widget/?player_id=not-a-player'), '');
+  assert.equal(playerIdFromReferer(''), '');
+});
+
 test('the live board is public, ordered, and hides the session id', async () => {
   const { base, close } = await serve(createPresenceMiddleware({ unlimitedRate: true }));
   const beat = (id, info) =>
@@ -76,6 +83,44 @@ test('the live board is public, ordered, and hides the session id', async () => 
     const idOnly = await (await fetch(`${base}/api/presence/live`, { headers: { 'x-forwarded-for': '203.0.113.12' } })).json();
     assert.equal(idOnly.players.some((player) => player.nickname === 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'), false);
     assert.equal(idOnly.online >= 4, true);
+
+    const playerId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+    const original = globalThis.fetch;
+    process.env.FACEIT_API_KEY = 'test-key';
+    globalThis.fetch = async (url, options) => {
+      if (String(url).includes('open.faceit.com')) {
+        return new Response(
+          JSON.stringify({
+            nickname: 'OldBanner',
+            player_id: playerId,
+            country: 'pl',
+            games: { cs2: { faceit_elo: 1500, skill_level: 7 } },
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        );
+      }
+      return original(url, options);
+    };
+    try {
+      const posted = await fetch(`${base}/api/presence`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-forwarded-for': '203.0.113.40',
+          referer: `https://faceitbanner.vxh.pl/widget/?player_id=${playerId}`,
+        },
+        body: JSON.stringify({ id: 'oldbannerheartbeat01' }),
+      });
+      assert.equal(posted.status, 200);
+      const named = await (await fetch(`${base}/api/presence/live`, { headers: { 'x-forwarded-for': '203.0.113.41' } })).json();
+      assert.deepEqual(
+        named.players.find((player) => player.nickname === 'OldBanner'),
+        { nickname: 'OldBanner', elo: 1500, level: 7, country: 'pl' }
+      );
+    } finally {
+      globalThis.fetch = original;
+      delete process.env.FACEIT_API_KEY;
+    }
   } finally {
     await close();
   }

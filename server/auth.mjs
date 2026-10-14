@@ -143,7 +143,7 @@ async function handleCallback(req, res, url) {
   await saveSession(sessionId, user);
   await recordLogin(user, clientIp(req)).catch(() => undefined);
   setCookie(res, req, sessionId, SESSION_MAX_AGE);
-  redirect(res, isAdmin(user) ? '/admin' : '/');
+  redirect(res, '/');
 }
 
 const LOCKOUT = { strikes: 5, windowMs: 5 * 60_000, blockMs: 15 * 60_000 };

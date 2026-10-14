@@ -90,9 +90,20 @@ export async function lookupPlayer(playerId) {
   }
 }
 
+/** player_id from the banner address. Old widgets never send it in the heartbeat; the browser still puts the page URL in Referer. */
+export function playerIdFromReferer(referer) {
+  if (typeof referer !== 'string' || !referer) return '';
+  try {
+    const id = new URL(referer).searchParams.get('player_id') || '';
+    return UUID.test(id) ? id.toLowerCase() : '';
+  } catch {
+    return '';
+  }
+}
+
 /** Older banners send the player id before the nickname. Fill the public profile without replacing fields they already sent. */
 export async function fillFromPlayerId(entries) {
-  const missing = entries.filter((entry) => entry?.info?.playerId && !entry.info.nickname).slice(0, 40);
+  const missing = entries.filter((entry) => entry?.info?.playerId && !entry.info.nickname).slice(0, 80);
   await Promise.all(
     missing.map(async (entry) => {
       const profile = await lookupPlayer(entry.info.playerId);

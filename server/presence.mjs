@@ -1,6 +1,6 @@
 import { clientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
-import { fillFromPlayerId, publicRanking, sanitizeInfo } from './live.mjs';
+import { fillFromPlayerId, playerIdFromReferer, publicRanking, sanitizeInfo } from './live.mjs';
 
 const ACTIVE_WINDOW_MS = 135_000;
 const MAX_SESSIONS = 100_000;
@@ -125,7 +125,9 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
         }
         bannersPerIp.set(ip, (bannersPerIp.get(ip) ?? 0) + 1);
       }
-      const info = body.info === undefined ? known?.info ?? null : sanitizeInfo(body.info) ?? known?.info ?? null;
+      const parsed = body.info === undefined ? known?.info ?? null : sanitizeInfo(body.info) ?? known?.info ?? null;
+      const fromPage = parsed?.playerId ? '' : playerIdFromReferer(req.headers.referer || req.headers.referrer);
+      const info = fromPage ? { ...(parsed || {}), playerId: fromPage } : parsed;
       sessions.set(id, { lastSeen: now, ip: known?.ip ?? ip, info, firstSeen: known?.firstSeen ?? now });
       return sendJson(res, 200, {
         online: sessions.size,
