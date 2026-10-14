@@ -456,5 +456,8 @@
   "banners.limit_reached": "Das Limit gespeicherter Banner ist erreicht.",
   "banners.load_failed": "Banner konnten nicht geladen werden.",
   "donate.link": "Projekt unterstützen",
-  "donate.hint": "für den Serverbetrieb"
+  "donate.hint": "für den Serverbetrieb",
+  "account.menu": "Kontomenü",
+  "account.logout": "Abmelden",
+  "account.admin": "Admin-Panel"
 }

@@ -456,5 +456,8 @@
   "banners.limit_reached": "You reached the saved banner limit.",
   "banners.load_failed": "Could not load your banners.",
   "donate.link": "Support the project",
-  "donate.hint": "server upkeep"
+  "donate.hint": "server upkeep",
+  "account.menu": "Account menu",
+  "account.logout": "Log out",
+  "account.admin": "Admin panel"
 }

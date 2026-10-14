@@ -48,8 +48,10 @@ import { OnlineBannerCount } from '../components/OnlineBannerCount.tsx';
 import { ConflictDialog } from '../components/ConflictDialog.tsx';
 import { DonateLink } from '../components/DonateLink.tsx';
 import { MyBannersPanel } from '../components/MyBannersPanel.tsx';
-import { SyncChip } from '../components/SyncChip.tsx';
+import { AccountMenu } from '../components/AccountMenu.tsx';
+import { LanguageSelect } from '../components/LanguageSelect.tsx';
 import { useCloudSync } from '../cloud/useCloudSync.ts';
+import { logout as apiLogout } from '../cloud/api.ts';
 import { useSession } from '../cloud/useSession.ts';
 import { getPlayerProfile } from '../../widget/src/utils/faceit_util.ts';
 
@@ -608,39 +610,15 @@ export const Generator = () => {
               <StudioIcon name="arrow" />
             </a>
           </nav>
-          <div className="sidebar-account">
-            <SyncChip
-              state={cloudSync.state}
-              lastSavedAt={cloudSync.lastSavedAt}
-              user={session.user}
-            />
-            <DonateLink variant="header" />
-          </div>
-          <div
-            className="sidebar-lang"
-            role="group"
-            aria-label={tl('generator.settings.language')}
-          >
-            {languages.map((entry) => (
-              <button
-                key={entry.id}
-                type="button"
-                aria-pressed={entry.id === language.id}
-                title={tl(`language.label.${entry.id}`)}
-                onClick={() => {
-                  setLanguage(entry);
-                  localStorage.setItem('fcw_lang', entry.id);
-                }}
-              >
-                <img
-                  className="flag"
-                  src={`https://flagcdn.com/${entry.id === 'en' ? 'gb' : entry.id}.svg`}
-                  alt=""
-                />
-                <span>{tl(`language.label.${entry.id}`)}</span>
-              </button>
-            ))}
-          </div>
+          <LanguageSelect
+            languages={languages}
+            current={language}
+            onChange={(entry) => {
+              setLanguage(entry);
+              localStorage.setItem('fcw_lang', entry.id);
+            }}
+          />
+          <DonateLink variant="header" />
           <OnlineBannerCount />
           <div className="sidebar-note">
             <span className="game-label">CS2</span>
@@ -655,9 +633,23 @@ export const Generator = () => {
               <span className="breadcrumb-divider">/</span>{' '}
               <strong>{tabs[selectedTabIndex].name}</strong>
             </span>
-            <span className="obs-tag">
-              <StudioIcon name="monitor" />
-              OBS STUDIO
+            <span className="topbar-right">
+              <span className="obs-tag">
+                <StudioIcon name="monitor" />
+                OBS STUDIO
+              </span>
+              <AccountMenu
+                user={session.user}
+                admin={session.admin}
+                syncState={cloudSync.state}
+                lastSavedAt={cloudSync.lastSavedAt}
+                onOpenBanners={() => selectTab(3)}
+                onLogout={() => {
+                  void apiLogout()
+                    .catch(() => undefined)
+                    .finally(session.refresh);
+                }}
+              />
             </span>
           </div>
           <div className="studio-heading">

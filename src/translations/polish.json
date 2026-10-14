@@ -456,5 +456,8 @@
   "banners.limit_reached": "Osiągnięto limit zapisanych banerów.",
   "banners.load_failed": "Nie udało się wczytać listy banerów.",
   "donate.link": "Wesprzyj projekt",
-  "donate.hint": "na utrzymanie serwera"
+  "donate.hint": "na utrzymanie serwera",
+  "account.menu": "Menu konta",
+  "account.logout": "Wyloguj",
+  "account.admin": "Panel admina"
 }

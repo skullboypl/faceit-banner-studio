@@ -46,6 +46,8 @@ async function request<T>(
 
 export const fetchMe = () => request<{ user: User | null; admin: boolean }>('GET', '/api/auth/me');
 
+export const logout = () => request<{ ok: true }>('POST', '/api/auth/logout', {});
+
 export const getWorkspace = () => request<{ workspace: CloudWorkspace | null }>('GET', '/api/me/workspace');
 export const putWorkspace = (body: WorkspaceBody, options?: { keepalive?: boolean }) =>
   request<{ version: number }>('PUT', '/api/me/workspace', body, options);
