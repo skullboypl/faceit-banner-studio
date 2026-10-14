@@ -1,7 +1,7 @@
 import schemaJson from '../../../shared/settings-schema.json';
 import { validateDelta, type SettingsSchema } from '../../../shared/settings-delta.mjs';
-import { fail, guard, isAdmin, isFail, json, readBody, type Fail } from './http';
-import { createRateLimiter } from './rate-limit';
+import { fail, guard, isAdmin, isFail, json, readBody, tooManyRequests, type Fail } from './http';
+import { createLimits } from './limits';
 import {
   InvalidPostError,
   POST_KINDS,
@@ -82,13 +82,10 @@ function cleanContext(raw: unknown): Record<string, unknown> | null | Fail {
 }
 
 export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
-  const allowAll = () => true;
-  const postLimit = options.unlimited ? allowAll : createRateLimiter({ perMinute: 5, perHour: 5 });
-  const commentLimit = options.unlimited ? allowAll : createRateLimiter({ perMinute: 10 });
-  const voteLimit = options.unlimited ? allowAll : createRateLimiter({ perMinute: 30 });
+  const limits = createLimits(options.unlimited);
 
   const member = (request: Request, extra: Parameters<typeof guard>[1] = {}) =>
-    guard(request, { unauthorizedCode: 'login_required', ...extra });
+    guard(request, { unauthorizedCode: 'login_required', ip: limits.ip, ...extra });
 
   const run = async (work: () => Promise<Response>): Promise<Response> => {
     try {
@@ -123,6 +120,7 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
   return {
     listPosts: (request: Request) =>
       run(async () => {
+        if (!limits.ip(request, false)) return tooManyRequests('60');
         const query = parseQuery(request);
         if (isFail(query)) return query.response;
         const user = await getSessionUser(request);
@@ -135,7 +133,7 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
 
     createPost: (request: Request) =>
       run(async () => {
-        const user = await member(request, { write: true, limiter: postLimit, retryAfter: '600' });
+        const user = await member(request, { write: true, limiter: limits.post, retryAfter: '600' });
         if (isFail(user)) return user.response;
         const body = await readBody(request);
         if (isFail(body)) return body.response;
@@ -173,7 +171,7 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
 
     vote: (request: Request, ctx: Ctx) =>
       run(async () => {
-        const user = await member(request, { write: true, limiter: voteLimit, retryAfter: '5' });
+        const user = await member(request, { write: true, limiter: limits.vote, retryAfter: '5' });
         if (isFail(user)) return user.response;
         const result = await toggleVote(user.guid, (await ctx.params).id);
         return result ? json(200, result) : notFound();
@@ -181,7 +179,7 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
 
     addComment: (request: Request, ctx: Ctx) =>
       run(async () => {
-        const user = await member(request, { write: true, limiter: commentLimit, retryAfter: '30' });
+        const user = await member(request, { write: true, limiter: limits.comment, retryAfter: '30' });
         if (isFail(user)) return user.response;
         const body = await readBody(request);
         if (isFail(body)) return body.response;
@@ -191,7 +189,7 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
 
     adminList: (request: Request) =>
       run(async () => {
-        const user = await member(request, { admin: true });
+        const user = await member(request, { admin: true, limiter: limits.admin });
         if (isFail(user)) return user.response;
         const query = parseQuery(request);
         if (isFail(query)) return query.response;
@@ -206,7 +204,7 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
 
     adminSetStatus: (request: Request, ctx: Ctx) =>
       run(async () => {
-        const user = await member(request, { write: true, admin: true });
+        const user = await member(request, { write: true, admin: true, limiter: limits.admin });
         if (isFail(user)) return user.response;
         const body = await readBody(request);
         if (isFail(body)) return body.response;
@@ -219,7 +217,7 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
 
     adminDeletePost: (request: Request, ctx: Ctx) =>
       run(async () => {
-        const user = await member(request, { write: true, admin: true });
+        const user = await member(request, { write: true, admin: true, limiter: limits.admin });
         if (isFail(user)) return user.response;
         const outcome = await deletePost((await ctx.params).id, { guid: user.guid, admin: true });
         return outcome === 'deleted' ? json(200, { ok: true }) : notFound();
@@ -227,14 +225,14 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
 
     adminDeleteComment: (request: Request, ctx: Ctx) =>
       run(async () => {
-        const user = await member(request, { write: true, admin: true });
+        const user = await member(request, { write: true, admin: true, limiter: limits.admin });
         if (isFail(user)) return user.response;
         return (await deleteComment((await ctx.params).id)) ? json(200, { ok: true }) : notFound();
       }),
 
     adminExport: (request: Request, ctx: Ctx) =>
       run(async () => {
-        const user = await member(request, { admin: true });
+        const user = await member(request, { admin: true, limiter: limits.admin });
         if (isFail(user)) return user.response;
         const text = await exportPost((await ctx.params).id);
         return text === null

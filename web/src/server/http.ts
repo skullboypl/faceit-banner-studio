@@ -93,6 +93,8 @@ export const isAdmin = (user: { guid: string } | null): boolean =>
 
 export type GuardOptions = {
   write?: boolean;
+  /** Per-IP check, run before anything else so floods never reach the session store. */
+  ip?: (request: Request, write: boolean) => boolean;
   limiter?: (key: string) => boolean;
   retryAfter?: string;
   admin?: boolean;
@@ -100,7 +102,11 @@ export type GuardOptions = {
 };
 
 /** Origin (writes) → session → admin → rate limit → account row. */
+export const tooManyRequests = (retryAfter = '60'): Response =>
+  json(429, { error: 'rate_limited', message: 'Too many requests, slow down.' }, { 'retry-after': retryAfter });
+
 export async function guard(request: Request, options: GuardOptions = {}): Promise<SessionUser | Fail> {
+  if (options.ip && !options.ip(request, Boolean(options.write))) return { response: tooManyRequests('60') };
   if (options.write && !originAllowed(request)) return fail(403, 'bad_origin', 'Cross-origin request rejected.');
   const user = await getSessionUser(request);
   if (!user) return fail(401, options.unauthorizedCode ?? 'unauthorized', 'Log in with FACEIT first.');

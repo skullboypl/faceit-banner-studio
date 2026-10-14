@@ -99,6 +99,53 @@ describe('listing', () => {
   });
 });
 
+describe('per-IP limits', () => {
+  const fromIp = (ip: string, cookie?: string) =>
+    new Request('http://localhost:3100/api/posts', {
+      headers: { 'x-forwarded-for': ip, ...(cookie ? { cookie } : {}) },
+    });
+
+  test('a flood of reads from one IP is rejected with 429 and Retry-After', async () => {
+    const { createFeedbackHandlers } = await import('./feedback-handlers');
+    const limited = createFeedbackHandlers();
+    let rejected = 0;
+    let retryAfter: string | null = null;
+    for (let i = 0; i < 160; i++) {
+      const response = await limited.listPosts(fromIp('198.51.100.20'));
+      if (response.status === 429) {
+        rejected++;
+        retryAfter = response.headers.get('retry-after');
+      }
+    }
+    expect(rejected).toBeGreaterThanOrEqual(40);
+    expect(retryAfter).not.toBeNull();
+  });
+
+  test('another IP is not blocked by the flood', async () => {
+    const { createFeedbackHandlers } = await import('./feedback-handlers');
+    const limited = createFeedbackHandlers();
+    for (let i = 0; i < 160; i++) await limited.listPosts(fromIp('198.51.100.21'));
+    expect((await limited.listPosts(fromIp('198.51.100.22'))).status).toBe(200);
+  });
+
+  test('writes are limited harder than reads: 21st write from one IP is rejected before login is even checked', async () => {
+    const { createFeedbackHandlers } = await import('./feedback-handlers');
+    const limited = createFeedbackHandlers();
+    const write = () =>
+      limited.vote(
+        new Request(`http://localhost:3100/api/posts/${MISSING}/vote`, {
+          method: 'POST',
+          headers: { origin: ORIGIN, 'x-forwarded-for': '198.51.100.23' },
+        }),
+        withId(MISSING)
+      );
+    const statuses: number[] = [];
+    for (let i = 0; i < 25; i++) statuses.push((await write()).status);
+    expect(statuses.slice(0, 20).every((status) => status === 401)).toBe(true);
+    expect(statuses.slice(20).every((status) => status === 429)).toBe(true);
+  });
+});
+
 describe('creating', () => {
   test('requires a session and a same-origin Origin', async () => {
     const body = { kind: 'request', title: 'Dark theme', body: 'Please.' };
@@ -132,16 +179,16 @@ describe('creating', () => {
     expect(bad.response.status).toBe(400);
   });
 
-  test('the 6th post within an hour returns 429 with the default limits', async () => {
+  test('the 4th post within an hour returns 429 with the default limits', async () => {
     const { createFeedbackHandlers } = await import('./feedback-handlers');
     const limited = createFeedbackHandlers();
     const cookie = await login(alice);
     const post = () =>
       limited.createPost(call('POST', '/api/posts', { cookie, body: { kind: 'request', title: 'Idea number', body: 'x' } }));
-    for (let i = 0; i < 5; i++) expect((await post()).status).toBe(201);
-    const sixth = await post();
-    expect(sixth.status).toBe(429);
-    expect(sixth.headers.get('retry-after')).not.toBeNull();
+    for (let i = 0; i < 3; i++) expect((await post()).status).toBe(201);
+    const fourth = await post();
+    expect(fourth.status).toBe(429);
+    expect(fourth.headers.get('retry-after')).not.toBeNull();
   });
 
   test('markup in a title comes back verbatim as text', async () => {
@@ -213,14 +260,14 @@ describe('votes and comments', () => {
     expect(posts[0].comments).toBe(1);
   });
 
-  test('the 11th comment within a minute returns 429', async () => {
+  test('the 7th comment within a minute returns 429', async () => {
     const { createFeedbackHandlers } = await import('./feedback-handlers');
     const limited = createFeedbackHandlers();
     const { data } = await create(await login(alice));
     const cookie = await login(bob);
     const comment = () =>
       limited.addComment(call('POST', `/api/posts/${data.post.id}/comments`, { cookie, body: { body: 'hi' } }), withId(data.post.id));
-    for (let i = 0; i < 10; i++) expect((await comment()).status).toBe(201);
+    for (let i = 0; i < 6; i++) expect((await comment()).status).toBe(201);
     expect((await comment()).status).toBe(429);
   });
 

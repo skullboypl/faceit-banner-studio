@@ -11,7 +11,7 @@ import {
   updateBanner,
 } from './repo-banners';
 import { fail, guard, isFail, json, readBody, type Fail } from './http';
-import { createRateLimiter } from './rate-limit';
+import { createLimits } from './limits';
 import { getWorkspace, putWorkspace } from './workspace';
 
 const schema = schemaJson as SettingsSchema;
@@ -20,9 +20,9 @@ const DEVICE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 type Ctx = { params: Promise<{ id: string }> };
 
 export function createMeHandlers(options: { unlimited?: boolean } = {}) {
-  const allowAll = () => true;
-  const workspaceLimit = options.unlimited ? allowAll : createRateLimiter({ perSecond: 1, perMinute: 60 });
-  const bannerLimit = options.unlimited ? allowAll : createRateLimiter({ perMinute: 30 });
+  const limits = createLimits(options.unlimited);
+  const workspaceLimit = limits.workspace;
+  const bannerLimit = limits.banner;
 
   const run = async (work: () => Promise<Response>): Promise<Response> => {
     try {
@@ -49,14 +49,14 @@ export function createMeHandlers(options: { unlimited?: boolean } = {}) {
   return {
     getWorkspace: (request: Request) =>
       run(async () => {
-        const user = await guard(request);
+        const user = await guard(request, { ip: limits.ip });
         if (isFail(user)) return user.response;
         return json(200, { workspace: await getWorkspace(user.guid) });
       }),
 
     putWorkspace: (request: Request) =>
       run(async () => {
-        const user = await guard(request, { write: true, limiter: workspaceLimit, retryAfter: '2' });
+        const user = await guard(request, { write: true, ip: limits.ip, limiter: workspaceLimit, retryAfter: '2' });
         if (isFail(user)) return user.response;
         const body = await readBody(request);
         if (isFail(body)) return body.response;
@@ -80,14 +80,14 @@ export function createMeHandlers(options: { unlimited?: boolean } = {}) {
 
     listBanners: (request: Request) =>
       run(async () => {
-        const user = await guard(request);
+        const user = await guard(request, { ip: limits.ip });
         if (isFail(user)) return user.response;
         return json(200, { banners: await listBanners(user.guid), limit: MAX_BANNERS_PER_USER });
       }),
 
     createBanner: (request: Request) =>
       run(async () => {
-        const user = await guard(request, { write: true, limiter: bannerLimit, retryAfter: '30' });
+        const user = await guard(request, { write: true, ip: limits.ip, limiter: bannerLimit, retryAfter: '30' });
         if (isFail(user)) return user.response;
         const body = await readBody(request);
         if (isFail(body)) return body.response;
@@ -99,7 +99,7 @@ export function createMeHandlers(options: { unlimited?: boolean } = {}) {
 
     updateBanner: (request: Request, ctx: Ctx) =>
       run(async () => {
-        const user = await guard(request, { write: true, limiter: bannerLimit, retryAfter: '30' });
+        const user = await guard(request, { write: true, ip: limits.ip, limiter: bannerLimit, retryAfter: '30' });
         if (isFail(user)) return user.response;
         const body = await readBody(request);
         if (isFail(body)) return body.response;
@@ -123,7 +123,7 @@ export function createMeHandlers(options: { unlimited?: boolean } = {}) {
 
     deleteBanner: (request: Request, ctx: Ctx) =>
       run(async () => {
-        const user = await guard(request, { write: true, limiter: bannerLimit, retryAfter: '30' });
+        const user = await guard(request, { write: true, ip: limits.ip, limiter: bannerLimit, retryAfter: '30' });
         if (isFail(user)) return user.response;
         const removed = await deleteBanner(user.guid, (await ctx.params).id);
         return removed ? json(200, { ok: true }) : fail(404, 'not_found', 'Banner not found.').response;

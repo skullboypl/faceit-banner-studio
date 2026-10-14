@@ -1,4 +1,7 @@
 import { randomBytes } from 'node:crypto';
+import { clientIp as resolveClientIp } from '../shared/client-ip.mjs';
+import { createRateLimiter } from '../shared/rate-limit.mjs';
+import { getPresenceCount } from './presence.mjs';
 import {
   consumeState,
   deleteSession,
@@ -15,6 +18,7 @@ const TOKEN_URL = 'https://api.faceit.com/auth/v1/oauth/token';
 const USERINFO_URL = 'https://api.faceit.com/auth/v1/resources/userinfo';
 const SESSION_COOKIE = 'fb_session';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
+const trustedHops = () => Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS) || 1);
 
 function sendJson(res, status, data) {
   res.statusCode = status;
@@ -55,8 +59,7 @@ function setCookie(res, req, value, maxAge) {
 }
 
 function clientIp(req) {
-  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-  return forwarded || req.socket.remoteAddress || null;
+  return resolveClientIp(req.headers, req.socket.remoteAddress, trustedHops());
 }
 
 export function isAdmin(user) {
@@ -136,12 +139,53 @@ async function handleCallback(req, res, url) {
   redirect(res, isAdmin(user) ? '/admin' : '/');
 }
 
+const LOCKOUT = { strikes: 5, windowMs: 5 * 60_000, blockMs: 15 * 60_000 };
+
+/** PUBLIC_URL may list several origins, comma separated. */
+function originAllowed(req) {
+  const origin = req.headers.origin;
+  if (!origin) return false;
+  try {
+    const wanted = new URL(origin).origin;
+    return String(process.env.PUBLIC_URL ?? '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .some((value) => new URL(value).origin === wanted);
+  } catch {
+    return false;
+  }
+}
+
 export function createAuthMiddleware() {
+  const limits = {
+    login: createRateLimiter({ perMinute: 10, blockAfter: LOCKOUT }),
+    callback: createRateLimiter({ perMinute: 20, blockAfter: LOCKOUT }),
+    me: createRateLimiter({ perMinute: 120, blockAfter: LOCKOUT }),
+    logout: createRateLimiter({ perMinute: 20, blockAfter: LOCKOUT }),
+    admin: createRateLimiter({ perMinute: 60, blockAfter: LOCKOUT }),
+  };
+
   return async (req, res, next) => {
     const url = new URL(req.url || '/', 'http://localhost');
     const { pathname } = url;
     if (!pathname.startsWith('/api/auth/') && pathname !== '/api/admin/overview') {
       return next();
+    }
+
+    const ip = clientIp(req);
+    const bucket = pathname.endsWith('/login')
+      ? 'login'
+      : pathname.endsWith('/callback')
+        ? 'callback'
+        : pathname.endsWith('/me')
+          ? 'me'
+          : pathname.endsWith('/logout')
+            ? 'logout'
+            : 'admin';
+    if (!limits[bucket](ip)) {
+      res.setHeader('Retry-After', '60');
+      return sendJson(res, 429, { error: 'rate_limited' });
     }
 
     try {
@@ -156,6 +200,7 @@ export function createAuthMiddleware() {
         return sendJson(res, 200, user ? { user, admin: isAdmin(user) } : { user: null, admin: false });
       }
       if (pathname === '/api/auth/logout' && req.method === 'POST') {
+        if (!originAllowed(req)) return sendJson(res, 403, { error: 'bad_origin' });
         const id = parseCookies(req.headers.cookie)[SESSION_COOKIE];
         if (id) await deleteSession(id);
         setCookie(res, req, '', 0);
@@ -165,7 +210,7 @@ export function createAuthMiddleware() {
         const user = await currentUser(req);
         if (!user) return sendJson(res, 401, { error: 'unauthorized' });
         if (!isAdmin(user)) return sendJson(res, 403, { error: 'forbidden' });
-        const presence = await fetchPresence(req);
+        const presence = getPresenceCount();
         return sendJson(res, 200, {
           online: presence,
           storage: await storageStatus(),
@@ -178,15 +223,4 @@ export function createAuthMiddleware() {
       return sendJson(res, 500, { error: 'server_error' });
     }
   };
-}
-
-/** The presence middleware lives in the same process, so ask it directly over HTTP loopback. */
-async function fetchPresence(req) {
-  try {
-    const origin = `http://${req.headers.host}`;
-    const response = await fetch(`${origin}/api/presence`, { cache: 'no-store' });
-    return (await response.json()).online ?? null;
-  } catch {
-    return null;
-  }
 }
