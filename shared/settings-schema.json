@@ -1,0 +1,1342 @@
+{
+  "orbitAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "orbitLevelGlow": {
+    "type": "boolean",
+    "default": true
+  },
+  "orbitLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "haloAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "haloLevelGlow": {
+    "type": "boolean",
+    "default": true
+  },
+  "haloLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "pulseAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "pulseLevelGlow": {
+    "type": "boolean",
+    "default": true
+  },
+  "pulseLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "tickerAccent": {
+    "type": "string",
+    "default": "e7002c",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "tickerLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "tickerLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "tickerAutoplay": {
+    "type": "boolean",
+    "default": true
+  },
+  "tickerSeconds": {
+    "type": "number",
+    "default": 6,
+    "min": 3,
+    "max": 20
+  },
+  "tickerHeadStat": {
+    "type": "statistic_type",
+    "default": "KD"
+  },
+  "widgetMode": {
+    "type": "string",
+    "default": "solo",
+    "options": [
+      "solo",
+      "versus"
+    ]
+  },
+  "opponentId": {
+    "type": "string"
+  },
+  "opponentName": {
+    "type": "string",
+    "default": "PAGO"
+  },
+  "versusOpponentAccent": {
+    "type": "string",
+    "default": "3b82f6",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "duelAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "edgeAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "faceoffAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "clashAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "tugAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "rivalsAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "matchupAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "scoreboardAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "cycleAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "surgeAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "cycleAutoplay": {
+    "type": "boolean",
+    "default": true
+  },
+  "cycleSeconds": {
+    "type": "number",
+    "default": 5,
+    "min": 3,
+    "max": 20
+  },
+  "slabAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "slabLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "slabLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "gaugeAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "gaugeLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "gaugeLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "cardAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "cardLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "cardLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "reelAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "reelLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "reelLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "reelAutoplay": {
+    "type": "boolean",
+    "default": true
+  },
+  "reelSeconds": {
+    "type": "number",
+    "default": 4,
+    "min": 2,
+    "max": 20
+  },
+  "ribbonAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "ribbonLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "ribbonLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "towerAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "towerLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "towerLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "dialsAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "dialsLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "dialsLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "marqueeAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "marqueeLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "marqueeLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "tallyAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "overlayAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "ladderAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "marqueeSeconds": {
+    "type": "number",
+    "default": 14,
+    "min": 6,
+    "max": 40
+  },
+  "primeAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "primeLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "primeLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "broadcastAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "railAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "focusAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "showcaseAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "spotlightAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "broadcastDensity": {
+    "type": "string",
+    "default": "comfortable",
+    "options": [
+      "comfortable",
+      "compact"
+    ]
+  },
+  "broadcastTiles": {
+    "type": "boolean",
+    "default": true
+  },
+  "railStatsPosition": {
+    "type": "string",
+    "default": "right",
+    "options": [
+      "right",
+      "below"
+    ]
+  },
+  "railShowLabels": {
+    "type": "boolean",
+    "default": true
+  },
+  "focusStatsLayout": {
+    "type": "string",
+    "default": "grid",
+    "options": [
+      "grid",
+      "rows"
+    ]
+  },
+  "focusLargeElo": {
+    "type": "boolean",
+    "default": true
+  },
+  "showcaseLevelGlow": {
+    "type": "boolean",
+    "default": true
+  },
+  "showcaseLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "showcaseRankPlace": {
+    "type": "string",
+    "default": "beside",
+    "options": [
+      "beside",
+      "under"
+    ]
+  },
+  "spotlightLevelGlow": {
+    "type": "boolean",
+    "default": true
+  },
+  "spotlightLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "spotlightRankPlace": {
+    "type": "string",
+    "default": "beside",
+    "options": [
+      "beside",
+      "under"
+    ]
+  },
+  "broadcastLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "broadcastLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "broadcastRankPlace": {
+    "type": "string",
+    "default": "beside",
+    "options": [
+      "beside",
+      "under"
+    ]
+  },
+  "railLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "railLevelGlowStrength": {
+    "type": "number",
+    "default": 6,
+    "min": 2,
+    "max": 20
+  },
+  "focusLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "focusLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "showcaseSeconds": {
+    "type": "number",
+    "default": 6,
+    "min": 3,
+    "max": 20
+  },
+  "showcaseMotion": {
+    "type": "string",
+    "default": "slide",
+    "options": [
+      "slide",
+      "flip",
+      "fade"
+    ]
+  },
+  "showcaseAutoplay": {
+    "type": "boolean",
+    "default": true
+  },
+  "showcaseGlow": {
+    "type": "boolean",
+    "default": true
+  },
+  "showcaseProfile": {
+    "type": "boolean",
+    "default": true
+  },
+  "showcaseForm": {
+    "type": "boolean",
+    "default": true
+  },
+  "showcaseTactics": {
+    "type": "boolean",
+    "default": true
+  },
+  "showcaseSession": {
+    "type": "boolean",
+    "default": true
+  },
+  "showcaseStat1": {
+    "type": "statistic_type",
+    "default": "ADR",
+    "options": [
+      "KILLS",
+      "DEATHS",
+      "ADR",
+      "ASSISTS",
+      "MVPS",
+      "KR",
+      "WINRATIO",
+      "HSPERCENT",
+      "KD",
+      "RANKING",
+      "WINSTREAK",
+      "ENTRYRATE",
+      "UTILITY",
+      "FLASHRATE"
+    ]
+  },
+  "showcaseStat2": {
+    "type": "statistic_type",
+    "default": "KR",
+    "options": [
+      "KILLS",
+      "DEATHS",
+      "ADR",
+      "ASSISTS",
+      "MVPS",
+      "KR",
+      "WINRATIO",
+      "HSPERCENT",
+      "KD",
+      "RANKING",
+      "WINSTREAK",
+      "ENTRYRATE",
+      "UTILITY",
+      "FLASHRATE"
+    ]
+  },
+  "showcaseStat3": {
+    "type": "statistic_type",
+    "default": "ENTRYRATE",
+    "options": [
+      "KILLS",
+      "DEATHS",
+      "ADR",
+      "ASSISTS",
+      "MVPS",
+      "KR",
+      "WINRATIO",
+      "HSPERCENT",
+      "KD",
+      "RANKING",
+      "WINSTREAK",
+      "ENTRYRATE",
+      "UTILITY",
+      "FLASHRATE"
+    ]
+  },
+  "showcaseStat4": {
+    "type": "statistic_type",
+    "default": "FLASHRATE",
+    "options": [
+      "KILLS",
+      "DEATHS",
+      "ADR",
+      "ASSISTS",
+      "MVPS",
+      "KR",
+      "WINRATIO",
+      "HSPERCENT",
+      "KD",
+      "RANKING",
+      "WINSTREAK",
+      "ENTRYRATE",
+      "UTILITY",
+      "FLASHRATE"
+    ]
+  },
+  "spotlightSeconds": {
+    "type": "number",
+    "default": 5,
+    "min": 3,
+    "max": 20
+  },
+  "spotlightMotion": {
+    "type": "string",
+    "default": "flip",
+    "options": [
+      "slide",
+      "flip",
+      "fade"
+    ]
+  },
+  "spotlightAutoplay": {
+    "type": "boolean",
+    "default": true
+  },
+  "spotlightGlow": {
+    "type": "boolean",
+    "default": true
+  },
+  "spotlightProfile": {
+    "type": "boolean",
+    "default": true
+  },
+  "spotlightForm": {
+    "type": "boolean",
+    "default": true
+  },
+  "spotlightTactics": {
+    "type": "boolean",
+    "default": false
+  },
+  "spotlightSession": {
+    "type": "boolean",
+    "default": true
+  },
+  "spotlightStat1": {
+    "type": "statistic_type",
+    "default": "ADR",
+    "options": [
+      "KILLS",
+      "DEATHS",
+      "ADR",
+      "ASSISTS",
+      "MVPS",
+      "KR",
+      "WINRATIO",
+      "HSPERCENT",
+      "KD",
+      "RANKING",
+      "WINSTREAK",
+      "ENTRYRATE",
+      "UTILITY",
+      "FLASHRATE"
+    ]
+  },
+  "spotlightStat2": {
+    "type": "statistic_type",
+    "default": "KR",
+    "options": [
+      "KILLS",
+      "DEATHS",
+      "ADR",
+      "ASSISTS",
+      "MVPS",
+      "KR",
+      "WINRATIO",
+      "HSPERCENT",
+      "KD",
+      "RANKING",
+      "WINSTREAK",
+      "ENTRYRATE",
+      "UTILITY",
+      "FLASHRATE"
+    ]
+  },
+  "spotlightStat3": {
+    "type": "statistic_type",
+    "default": "ENTRYRATE",
+    "options": [
+      "KILLS",
+      "DEATHS",
+      "ADR",
+      "ASSISTS",
+      "MVPS",
+      "KR",
+      "WINRATIO",
+      "HSPERCENT",
+      "KD",
+      "RANKING",
+      "WINSTREAK",
+      "ENTRYRATE",
+      "UTILITY",
+      "FLASHRATE"
+    ]
+  },
+  "spotlightStat4": {
+    "type": "statistic_type",
+    "default": "FLASHRATE",
+    "options": [
+      "KILLS",
+      "DEATHS",
+      "ADR",
+      "ASSISTS",
+      "MVPS",
+      "KR",
+      "WINRATIO",
+      "HSPERCENT",
+      "KD",
+      "RANKING",
+      "WINSTREAK",
+      "ENTRYRATE",
+      "UTILITY",
+      "FLASHRATE"
+    ]
+  },
+  "bannerDesign": {
+    "type": "string",
+    "default": "2026",
+    "options": [
+      "2026",
+      "legacy"
+    ]
+  },
+  "showUpdateIntro": {
+    "type": "boolean",
+    "default": true
+  },
+  "widgetLanguage": {
+    "type": "string_undefined",
+    "options": [
+      "en",
+      "pl",
+      "de",
+      null
+    ]
+  },
+  "playerId": {
+    "type": "string"
+  },
+  "bannerRadiusCustom": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerRadius": {
+    "type": "number",
+    "default": 14,
+    "min": 0,
+    "max": 48
+  },
+  "bannerWidthMode": {
+    "type": "string",
+    "default": "recommended",
+    "options": [
+      "auto",
+      "manual",
+      "recommended"
+    ]
+  },
+  "bannerWidth": {
+    "type": "number",
+    "default": 500,
+    "min": 100,
+    "max": 1600
+  },
+  "bannerHeightMode": {
+    "type": "string",
+    "default": "recommended",
+    "options": [
+      "auto",
+      "manual",
+      "recommended"
+    ]
+  },
+  "bannerHeight": {
+    "type": "number",
+    "default": 300,
+    "min": 50,
+    "max": 1000
+  },
+  "autoWidth": {
+    "type": "boolean",
+    "default": true
+  },
+  "onlyOfficialMatchesCount": {
+    "type": "boolean",
+    "default": true
+  },
+  "showRanking": {
+    "type": "ranking_state",
+    "default": 2
+  },
+  "showEloDiff": {
+    "type": "boolean",
+    "default": true
+  },
+  "showWinsLosses": {
+    "type": "boolean",
+    "default": true
+  },
+  "hideBannerHeader": {
+    "type": "boolean",
+    "default": false
+  },
+  "showIcons": {
+    "type": "boolean",
+    "default": false
+  },
+  "showLevelIcon": {
+    "type": "boolean",
+    "default": true
+  },
+  "showUsername": {
+    "type": "boolean",
+    "default": true
+  },
+  "showVerifiedBadge": {
+    "type": "boolean",
+    "default": false
+  },
+  "showEloSuffix": {
+    "type": "boolean",
+    "default": true
+  },
+  "showStatistics": {
+    "type": "boolean",
+    "default": true
+  },
+  "showEloProgressBar": {
+    "type": "boolean",
+    "default": true
+  },
+  "useBannerAsBackground": {
+    "type": "boolean",
+    "default": true
+  },
+  "useAvatarAsBackground": {
+    "type": "boolean",
+    "default": false
+  },
+  "adjustBackgroundOpacity": {
+    "type": "boolean",
+    "default": false
+  },
+  "adjustBackgroundBlur": {
+    "type": "boolean",
+    "default": false
+  },
+  "adjustBannerShadow": {
+    "type": "boolean",
+    "default": false
+  },
+  "adjustEloSuffixSpacing": {
+    "type": "boolean",
+    "default": false
+  },
+  "adjustLevelIconScale": {
+    "type": "boolean",
+    "default": false
+  },
+  "adjustRankingIconScale": {
+    "type": "boolean",
+    "default": false
+  },
+  "adjustRankingFontSize": {
+    "type": "boolean",
+    "default": false
+  },
+  "adjustBannerFont": {
+    "type": "boolean",
+    "default": false
+  },
+  "adjustBannerFontSize": {
+    "type": "boolean",
+    "default": false
+  },
+  "backgroundOpacity": {
+    "type": "number",
+    "default": 0.15,
+    "min": 0,
+    "max": 1
+  },
+  "backgroundBlur": {
+    "type": "number",
+    "default": 2,
+    "min": 0,
+    "max": 20
+  },
+  "bannerShadowColor": {
+    "type": "string",
+    "default": "000000",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "bannerShadowOpacity": {
+    "type": "number",
+    "default": 0.35,
+    "min": 0,
+    "max": 1
+  },
+  "bannerShadowStrength": {
+    "type": "number",
+    "default": 35,
+    "min": 0,
+    "max": 100
+  },
+  "eloSuffixSpacing": {
+    "type": "number",
+    "default": 4,
+    "min": 0,
+    "max": 20
+  },
+  "levelIconScale": {
+    "type": "number",
+    "default": 0,
+    "min": -50,
+    "max": 50
+  },
+  "rankingIconScale": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "rankingFontSize": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "bannerFont": {
+    "type": "string",
+    "default": "dm_sans",
+    "options": [
+      "dm_sans",
+      "arial",
+      "comic_sans_ms",
+      "courier_new",
+      "garamond",
+      "georgia",
+      "helvetica",
+      "impact",
+      "inter",
+      "lucida_sans",
+      "merriweather",
+      "montserrat",
+      "open_sans",
+      "oswald",
+      "palatino_linotype",
+      "playfair_display",
+      "poppins",
+      "roboto",
+      "segoe_ui",
+      "tahoma",
+      "times_new_roman",
+      "trebuchet_ms",
+      "verdana",
+      "kick_font"
+    ]
+  },
+  "adjustBannerFontWeightNickname": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontWeightNickname": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontSizeNickname": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontSizeNickname": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontWeightElo": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontWeightElo": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontSizeElo": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontSizeElo": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontWeightEloSuffix": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontWeightEloSuffix": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontSizeEloSuffix": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontSizeEloSuffix": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontWeightEloDiff": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontWeightEloDiff": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontSizeEloDiff": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontSizeEloDiff": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontWeightWinsValue": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontWeightWinsValue": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontSizeWinsValue": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontSizeWinsValue": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontWeightWinsLabel": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontWeightWinsLabel": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontSizeWinsLabel": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontSizeWinsLabel": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontWeightLossesValue": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontWeightLossesValue": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontSizeLossesValue": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontSizeLossesValue": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontWeightLossesLabel": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontWeightLossesLabel": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontSizeLossesLabel": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontSizeLossesLabel": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontWeightStatistics": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontWeightStatistics": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "adjustBannerFontSizeStatistics": {
+    "type": "boolean",
+    "default": false
+  },
+  "bannerFontSizeStatistics": {
+    "type": "number",
+    "default": 50,
+    "min": 0,
+    "max": 200
+  },
+  "refreshInterval": {
+    "type": "number",
+    "default": 60,
+    "min": 10,
+    "max": 120
+  },
+  "colorScheme": {
+    "type": "string",
+    "default": "faceit",
+    "options": [
+      "dark",
+      "faceit",
+      "ctp-latte",
+      "ctp-frappe",
+      "ctp-macchiato",
+      "ctp-mocha",
+      "custom"
+    ]
+  },
+  "style": {
+    "type": "string",
+    "default": "prime",
+    "options": [
+      "prime",
+      "showcase",
+      "spotlight",
+      "broadcast",
+      "rail",
+      "focus",
+      "orbit",
+      "halo",
+      "pulse",
+      "ticker",
+      "slab",
+      "gauge",
+      "card",
+      "reel",
+      "ribbon",
+      "tower",
+      "dials",
+      "marquee",
+      "tally",
+      "overlay",
+      "ladder",
+      "duel",
+      "edge",
+      "faceoff",
+      "clash",
+      "tug",
+      "rivals",
+      "matchup",
+      "scoreboard",
+      "cycle",
+      "surge",
+      "normal",
+      "animated",
+      "compact",
+      "rounded",
+      "rounded-compact",
+      "radar",
+      "classic",
+      "amoled",
+      "aurora",
+      "auroraflow",
+      "banner",
+      "card",
+      "circle",
+      "circuit",
+      "glass",
+      "horizon",
+      "justelo",
+      "justelomatches",
+      "justelomatchesname",
+      "justeloname",
+      "neon",
+      "photon",
+      "pulsegrid",
+      "ripple",
+      "sidebar",
+      "split",
+      "stack",
+      "terminal",
+      "custom"
+    ]
+  },
+  "animatedDeckAnimation": {
+    "type": "string",
+    "default": "fade",
+    "options": [
+      "fade",
+      "slide_up",
+      "zoom"
+    ]
+  },
+  "animatedDeckShowHeader": {
+    "type": "boolean",
+    "default": true
+  },
+  "animatedDeckShowStats": {
+    "type": "boolean",
+    "default": true
+  },
+  "animatedDeckShowMatches": {
+    "type": "boolean",
+    "default": true
+  },
+  "animatedDeckOrderHeader": {
+    "type": "number",
+    "default": 1,
+    "min": 1,
+    "max": 3
+  },
+  "animatedDeckOrderStats": {
+    "type": "number",
+    "default": 2,
+    "min": 1,
+    "max": 3
+  },
+  "animatedDeckOrderMatches": {
+    "type": "number",
+    "default": 3,
+    "min": 1,
+    "max": 3
+  },
+  "customBorderColor1": {
+    "type": "string",
+    "default": "595959",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "customInlineCSS": {
+    "type": "string",
+    "default": ""
+  },
+  "customBorderColor1Opacity": {
+    "type": "number",
+    "default": 1,
+    "min": 0,
+    "max": 1
+  },
+  "customBorderColor2": {
+    "type": "string",
+    "default": "8d8d8d",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "customBorderColor2Opacity": {
+    "type": "number",
+    "default": 1,
+    "min": 0,
+    "max": 1
+  },
+  "adjustBorderWidth": {
+    "type": "boolean",
+    "default": false
+  },
+  "borderWidth": {
+    "type": "number",
+    "default": 1,
+    "min": 0,
+    "max": 12
+  },
+  "adjustStatisticsSeparator": {
+    "type": "boolean",
+    "default": false
+  },
+  "customStatisticsSeparatorColor": {
+    "type": "string",
+    "default": "595959",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "customStatisticsSeparatorOpacity": {
+    "type": "number",
+    "default": 1,
+    "min": 0,
+    "max": 1
+  },
+  "statisticsSeparatorWidth": {
+    "type": "number",
+    "default": 1,
+    "min": 0,
+    "max": 12
+  },
+  "customTextColor": {
+    "type": "string",
+    "default": "ffffff",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "customBackgroundColor": {
+    "type": "string",
+    "default": "121212",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "statSlot1": {
+    "type": "statistic_type",
+    "default": "KILLS"
+  },
+  "statSlot2": {
+    "type": "statistic_type",
+    "default": "KD"
+  },
+  "statSlot3": {
+    "type": "statistic_type",
+    "default": "HSPERCENT"
+  },
+  "statSlot4": {
+    "type": "statistic_type",
+    "default": "WINRATIO"
+  },
+  "saveSession": {
+    "type": "boolean",
+    "default": true
+  },
+  "averageStatsMatchCount": {
+    "type": "number",
+    "default": 30
+  },
+  "widgetOpacity": {
+    "type": "number",
+    "default": 1,
+    "min": 0,
+    "max": 1
+  },
+  "customCSS": {
+    "type": "string_undefined"
+  }
+}

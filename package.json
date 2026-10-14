@@ -6,13 +6,25 @@
     "type": "git",
     "url": "git+https://github.com/skullboypl/faceit-banner-faceitbanner.vxh.pl.git"
   },
-  "keywords": ["faceit", "faceit banner", "faceit widget", "obs", "obs overlay", "streamlabs", "cs2", "elo", "stream overlay"],
+  "keywords": [
+    "faceit",
+    "faceit banner",
+    "faceit widget",
+    "obs",
+    "obs overlay",
+    "streamlabs",
+    "cs2",
+    "elo",
+    "stream overlay"
+  ],
   "private": true,
   "version": "3.6.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "dev:services": "docker compose -f docker-compose.dev.yml up -d --wait",
+    "gen:schema": "tsx scripts/gen-settings-schema.ts",
+    "test": "node --test \"tests/*.test.mjs\"",
     "dev:services:down": "docker compose -f docker-compose.dev.yml down",
     "docs": "vite build --ssr src/docs/render.tsx --outDir .ssr --emptyOutDir && node .ssr/render.js",
     "build": "tsc && pnpm run docs && vite build",
@@ -45,6 +57,7 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.14.0",
     "prettier": "^3.5.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.7.3",
     "vite": "^7.0.4"
   }
