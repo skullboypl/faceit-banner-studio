@@ -16,6 +16,15 @@ test('sanitizeInfo keeps a valid banner and drops a bad elo, level and player id
   assert.deepEqual(info, { nickname: 'donk666', country: 'pl', style: 'orbit' });
 });
 
+test('sanitizeInfo keeps a player id when the old banner has not sent a nickname yet', () => {
+  const id = '10B53A6D-5FC9-4095-920C-2953CFA62486';
+  assert.deepEqual(sanitizeInfo({ playerId: id, elo: 2100 }), {
+    playerId: id.toLowerCase(),
+    elo: 2100,
+  });
+  assert.equal(sanitizeInfo({ playerId: 'not-a-player' }), null);
+});
+
 test('sanitizeInfo strips control characters and refuses a nickname that is only markup', () => {
   assert.equal(sanitizeInfo({ nickname: 'a\u0000b<script>' })?.nickname, 'abscript');
   assert.equal(sanitizeInfo({ nickname: '<' }), null);
@@ -61,6 +70,12 @@ test('the live board is public, ordered, and hides the session id', async () => 
     assert.equal(board.players.some((player) => 'id' in player || 'playerId' in player), false);
     assert.equal(board.ranked, 3);
     assert.equal(board.online >= 3, true);
+    delete process.env.FACEIT_API_KEY;
+    delete process.env.VITE_FACEIT_API_KEY;
+    assert.equal((await beat('abcdefghijklmnop04', { playerId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' })).status, 200);
+    const idOnly = await (await fetch(`${base}/api/presence/live`, { headers: { 'x-forwarded-for': '203.0.113.12' } })).json();
+    assert.equal(idOnly.players.some((player) => player.nickname === 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'), false);
+    assert.equal(idOnly.online >= 4, true);
   } finally {
     await close();
   }

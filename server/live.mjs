@@ -9,13 +9,15 @@ function cleanNick(value) {
   return cleaned;
 }
 
-/** Public fields from a widget heartbeat. Invalid fields are dropped; no nickname means no board row. */
+/** Public fields from a widget heartbeat. A FACEIT player id is enough; the nickname can be filled in later. */
 export function sanitizeInfo(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const nickname = cleanNick(raw.nickname);
-  if (!nickname) return null;
-  const info = { nickname };
-  if (typeof raw.playerId === 'string' && UUID.test(raw.playerId)) info.playerId = raw.playerId.toLowerCase();
+  const playerId = typeof raw.playerId === 'string' && UUID.test(raw.playerId) ? raw.playerId.toLowerCase() : '';
+  if (!nickname && !playerId) return null;
+  const info = {};
+  if (nickname) info.nickname = nickname;
+  if (playerId) info.playerId = playerId;
   const elo = Number(raw.elo);
   if (Number.isInteger(elo) && elo >= 0 && elo <= 10000) info.elo = elo;
   const level = Number(raw.level);
@@ -46,4 +48,63 @@ export function publicRanking(entries) {
       return a.nickname.localeCompare(b.nickname);
     })
     .map(({ lastSeen, playerId, ...player }) => player);
+}
+
+const lookupCache = new Map();
+const LOOKUP_OK_MS = 10 * 60_000;
+const LOOKUP_MISS_MS = 60_000;
+
+function faceitKey() {
+  return process.env.FACEIT_API_KEY || process.env.VITE_FACEIT_API_KEY || '';
+}
+
+/** Public FACEIT profile for a banner that only reported its player id. */
+export async function lookupPlayer(playerId) {
+  const key = faceitKey();
+  if (!key || !UUID.test(playerId)) return null;
+  const cached = lookupCache.get(playerId);
+  if (cached && Date.now() - cached.at < (cached.profile ? LOOKUP_OK_MS : LOOKUP_MISS_MS)) return cached.profile;
+  try {
+    const response = await fetch(`https://open.faceit.com/data/v4/players/${playerId}`, {
+      headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' },
+      signal: AbortSignal.timeout(2500),
+    });
+    if (!response.ok) {
+      lookupCache.set(playerId, { at: Date.now(), profile: null });
+      return null;
+    }
+    const data = await response.json();
+    const cs2 = data?.games?.cs2;
+    const profile = sanitizeInfo({
+      nickname: data?.nickname,
+      playerId: data?.player_id || playerId,
+      elo: cs2?.faceit_elo,
+      level: cs2?.skill_level,
+      country: data?.country,
+    });
+    lookupCache.set(playerId, { at: Date.now(), profile });
+    return profile;
+  } catch {
+    lookupCache.set(playerId, { at: Date.now(), profile: null });
+    return null;
+  }
+}
+
+/** Older banners send the player id before the nickname. Fill the public profile without replacing fields they already sent. */
+export async function fillFromPlayerId(entries) {
+  const missing = entries.filter((entry) => entry?.info?.playerId && !entry.info.nickname).slice(0, 40);
+  await Promise.all(
+    missing.map(async (entry) => {
+      const profile = await lookupPlayer(entry.info.playerId);
+      if (!profile?.nickname) return;
+      entry.info = {
+        ...profile,
+        ...entry.info,
+        nickname: entry.info.nickname || profile.nickname,
+        elo: Number.isInteger(entry.info.elo) ? entry.info.elo : profile.elo,
+        level: Number.isInteger(entry.info.level) ? entry.info.level : profile.level,
+        country: entry.info.country || profile.country,
+      };
+    })
+  );
 }

@@ -20,6 +20,10 @@ RUN pnpm run build
 
 FROM nginx:1.27-alpine
 
+# Same key the widget uses, so a banner that only reports player_id can still be named on the live board.
+ARG VITE_FACEIT_API_KEY
+ENV FACEIT_API_KEY=${VITE_FACEIT_API_KEY}
+
 RUN apk add --no-cache nodejs npm
 
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf

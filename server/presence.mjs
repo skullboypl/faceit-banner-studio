@@ -1,6 +1,6 @@
 import { clientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
-import { publicRanking, sanitizeInfo } from './live.mjs';
+import { fillFromPlayerId, publicRanking, sanitizeInfo } from './live.mjs';
 
 const ACTIVE_WINDOW_MS = 135_000;
 const MAX_SESSIONS = 100_000;
@@ -61,12 +61,13 @@ export const getPresenceCount = () => {
 };
 
 /** Public board: nick, ELO, level, country. No session id and no address. */
-export function getLiveBoard() {
+export async function getLiveBoard() {
   prune();
   const entries = [];
   for (const entry of sessions.values()) {
-    if (entry.info) entries.push({ info: entry.info, lastSeen: entry.lastSeen });
+    if (entry.info) entries.push({ info: { ...entry.info }, lastSeen: entry.lastSeen });
   }
+  await fillFromPlayerId(entries);
   const players = publicRanking(entries);
   return {
     online: sessions.size,
@@ -93,7 +94,7 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
 
     if (req.method === 'GET') {
       if (!getLimit(ip)) return sendJson(res, 429, { error: 'rate_limited' }, { 'Retry-After': '60' });
-      if (pathname === '/api/presence/live') return sendJson(res, 200, getLiveBoard());
+      if (pathname === '/api/presence/live') return sendJson(res, 200, await getLiveBoard());
       return sendJson(res, 200, {
         online: sessions.size,
         windowSeconds: ACTIVE_WINDOW_MS / 1000,

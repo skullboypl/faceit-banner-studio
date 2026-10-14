@@ -417,23 +417,25 @@ export const Widget = ({
   );
 
   const [searchParams] = useSearchParams();
-  const presenceInfo = useRef<(() => { nickname: string; elo: number; level: number; country?: string; style: string; playerId: string } | undefined) | null>(null);
+  const presenceInfo = useRef<(() => { nickname?: string; elo?: number; level?: number; country?: string; style?: string; playerId?: string } | undefined) | null>(null);
   presenceInfo.current = () => {
-    if (!username || !elo) return undefined;
+    const playerId = String(SETTINGS.get('playerId') || '');
+    if (!username && !playerId) return undefined;
     return {
-      nickname: username,
-      elo,
-      level,
-      country,
-      style: resolvedStyle,
-      playerId: String(SETTINGS.get('playerId') || ''),
+      ...(username ? { nickname: username } : {}),
+      ...(typeof elo === 'number' && elo > 0 ? { elo } : {}),
+      ...(typeof level === 'number' && level > 0 ? { level } : {}),
+      ...(country ? { country } : {}),
+      ...(resolvedStyle ? { style: resolvedStyle } : {}),
+      ...(playerId ? { playerId } : {}),
     };
   };
   useEffect(() => {
-    /* The preview frames inside the generator are not people using the banner */
+    /* The preview frames inside the generator are not people using the banner.
+       Old banner links already carry player_id, so the first ping can name them before ELO loads. */
     if (preview || new URLSearchParams(window.location.search).get('presence') === 'off') return;
     return startPresenceHeartbeat(() => presenceInfo.current?.());
-  }, [preview]);
+  }, [preview, username, elo, level, country]);
   // Dynamicznie dodaj/usuń link do Kick Font
   useEffect(() => {
     if (SETTINGS.get('bannerFont') === 'kick_font') {
