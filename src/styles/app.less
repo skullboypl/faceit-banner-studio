@@ -1998,29 +1998,45 @@ html.generator .studio-sidebar .sidebar-note {
   border-top: 0;
 }
 
-/* Feedback board: requests and bugs */
-.feedback-board {
+/* Feedback board: requests and bugs (prefixed so the global button styles do not win) */
+html.generator .settings.feedback-board {
   .feedback-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
   .feedback-head .primary-action { width: auto; margin: 0; padding: 8px 14px; text-decoration: none; white-space: nowrap; }
   .feedback-tabs {
     display: inline-flex;
     gap: 4px;
-    padding: 3px;
-    margin: 6px 0 12px;
+    padding: 4px;
+    margin: 8px 0 14px;
     background: #101010;
     border: 1px solid #2c2c2c;
     border-radius: 999px;
-    button {
+    > button[role='tab'] {
       width: auto;
+      height: auto;
+      min-width: 92px;
       margin: 0;
-      padding: 6px 16px;
-      font-size: 12px;
+      padding: 8px 20px;
+      font-size: 13px;
       font-weight: 700;
+      line-height: 1.2;
       color: #a19c99;
-      background: transparent;
-      border: 0;
-      border-radius: 999px;
-      &[aria-selected='true'] { color: #fff; background: #ff5500; }
+      background-color: transparent !important; /* the global ".settings button:not(...)" rule is heavier */
+      border: 1px solid transparent !important;
+      border-radius: 999px !important;
+      min-height: 0 !important;
+      padding: 8px 20px !important;
+      box-shadow: none;
+      transform: none !important;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      &:hover { color: #fff; background-color: #1b1410 !important; }
+      &[aria-selected='true'] {
+        color: #fff;
+        background: linear-gradient(135deg, #ff5500, #ff7a2a) !important;
+        border-color: #ff8a4a !important;
+        box-shadow: 0 4px 14px #ff550040;
+      }
+      &:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
     }
   }
   .feedback-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; select { width: auto; margin: 0; } }
@@ -2096,7 +2112,7 @@ html.generator .studio-sidebar .sidebar-note {
   &--done { color: #8bce76; border-color: #2f4a2a; background: #12200f; }
   &--declined, &--duplicate { color: #9a9a9f; text-decoration: line-through; }
 }
-.feedback-detail {
+html.generator .feedback-detail {
   display: grid;
   gap: 12px;
   .feedback-back { width: auto; margin: 0; justify-self: start; padding: 6px 12px; font-size: 12px; }
@@ -2129,7 +2145,7 @@ html.generator .studio-sidebar .sidebar-note {
   .admin-badge { padding: 1px 6px; font-size: 9px; font-style: normal; font-weight: 800; color: #fff; background: #ff5500; border-radius: 999px; }
   form { display: grid; gap: 8px; textarea { margin: 0; } button { width: auto; justify-self: start; margin: 0; } }
 }
-.feedback-form {
+html.generator .feedback-form {
   display: grid;
   gap: 10px;
   h4 { margin: 0; font-size: 16px; }
@@ -2175,3 +2191,23 @@ html.generator .studio-main.studio-main--wide {
   grid-template-columns: minmax(0, 1fr);
   max-width: 1100px;
 }
+
+
+/* The global `a:hover, a:focus { color: blue }` is heavier than single-class link styles, so every link of ours
+   states its own colour for all link states. */
+a.faceit-login, a.faceit-login:hover, a.faceit-login:focus, a.faceit-login:visited,
+a.sync-chip-action, a.sync-chip-action:hover, a.sync-chip-action:focus, a.sync-chip-action:visited,
+a.primary-action, a.primary-action:hover, a.primary-action:focus, a.primary-action:visited,
+a.admin-login, a.admin-login:hover, a.admin-login:focus, a.admin-login:visited { color: #fff; }
+a.donate-link, a.donate-link:hover, a.donate-link:focus, a.donate-link:visited { color: #ffd2b8; }
+.account-popup > a, .account-popup > a:hover, .account-popup > a:focus, .account-popup > a:visited { color: #e6e6ea; }
+a.mobile-menu-item, a.mobile-menu-item:hover, a.mobile-menu-item:focus, a.mobile-menu-item:visited { color: #e6e6ea; }
+a.mobile-menu-item--hub, a.mobile-menu-item--hub:hover, a.mobile-menu-item--hub:focus { color: #f3c36a; }
+a.faceit-login:focus-visible, a.donate-link:focus-visible, a.mobile-menu-item:focus-visible { outline: 2px solid #ff8a4a; outline-offset: 2px; }
+a.donate-link:hover { background: #271a12; border-color: #ff6b18; }
+
+
+/* Menu items are 100% wide plus padding: without border-box their hover background spilled out of the popup */
+.account-popup { box-sizing: border-box; overflow: hidden; }
+.account-popup > button, .account-popup > a, .account-popup > .sync-chip { box-sizing: border-box; max-width: 100%; }
+.lang-list, .lang-list li { box-sizing: border-box; }
