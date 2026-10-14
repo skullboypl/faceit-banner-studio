@@ -21,6 +21,17 @@ export function PresetSettings() {
       </select>
     </div>
   );
+  if (['lineup', 'sheet', 'splitset', 'livecard'].includes(style)) {
+    return (
+      <div className="settings preset-options">
+        <h3 className="card-heading">{tl('preset.settings', [tl(`style.${style}`)])}</h3>
+        <div className="setting preset-accent">
+          <label htmlFor="preset-accent">{tl('preset.accent')}</label>
+          <input id="preset-accent" type="color" value={`#${settings.get(key('Accent'))}`} onChange={(event) => settings.set(key('Accent'), event.target.value.slice(1))} />
+        </div>
+      </div>
+    );
+  }
   if (isVersusStyle(style)) {
     return (
       <div className="settings preset-options">

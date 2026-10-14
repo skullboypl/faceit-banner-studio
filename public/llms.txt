@@ -6,9 +6,9 @@ Home: https://faceitbanner.vxh.pl/
 
 ## Dokumentacja (PL)
 
-- [Dokumentacja FACEIT Banner](https://faceitbanner.vxh.pl/docs/): Dokumentacja generatora banerów FACEIT do OBS: 18 układów solo, 13 układów VERSUS, rozmiar, parametry linku i FAQ.
+- [Dokumentacja FACEIT Banner](https://faceitbanner.vxh.pl/docs/): Dokumentacja generatora banerów FACEIT do OBS: 22 układów solo, 13 układów VERSUS, rozmiar, parametry linku i FAQ.
 - [Jak dodać baner FACEIT do OBS](https://faceitbanner.vxh.pl/docs/szybki-start/): Krok po kroku: wygeneruj link w generatorze FACEIT Banner i dodaj go do OBS jako Browser Source. Zajmuje około dwóch minut.
-- [Banery solo](https://faceitbanner.vxh.pl/docs/banery-solo/): Przegląd 18 układów banerów solo FACEIT 2026 z rozmiarami OBS: Prime, Showcase, Spotlight, Broadcast, Rail, Focus, Orbit, Halo, Pulse, Ticker, Slab, Gauge, Card, Reel, Ribbon, Tower, Dials, Marquee.
+- [Banery solo](https://faceitbanner.vxh.pl/docs/banery-solo/): Przegląd 22 układów banerów solo FACEIT 2026 z rozmiarami OBS: Prime, Showcase, Spotlight, Broadcast, Rail, Focus, Orbit, Halo, Pulse, Ticker, Slab, Gauge, Card, Reel, Ribbon, Tower, Dials, Marquee, Lineup, Sheet, Radar i pasek, Live card.
 - [Banery VERSUS](https://faceitbanner.vxh.pl/docs/banery-versus/): Tryb VERSUS: porównaj swoje ELO i statystyki z rywalem na streamie. 13 układów: Duel, Edge, Faceoff, Clash, Tug, Rivals, Tally, Overlay, Ladder, Matchup, Scoreboard, Cycle, Surge.
 - [Rozmiar i responsywność banera](https://faceitbanner.vxh.pl/docs/rozmiar-banera/): Tryby rozmiaru AUTO, Zalecane i Ręcznie, limity szerokości i wysokości dla każdego banera oraz zalecane rozmiary źródła w OBS.
 - [Parametry linku widżetu](https://faceitbanner.vxh.pl/docs/parametry-url/): Wszystkie parametry adresu widżetu FACEIT Banner: nazwy, dozwolone wartości i wartości domyślne. Przydatne do ręcznej edycji linku.
@@ -26,9 +26,9 @@ Home: https://faceitbanner.vxh.pl/
 
 ## Documentation (EN)
 
-- [FACEIT Banner documentation](https://faceitbanner.vxh.pl/en/docs/): Documentation for the FACEIT banner generator for OBS: 18 solo layouts, 13 VERSUS layouts, size options, URL parameters and FAQ.
+- [FACEIT Banner documentation](https://faceitbanner.vxh.pl/en/docs/): Documentation for the FACEIT banner generator for OBS: 22 solo layouts, 13 VERSUS layouts, size options, URL parameters and FAQ.
 - [How to add a FACEIT banner to OBS](https://faceitbanner.vxh.pl/en/docs/quick-start/): Step by step: generate a link in the FACEIT Banner generator and add it to OBS as a Browser Source. Takes about two minutes.
-- [Solo banners](https://faceitbanner.vxh.pl/en/docs/solo-banners/): Overview of 18 FACEIT 2026 solo banner layouts with OBS sizes: Prime, Showcase, Spotlight, Broadcast, Rail, Focus, Orbit, Halo, Pulse, Ticker, Slab, Gauge, Card, Reel, Ribbon, Tower, Dials, Marquee.
+- [Solo banners](https://faceitbanner.vxh.pl/en/docs/solo-banners/): Overview of 22 FACEIT 2026 solo banner layouts with OBS sizes: Prime, Showcase, Spotlight, Broadcast, Rail, Focus, Orbit, Halo, Pulse, Ticker, Slab, Gauge, Card, Reel, Ribbon, Tower, Dials, Marquee, Lineup, Sheet, Radar and bar, Live card.
 - [VERSUS banners](https://faceitbanner.vxh.pl/en/docs/versus-banners/): VERSUS mode: compare your ELO and statistics with a rival on stream. 13 layouts: Duel, Edge, Faceoff, Clash, Tug, Rivals, Tally, Overlay, Ladder, Matchup, Scoreboard, Cycle, Surge.
 - [Banner size and responsiveness](https://faceitbanner.vxh.pl/en/docs/banner-size/): AUTO, Recommended and Manual size modes, width and height limits for every banner and the recommended OBS source sizes.
 - [Widget URL parameters](https://faceitbanner.vxh.pl/en/docs/url-parameters/): Every FACEIT Banner widget URL parameter: names, allowed values and defaults. Handy for editing a link by hand.

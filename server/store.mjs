@@ -90,6 +90,30 @@ export async function withRedis(run) {
   }
 }
 
+/** Runs a Redis command and returns its value. `undefined` when Redis is down. */
+export async function redisCall(run) {
+  try {
+    const redis = await getRedis();
+    if (!redis) return undefined;
+    return await run(redis);
+  } catch (error) {
+    markRedisDown(error);
+    return undefined;
+  }
+}
+
+/** Runs a query on the login Postgres pool. `undefined` when Postgres is down. */
+export async function postgresCall(run) {
+  try {
+    const pool = await getPostgres();
+    if (!pool) return undefined;
+    return await run(pool);
+  } catch (error) {
+    markPostgresDown(error);
+    return undefined;
+  }
+}
+
 export async function saveSession(id, user) {
   const stored = await withRedis((redis) =>
     redis.set(`fb:session:${id}`, JSON.stringify(user), 'EX', SESSION_TTL_SECONDS)

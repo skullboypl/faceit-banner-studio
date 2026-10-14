@@ -60,6 +60,11 @@ import { pickLanguage } from '../translations/detect.ts';
 import { useCloudSync } from '../cloud/useCloudSync.ts';
 import { logout as apiLogout } from '../cloud/api.ts';
 import { useSession } from '../cloud/useSession.ts';
+import {
+  defaultBannerCatalog,
+  normalizeBannerCatalog,
+  type BannerCatalog,
+} from '../../shared/banner-catalog.mjs';
 import { getPlayerProfile } from '../../widget/src/utils/faceit_util.ts';
 
 export { LanguageContext, SettingsContext } from './contexts.ts';
@@ -157,6 +162,19 @@ export const Generator = () => {
   }, [language]);
 
   const session = useSession();
+  const [catalog, setCatalog] = useState<BannerCatalog>(defaultBannerCatalog);
+  useEffect(() => {
+    let cancel = false;
+    fetch('/api/catalog', { cache: 'no-store' })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => {
+        if (!cancel && body?.modes) setCatalog(normalizeBannerCatalog(body.modes));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancel = true;
+    };
+  }, []);
   useEffect(() => {
     document.documentElement.lang = language.id;
   }, [language]);
@@ -534,6 +552,8 @@ export const Generator = () => {
           opponent={opponent}
           setOpponent={setOpponent}
           accountNickname={session.user?.nickname}
+          admin={session.admin}
+          catalog={catalog}
         />
       ),
     },

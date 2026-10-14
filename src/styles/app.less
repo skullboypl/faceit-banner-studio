@@ -907,6 +907,7 @@ dialog {
   border-radius: 12px;
 
   .design-switch-option {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -959,6 +960,89 @@ dialog {
         font-size: 10px;
         color: #a19c99;
       }
+    }
+  }
+}
+
+.settings .design-switch.mode-switch {
+  grid-template-columns: 1fr 1fr;
+}
+
+.settings .mode-eye {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: #7dffa8;
+  .studio-icon { width: 16px; height: 16px; }
+  &.is-off { color: #6f6a66; }
+}
+
+.settings .design-switch.popup-phase {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+html.generator .settings .roster-editor {
+  .roster-add {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    input {
+      flex: 1 1 auto;
+      width: 1%;
+      min-width: 0;
+      margin: 0;
+    }
+    .roster-submit {
+      width: auto;
+      flex: 0 0 auto;
+      margin: 0;
+      min-height: 39px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: 8px;
+      background: #ff6b18;
+      color: #1a0d06;
+      font-weight: 750;
+      white-space: nowrap;
+      cursor: pointer;
+      &:hover { background: #ff7d33; }
+      &:disabled { opacity: 0.4; cursor: default; }
+    }
+  }
+  ul {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 4px 4px 10px;
+    border-radius: 999px;
+    background: #1d1d1d;
+    border: 1px solid #343434;
+    .roster-remove {
+      width: 22px;
+      height: 22px;
+      min-height: 22px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: #d9d2cc;
+      line-height: 1;
+      cursor: pointer;
+      &:hover { background: #2a2a2a; color: #fff; }
     }
   }
 }
@@ -1445,6 +1529,30 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
 }
 
 /* Link dialog: OBS source size and the full page preview */
+dialog.generated .split-links {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  p {
+    margin: 0;
+  }
+}
+dialog.generated .split-link {
+  padding: 12px 14px;
+  background: #151516;
+  border: 1px solid #2b2b2e;
+  border-radius: 8px;
+  input {
+    margin-top: 8px;
+  }
+  button {
+    width: auto;
+    margin-top: 8px;
+  }
+  .iframe-preview {
+    margin-top: 10px;
+  }
+}
 dialog.generated .obs-size,
 dialog.generated .obs-preview {
   margin: 14px 0 0;
@@ -2294,3 +2402,20 @@ a.donate-link:hover { background: #271a12; border-color: #ff6b18; }
 @import './admin.less';
 
 
+
+/* Popup mode controls in the generator */
+.popup-options .popup-slider { display: grid; gap: 6px; margin-top: 10px; }
+.popup-options .popup-slider input[type='range'] { width: 100%; }
+.popup-options .setting select { width: 100%; }
+.popup-options .design-switch.popup-phase { margin-top: 12px; }
+.popup-position {
+  display: grid; grid-template-columns: repeat(3, 34px); gap: 6px; margin-top: 8px;
+  padding: 8px; width: max-content; border: 1px solid @surface0; border-radius: 10px; background: fade(@base2, 60%);
+}
+.popup-position button {
+  width: 34px; height: 24px; min-height: 0; padding: 0; border-radius: 6px;
+  background: fade(@surface1, 60%); border: 1px solid transparent; cursor: pointer;
+}
+.popup-position button:hover { border-color: #ff6b18; }
+.popup-position button[aria-checked='true'] { background: #ff6b18; border-color: #ff8a45; }
+.popup-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 12px; margin-top: 6px; }

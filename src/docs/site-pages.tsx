@@ -527,7 +527,7 @@ export const sitePages: { path: string; element: ReactElement }[] = [
             <li><strong>Ustawienia generatora</strong> zapisują się wyłącznie w pamięci Twojej przeglądarki (localStorage). Nie trafiają na nasz serwer.</li>
             <li>
               <strong>Banery na żywo:</strong> widżet wysyła losowy identyfikator oraz publiczne dane z banera
-              (nick, ELO, level, kraj, styl). Serwer trzyma je w pamięci około 2 minut, żeby policzyć otwarte banery
+              (nick, ELO, level, kraj, styl). Serwer trzyma je około godziny, żeby policzyć otwarte banery
               i pokazać ranking ELO na stronie „Na żywo”. Sam identyfikator gracza z adresu banera wystarczy:
               serwer dopytuje wtedy publiczny nick i ELO w FACEIT. Bez nicku i bez identyfikatora widać tylko liczbę.
               Ranking nie pokazuje adresu IP. Adres służy tylko do limitu, ile banerów może zgłosić jedna sieć, i znika razem z wpisem.
@@ -592,7 +592,7 @@ export const sitePages: { path: string; element: ReactElement }[] = [
             <li><strong>Generator settings</strong> are kept only in your browser (localStorage), not on our server.</li>
             <li>
               <strong>Live banners:</strong> the widget sends a random identifier plus the public banner fields
-              (nickname, ELO, level, country, style). The server keeps them in memory for about 2 minutes to count open
+              (nickname, ELO, level, country, style). The server keeps them for about an hour to count open
               banners and to show the ELO ranking on the Live page. A player id from the banner address is enough:
               the server then asks FACEIT for the public nickname and ELO. Without a nickname and without a player id,
               only the count is visible. The ranking does not show the IP address. The address is used only to limit how many

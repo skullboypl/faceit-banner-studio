@@ -109,6 +109,7 @@ import '../styles/broadcast-presets.less';
 import '../styles/avatar-presets.less';
 import '../styles/ticker-preset.less';
 import '../styles/versus-preset.less';
+import '../styles/modes-preset.less';
 import '../styles/solo-extra.less';
 import '../styles/stats-extra.less';
 import '../styles/promo-2026.less';
@@ -118,6 +119,10 @@ import {
   isVersusStyle,
 } from '../styles/styles';
 import { BroadcastDeck, BroadcastSlide } from '../components/BroadcastDeck';
+import { TeamBanner } from './TeamBanner';
+import { SPLIT_PARTS, SplitBanner, type SplitCamera, type SplitRadar } from './SplitBanner';
+import { MatchPopup } from './MatchPopup';
+import { readPopupOptions } from './popup-options';
 import { SettingsContext } from '../../../src/generator/Generator.tsx';
 import { startPresenceHeartbeat } from '../../../src/utils/presence.ts';
 import { SettingKey, useSettings } from '../../../src/settings/manager.ts';
@@ -338,6 +343,12 @@ export const Widget = ({
   const isDeckPreset = resolvedStyle === 'showcase' || resolvedStyle === 'spotlight';
   const isTicker = resolvedStyle === 'ticker';
   const isVersus = isVersusStyle(resolvedStyle);
+  const isTeam = SETTINGS.get('widgetMode') === 'team';
+  const isSplit = SETTINGS.get('widgetMode') === 'split';
+  const splitPart = isSplit ? String(SETTINGS.get('splitPart') || '') : '';
+  const splitLimits =
+    splitPart === 'radar' || splitPart === 'camera' ? SPLIT_PARTS[splitPart] : undefined;
+  const isPopup = SETTINGS.get('widgetMode') === 'popup';
   const isSoloExtra = ['slab', 'gauge', 'card', 'reel', 'ribbon', 'tower', 'dials', 'marquee'].includes(resolvedStyle);
 
   /* Banner sizing: AUTO follows the OBS browser window, manual uses own values */
@@ -348,20 +359,28 @@ export const Widget = ({
   }));
   const [previewCardWidth, setPreviewCardWidth] = useState(Infinity);
   /* The preview has no OBS window, so AUTO there means the banner's own size. */
-  const previewLimits = preview ? getBannerSizeLimits(resolvedStyle) : undefined;
+  const previewLimits = preview ? splitLimits ?? getBannerSizeLimits(resolvedStyle) : undefined;
+  const splitPairPreview = Boolean(preview && isSplit && !splitPart);
   const isSizedBanner =
-    SETTINGS.get('bannerDesign') === '2026' && SETTINGS.get('style') !== 'custom';
+    SETTINGS.get('bannerDesign') === '2026' &&
+    SETTINGS.get('style') !== 'custom' &&
+    !splitPairPreview;
   const bannerSize = isSizedBanner
     ? resolveBannerSize({
         style: resolvedStyle,
-        widthMode: SETTINGS.get('bannerWidthMode') as BannerSizeMode,
+        widthMode: splitLimits ? 'recommended' : (SETTINGS.get('bannerWidthMode') as BannerSizeMode),
         width: SETTINGS.get('bannerWidth'),
-        heightMode: SETTINGS.get('bannerHeightMode') as BannerSizeMode,
-        recommendedWidth: getRecommendedWidth(
-          resolvedStyle,
-          Boolean(SETTINGS.get('showStatistics'))
-        ),
-        height: SETTINGS.get('bannerHeight'),
+        heightMode: splitLimits
+          ? 'manual'
+          : (SETTINGS.get('bannerHeightMode') as BannerSizeMode),
+        recommendedWidth: splitLimits
+          ? splitLimits.width
+          : getRecommendedWidth(
+              resolvedStyle,
+              Boolean(SETTINGS.get('showStatistics'))
+            ),
+        height: splitLimits ? splitLimits.height : SETTINGS.get('bannerHeight'),
+        limits: splitLimits,
         viewportWidth: previewLimits?.width ?? viewport.width,
         viewportHeight: previewLimits?.height ?? viewport.height,
       })
@@ -414,6 +433,28 @@ export const Widget = ({
       return tl(language, text, args);
     },
     [language]
+  );
+
+  const renderSplitPart = (part: 'radar' | 'camera') => (
+    <SplitBanner
+      part={part}
+      radar={(SETTINGS.get('splitRadar') as SplitRadar) || 'combat'}
+      camera={(SETTINGS.get('splitMini') as SplitCamera) || 'identity'}
+      username={username || previewUsername || 'Player'}
+      avatar={preview ? previewAvatar : avatar}
+      elo={elo}
+      level={level}
+      ranking={ranking}
+      wins={preview ? 18 : wins}
+      losses={preview ? 12 : losses}
+      winStreak={preview ? 4 : winStreak}
+      winRate={preview ? 56 : winsPercent}
+      kd={preview ? 1.22 : avgMatches ? kdRatio / avgMatches : 0}
+      adr={preview ? 82 : avgMatches ? adr / avgMatches : 0}
+      hs={preview ? 48 : avgMatches ? hsPercent / avgMatches : 0}
+      kills={preview ? 18 : avgMatches ? kills / avgMatches : 0}
+      kr={preview ? 72 : krRatio}
+    />
   );
 
   const [searchParams] = useSearchParams();
@@ -2139,6 +2180,7 @@ export const Widget = ({
         ref={wrapperRef}
         className={`wrapper banner-load-enter${compatibilityMode ? ' compatibility' : ''}${SETTINGS.get('bannerDesign') === '2026' && SETTINGS.get('style') !== 'custom' ? ' banner-design-2026' : ''}${bannerSize ? ' banner-fill' : ''}`}
         data-layout={resolvedStyle}
+        data-part={splitPart || undefined}
         data-density={
           resolvedStyle === 'broadcast'
             ? String(SETTINGS.get('broadcastDensity'))
@@ -2206,7 +2248,7 @@ export const Widget = ({
                   '--preset-accent-soft': `#${presetAccent}33`,
                 }
               : {}),
-            ...(isBroadcastPreset
+            ...(typeof SETTINGS.get(`${resolvedStyle}LevelGlowStrength` as SettingKey) === 'number'
               ? { '--level-glow': `${SETTINGS.get(`${resolvedStyle}LevelGlowStrength` as SettingKey)}px` }
               : {}),
           } as CSSProperties
@@ -2216,7 +2258,35 @@ export const Widget = ({
         <div
           className={`widget ${SETTINGS.get('useBannerAsBackground') || SETTINGS.get('useAvatarAsBackground') ? 'banner' : ''}`}
         >
-          {isSoloExtra ? (
+          {isPopup ? (
+            <MatchPopup
+              preview={preview}
+              playerId={String(SETTINGS.get('playerId') || '')}
+              username={username || previewUsername || 'Player'}
+              phase={(SETTINGS.get('popupPreview') as 'pre' | 'live' | 'post') || 'live'}
+              options={readPopupOptions((key) => SETTINGS.get(key as SettingKey))}
+              translate={translate}
+            />
+          ) : isTeam ? (
+            <TeamBanner
+              roster={String(SETTINGS.get('teamRoster') || '')}
+              layout={resolvedStyle === 'sheet' ? 'sheet' : 'lineup'}
+              translate={translate}
+            />
+          ) : isSplit && splitPairPreview ? (
+            <div className="split-sources">
+              <div className="split-source">
+                <span>1 · {translate('split.part.radar')}</span>
+                {renderSplitPart('radar')}
+              </div>
+              <div className="split-source">
+                <span>2 · {translate('split.part.camera')}</span>
+                {renderSplitPart('camera')}
+              </div>
+            </div>
+          ) : isSplit ? (
+            renderSplitPart(splitPart === 'camera' ? 'camera' : 'radar')
+          ) : isSoloExtra ? (
             renderSoloExtra()
           ) : isVersus ? (
             renderVersus()

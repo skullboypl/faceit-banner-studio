@@ -10,9 +10,12 @@ import {
 } from '../../../widget/src/utils/faceit_util.ts';
 import { ShowRanking } from '../../../widget/src/widget/Widget.tsx';
 import type { VersusPlayer } from '../../../widget/src/widget/Widget.tsx';
-import { isVersusStyle } from '../../../widget/src/styles/styles.ts';
+import { presetMode, BannerMode } from '../../../widget/src/styles/styles.ts';
+import { parseRoster } from '../../../shared/banner-modes.mjs';
+import { BANNER_MODES, type BannerCatalog } from '../../../shared/banner-catalog.mjs';
 import { UserIcon } from '../../assets/icons/tabler/UserIcon.tsx';
 import { StudioIcon } from '../../components/StudioIcon.tsx';
+import { PopupOptions } from '../../components/PopupOptions.tsx';
 import { LOGIN_URL } from '../../components/FaceitLoginButton.tsx';
 
 type Props = {
@@ -35,6 +38,9 @@ type Props = {
   setOpponent: Dispatch<VersusPlayer | undefined>;
   /** Nickname of the logged-in FACEIT account, when there is one. */
   accountNickname?: string;
+  /** Admins see every mode. Everyone else only sees modes the catalog marks visible. */
+  admin?: boolean;
+  catalog?: BannerCatalog;
 };
 
 export const MainTab = ({
@@ -56,13 +62,16 @@ export const MainTab = ({
   opponent,
   setOpponent,
   accountNickname,
+  admin = false,
+  catalog,
 }: Props) => {
   const tl = useContext(LanguageContext);
   const settings = useContext(SettingsContext);
   const [opponentStatus, setOpponentStatus] = useState<
     'idle' | 'loading' | 'found' | 'missing'
   >('idle');
-  const versusMode = settings?.get('widgetMode') === 'versus';
+  const mode = (settings?.get('widgetMode') as BannerMode) || 'solo';
+  const versusMode = mode === 'versus';
   const opponentName = String(settings?.get('opponentName') ?? '');
 
   /* VERSUS: look the opponent up as the name is typed */
@@ -100,16 +109,22 @@ export const MainTab = ({
     return () => clearTimeout(timeout);
   }, [opponentName, versusMode]);
 
-  const switchMode = (mode: 'solo' | 'versus') => {
+  const switchMode = (next: BannerMode) => {
     if (!settings) return;
-    settings.set('widgetMode', mode);
-    if (mode === 'versus') {
-      settings.set('bannerDesign', '2026');
-      if (!isVersusStyle(String(settings.get('style')))) {
-        settings.set('style', 'duel');
-      }
-    } else if (isVersusStyle(String(settings.get('style')))) {
-      settings.set('style', 'prime');
+    settings.set('widgetMode', next);
+    if (next !== 'solo') settings.set('bannerDesign', '2026');
+    if (presetMode(String(settings.get('style'))) !== next) {
+      const fallback: Record<BannerMode, string> = {
+        solo: 'prime',
+        versus: 'duel',
+        team: 'lineup',
+        split: 'splitset',
+        popup: 'livecard',
+      };
+      settings.set('style', fallback[next]);
+    }
+    if (next === 'team' && !parseRoster(String(settings.get('teamRoster') || '')).length && username.trim()) {
+      settings.set('teamRoster', username.trim());
     }
   };
 
@@ -162,22 +177,30 @@ export const MainTab = ({
     <>
       <div className={'settings design-version'}>
         <h3 className="card-heading">{tl('mode.title')}</h3>
-        <div className="design-switch" role="group" aria-label={tl('mode.title')}>
-          {(['solo', 'versus'] as const).map((mode) => (
+        <div className="design-switch mode-switch" role="group" aria-label={tl('mode.title')}>
+          {BANNER_MODES.filter((entry) => admin || catalog?.[entry] !== false).map((entry) => (
             <button
-              key={mode}
+              key={entry}
               type="button"
               className="design-switch-option"
-              aria-pressed={(versusMode ? 'versus' : 'solo') === mode}
-              onClick={() => switchMode(mode)}
+              aria-pressed={mode === entry}
+              onClick={() => switchMode(entry)}
             >
               <span className="design-switch-mark" aria-hidden="true">
-                {mode === 'solo' ? '1' : 'VS'}
+                {entry === 'solo' ? '1' : entry === 'versus' ? 'VS' : entry === 'team' ? '10' : entry === 'split' ? 'R+' : '●'}
               </span>
               <span className="design-switch-text">
-                <strong>{tl(`mode.${mode}`)}</strong>
-                <small>{tl(`mode.${mode}.tagline`)}</small>
+                <strong>{tl(`mode.${entry}`)}</strong>
+                <small>{tl(`mode.${entry}.tagline`)}</small>
               </span>
+              {admin && (
+                <span
+                  className={`mode-eye${catalog?.[entry] === false ? ' is-off' : ''}`}
+                  title={catalog?.[entry] === false ? 'Ukryte w konfiguratorze' : 'Widoczne dla wszystkich'}
+                >
+                  <StudioIcon name={catalog?.[entry] === false ? 'eye-off' : 'eye'} />
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -221,13 +244,51 @@ export const MainTab = ({
             </div>
           </>
         )}
+        {mode === 'team' && (
+          <TeamRosterEditor />
+        )}
+        {mode === 'split' && (
+          <>
+            <div className="setting">
+              <label htmlFor="split-radar">{tl('split.radar')}</label>
+              <select
+                id="split-radar"
+                value={String(settings.get('splitRadar'))}
+                onChange={(event) => settings.set('splitRadar', event.target.value)}
+              >
+                {(['combat', 'aim', 'results'] as const).map((option) => (
+                  <option key={option} value={option}>
+                    {tl(`split.radar.${option}`)}
+                  </option>
+                ))}
+              </select>
+              <p className="subtext">{tl('split.radar.help')}</p>
+            </div>
+            <div className="setting">
+              <label htmlFor="split-camera">{tl('split.camera')}</label>
+              <select
+                id="split-camera"
+                value={String(settings.get('splitMini'))}
+                onChange={(event) => settings.set('splitMini', event.target.value)}
+              >
+                {(['identity', 'elo', 'session', 'form'] as const).map((option) => (
+                  <option key={option} value={option}>
+                    {tl(`split.mini.${option}`)}
+                  </option>
+                ))}
+              </select>
+              <p className="subtext">{tl('split.camera.help')}</p>
+            </div>
+          </>
+        )}
         <div className="look-cta">
           <div className="look-cta-text">
-            <small>{tl(versusMode ? 'cta.versus_layout' : 'cta.layout')}</small>
+            <small>{tl(mode === 'solo' ? 'cta.layout' : `cta.${mode}_layout`)}</small>
             <strong>
               {tl(`style.${String(settings.get('style'))}`)}
             </strong>
           </div>
+      {mode === 'popup' && <PopupOptions />}
           <button
             type="button"
             className="look-cta-button"
@@ -458,3 +519,61 @@ export const MainTab = ({
     </>
   );
 };
+
+function TeamRosterEditor() {
+  const tl = useContext(LanguageContext);
+  const settings = useContext(SettingsContext);
+  const [draft, setDraft] = useState('');
+  if (!tl || !settings) return null;
+  const names = parseRoster(String(settings.get('teamRoster') || ''));
+  const add = () => {
+    const next = parseRoster([...names, draft].join(','));
+    settings.set('teamRoster', next.join(','));
+    setDraft('');
+  };
+  return (
+    <div className="setting roster-editor">
+      <p>{tl('team.roster')}</p>
+      <div className="roster-add">
+        <input
+          aria-label={tl('team.roster')}
+          placeholder={tl('team.placeholder')}
+          value={draft}
+          maxLength={30}
+          disabled={names.length >= 10}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              add();
+            }
+          }}
+        />
+        <button
+          className="roster-submit"
+          type="button"
+          onClick={add}
+          disabled={names.length >= 10 || !draft.trim()}
+        >
+          {tl('team.add')}
+        </button>
+      </div>
+      <ul>
+        {names.map((name) => (
+          <li key={name}>
+            <span>{name}</span>
+            <button
+              className="roster-remove"
+              type="button"
+              aria-label={tl('team.remove', [name])}
+              onClick={() => settings.set('teamRoster', names.filter((entry) => entry !== name).join(','))}
+            >
+              ×
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p className="subtext">{tl('team.help')}</p>
+    </div>
+  );
+}

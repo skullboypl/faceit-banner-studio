@@ -388,6 +388,41 @@ const DRAWINGS: Record<string, (d: Draw) => ReactNode> = {
       {d.r(0.9, 0.86, 0.04, 0.05, MID)}
     </>
   ),
+  lineup: (d) => (
+    <>
+      {d.r(0.08, 0.06, 0.28, 0.06, ACCENT, 0.4)}
+      {d.r(0.62, 0.06, 0.28, 0.06, LIGHT, 0.4)}
+      {Array.from({ length: 6 }, (_, index) => d.r(0.08, 0.18 + index * 0.13, 0.84, 0.1, index % 2 ? '#2a2420' : DIM, 0.25))}
+    </>
+  ),
+  sheet: (d) => (
+    <>
+      {Array.from({ length: 4 }, (_, index) => (
+        <g key={index}>
+          {d.r(0.05, 0.08 + index * 0.22, 0.42, 0.16, DIM, 0.25)}
+          {d.r(0.53, 0.08 + index * 0.22, 0.42, 0.16, DIM, 0.25)}
+        </g>
+      ))}
+    </>
+  ),
+  splitset: (d) => (
+    <>
+      {d.ring(0.24, 0.5, 0.36)}
+      {d.r(0.56, 0.28, 0.36, 0.18, LIGHT)}
+      {d.r(0.56, 0.54, 0.36, 0.12, ACCENT, 0.2)}
+      {d.r(0.56, 0.74, 0.24, 0.08, MID)}
+    </>
+  ),
+  livecard: (d) => (
+    <>
+      {d.r(0.14, 0.16, 0.72, 0.68, '#241910', 0.08)}
+      {d.r(0.22, 0.24, 0.16, 0.06, ACCENT, 0.4)}
+      {d.r(0.28, 0.38, 0.18, 0.16, LIGHT)}
+      {d.r(0.54, 0.38, 0.18, 0.16, LIGHT)}
+      {d.r(0.22, 0.62, 0.24, 0.05, DIM)}
+      {d.r(0.54, 0.62, 0.24, 0.05, DIM)}
+    </>
+  ),
 };
 
 /** Thumbnail of one banner layout, drawn at the banner's own proportions. */

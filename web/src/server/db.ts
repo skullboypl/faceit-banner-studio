@@ -99,6 +99,18 @@ export async function migrate(pool: pg.Pool): Promise<void> {
       );
       CREATE INDEX IF NOT EXISTS attachments_post ON attachments (post_id) WHERE deleted_at IS NULL;
       CREATE INDEX IF NOT EXISTS attachments_owner_created ON attachments (owner_guid, created_at DESC);
+      CREATE TABLE IF NOT EXISTS banner_catalog (
+        mode TEXT PRIMARY KEY,
+        visible BOOLEAN NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      INSERT INTO banner_catalog (mode, visible) VALUES
+        ('solo', TRUE),
+        ('versus', TRUE),
+        ('team', FALSE),
+        ('split', FALSE),
+        ('popup', FALSE)
+      ON CONFLICT (mode) DO NOTHING;
     `);
   } finally {
     await client.query('SELECT pg_advisory_unlock(727001)').catch(() => undefined);

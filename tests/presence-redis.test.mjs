@@ -17,7 +17,7 @@ function fakeRedis() {
     data,
     async set(key, value, mode, ttl) {
       assert.equal(mode, 'EX');
-      assert.equal(ttl, 15 * 60);
+      assert.equal(ttl, 60 * 60);
       data.set(key, value);
     },
     async del(key) {
@@ -68,7 +68,7 @@ test('a process restart keeps the live list from Redis and drops an expired bann
 
     redis.data.set(
       'fb:live:abcdefghijklmnop02',
-      JSON.stringify({ lastSeen: Date.now() - 16 * 60_000, firstSeen: Date.now() - 20 * 60_000, ip: '203.0.113.9', info: { nickname: 'Gone' } })
+      JSON.stringify({ lastSeen: Date.now() - 61 * 60_000, firstSeen: Date.now() - 70 * 60_000, ip: '203.0.113.9', info: { nickname: 'Gone' } })
     );
     resetPresenceForTests();
     const after = await (await fetch(`${base}/api/presence`, { headers: { 'x-forwarded-for': '203.0.113.83' } })).json();

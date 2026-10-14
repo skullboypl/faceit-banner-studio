@@ -1,6 +1,7 @@
 import { Language, tl } from '../translations/translations.ts';
 import { Dispatch, useEffect, useRef, useCallback, useState } from 'react';
 import { broadcastPresets } from '../../widget/src/styles/styles';
+import { SPLIT_PARTS } from '../../widget/src/widget/SplitBanner';
 
 type SourceSize = { width: number; height: number };
 
@@ -28,6 +29,20 @@ export const GeneratedWidgetModal = ({
   const [previewSize, setPreviewSize] = useState('recommended');
   const [copiedLabel, setCopiedLabel] = useState<string>();
   const query = url ? new URL(url).searchParams : undefined;
+  const isSplitLink = query?.get('mode') === 'split';
+  const splitLinks =
+    url && isSplitLink
+      ? (['radar', 'camera'] as const).map((part) => {
+          const next = new URL(url);
+          next.searchParams.set('part', part);
+          return {
+            part,
+            href: next.toString(),
+            width: SPLIT_PARTS[part].width,
+            height: SPLIT_PARTS[part].height,
+          };
+        })
+      : undefined;
   const preset =
     query?.get('design') === '2026'
       ? broadcastPresets.find((entry) => entry.id === query.get('style'))
@@ -76,7 +91,7 @@ export const GeneratedWidgetModal = ({
 
   /* The real widget knows its own size: read it from the preview once data has loaded */
   useEffect(() => {
-    if (!url || mode !== 'widget' || !preset) return;
+    if (!url || mode !== 'widget' || !preset || isSplitLink) return;
     let tries = 0;
     const timer = window.setInterval(() => {
       tries += 1;
@@ -97,7 +112,7 @@ export const GeneratedWidgetModal = ({
       if (tries > 14) window.clearInterval(timer);
     }, 700);
     return () => window.clearInterval(timer);
-  }, [url, mode, preset]);
+  }, [url, mode, preset, isSplitLink]);
 
   const close = useCallback(() => {
     setURL(undefined);
@@ -175,6 +190,51 @@ export const GeneratedWidgetModal = ({
           <p>{tl(language, 'generator.share.info.1')}</p>
         )}
 
+        {splitLinks ? (
+          <div className="split-links">
+            <p>{tl(language, 'split.links.help')}</p>
+            {splitLinks.map((entry, index) => (
+              <div className="split-link" key={entry.part}>
+                <div className="obs-size-head">
+                  <strong>{tl(language, `split.link.${entry.part}`)}</strong>
+                  <span className="obs-size-value">
+                    {entry.width} × {entry.height}
+                  </span>
+                </div>
+                <input
+                  ref={index === 0 ? urlInputRef : undefined}
+                  readOnly
+                  value={entry.href}
+                  onFocus={(e) => {
+                    e.currentTarget.select();
+                    e.currentTarget.setSelectionRange(0, e.currentTarget.value.length);
+                  }}
+                  onClick={(e) => e.currentTarget.select()}
+                />
+                <button
+                  type="button"
+                  onClick={() => writeClipboard(entry.href, entry.part)}
+                >
+                  {tl(language, 'modals.buttons.copy')}
+                  {copiedLabel === entry.part ? ' ✓' : ''}
+                </button>
+                <div className="iframe-preview obs-frame">
+                  <iframe
+                    title={tl(language, `split.link.${entry.part}`)}
+                    src={`${entry.href}&presence=off`}
+                    style={{
+                      border: 0,
+                      width: `${entry.width}px`,
+                      height: `${entry.height}px`,
+                      display: 'block',
+                      background: 'transparent',
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <input
           ref={urlInputRef}
           readOnly
@@ -191,8 +251,9 @@ export const GeneratedWidgetModal = ({
             if (e.key === 'Escape') close();
           }}
         />
+        )}
 
-        {mode === 'widget' && (
+        {mode === 'widget' && !splitLinks && (
           <div className="obs-size">
             <div className="obs-size-head">
               <strong>{tl(language, 'obs.size.title')}</strong>
@@ -246,7 +307,7 @@ export const GeneratedWidgetModal = ({
           </div>
         )}
 
-        {mode === 'widget' && url && (
+        {mode === 'widget' && url && !splitLinks && (
           <div className="obs-preview">
             <div className="obs-preview-head">
               <strong>{tl(language, 'obs.preview.title')}</strong>
@@ -297,7 +358,8 @@ export const GeneratedWidgetModal = ({
           </button>
           <button
             onClick={() => {
-              if (url) window.open(url, '_blank', 'noopener,noreferrer');
+              const target = splitLinks?.[0]?.href || url;
+              if (target) window.open(target, '_blank', 'noopener,noreferrer');
             }}
           >
             {tl(language, 'generator.generate.open_in_browser.button')}

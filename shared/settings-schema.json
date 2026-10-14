@@ -78,7 +78,203 @@
     "default": "solo",
     "options": [
       "solo",
-      "versus"
+      "versus",
+      "team",
+      "split",
+      "popup"
+    ]
+  },
+  "teamRoster": {
+    "type": "string",
+    "default": ""
+  },
+  "splitPart": {
+    "type": "string",
+    "default": "",
+    "options": [
+      "",
+      "radar",
+      "camera"
+    ]
+  },
+  "splitRadar": {
+    "type": "string",
+    "default": "combat",
+    "options": [
+      "combat",
+      "aim",
+      "results"
+    ]
+  },
+  "splitMini": {
+    "type": "string",
+    "default": "identity",
+    "options": [
+      "identity",
+      "elo",
+      "session",
+      "form"
+    ]
+  },
+  "popupPre": {
+    "type": "boolean",
+    "default": true
+  },
+  "popupLive": {
+    "type": "boolean",
+    "default": true
+  },
+  "popupPost": {
+    "type": "boolean",
+    "default": true
+  },
+  "popupSeconds": {
+    "type": "number",
+    "default": 12,
+    "min": 6,
+    "max": 40
+  },
+  "popupDelay": {
+    "type": "number",
+    "default": 0,
+    "min": 0,
+    "max": 30
+  },
+  "popupPosition": {
+    "type": "string",
+    "default": "center",
+    "options": [
+      "top-left",
+      "top",
+      "top-right",
+      "left",
+      "center",
+      "right",
+      "bottom-left",
+      "bottom",
+      "bottom-right"
+    ]
+  },
+  "popupScale": {
+    "type": "number",
+    "default": 100,
+    "min": 60,
+    "max": 160
+  },
+  "popupWidth": {
+    "type": "number",
+    "default": 760,
+    "min": 420,
+    "max": 1200
+  },
+  "popupRadius": {
+    "type": "number",
+    "default": 18,
+    "min": 0,
+    "max": 32
+  },
+  "popupOpacity": {
+    "type": "number",
+    "default": 94,
+    "min": 40,
+    "max": 100
+  },
+  "popupTheme": {
+    "type": "string",
+    "default": "dark",
+    "options": [
+      "dark",
+      "glass",
+      "light",
+      "clear"
+    ]
+  },
+  "popupAnimation": {
+    "type": "string",
+    "default": "rise",
+    "options": [
+      "rise",
+      "fade",
+      "slide",
+      "zoom",
+      "none"
+    ]
+  },
+  "popupCompact": {
+    "type": "boolean",
+    "default": false
+  },
+  "popupShowMap": {
+    "type": "boolean",
+    "default": true
+  },
+  "popupShowScore": {
+    "type": "boolean",
+    "default": true
+  },
+  "popupShowAvg": {
+    "type": "boolean",
+    "default": true
+  },
+  "popupShowTeams": {
+    "type": "boolean",
+    "default": true
+  },
+  "popupShowElo": {
+    "type": "boolean",
+    "default": true
+  },
+  "popupShowLevels": {
+    "type": "boolean",
+    "default": true
+  },
+  "popupHighlightMe": {
+    "type": "boolean",
+    "default": true
+  },
+  "popupSortElo": {
+    "type": "boolean",
+    "default": false
+  },
+  "popupShowMe": {
+    "type": "boolean",
+    "default": true
+  },
+  "popupMeKills": {
+    "type": "boolean",
+    "default": true
+  },
+  "popupMeDeaths": {
+    "type": "boolean",
+    "default": true
+  },
+  "popupMeAssists": {
+    "type": "boolean",
+    "default": false
+  },
+  "popupMeKd": {
+    "type": "boolean",
+    "default": true
+  },
+  "popupMeAdr": {
+    "type": "boolean",
+    "default": true
+  },
+  "popupMeHs": {
+    "type": "boolean",
+    "default": false
+  },
+  "popupMeMvps": {
+    "type": "boolean",
+    "default": false
+  },
+  "popupPreview": {
+    "type": "string",
+    "default": "live",
+    "options": [
+      "pre",
+      "live",
+      "post"
     ]
   },
   "opponentId": {
@@ -134,6 +330,26 @@
     "regex": "^[0-9a-fA-F]{3,8}$"
   },
   "cycleAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "lineupAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "sheetAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "splitsetAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "livecardAccent": {
     "type": "string",
     "default": "ff5900",
     "regex": "^[0-9a-fA-F]{3,8}$"
@@ -1169,6 +1385,10 @@
       "scoreboard",
       "cycle",
       "surge",
+      "lineup",
+      "sheet",
+      "splitset",
+      "livecard",
       "normal",
       "animated",
       "compact",

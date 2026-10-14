@@ -3,8 +3,8 @@ import { createRateLimiter } from '../shared/rate-limit.mjs';
 import { fillFromPlayerId, playerIdFromReferer, publicRanking, sanitizeInfo } from './live.mjs';
 import { withRedis } from './store.mjs';
 
-/** Current widgets ping every minute. Older banners and OBS browser sources can ping only every few minutes, so a two-minute window dropped them. */
-export const ACTIVE_WINDOW_MS = 15 * 60_000;
+/** Current widgets ping every minute. Older banners refresh only after a win and never send a heartbeat, so the live pool keeps a banner for an hour after its last contact. */
+export const ACTIVE_WINDOW_MS = 60 * 60_000;
 const MAX_SESSIONS = 100_000;
 /** More distinct banners than this from one address is not a streamer, it is somebody inflating the counter. */
 const MAX_BANNERS_PER_IP = 30;

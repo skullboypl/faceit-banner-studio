@@ -35,6 +35,10 @@ export const styles: {
   { id: 'scoreboard', modernOnly: true },
   { id: 'cycle', modernOnly: true },
   { id: 'surge', modernOnly: true },
+  { id: 'lineup', modernOnly: true },
+  { id: 'sheet', modernOnly: true },
+  { id: 'splitset', modernOnly: true },
+  { id: 'livecard', modernOnly: true },
   // dotychczasowe
   { id: 'normal' },
   { id: 'animated' },
@@ -81,6 +85,8 @@ export const broadcastPresets: readonly {
   square?: boolean;
   /** Two-player banner, offered only in VERSUS mode. */
   versus?: boolean;
+  /** Roster, split set, or match popup. Solo layouts leave this empty. */
+  group?: 'team' | 'split' | 'popup';
 }[] = [
   { id: 'prime', width: 540, height: 250 },
   { id: 'showcase', width: 500, height: 180, animated: true },
@@ -113,10 +119,23 @@ export const broadcastPresets: readonly {
   { id: 'scoreboard', width: 760, height: 124, versus: true },
   { id: 'cycle', width: 520, height: 150, versus: true, animated: true },
   { id: 'surge', width: 480, height: 130, versus: true, animated: true },
+  { id: 'lineup', width: 440, height: 460, group: 'team' },
+  { id: 'sheet', width: 680, height: 300, group: 'team' },
+  { id: 'splitset', width: 300, height: 300, square: true, group: 'split' },
+  { id: 'livecard', width: 640, height: 520, group: 'popup' },
 ];
+
+export type BannerMode = 'solo' | 'versus' | 'team' | 'split' | 'popup';
 
 export const isVersusStyle = (style: string) =>
   broadcastPresets.some((preset) => preset.id === style && preset.versus);
+
+export function presetMode(style: string): BannerMode {
+  const preset = broadcastPresets.find((entry) => entry.id === style);
+  if (!preset) return 'solo';
+  if (preset.versus) return 'versus';
+  return preset.group ?? 'solo';
+}
 
 export function resolveBannerStyle(style: string, design: string) {
   const modern = styles.some((entry) => entry.id === style && entry.modernOnly);

@@ -4,19 +4,25 @@ import { broadcastPresets } from '../../widget/src/styles/styles';
 import { PresetThumb } from './PresetThumb';
 
 /** Layout cards; `versus` picks the two-player layouts instead of the solo ones. */
-export function PresetCards({ versus }: { versus: boolean }) {
+export function PresetCards({ mode }: { mode: string }) {
   const settings = useContext(SettingsContext);
   const tl = useContext(LanguageContext);
   if (!settings || !tl) return null;
+  const label =
+    mode === 'versus'
+      ? 'versus.layouts'
+      : mode === 'team'
+        ? 'team.layouts'
+        : mode === 'split'
+          ? 'split.layouts'
+          : mode === 'popup'
+            ? 'popup.layouts'
+            : 'studio.presets';
 
   return (
-    <div
-      className="broadcast-presets"
-      role="group"
-      aria-label={tl(versus ? 'versus.layouts' : 'studio.presets')}
-    >
+    <div className="broadcast-presets" role="group" aria-label={tl(label)}>
       {broadcastPresets
-        .filter((preset) => Boolean(preset.versus) === versus)
+        .filter((preset) => (preset.group ?? (preset.versus ? 'versus' : 'solo')) === mode)
         .map((preset) => (
           <button
             key={preset.id}

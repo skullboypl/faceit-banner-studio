@@ -13,6 +13,7 @@ import {
   ADMIN_TABS,
   type AdminTab as Tab,
 } from './AdminNavigation';
+import { AdminCatalog } from './AdminCatalog';
 
 type State =
   | { status: 'loading' | 'guest' | 'error' }
@@ -216,6 +217,7 @@ export const AdminPage = () => {
               {tab === 'queue' && <AdminQueue user={state.user} />}
               {tab === 'system' && (
                 <>
+                  <AdminCatalog />
                   <SystemStatus overview={state.overview} />
                   <section className="admin-card admin-preferences">
                     <div>

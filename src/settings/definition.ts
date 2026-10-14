@@ -1,6 +1,7 @@
 import { colorSchemes, styles } from '../../widget/src/styles/styles';
 import { languages } from '../translations/translations';
 import { SettingDefinition } from './manager';
+import { POPUP_ANIMATIONS, POPUP_POSITIONS, POPUP_RANGES, POPUP_THEMES } from '../../widget/src/widget/popup-options';
 
 const HEX_REGEXP = /^[0-9a-fA-F]{3,8}$/;
 const BANNER_FONT_OPTIONS = [
@@ -138,8 +139,228 @@ export const SETTINGS_DEFINITIONS = {
   widgetMode: {
     type: 'string',
     defaultValue: 'solo',
-    options: ['solo', 'versus'],
+    options: ['solo', 'versus', 'team', 'split', 'popup'],
     query: ['mode'],
+  },
+  teamRoster: {
+    type: 'string',
+    defaultValue: '',
+    query: ['roster'],
+  },
+  splitPart: {
+    type: 'string',
+    defaultValue: '',
+    options: ['', 'radar', 'camera'],
+    query: ['part'],
+    requirements: [{ setting: 'widgetMode', value: 'split' }],
+  },
+  splitRadar: {
+    type: 'string',
+    defaultValue: 'combat',
+    options: ['combat', 'aim', 'results'],
+    query: ['split_radar'],
+    requirements: [{ setting: 'widgetMode', value: 'split' }],
+  },
+  splitMini: {
+    type: 'string',
+    defaultValue: 'identity',
+    options: ['identity', 'elo', 'session', 'form'],
+    query: ['split_mini'],
+    requirements: [{ setting: 'widgetMode', value: 'split' }],
+  },
+  popupPre: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['popup_pre'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupLive: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['popup_live'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupPost: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['popup_post'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupSeconds: {
+    type: 'number',
+    defaultValue: 12,
+    min: POPUP_RANGES.seconds[0],
+    max: POPUP_RANGES.seconds[1],
+    query: ['popup_seconds'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupDelay: {
+    type: 'number',
+    defaultValue: 0,
+    min: POPUP_RANGES.delay[0],
+    max: POPUP_RANGES.delay[1],
+    query: ['popup_delay'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupPosition: {
+    type: 'string',
+    defaultValue: 'center',
+    options: [...POPUP_POSITIONS],
+    query: ['popup_position'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupScale: {
+    type: 'number',
+    defaultValue: 100,
+    min: POPUP_RANGES.scale[0],
+    max: POPUP_RANGES.scale[1],
+    query: ['popup_scale'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupWidth: {
+    type: 'number',
+    defaultValue: 760,
+    min: POPUP_RANGES.width[0],
+    max: POPUP_RANGES.width[1],
+    query: ['popup_width'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupRadius: {
+    type: 'number',
+    defaultValue: 18,
+    min: POPUP_RANGES.radius[0],
+    max: POPUP_RANGES.radius[1],
+    query: ['popup_radius'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupOpacity: {
+    type: 'number',
+    defaultValue: 94,
+    min: POPUP_RANGES.opacity[0],
+    max: POPUP_RANGES.opacity[1],
+    query: ['popup_opacity'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupTheme: {
+    type: 'string',
+    defaultValue: 'dark',
+    options: [...POPUP_THEMES],
+    query: ['popup_theme'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupAnimation: {
+    type: 'string',
+    defaultValue: 'rise',
+    options: [...POPUP_ANIMATIONS],
+    query: ['popup_animation'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupCompact: {
+    type: 'boolean',
+    defaultValue: false,
+    query: ['popup_compact'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupShowMap: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['popup_map'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupShowScore: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['popup_score'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupShowAvg: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['popup_avg'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupShowTeams: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['popup_teams'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupShowElo: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['popup_elo'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupShowLevels: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['popup_levels'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupHighlightMe: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['popup_highlight'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupSortElo: {
+    type: 'boolean',
+    defaultValue: false,
+    query: ['popup_sort_elo'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupShowMe: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['popup_me'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupMeKills: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['popup_me_kills'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupMeDeaths: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['popup_me_deaths'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupMeAssists: {
+    type: 'boolean',
+    defaultValue: false,
+    query: ['popup_me_assists'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupMeKd: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['popup_me_kd'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupMeAdr: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['popup_me_adr'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupMeHs: {
+    type: 'boolean',
+    defaultValue: false,
+    query: ['popup_me_hs'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupMeMvps: {
+    type: 'boolean',
+    defaultValue: false,
+    query: ['popup_me_mvps'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupPreview: {
+    type: 'string',
+    defaultValue: 'live',
+    options: ['pre', 'live', 'post'],
   },
   opponentId: {
     type: 'string',
@@ -217,6 +438,34 @@ export const SETTINGS_DEFINITIONS = {
     "defaultValue": "ff5900",
     "query": ["cycle_accent"],
     "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "cycle" }],
+    "regex": HEX_REGEXP
+  },
+  "lineupAccent": {
+    "type": "string",
+    "defaultValue": "ff5900",
+    "query": ["lineup_accent"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "lineup" }],
+    "regex": HEX_REGEXP
+  },
+  "sheetAccent": {
+    "type": "string",
+    "defaultValue": "ff5900",
+    "query": ["sheet_accent"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "sheet" }],
+    "regex": HEX_REGEXP
+  },
+  "splitsetAccent": {
+    "type": "string",
+    "defaultValue": "ff5900",
+    "query": ["splitset_accent"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "splitset" }],
+    "regex": HEX_REGEXP
+  },
+  "livecardAccent": {
+    "type": "string",
+    "defaultValue": "ff5900",
+    "query": ["livecard_accent"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "livecard" }],
     "regex": HEX_REGEXP
   },
   "surgeAccent": {

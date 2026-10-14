@@ -1,5 +1,4 @@
 import {
-  broadcastPresets,
   colorSchemes,
   resolveBannerStyle,
   styles,
@@ -11,6 +10,7 @@ import { InfoBox } from '../../components/InfoBox.tsx';
 import { LanguageContext, SettingsContext } from '../Generator.tsx';
 import { ShowRanking } from '../../../widget/src/widget/Widget.tsx';
 import { PresetSettings } from '../../components/PresetSettings';
+import { appearanceFor } from '../appearance';
 import { PresetCards } from '../../components/PresetCards';
 import {
   BannerRadiusControl,
@@ -153,6 +153,8 @@ export const StyleTab = ({
     });
   };
 
+  const ui = appearanceFor(String(settings.get('widgetMode') || 'solo'));
+
   return (
     <>
       <div className={'settings design-version'}>
@@ -168,9 +170,9 @@ export const StyleTab = ({
               type="button"
               className="design-switch-option"
               aria-pressed={settings.get('bannerDesign') === design}
-              disabled={design === 'legacy' && settings.get('widgetMode') === 'versus'}
+              disabled={design === 'legacy' && settings.get('widgetMode') !== 'solo'}
               title={
-                design === 'legacy' && settings.get('widgetMode') === 'versus'
+                design === 'legacy' && settings.get('widgetMode') !== 'solo'
                   ? tl('generator.theme.design.legacy_locked')
                   : undefined
               }
@@ -193,7 +195,7 @@ export const StyleTab = ({
           ))}
         </div>
         <p className="subtext">
-          {settings.get('widgetMode') === 'versus'
+          {settings.get('widgetMode') !== 'solo'
             ? tl('generator.theme.design.legacy_locked')
             : tl('generator.theme.design.help')}
         </p>
@@ -201,13 +203,13 @@ export const StyleTab = ({
       <div className={'settings'}>
         <h3 className="card-heading">{tl('studio.appearance')}</h3>
         {settings.get('bannerDesign') === '2026' && (
-          <PresetCards versus={settings.get('widgetMode') === 'versus'} />
+          <PresetCards mode={String(settings.get('widgetMode') || 'solo')} />
         )}
         <BannerSizeControls />
-        <BannerRadiusControl />
+        {ui.radius && <BannerRadiusControl />}
         <div className={'setting'}>
           <div className={'flex style-mode-row'}>
-            <div>
+            {ui.scheme && <div>
               <p>{tl('generator.theme.color_scheme')}</p>
               <select
                 aria-label={tl('generator.theme.color_scheme')}
@@ -222,7 +224,7 @@ export const StyleTab = ({
                   );
                 })}
               </select>
-            </div>
+            </div>}
             {settings.get('bannerDesign') !== '2026' && <div>
               <p>{tl('generator.theme.style')}</p>
               <select
@@ -427,6 +429,7 @@ export const StyleTab = ({
           </div>
         )}
 
+        {ui.fontSizes && (<>
         <Checkbox
           text={tl('generator.theme.banner_font_size.adjust')}
           setting={'adjustBannerFontSize'}
@@ -1021,9 +1024,11 @@ export const StyleTab = ({
             )}
           </>
         )}
+        </>)}
       </div>
 
-      <div className={'settings'}>
+      {(ui.iconScale || ui.surface) && <div className={'settings'}>
+        {ui.iconScale && (<>
         <Checkbox
           text={tl('generator.theme.level_icon_scale.adjust')}
           setting={'adjustLevelIconScale'}
@@ -1082,7 +1087,9 @@ export const StyleTab = ({
             )}
           </>
         )}
+        </>)}
 
+        {ui.surface && (<>
         {/* Banner background settings */}
 
         <Checkbox
@@ -1252,11 +1259,12 @@ export const StyleTab = ({
             )}
           </>
         )}
-      </div>
+        </>)}
+      </div>}
 
       {/* Custom color scheme settings */}
 
-      {settings.get('colorScheme') === 'custom' && (
+      {settings.get('colorScheme') === 'custom' && ui.scheme && (
         <div className={'settings'}>
           <div className={'setting'}>
             <p style={{ fontWeight: 700, marginBottom: '8px' }}>
@@ -1419,6 +1427,7 @@ export const StyleTab = ({
       {/* Background opacity settings */}
       <div className={'settings'}>
         <div className={'setting'}>
+          {ui.surface && (<>
           <p>{tl('generator.theme.adjust_opacity')}</p>
 
           <div className={'flex'} style={{ alignItems: 'center' }}>
@@ -1443,6 +1452,7 @@ export const StyleTab = ({
           <small style={{ fontStyle: 'italic' }}>
             {tl('generator.theme.adjust_opacity.requirements')}
           </small>
+          </>)}
 
           <div className={'setting'} style={{ marginTop: '14px' }}>
             <p>{tl('generator.theme.custom_inline_css.title')}</p>

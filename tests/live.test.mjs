@@ -6,8 +6,8 @@ import { ACTIVE_WINDOW_MS, createPresenceMiddleware } from '../server/presence.m
 
 process.env.LIVE_BOARD_TTL_MS = '0';
 
-test('a banner that pings only every few minutes stays on the live list', () => {
-  assert.equal(ACTIVE_WINDOW_MS, 15 * 60_000);
+test('a banner that only reports after a win stays on the live list for an hour', () => {
+  assert.equal(ACTIVE_WINDOW_MS, 60 * 60_000);
 });
 
 test('sanitizeInfo keeps a valid banner and drops a bad elo, level and player id', () => {

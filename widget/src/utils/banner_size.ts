@@ -29,6 +29,8 @@ export type BannerSizeInput = {
   viewportHeight: number;
   /** Zalecana szerokość dla aktualnie widocznych elementów (patrz `getRecommendedWidth`). */
   recommendedWidth?: number;
+  /** Własne limity, gdy jeden styl ma kilka kształtów (radar i pasek split). */
+  limits?: BannerSizeLimits;
 };
 
 export type BannerSize = {
@@ -79,7 +81,7 @@ const resolveAxis = (
  * Skala typografii rośnie tylko częściowo, żeby większe pole dostawało więcej miejsca, a nie samo powiększenie.
  */
 export function resolveBannerSize(input: BannerSizeInput): BannerSize | undefined {
-  const limits = getBannerSizeLimits(input.style);
+  const limits = input.limits ?? getBannerSizeLimits(input.style);
   if (!limits) return undefined;
 
   if (limits.square) {

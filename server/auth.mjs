@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { clientIp as resolveClientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
 import { getPresenceCount, hydratePresence } from './presence.mjs';
+import { readBannerCatalog, writeBannerCatalog } from './catalog.mjs';
 import {
   consumeState,
   deleteSession,
@@ -178,16 +179,49 @@ async function handleCallback(req, res, url) {
 const LOCKOUT = { strikes: 5, windowMs: 5 * 60_000, blockMs: 15 * 60_000 };
 
 /** PUBLIC_URL may list several origins, comma separated. */
+function readJson(req) {
+  return new Promise((resolve) => {
+    const chunks = [];
+    let size = 0;
+    req.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > 8192) {
+        resolve(null);
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
+        resolve(parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null);
+      } catch {
+        resolve(null);
+      }
+    });
+    req.on('error', () => resolve(null));
+  });
+}
+
 function originAllowed(req) {
   const origin = req.headers.origin;
   if (!origin) return false;
   try {
-    const wanted = new URL(origin).origin;
+    const wanted = new URL(origin);
+    if (
+      process.env.DEV_ADMIN === '1' &&
+      process.env.NODE_ENV !== 'production' &&
+      (wanted.hostname === '127.0.0.1' || wanted.hostname === 'localhost' || wanted.hostname === '::1')
+    ) {
+      return true;
+    }
+    const wantedOrigin = wanted.origin;
     return String(process.env.PUBLIC_URL ?? '')
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean)
-      .some((value) => new URL(value).origin === wanted);
+      .some((value) => new URL(value).origin === wantedOrigin);
   } catch {
     return false;
   }
@@ -199,13 +233,19 @@ export function createAuthMiddleware() {
     callback: createRateLimiter({ perMinute: 20, blockAfter: LOCKOUT }),
     me: createRateLimiter({ perMinute: 120, blockAfter: LOCKOUT }),
     logout: createRateLimiter({ perMinute: 20, blockAfter: LOCKOUT }),
+    catalog: createRateLimiter({ perMinute: 120, blockAfter: LOCKOUT }),
     admin: createRateLimiter({ perMinute: 60, blockAfter: LOCKOUT }),
   };
 
   return async (req, res, next) => {
     const url = new URL(req.url || '/', 'http://localhost');
     const { pathname } = url;
-    if (!pathname.startsWith('/api/auth/') && pathname !== '/api/admin/overview') {
+    if (
+      !pathname.startsWith('/api/auth/') &&
+      pathname !== '/api/admin/overview' &&
+      pathname !== '/api/catalog' &&
+      pathname !== '/api/admin/catalog'
+    ) {
       return next();
     }
 
@@ -216,8 +256,10 @@ export function createAuthMiddleware() {
         ? 'callback'
         : pathname.endsWith('/me')
           ? 'me'
-          : pathname.endsWith('/logout')
-            ? 'logout'
+        : pathname.endsWith('/logout')
+          ? 'logout'
+          : pathname === '/api/catalog'
+            ? 'catalog'
             : 'admin';
     if (!limits[bucket](ip)) {
       res.setHeader('Retry-After', '60');
@@ -241,6 +283,22 @@ export function createAuthMiddleware() {
         if (id) await deleteSession(id);
         setCookie(res, req, '', 0);
         return sendJson(res, 200, { ok: true });
+      }
+      if (pathname === '/api/catalog' && req.method === 'GET') {
+        return sendJson(res, 200, { modes: await readBannerCatalog() });
+      }
+      if (pathname === '/api/admin/catalog' && (req.method === 'GET' || req.method === 'PUT')) {
+        const user = await currentUser(req);
+        if (!user) return sendJson(res, 401, { error: 'unauthorized' });
+        if (!isAdmin(user)) return sendJson(res, 403, { error: 'forbidden' });
+        if (req.method === 'GET') return sendJson(res, 200, { modes: await readBannerCatalog() });
+        if (!originAllowed(req)) return sendJson(res, 403, { error: 'bad_origin' });
+        const body = await readJson(req);
+        const patch = body?.modes;
+        if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
+          return sendJson(res, 400, { error: 'invalid_body' });
+        }
+        return sendJson(res, 200, { modes: await writeBannerCatalog(patch) });
       }
       if (pathname === '/api/admin/overview' && req.method === 'GET') {
         const user = await currentUser(req);

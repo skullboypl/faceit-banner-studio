@@ -324,3 +324,60 @@ export function getPlayerProfile(
     });
   });
 }
+
+const PLAYER_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export type RosterCard = {
+  username: string;
+  avatar?: string;
+  elo: number;
+  level: number;
+  kd: number;
+  winRate: number;
+  missing?: boolean;
+};
+
+/** Profile plus lifetime K/D and win rate, for one row of the roster. */
+export async function lookupRosterCard(name: string): Promise<RosterCard> {
+  const profile = await lookupPlayer(name);
+  const game = profile?.games.cs2;
+  if (!profile || !game) {
+    return { username: name.trim(), elo: 0, level: 1, kd: 0, winRate: 0, missing: true };
+  }
+  let kd = 0;
+  let winRate = 0;
+  try {
+    const response = await fetch(
+      `https://open.faceit.com/data/v4/players/${profile.player_id}/stats/cs2`,
+      { headers: HEADERS }
+    );
+    if (response.ok) {
+      const body = (await response.json()) as { lifetime?: Record<string, string | number> };
+      kd = Number(body.lifetime?.['Average K/D Ratio'] || 0);
+      winRate = Number(body.lifetime?.['Win Rate %'] || 0);
+    }
+  } catch {
+    /* the row still shows ELO and level */
+  }
+  return {
+    username: profile.nickname,
+    avatar: profile.avatar,
+    elo: game.faceit_elo,
+    level: game.skill_level,
+    kd,
+    winRate,
+  };
+}
+
+/** Profile by nickname, or by id when the value is a FACEIT player id. */
+export function lookupPlayer(name: string): Promise<V4PlayersResponse | undefined> {
+  const trimmed = name.trim();
+  if (!trimmed) return Promise.resolve(undefined);
+  const url = PLAYER_ID.test(trimmed)
+    ? `https://open.faceit.com/data/v4/players/${trimmed}`
+    : `https://open.faceit.com/data/v4/players?nickname=${encodeURIComponent(trimmed)}`;
+  return fetch(url, { headers: HEADERS }).then(async (response) => {
+    if (!response.ok) return undefined;
+    return (await response.json()) as V4PlayersResponse;
+  });
+}
