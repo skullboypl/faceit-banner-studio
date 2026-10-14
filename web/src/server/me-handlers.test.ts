@@ -139,6 +139,28 @@ describe('workspace', () => {
     expect(response.status).toBe(413);
   });
 
+  test('413 and an early stop for a chunked body with no Content-Length', async () => {
+    const cookie = await login(alice);
+    let sent = 0;
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        controller.enqueue(new Uint8Array(8192).fill(97));
+        sent += 8192;
+        if (sent >= 50 * 1024 * 1024) controller.close();
+      },
+    });
+    const request = new Request('http://localhost:3100/api/me/workspace', {
+      method: 'PUT',
+      headers: { cookie, origin: ORIGIN, 'content-type': 'application/json' },
+      body: stream,
+      // @ts-expect-error Node needs duplex for streamed request bodies
+      duplex: 'half',
+    });
+    const response = await handlers.putWorkspace(request);
+    expect(response.status).toBe(413);
+    expect(sent).toBeLessThan(1024 * 1024);
+  });
+
   test('429 on a second write within one second with the default limits', async () => {
     const { createMeHandlers } = await import('./me-handlers');
     const limited = createMeHandlers();

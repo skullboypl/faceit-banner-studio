@@ -46,13 +46,36 @@ function originAllowed(request: Request): boolean {
   }
 }
 
-async function readBody(request: Request): Promise<Record<string, unknown> | Fail> {
-  const declared = Number(request.headers.get('content-length'));
-  if (declared > MAX_BODY_BYTES) return fail(413, 'payload_too_large', 'Request body is too large.');
-  const text = await request.text();
-  if (new TextEncoder().encode(text).length > MAX_BODY_BYTES) {
-    return fail(413, 'payload_too_large', 'Request body is too large.');
+/** Reads at most MAX_BODY_BYTES; stops (and cancels the upload) as soon as the limit is crossed. */
+async function readLimited(request: Request): Promise<string | null> {
+  if (!request.body) return '';
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_BODY_BYTES) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    chunks.push(value);
   }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+async function readBody(request: Request): Promise<Record<string, unknown> | Fail> {
+  const tooLarge = () => fail(413, 'payload_too_large', 'Request body is too large.');
+  if (Number(request.headers.get('content-length')) > MAX_BODY_BYTES) return tooLarge();
+  const text = await readLimited(request);
+  if (text === null) return tooLarge();
   try {
     const parsed = JSON.parse(text);
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw new Error('not an object');
