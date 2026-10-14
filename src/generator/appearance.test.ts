@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { appearanceFor } from './appearance';
+import { appearanceFor, settingsFor } from './appearance';
 
 describe('appearanceFor: which Look controls apply to a mode', () => {
   test('solo and versus banners use every control', () => {
@@ -37,5 +37,30 @@ describe('appearanceFor: which Look controls apply to a mode', () => {
 
   test('an unknown mode behaves like solo', () => {
     expect(appearanceFor('whatever')).toEqual(appearanceFor('solo'));
+  });
+});
+
+describe('settingsFor: which Settings-tab cards and options apply to a mode', () => {
+  test('solo and versus show the widget elements, auto width and session saving', () => {
+    for (const mode of ['solo', 'versus']) {
+      expect(settingsFor(mode)).toEqual({ elements: true, autoWidth: true, session: true });
+    }
+  });
+
+  test('popup, team and split render their own markup, so the solo element toggles and session saving are hidden', () => {
+    for (const mode of ['popup', 'team', 'split']) {
+      const ui = settingsFor(mode);
+      expect(ui.elements, mode).toBe(false);
+      expect(ui.session, mode).toBe(false);
+    }
+  });
+
+  test('auto width is meaningless for the full-frame popup only', () => {
+    expect(settingsFor('popup').autoWidth).toBe(false);
+    expect(settingsFor('team').autoWidth).toBe(true);
+  });
+
+  test('an unknown mode behaves like solo', () => {
+    expect(settingsFor('whatever')).toEqual(settingsFor('solo'));
   });
 });

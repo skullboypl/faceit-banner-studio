@@ -16,6 +16,7 @@ import { BANNER_MODES, type BannerCatalog } from '../../../shared/banner-catalog
 import { UserIcon } from '../../assets/icons/tabler/UserIcon.tsx';
 import { StudioIcon } from '../../components/StudioIcon.tsx';
 import { PopupOptions } from '../../components/PopupOptions.tsx';
+import { settingsFor } from '../appearance';
 import { LOGIN_URL } from '../../components/FaceitLoginButton.tsx';
 
 type Props = {
@@ -173,6 +174,8 @@ export const MainTab = ({
     return null;
   }
 
+  const ui = settingsFor(mode);
+
   return (
     <>
       <div className={'settings design-version'}>
@@ -298,7 +301,6 @@ export const MainTab = ({
           </button>
         </div>
       </div>
-      {mode === 'popup' && <PopupOptions />}
       <div className={'settings'}>
         <h3 className="card-heading">
           <UserIcon />
@@ -411,6 +413,8 @@ export const MainTab = ({
           </div>
         </div>
       </div>
+      {mode === 'popup' && <PopupOptions />}
+      {ui.elements && (
       <div className={'settings'}>
         <h3 className="card-heading">
           <StudioIcon name="layers" />
@@ -490,26 +494,31 @@ export const MainTab = ({
           </button>
         </div>
       </div>
+      )}
       <div className={'settings'}>
         <h3 className="card-heading">
           <StudioIcon name="settings" />
           {tl('studio.behavior')}
         </h3>
         <div className={'setting'}>
-          <Checkbox
-            text={tl('generator.settings.auto_width')}
-            setting={'autoWidth'}
-          />
+          {ui.autoWidth && (
+            <Checkbox
+              text={tl('generator.settings.auto_width')}
+              setting={'autoWidth'}
+            />
+          )}
           <Checkbox
             text={tl('generator.settings.update_intro')}
             setting={'showUpdateIntro'}
             helpTitle={tl('generator.settings.update_intro.help')}
           />
-          <Checkbox
-            text={tl('generator.settings.save_session')}
-            setting={'saveSession'}
-            helpTitle={tl('generator.settings.save_session.help')}
-          />
+          {ui.session && (
+            <Checkbox
+              text={tl('generator.settings.save_session')}
+              setting={'saveSession'}
+              helpTitle={tl('generator.settings.save_session.help')}
+            />
+          )}
         </div>
       </div>
       <hr />

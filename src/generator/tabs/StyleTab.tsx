@@ -11,6 +11,7 @@ import { LanguageContext, SettingsContext } from '../Generator.tsx';
 import { ShowRanking } from '../../../widget/src/widget/Widget.tsx';
 import { PresetSettings } from '../../components/PresetSettings';
 import { appearanceFor } from '../appearance';
+import { PopupLookOptions } from '../../components/PopupOptions.tsx';
 import { PresetCards } from '../../components/PresetCards';
 import {
   BannerRadiusControl,
@@ -400,6 +401,7 @@ export const StyleTab = ({
       </div>
 
       <PresetSettings />
+      {settings.get('widgetMode') === 'popup' && <PopupLookOptions />}
       <div className={'settings'}>
         <Checkbox
           text={tl('generator.theme.banner_font.adjust')}

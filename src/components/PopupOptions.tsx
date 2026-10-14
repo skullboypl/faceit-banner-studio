@@ -21,8 +21,7 @@ const ME_KEYS = {
   mvps: 'popupMeMvps',
 } as const;
 
-/** Popup-mode controls. Only options that change the card as configured are shown. */
-export function PopupOptions() {
+function useControls() {
   const settings = useContext(SettingsContext);
   const tl = useContext(LanguageContext);
   if (!settings || !tl) return null;
@@ -54,34 +53,15 @@ export function PopupOptions() {
       </select>
     </div>
   );
+  return { settings, tl, options, slider, select };
+}
 
+/** Popup card appearance: lives in the Look tab. */
+export function PopupLookOptions() {
+  const controls = useControls();
+  if (!controls) return null;
+  const { settings, tl, options, slider, select } = controls;
   return (
-    <>
-      <div className="settings popup-options">
-        <h3 className="card-heading">{tl('popup.group.when')}</h3>
-        <Checkbox text={tl('popup.pre')} setting="popupPre" />
-        <Checkbox text={tl('popup.live')} setting="popupLive" />
-        <Checkbox text={tl('popup.post')} setting="popupPost" />
-        {slider('popupSeconds', 'popup.hold', options.seconds, POPUP_RANGES.seconds)}
-        {slider('popupDelay', 'popup.delay', options.delay, POPUP_RANGES.delay)}
-        <div className="design-switch popup-phase" role="group" aria-label={tl('popup.preview')}>
-          {(['pre', 'live', 'post'] as const).map((phase) => (
-            <button
-              key={phase}
-              type="button"
-              className="design-switch-option"
-              aria-pressed={settings.get('popupPreview') === phase}
-              onClick={() => settings.set('popupPreview', phase)}
-            >
-              <span className="design-switch-text">
-                <strong>{tl(`popup.phase.${phase}`)}</strong>
-              </span>
-            </button>
-          ))}
-        </div>
-        <p className="subtext">{tl('popup.help')}</p>
-      </div>
-
       <div className="settings popup-options">
         <h3 className="card-heading">{tl('popup.group.look')}</h3>
         <div className="setting">
@@ -107,6 +87,40 @@ export function PopupOptions() {
         {select('popupTheme', 'popup.theme', options.theme, POPUP_THEMES, 'popup.theme')}
         {options.theme !== 'clear' && slider('popupOpacity', 'popup.opacity', options.opacity, POPUP_RANGES.opacity, 2)}
         {select('popupAnimation', 'popup.animation', options.animation, POPUP_ANIMATIONS, 'popup.anim')}
+      </div>
+  );
+}
+
+/** Popup timing and content: lives in the Settings tab under the player profile. */
+export function PopupOptions() {
+  const controls = useControls();
+  if (!controls) return null;
+  const { settings, tl, options, slider } = controls;
+  return (
+    <>
+      <div className="settings popup-options">
+        <h3 className="card-heading">{tl('popup.group.when')}</h3>
+        <Checkbox text={tl('popup.pre')} setting="popupPre" />
+        <Checkbox text={tl('popup.live')} setting="popupLive" />
+        <Checkbox text={tl('popup.post')} setting="popupPost" />
+        {slider('popupSeconds', 'popup.hold', options.seconds, POPUP_RANGES.seconds)}
+        {slider('popupDelay', 'popup.delay', options.delay, POPUP_RANGES.delay)}
+        <div className="design-switch popup-phase" role="group" aria-label={tl('popup.preview')}>
+          {(['pre', 'live', 'post'] as const).map((phase) => (
+            <button
+              key={phase}
+              type="button"
+              className="design-switch-option"
+              aria-pressed={settings.get('popupPreview') === phase}
+              onClick={() => settings.set('popupPreview', phase)}
+            >
+              <span className="design-switch-text">
+                <strong>{tl(`popup.phase.${phase}`)}</strong>
+              </span>
+            </button>
+          ))}
+        </div>
+        <p className="subtext">{tl('popup.help')}</p>
       </div>
 
       <div className="settings popup-options">

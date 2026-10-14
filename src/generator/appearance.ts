@@ -29,3 +29,19 @@ export function appearanceFor(mode: string): AppearanceControls {
   }
   return ALL;
 }
+
+export type SettingsControls = {
+  /** "Widget elements" card: toggles for the solo banner markup. */
+  elements: boolean;
+  /** Auto width of sized banners. */
+  autoWidth: boolean;
+  /** Saving session stats (solo markup only). */
+  session: boolean;
+};
+
+/** Which Settings-tab cards and options apply to a widget mode. */
+export function settingsFor(mode: string): SettingsControls {
+  if (mode === 'popup') return { elements: false, autoWidth: false, session: false };
+  if (mode === 'team' || mode === 'split') return { elements: false, autoWidth: true, session: false };
+  return { elements: true, autoWidth: true, session: true };
+}
