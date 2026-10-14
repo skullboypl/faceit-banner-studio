@@ -1,6 +1,7 @@
 import { clientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
 import { fillFromPlayerId, playerIdFromReferer, publicRanking, sanitizeInfo } from './live.mjs';
+import { withRedis } from './store.mjs';
 
 /** Current widgets ping every minute. Older banners and OBS browser sources can ping only every few minutes, so a two-minute window dropped them. */
 export const ACTIVE_WINDOW_MS = 15 * 60_000;
@@ -13,6 +14,106 @@ const LOCKOUT = { strikes: 5, windowMs: 5 * 60_000, blockMs: 15 * 60_000 };
 const sessions = new Map();
 const bannersPerIp = new Map();
 
+const PRESENCE_PREFIX = 'fb:live:';
+const PRESENCE_TTL_SECONDS = Math.ceil(ACTIVE_WINDOW_MS / 1000);
+const SESSION_ID = /^[a-zA-Z0-9_-]{16,80}$/;
+
+/** Tests pass a stand-in. Production uses the shared login Redis client. */
+let presenceRedis;
+export function usePresenceRedis(client) {
+  presenceRedis = client;
+  hydrated = false;
+}
+
+async function touchRedis(run) {
+  try {
+    if (presenceRedis) {
+      await run(presenceRedis);
+      return true;
+    }
+    return await withRedis(run);
+  } catch {
+    return false;
+  }
+}
+
+function persistSession(id, entry) {
+  const payload = JSON.stringify({
+    lastSeen: entry.lastSeen,
+    firstSeen: entry.firstSeen,
+    ip: entry.ip,
+    info: entry.info ?? null,
+  });
+  return touchRedis((redis) => redis.set(`${PRESENCE_PREFIX}${id}`, payload, 'EX', PRESENCE_TTL_SECONDS));
+}
+
+function dropSession(id) {
+  return touchRedis((redis) => redis.del(`${PRESENCE_PREFIX}${id}`));
+}
+
+let hydrated = false;
+let hydrating = null;
+
+/** Loads banners that were still inside the 15-minute window when this process started. */
+export function hydratePresence() {
+  if (hydrated) return Promise.resolve();
+  hydrating ??= loadPresence().finally(() => {
+    hydrating = null;
+  });
+  return hydrating;
+}
+
+async function loadPresence() {
+  if (!presenceRedis && !process.env.REDIS_URL) {
+    hydrated = true;
+    return;
+  }
+  const loaded = [];
+  const ok = await touchRedis(async (redis) => {
+    let cursor = '0';
+    do {
+      const [next, keys] = await redis.scan(cursor, 'MATCH', `${PRESENCE_PREFIX}*`, 'COUNT', 200);
+      cursor = String(next);
+      if (!keys?.length) continue;
+      const values = await redis.mget(...keys);
+      keys.forEach((key, index) => {
+        if (values[index]) loaded.push([key.slice(PRESENCE_PREFIX.length), values[index]]);
+      });
+    } while (cursor !== '0');
+  });
+  if (!ok) return;
+  const now = Date.now();
+  for (const [id, raw] of loaded) {
+    if (!SESSION_ID.test(id) || sessions.has(id)) continue;
+    let entry;
+    try {
+      entry = JSON.parse(raw);
+    } catch {
+      continue;
+    }
+    if (!entry || typeof entry.ip !== 'string' || typeof entry.lastSeen !== 'number') continue;
+    if (now - entry.lastSeen > ACTIVE_WINDOW_MS) continue;
+    sessions.set(id, {
+      lastSeen: entry.lastSeen,
+      firstSeen: typeof entry.firstSeen === 'number' ? entry.firstSeen : entry.lastSeen,
+      ip: entry.ip,
+      info: entry.info ?? null,
+    });
+    bannersPerIp.set(entry.ip, (bannersPerIp.get(entry.ip) ?? 0) + 1);
+  }
+  hydrated = true;
+}
+
+/** Clears the in-memory board so a test can pretend the process restarted. Redis is left as-is. */
+export function resetPresenceForTests() {
+  sessions.clear();
+  bannersPerIp.clear();
+  countCache = null;
+  boardCache = null;
+  hydrated = false;
+  hydrating = null;
+}
+
 function forget(id) {
   const entry = sessions.get(id);
   if (!entry) return;
@@ -20,6 +121,7 @@ function forget(id) {
   const left = (bannersPerIp.get(entry.ip) ?? 1) - 1;
   if (left > 0) bannersPerIp.set(entry.ip, left);
   else bannersPerIp.delete(entry.ip);
+  void dropSession(id);
 }
 
 function prune(now = Date.now()) {
@@ -136,6 +238,7 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
 
     const now = Date.now();
     const ip = clientIp(req.headers, req.socket.remoteAddress, trustedHops());
+    await hydratePresence();
 
     if (req.method === 'GET') {
       if (!getLimit(ip)) return sendJson(res, 429, { error: 'rate_limited' }, { 'Retry-After': '60' });
@@ -156,7 +259,7 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
     try {
       const body = await readJson(req);
       const id = typeof body.id === 'string' ? body.id : '';
-      if (!/^[a-zA-Z0-9_-]{16,80}$/.test(id)) {
+      if (!SESSION_ID.test(id)) {
         return sendJson(res, 400, { error: 'invalid_session' });
       }
       const known = sessions.get(id);
@@ -173,7 +276,9 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
       const parsed = body.info === undefined ? known?.info ?? null : sanitizeInfo(body.info) ?? known?.info ?? null;
       const fromPage = parsed?.playerId ? '' : playerIdFromReferer(req.headers.referer || req.headers.referrer);
       const info = fromPage ? { ...(parsed || {}), playerId: fromPage } : parsed;
-      sessions.set(id, { lastSeen: now, ip: known?.ip ?? ip, info, firstSeen: known?.firstSeen ?? now });
+      const saved = { lastSeen: now, ip: known?.ip ?? ip, info, firstSeen: known?.firstSeen ?? now };
+      sessions.set(id, saved);
+      await persistSession(id, saved);
       return sendJson(res, 200, {
         online: sessions.size,
         windowSeconds: ACTIVE_WINDOW_MS / 1000,

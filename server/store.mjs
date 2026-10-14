@@ -78,7 +78,7 @@ async function getPostgres() {
   return postgresPromise;
 }
 
-async function withRedis(run) {
+export async function withRedis(run) {
   try {
     const redis = await getRedis();
     if (!redis) return false;

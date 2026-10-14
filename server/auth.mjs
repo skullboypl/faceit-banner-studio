@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { clientIp as resolveClientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
-import { getPresenceCount } from './presence.mjs';
+import { getPresenceCount, hydratePresence } from './presence.mjs';
 import {
   consumeState,
   deleteSession,
@@ -246,6 +246,7 @@ export function createAuthMiddleware() {
         const user = await currentUser(req);
         if (!user) return sendJson(res, 401, { error: 'unauthorized' });
         if (!isAdmin(user)) return sendJson(res, 403, { error: 'forbidden' });
+        await hydratePresence();
         const presence = getPresenceCount();
         return sendJson(res, 200, {
           online: presence,
