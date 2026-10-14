@@ -22,7 +22,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(
+export async function request<T>(
   method: string,
   path: string,
   body?: unknown,
