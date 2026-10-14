@@ -16,7 +16,17 @@ const server = createServer((req, res) => {
   });
 });
 
-server.listen(port, '127.0.0.1');
+server.listen(port, '127.0.0.1', () => {
+  console.log(`presence and auth listening on 127.0.0.1:${port}`);
+});
+
+// A failed login store must not take the live counter down with it.
+process.on('uncaughtException', (error) => {
+  console.error('presence service kept running after an error:', error);
+});
+process.on('unhandledRejection', (error) => {
+  console.error('presence service kept running after a rejection:', error);
+});
 
 const shutdown = () => server.close(() => process.exit(0));
 process.on('SIGTERM', shutdown);

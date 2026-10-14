@@ -1163,7 +1163,7 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
   flex: 1 1 auto;
 }
 /* The rail is a fixed column. Tabs scroll; the counter, support and language stay inside the screen. */
-@media (min-width: 1001px) {
+@media (min-width: 701px) {
   html.generator .studio-sidebar {
     display: flex;
     flex-direction: column;
@@ -1256,23 +1256,7 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
     border-color: #ff6b18;
   }
 }
-@media (max-width: 1280px) and (min-width: 1001px) {
-  .studio-sidebar .sidebar-lang button {
-    justify-content: center;
-    padding: 8px;
-    span {
-      display: none;
-    }
-  }
-  .studio-sidebar .tabs .docs-tab {
-    justify-content: center;
-    padding: 14px;
-    > span,
-    > .studio-icon:last-child {
-      display: none;
-    }
-  }
-  /* Icon rail is 76px. Foot controls must stay inside it, and the language menu opens beside the rail. */
+@media (max-width: 1280px) and (min-width: 701px) {
   html.generator .studio-sidebar {
     overflow: visible;
   }
@@ -1287,12 +1271,12 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
     margin: 0;
     padding: 0;
     justify-content: center;
+    > span,
+    > .studio-icon:last-child {
+      display: none;
+    }
   }
-  html.generator .studio-sidebar .sidebar-foot {
-    box-sizing: border-box;
-    width: 100%;
-    min-width: 0;
-  }
+  html.generator .studio-sidebar .sidebar-foot,
   html.generator .studio-sidebar .sidebar-foot > *,
   html.generator .studio-sidebar .online-banners,
   html.generator .studio-sidebar .donate-link--header,
@@ -1311,31 +1295,16 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
     justify-content: center;
     padding: 8px 4px;
   }
+  html.generator .studio-sidebar .donate-link--header > span,
+  html.generator .studio-sidebar .lang-trigger .lang-name,
+  html.generator .studio-sidebar .lang-trigger .studio-icon {
+    display: none;
+  }
   html.generator .studio-sidebar .lang-list {
     left: calc(100% + 8px);
     right: auto;
     bottom: 0;
     min-width: 168px;
-  }
-}
-@media (max-width: 1000px) {
-  .studio-sidebar .sidebar-lang {
-    flex-direction: row;
-    margin: 0 0 10px;
-    button {
-      flex: 1;
-      justify-content: center;
-    }
-  }
-  .studio-sidebar .tabs .docs-tab {
-    flex: 1;
-    justify-content: center;
-    border-color: transparent;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-    > .studio-icon:last-child {
-      display: none;
-    }
   }
 }
 @media (max-width: 600px) {
@@ -1360,11 +1329,34 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
   html.generator body {
     padding-bottom: calc(76px + env(safe-area-inset-bottom));
   }
+  html.generator .studio-workspace {
+    margin-left: 0;
+  }
   html.generator .studio-sidebar {
-    position: static;
+    position: relative;
+    width: 100%;
+    height: auto;
+    max-height: none;
     padding: 14px 16px 10px;
     gap: 12px;
     border-bottom: 1px solid #252527;
+    overflow: visible;
+  }
+  html.generator .studio-sidebar .sidebar-note {
+    display: none;
+  }
+  html.generator .studio-sidebar .online-banners {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: auto;
+    min-height: 30px;
+    margin: 0;
+    padding: 5px 8px;
+  }
+  html.generator .studio-sidebar .online-banners .online-copy > span,
+  html.generator .studio-sidebar .online-banners > small {
+    display: none;
   }
   html.generator .studio-sidebar .nav-caption {
     display: none;
@@ -1540,12 +1532,10 @@ dialog.generated .obs-frame {
     stroke-width: 1.7;
   }
 }
-@media (max-width: 1000px) {
+@media (max-width: 1280px) and (min-width: 701px) {
   .studio-sidebar .tabs .hub-tab {
-    padding: 12px;
+    padding: 0;
     border-top: 0;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
   }
 }
 
@@ -1815,16 +1805,9 @@ dialog.generated .obs-frame {
     &[aria-selected='true'] { color: #ff8a4a; }
   }
 }
-@media (max-width: 1280px) and (min-width: 1001px) {
-  .lang-trigger { justify-content: center; padding: 9px 0; .lang-name, .studio-icon { display: none; } }
-  .lang-list { left: 0; right: auto; min-width: 150px; }
-  .donate-link--header { justify-content: center; padding: 9px 0; > span { display: none; } }
-}
-@media (max-width: 1000px) {
-  .studio-sidebar .lang-select { margin: 0 0 10px; }
-  .lang-trigger { width: auto; padding: 6px 10px; }
+@media (max-width: 700px) {
+  .studio-sidebar .lang-select { margin: 0; }
   .lang-list { bottom: auto; top: calc(100% + 6px); right: auto; min-width: 150px; }
-  .donate-link--header { display: none; }
 }
 @media (max-width: 600px) {
   .account-trigger .account-name { display: none; }
@@ -1877,35 +1860,6 @@ dialog.generated .obs-frame {
   &:hover, &[aria-expanded='true'] { border-color: #ff6b18; background: #201610; }
 }
 .lang-list { background: #17120f; border-color: #3a2a20; li:hover, li:focus-visible { background: #2a1a12; } }
-
-/* Tablet: compact two-row header (brand + language + counter, then a scrollable tab strip) */
-@media (min-width: 701px) and (max-width: 1000px) {
-  html.generator .studio-sidebar {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    grid-template-areas: 'brand lang online' 'tabs tabs tabs';
-    align-items: center;
-    gap: 12px 12px;
-    padding: 14px 24px 0;
-    .studio-brand { grid-area: brand; }
-    .lang-select { grid-area: lang; margin: 0; }
-    .online-banners { grid-area: online; position: static; margin: 0; }
-    .tabs {
-      grid-area: tabs;
-      display: flex;
-      flex-direction: row;
-      gap: 6px;
-      margin: 0;
-      overflow-x: auto;
-      scrollbar-width: none;
-      &::-webkit-scrollbar { display: none; }
-      > * { flex: 0 0 auto; width: auto; }
-      button { flex: 0 0 auto; width: auto; padding: 11px 16px; white-space: nowrap; }
-      .hub-tab { padding: 11px 14px; > span { display: none; } }
-    }
-    .nav-caption, .sidebar-note, .donate-link--header { display: none; }
-  }
-}
 
 /* Phone: 3 pinned tabs + a hamburger that opens the full-screen menu */
 .mobile-menu-toggle { display: none; }
@@ -2044,7 +1998,7 @@ html.generator .studio-sidebar .tabs > .mobile-menu-toggle { display: none; }
   .lang-select { margin-top: 0; }
   .lang-trigger { padding: 5px 10px; font-size: 11px; border-radius: 8px; .flag { width: 16px; height: 11px; } }
 }
-@media (max-width: 1000px) {
+@media (max-width: 700px) {
   .studio-sidebar .sidebar-foot { display: contents; }
 }
 .account-skeleton {
