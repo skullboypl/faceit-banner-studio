@@ -43,6 +43,8 @@ test('login is limited per IP and then locked out', async () => {
     const pkce = await hit(base, '/api/auth/login', { ip: '198.51.100.20' });
     const location = new URL(pkce.headers.get('location'));
     assert.equal(location.searchParams.get('code_challenge_method'), 'S256');
+    assert.equal(location.searchParams.get('redirect_popup'), 'true');
+    assert.equal(location.pathname, '/accounts');
     assert.ok(location.searchParams.get('code_challenge'));
   } finally {
     await close();

@@ -13,7 +13,7 @@ import {
   storageStatus,
 } from './store.mjs';
 
-const AUTHORIZE_URL = 'https://accounts.faceit.com';
+const AUTHORIZE_URL = 'https://accounts.faceit.com/accounts';
 const TOKEN_URL = 'https://api.faceit.com/auth/v1/oauth/token';
 const USERINFO_URL = 'https://api.faceit.com/auth/v1/resources/userinfo';
 const SESSION_COOKIE = 'fb_session';
@@ -91,6 +91,7 @@ async function handleLogin(req, res) {
     state,
     code_challenge: challenge,
     code_challenge_method: 'S256',
+    redirect_popup: 'true',
   });
   redirect(res, `${AUTHORIZE_URL}?${params}`);
 }
