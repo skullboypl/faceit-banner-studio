@@ -1988,3 +1988,10 @@ html.generator .studio-sidebar .tabs > .mobile-menu-toggle { display: none; }
 }
 @keyframes account-skeleton { to { background-position: -300% 0; } }
 @media (prefers-reduced-motion: reduce) { .account-skeleton { animation: none; } }
+
+/* The bottom group already has its own divider, so the note below it needs spacing instead of a second line */
+html.generator .studio-sidebar .sidebar-note {
+  margin-top: 16px;
+  padding-top: 0;
+  border-top: 0;
+}
