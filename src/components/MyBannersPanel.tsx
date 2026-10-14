@@ -11,8 +11,7 @@ import {
 import { fromDelta, toDelta } from '../cloud/delta';
 import { LanguageContext, SettingsContext } from '../generator/contexts';
 import type { SettingKey } from '../settings/manager';
-
-const LOGIN_URL = '/api/auth/login';
+import { FaceitLoginButton } from './FaceitLoginButton';
 
 export const MyBannersPanel = ({ user }: { user: User | null }) => {
   const tl = useContext(LanguageContext);
@@ -64,9 +63,7 @@ export const MyBannersPanel = ({ user }: { user: User | null }) => {
       <div className="settings my-banners">
         <h3 className="card-heading">{tl('banners.title')}</h3>
         <p className="subtext">{tl('banners.login_cta')}</p>
-        <a className="primary-action login-cta" href={LOGIN_URL}>
-          {tl('cloud.login')}
-        </a>
+        <FaceitLoginButton className="login-cta" />
       </div>
     );
   }

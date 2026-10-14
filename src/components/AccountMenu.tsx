@@ -2,6 +2,7 @@ import { useCallback, useContext, useRef, useState } from 'react';
 import type { User } from '../cloud/api';
 import type { SyncState } from '../cloud/useCloudSync';
 import { LanguageContext } from '../generator/contexts';
+import { FaceitLoginButton } from './FaceitLoginButton';
 import { StudioIcon } from './StudioIcon';
 import { SyncChip } from './SyncChip';
 import { useDismiss } from './useDismiss';
@@ -26,9 +27,7 @@ export const AccountMenu = ({ user, admin, syncState, lastSavedAt, onOpenBanners
 
   if (!user) {
     return (
-      <a className="account-login" href="/api/auth/login">
-        {tl('cloud.login')}
-      </a>
+      <FaceitLoginButton />
     );
   }
 
@@ -56,7 +55,7 @@ export const AccountMenu = ({ user, admin, syncState, lastSavedAt, onOpenBanners
       </button>
       {open && (
         <div className="account-popup" role="menu" aria-label={tl('account.menu')}>
-          <SyncChip state={syncState} lastSavedAt={lastSavedAt} user={user} />
+          <SyncChip state={syncState} lastSavedAt={lastSavedAt} user={user} showUser={false} />
           <button type="button" role="menuitem" onClick={choose(onOpenBanners)}>
             <StudioIcon name="cloud" />
             {tl('banners.title')}

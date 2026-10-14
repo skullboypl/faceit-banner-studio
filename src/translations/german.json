@@ -459,5 +459,8 @@
   "donate.hint": "für den Serverbetrieb",
   "account.menu": "Kontomenü",
   "account.logout": "Abmelden",
-  "account.admin": "Admin-Panel"
+  "account.admin": "Admin-Panel",
+  "menu.title": "Menü",
+  "menu.close": "Menü schließen",
+  "menu.open": "Menü öffnen"
 }

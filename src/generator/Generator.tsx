@@ -50,6 +50,7 @@ import { DonateLink } from '../components/DonateLink.tsx';
 import { MyBannersPanel } from '../components/MyBannersPanel.tsx';
 import { AccountMenu } from '../components/AccountMenu.tsx';
 import { LanguageSelect } from '../components/LanguageSelect.tsx';
+import { MobileMenu } from '../components/MobileMenu.tsx';
 import { useCloudSync } from '../cloud/useCloudSync.ts';
 import { logout as apiLogout } from '../cloud/api.ts';
 import { useSession } from '../cloud/useSession.ts';
@@ -58,6 +59,9 @@ import { getPlayerProfile } from '../../widget/src/utils/faceit_util.ts';
 export { LanguageContext, SettingsContext } from './contexts.ts';
 
 const DEFAULT_GENERATOR_USERNAME = 'donk666';
+/** Tabs pinned to the phone's bottom bar; the rest live in the full-screen menu. */
+const PINNED_TABS = 3;
+const TAB_ICONS = ['settings', 'palette', 'stats', 'cloud'] as const;
 const PREVIEW_BACKGROUNDS: Record<string, string> = {
   nuke: nukePreview,
   mirage: miragePreview,
@@ -103,6 +107,7 @@ export const Generator = () => {
   );
 
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [introReplay, setIntroReplay] = useState(0);
   const selectTab = useCallback((index: number) => {
     setSelectedTabIndex(index);
@@ -536,6 +541,28 @@ export const Generator = () => {
         value={{ settings, get: getSetting, set: setSetting }}
       >
         <ConflictDialog conflict={cloudSync.conflict} />
+        <MobileMenu
+          open={mobileMenuOpen}
+          onClose={() => setMobileMenuOpen(false)}
+          tabs={tabs.map((tab, index) => ({ name: tab.name, icon: TAB_ICONS[index] }))}
+          selectedIndex={selectedTabIndex}
+          onSelectTab={selectTab}
+          languages={languages}
+          currentLanguage={language}
+          onLanguage={(entry) => {
+            setLanguage(entry);
+            localStorage.setItem('fcw_lang', entry.id);
+          }}
+          user={session.user}
+          admin={session.admin}
+          syncState={cloudSync.state}
+          lastSavedAt={cloudSync.lastSavedAt}
+          onLogout={() => {
+            void apiLogout()
+              .catch(() => undefined)
+              .finally(session.refresh);
+          }}
+        />
         <GeneratedWidgetModal
           language={language}
           url={generatedURL}
@@ -577,13 +604,14 @@ export const Generator = () => {
                   aria-label={tab.name}
                   title={tab.name}
                   aria-current={index === selectedTabIndex ? 'page' : undefined}
+                  data-overflow={index >= PINNED_TABS ? 'true' : undefined}
                   onClick={() => {
                     selectTab(index);
                   }}
                   className={index === selectedTabIndex ? 'active' : ''}
                 >
                   <StudioIcon
-                    name={(['settings', 'palette', 'stats', 'cloud'] as const)[index]}
+                    name={TAB_ICONS[index]}
                   />
                   <span>{tab.name}</span>
                   <StudioIcon name="chevron" />
@@ -609,6 +637,17 @@ export const Generator = () => {
               <span>{tl('studio.docs')}</span>
               <StudioIcon name="arrow" />
             </a>
+            <button
+              type="button"
+              className="mobile-menu-toggle"
+              aria-label={tl('menu.open')}
+              aria-haspopup="dialog"
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <StudioIcon name="menu" />
+              <span>{tl('menu.title')}</span>
+            </button>
           </nav>
           <LanguageSelect
             languages={languages}

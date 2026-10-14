@@ -1524,7 +1524,7 @@ dialog.generated .obs-frame {
     font-weight: 700;
     color: #fff;
     text-decoration: none;
-    background: #e7002c;
+    background: #ff5500;
     border-radius: 8px;
   }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -1553,7 +1553,7 @@ dialog.generated .obs-frame {
     font-weight: 700;
     color: #fff;
     text-decoration: none;
-    background: #e7002c;
+    background: #ff5500;
     border-radius: 999px;
   }
   &--saved { color: #8bce76; border-color: #2f4a2a; }
@@ -1615,21 +1615,10 @@ dialog.generated .obs-frame {
   }
   .my-banners-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; small { color: #8b8683; } }
   .my-banners-actions { display: flex; flex-wrap: wrap; gap: 6px; button { width: auto; margin: 0; padding: 4px 10px; font-size: 11px; } .danger { color: #ff8a8a; } }
-  .login-cta { display: inline-block; margin-top: 8px; padding: 9px 16px; color: #fff; text-decoration: none; background: #e7002c; border-radius: 8px; font-weight: 700; }
 }
 
 /* Top bar: account area and language dropdown */
 .studio-topbar .topbar-right { display: inline-flex; align-items: center; gap: 18px; }
-.account-login {
-  padding: 6px 14px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #fff;
-  text-decoration: none;
-  background: #e7002c;
-  border-radius: 999px;
-  white-space: nowrap;
-}
 .account-menu { position: relative; }
 .account-trigger {
   display: inline-flex;
@@ -1686,7 +1675,7 @@ dialog.generated .obs-frame {
   border: 1px solid #333;
   border-radius: 12px;
   box-shadow: 0 14px 36px #000a;
-  .sync-chip { margin-bottom: 4px; .sync-chip-user { display: none; } }
+  .sync-chip { margin-bottom: 4px; }
   > button, > a {
     display: flex;
     align-items: center;
@@ -1770,3 +1759,194 @@ dialog.generated .obs-frame {
   .account-trigger .account-name { display: none; }
   .studio-topbar .topbar-right { gap: 10px; }
 }
+
+/* FACEIT brand orange for the login button, account menu and language dropdown */
+.faceit-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 7px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+  background: linear-gradient(135deg, #ff5500, #ff7a2a);
+  border: 1px solid #ff8a4a;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px #ff550040;
+  transition: filter 0.15s, box-shadow 0.15s, transform 0.15s;
+  .icon-faceit-logo { width: 15px; height: 15px; flex: 0 0 auto; }
+  &:hover { filter: brightness(1.1); box-shadow: 0 6px 18px #ff550066; }
+  &:active { transform: translateY(1px); }
+  &:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+}
+.my-banners .faceit-login.login-cta { margin-top: 10px; padding: 10px 18px 10px 14px; font-size: 13px; }
+
+.account-trigger {
+  background: #17120f;
+  border-color: #3a2a20;
+  &:hover, &[aria-expanded='true'] { border-color: #ff6b18; background: #201610; }
+}
+.account-avatar { box-shadow: 0 0 0 2px #ff6b18; background: #2a1a12; color: #ffb48a; }
+.account-dot { border-color: #17120f; }
+.account-popup {
+  background: #17120f;
+  border-color: #3a2a20;
+  > button:hover, > a:hover { background: #2a1a12; }
+  .studio-icon { color: #ff8a4a; }
+  .account-logout, .account-logout .studio-icon { color: #ff9a9a; }
+}
+.lang-trigger {
+  color: #e6e6ea;
+  background: #17120f;
+  border: 1px solid #3a2a20;
+  border-radius: 10px;
+  &:hover, &[aria-expanded='true'] { border-color: #ff6b18; background: #201610; }
+}
+.lang-list { background: #17120f; border-color: #3a2a20; li:hover, li:focus-visible { background: #2a1a12; } }
+
+/* Tablet: compact two-row header (brand + language + counter, then a scrollable tab strip) */
+@media (min-width: 701px) and (max-width: 1000px) {
+  html.generator .studio-sidebar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'brand lang online' 'tabs tabs tabs';
+    align-items: center;
+    gap: 12px 12px;
+    padding: 14px 24px 0;
+    .studio-brand { grid-area: brand; }
+    .lang-select { grid-area: lang; margin: 0; }
+    .online-banners { grid-area: online; position: static; margin: 0; }
+    .tabs {
+      grid-area: tabs;
+      display: flex;
+      flex-direction: row;
+      gap: 6px;
+      margin: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+      &::-webkit-scrollbar { display: none; }
+      > * { flex: 0 0 auto; width: auto; }
+      button { flex: 0 0 auto; width: auto; padding: 11px 16px; white-space: nowrap; }
+      .hub-tab { padding: 11px 14px; > span { display: none; } }
+    }
+    .nav-caption, .sidebar-note, .donate-link--header { display: none; }
+  }
+}
+
+/* Phone: 3 pinned tabs + a hamburger that opens the full-screen menu */
+.mobile-menu-toggle { display: none; }
+@media (max-width: 700px) {
+  html.generator .studio-sidebar .tabs > button[data-overflow],
+  html.generator .studio-sidebar .tabs > .docs-tab,
+  html.generator .studio-sidebar .tabs > .hub-tab { display: none; }
+  html.generator .studio-sidebar .tabs > .mobile-menu-toggle {
+    display: flex;
+    color: #ffb48a;
+  }
+  html.generator .studio-sidebar .lang-select,
+  html.generator .studio-sidebar .donate-link--header { display: none; }
+  html.generator .studio-topbar .obs-tag { display: none; }
+}
+
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  color: #f0f0f2;
+  background: #0d0d0e;
+  animation: mobile-menu-in 0.18s ease-out;
+}
+@keyframes mobile-menu-in { from { opacity: 0; transform: translateY(12px); } }
+.mobile-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(14px + env(safe-area-inset-top)) 18px 14px;
+  border-bottom: 1px solid #252527;
+  strong { font-size: 18px; }
+  button {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    padding: 0;
+    color: #e6e6ea;
+    background: #17120f;
+    border: 1px solid #3a2a20;
+    border-radius: 12px;
+    .studio-icon { width: 20px; height: 20px; }
+  }
+}
+.mobile-menu-body {
+  display: grid;
+  align-content: start;
+  gap: 22px;
+  padding: 18px 18px calc(28px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+}
+.mobile-menu-section {
+  display: grid;
+  gap: 6px;
+  h3 { margin: 0 0 4px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: #8b8683; }
+  .sync-chip { margin: 2px 0 6px; }
+}
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  margin: 0;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e6e6ea;
+  text-align: left;
+  text-decoration: none;
+  background: #151515;
+  border: 1px solid #2c2c2c;
+  border-radius: 12px;
+  .studio-icon { width: 20px; height: 20px; flex: 0 0 20px; color: #ff8a4a; }
+  &[aria-current='page'] { background: #241710; border-color: #ff6b18; color: #fff; }
+  &--hub { color: #f3c36a; .studio-icon { color: #f3c36a; } }
+  &--danger { color: #ff9a9a; .studio-icon { color: #ff9a9a; } }
+}
+.mobile-menu-langs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+  button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #e6e6ea;
+    background: #151515;
+    border: 1px solid #2c2c2c;
+    border-radius: 12px;
+    .flag { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; }
+    &[aria-checked='true'] { background: #241710; border-color: #ff6b18; color: #fff; }
+  }
+}
+.mobile-menu-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 2px;
+  font-size: 16px;
+  .account-avatar { width: 36px; height: 36px; font-size: 15px; }
+}
+.mobile-menu .faceit-login { justify-content: center; padding: 14px 18px; font-size: 15px; }
+.mobile-menu .donate-link { justify-content: center; padding: 14px 16px; font-size: 13px; }
+.mobile-menu-item,
+.mobile-menu .donate-link,
+.mobile-menu .faceit-login,
+.mobile-menu .sync-chip { box-sizing: border-box; max-width: 100%; }

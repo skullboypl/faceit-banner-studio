@@ -459,5 +459,8 @@
   "donate.hint": "server upkeep",
   "account.menu": "Account menu",
   "account.logout": "Log out",
-  "account.admin": "Admin panel"
+  "account.admin": "Admin panel",
+  "menu.title": "Menu",
+  "menu.close": "Close menu",
+  "menu.open": "Open menu"
 }

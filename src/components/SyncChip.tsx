@@ -13,10 +13,13 @@ export const SyncChip = ({
   state,
   lastSavedAt,
   user,
+  showUser = true,
 }: {
   state: SyncState;
   lastSavedAt: number | null;
   user: User | null;
+  /** Hide the nickname where the surrounding UI already shows it. */
+  showUser?: boolean;
 }) => {
   const tl = useContext(LanguageContext);
   if (!tl) return null;
@@ -57,7 +60,7 @@ export const SyncChip = ({
           {tl('cloud.relogin')}
         </a>
       )}
-      <small className="sync-chip-user">{user.nickname}</small>
+      {showUser && <small className="sync-chip-user">{user.nickname}</small>}
     </div>
   );
 };
