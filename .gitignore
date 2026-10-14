@@ -29,6 +29,7 @@ LOCALDATA/
 /Skills/
 /skills/
 /graphify-out/
+/tests/e2e-local.md
 .claude/
 .codex/
 AGENTS.md
