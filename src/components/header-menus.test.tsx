@@ -26,6 +26,12 @@ describe('AccountMenu', () => {
     expect(screen.queryByRole('button', { name: /skullboy/ })).toBeNull();
   });
 
+  test('while the session is loading it shows a placeholder, not a login button', () => {
+    account({ user: null, loading: true });
+    expect(screen.queryByRole('link', { name: /Zaloguj przez FACEIT/ })).toBeNull();
+    expect(document.querySelector('.account-skeleton')).toBeTruthy();
+  });
+
   test('shows the avatar and nickname on the trigger', () => {
     account();
     const trigger = screen.getByRole('button', { name: /skullboy/ });

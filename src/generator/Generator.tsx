@@ -51,6 +51,7 @@ import { MyBannersPanel } from '../components/MyBannersPanel.tsx';
 import { AccountMenu } from '../components/AccountMenu.tsx';
 import { LanguageSelect } from '../components/LanguageSelect.tsx';
 import { MobileMenu } from '../components/MobileMenu.tsx';
+import { pickLanguage } from '../translations/detect.ts';
 import { useCloudSync } from '../cloud/useCloudSync.ts';
 import { logout as apiLogout } from '../cloud/api.ts';
 import { useSession } from '../cloud/useSession.ts';
@@ -89,11 +90,15 @@ export const Generator = () => {
   const [playerVerifiedBadge, setPlayerVerifiedBadge] =
     useState<VerifiedBadgeType>('none');
   const [searchParams] = useSearchParams();
-  const [language, setLanguage] = useState<Language>(
-    languages.find((language) => language.id === searchParams.get('lang')) ||
-      languages.find((language) => language.id === localStorage.fcw_lang) ||
-      languages.find((language) => language.id === navigator.language) ||
-      languages[0]
+  const [language, setLanguage] = useState<Language>(() =>
+    pickLanguage(
+      {
+        param: searchParams.get('lang'),
+        saved: localStorage.getItem('fcw_lang'),
+        browser: navigator.languages?.length ? navigator.languages : [navigator.language],
+      },
+      languages
+    )
   );
   const [previewBackground, setPreviewBackground] = useState<string>('ancient');
   const [shareCopied, setShareCopied] = useState<boolean>(false);
@@ -138,6 +143,9 @@ export const Generator = () => {
   }, [language]);
 
   const session = useSession();
+  useEffect(() => {
+    document.documentElement.lang = language.id;
+  }, [language]);
   const applyCloudSettings = useCallback(
     (cloud: Partial<Settings>) => {
       for (const [key, value] of Object.entries(cloud)) {
@@ -649,16 +657,18 @@ export const Generator = () => {
               <span>{tl('menu.title')}</span>
             </button>
           </nav>
-          <LanguageSelect
-            languages={languages}
-            current={language}
-            onChange={(entry) => {
-              setLanguage(entry);
-              localStorage.setItem('fcw_lang', entry.id);
-            }}
-          />
-          <DonateLink variant="header" />
-          <OnlineBannerCount />
+          <div className="sidebar-foot">
+            <OnlineBannerCount />
+            <DonateLink variant="header" />
+            <LanguageSelect
+              languages={languages}
+              current={language}
+              onChange={(entry) => {
+                setLanguage(entry);
+                localStorage.setItem('fcw_lang', entry.id);
+              }}
+            />
+          </div>
           <div className="sidebar-note">
             <span className="game-label">CS2</span>
             <p>{tl('studio.sidebar_note')}</p>
@@ -680,6 +690,7 @@ export const Generator = () => {
               <AccountMenu
                 user={session.user}
                 admin={session.admin}
+                loading={session.loading}
                 syncState={cloudSync.state}
                 lastSavedAt={cloudSync.lastSavedAt}
                 onOpenBanners={() => selectTab(3)}

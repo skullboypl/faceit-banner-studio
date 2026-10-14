@@ -1950,3 +1950,41 @@ dialog.generated .obs-frame {
 .mobile-menu .donate-link,
 .mobile-menu .faceit-login,
 .mobile-menu .sync-chip { box-sizing: border-box; max-width: 100%; }
+
+/* Desktop sidebar: navigation on top, a quiet bottom group (counter, support, language) below it */
+html.generator .studio-sidebar .tabs > .mobile-menu-toggle { display: none; }
+@media (max-width: 700px) {
+  html.generator .studio-sidebar .tabs > .mobile-menu-toggle { display: flex; }
+}
+.studio-sidebar .sidebar-foot {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid #252527;
+  .online-banners { margin: 0; }
+  .donate-link--header {
+    padding: 6px 10px;
+    font-size: 10.5px;
+    background: linear-gradient(135deg, #2a1608, #1c1410);
+    border-color: #6a3a1a;
+    small { display: none; }
+  }
+  .lang-select { margin-top: 0; }
+  .lang-trigger { padding: 5px 10px; font-size: 11px; border-radius: 8px; .flag { width: 16px; height: 11px; } }
+}
+@media (max-width: 1000px) {
+  .studio-sidebar .sidebar-foot { display: contents; }
+}
+.account-skeleton {
+  display: inline-block;
+  width: 150px;
+  height: 34px;
+  background: linear-gradient(90deg, #17120f 25%, #261a12 50%, #17120f 75%);
+  background-size: 300% 100%;
+  border: 1px solid #3a2a20;
+  border-radius: 999px;
+  animation: account-skeleton 1.2s linear infinite;
+}
+@keyframes account-skeleton { to { background-position: -300% 0; } }
+@media (prefers-reduced-motion: reduce) { .account-skeleton { animation: none; } }

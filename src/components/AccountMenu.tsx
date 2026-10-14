@@ -14,10 +14,12 @@ type Props = {
   lastSavedAt: number | null;
   onOpenBanners: () => void;
   onLogout: () => void;
+  /** Session request still running: show a placeholder instead of flashing the login button. */
+  loading?: boolean;
 };
 
 /** Top-bar account area: a FACEIT login button for guests, avatar + nickname with a menu once logged in. */
-export const AccountMenu = ({ user, admin, syncState, lastSavedAt, onOpenBanners, onLogout }: Props) => {
+export const AccountMenu = ({ user, admin, syncState, lastSavedAt, onOpenBanners, onLogout, loading = false }: Props) => {
   const tl = useContext(LanguageContext);
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -25,11 +27,9 @@ export const AccountMenu = ({ user, admin, syncState, lastSavedAt, onOpenBanners
   useDismiss(open, root, close);
   if (!tl) return null;
 
-  if (!user) {
-    return (
-      <FaceitLoginButton />
-    );
-  }
+  if (loading) return <span className="account-skeleton" aria-hidden="true" />;
+
+  if (!user) return <FaceitLoginButton />;
 
   const choose = (action: () => void) => () => {
     close();
