@@ -1,5 +1,6 @@
 import { clientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
+import { publicRanking, sanitizeInfo } from './live.mjs';
 
 const ACTIVE_WINDOW_MS = 135_000;
 const MAX_SESSIONS = 100_000;
@@ -40,7 +41,7 @@ function readJson(req) {
     req.setEncoding('utf8');
     req.on('data', (chunk) => {
       body += chunk;
-      if (body.length > 1024) reject(new Error('payload_too_large'));
+      if (body.length > 2048) reject(new Error('payload_too_large'));
     });
     req.on('end', () => {
       try {
@@ -59,6 +60,22 @@ export const getPresenceCount = () => {
   return sessions.size;
 };
 
+/** Public board: nick, ELO, level, country. No session id and no address. */
+export function getLiveBoard() {
+  prune();
+  const entries = [];
+  for (const entry of sessions.values()) {
+    if (entry.info) entries.push({ info: entry.info, lastSeen: entry.lastSeen });
+  }
+  const players = publicRanking(entries);
+  return {
+    online: sessions.size,
+    ranked: players.length,
+    windowSeconds: ACTIVE_WINDOW_MS / 1000,
+    players: players.slice(0, 200),
+  };
+}
+
 const trustedHops = () => Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS) || 1);
 
 export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
@@ -68,7 +85,7 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
 
   return async (req, res, next) => {
     const pathname = new URL(req.url || '/', 'http://localhost').pathname;
-    if (pathname !== '/api/presence') return next();
+    if (pathname !== '/api/presence' && pathname !== '/api/presence/live') return next();
 
     const now = Date.now();
     prune(now);
@@ -76,13 +93,14 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
 
     if (req.method === 'GET') {
       if (!getLimit(ip)) return sendJson(res, 429, { error: 'rate_limited' }, { 'Retry-After': '60' });
+      if (pathname === '/api/presence/live') return sendJson(res, 200, getLiveBoard());
       return sendJson(res, 200, {
         online: sessions.size,
         windowSeconds: ACTIVE_WINDOW_MS / 1000,
       });
     }
 
-    if (req.method !== 'POST') {
+    if (pathname !== '/api/presence' || req.method !== 'POST') {
       res.setHeader('Allow', 'GET, POST');
       return sendJson(res, 405, { error: 'method_not_allowed' });
     }
@@ -106,7 +124,8 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
         }
         bannersPerIp.set(ip, (bannersPerIp.get(ip) ?? 0) + 1);
       }
-      sessions.set(id, { lastSeen: now, ip: known?.ip ?? ip });
+      const info = body.info === undefined ? known?.info ?? null : sanitizeInfo(body.info) ?? known?.info ?? null;
+      sessions.set(id, { lastSeen: now, ip: known?.ip ?? ip, info, firstSeen: known?.firstSeen ?? now });
       return sendJson(res, 200, {
         online: sessions.size,
         windowSeconds: ACTIVE_WINDOW_MS / 1000,

@@ -58,7 +58,8 @@ export async function migrate(pool: pg.Pool): Promise<void> {
         comments INTEGER NOT NULL DEFAULT 0,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        deleted_at TIMESTAMPTZ
+        deleted_at TIMESTAMPTZ,
+        content_hash TEXT
       );
       CREATE INDEX IF NOT EXISTS posts_list ON posts (kind, status, created_at DESC) WHERE deleted_at IS NULL;
       CREATE INDEX IF NOT EXISTS posts_top ON posts (votes DESC, created_at DESC) WHERE deleted_at IS NULL;
@@ -75,9 +76,16 @@ export async function migrate(pool: pg.Pool): Promise<void> {
         body VARCHAR(2000) NOT NULL,
         by_admin BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        deleted_at TIMESTAMPTZ
+        deleted_at TIMESTAMPTZ,
+        content_hash TEXT
       );
       CREATE INDEX IF NOT EXISTS comments_post ON comments (post_id, created_at);
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS content_hash TEXT;
+      ALTER TABLE comments ADD COLUMN IF NOT EXISTS content_hash TEXT;
+      CREATE UNIQUE INDEX IF NOT EXISTS posts_author_content
+        ON posts (author_guid, content_hash) WHERE deleted_at IS NULL AND content_hash IS NOT NULL;
+      CREATE UNIQUE INDEX IF NOT EXISTS comments_author_content
+        ON comments (post_id, author_guid, content_hash) WHERE deleted_at IS NULL AND content_hash IS NOT NULL;
     `);
   } finally {
     await client.query('SELECT pg_advisory_unlock(727001)').catch(() => undefined);

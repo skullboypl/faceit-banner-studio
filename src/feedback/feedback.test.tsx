@@ -211,6 +211,18 @@ describe('logged-in users', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Dodaj komentarz' }));
     expect((await screen.findByRole('alert')).textContent).toContain('Too many requests');
   });
+
+  test('a blocked comment shows the translated reason', async () => {
+    getPost.mockResolvedValue({ post: detail(memberPost('1', 'Dark theme')) });
+    addComment.mockRejectedValue(new ApiError(400, 'content_blocked', 'This text looks like spam.', { category: 'spam' }));
+    renderWithApp(<FeedbackBoard user={alice} admin={false} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Dark theme' }));
+    await screen.findByText('Full description of the post.');
+    fireEvent.change(screen.getByPlaceholderText('Napisz komentarz…'), { target: { value: 'spam' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Dodaj komentarz' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('wygląda na spam');
+  });
 });
 
 describe('new post form', () => {
@@ -242,7 +254,7 @@ describe('new post form', () => {
     fill('Brand new idea', 'Details of the idea.');
     fireEvent.click(screen.getByRole('button', { name: 'Wyślij zgłoszenie' }));
     await screen.findByText('Brand new idea');
-    expect(createPost).toHaveBeenCalledWith({ kind: 'request', title: 'Brand new idea', body: 'Details of the idea.' });
+    expect(createPost).toHaveBeenCalledWith({ kind: 'request', title: 'Brand new idea', body: 'Details of the idea.', website: '' });
   });
 
   test('a bug attaches the current banner settings by default and can drop them', async () => {
@@ -278,6 +290,16 @@ describe('new post form', () => {
   test('a request has no attachment option', async () => {
     await open();
     expect(screen.queryByRole('checkbox', { name: 'Dołącz aktualne ustawienia banera' })).toBeNull();
+  });
+
+  test('a blocked post shows the translated reason', async () => {
+    createPost.mockRejectedValue(new ApiError(400, 'content_blocked', 'This text contains language that is not allowed.', { category: 'profanity' }));
+    await open();
+    fill('Nope title', 'Bad words here.');
+    fireEvent.click(screen.getByRole('button', { name: 'Wyślij zgłoszenie' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('niedozwolone słownictwo');
+    expect(alert.textContent).not.toContain('This text contains');
   });
 
   test('a server rejection is shown and the form keeps its text', async () => {

@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
-import { ApiError, type User } from '../cloud/api';
+import type { User } from '../cloud/api';
+import { apiMessage } from '../cloud/messages';
 import { FaceitLoginButton } from '../components/FaceitLoginButton';
 import { LanguageContext } from '../generator/contexts';
 import {
@@ -16,8 +17,6 @@ import {
   type PostStatus,
 } from './api';
 import { StatusBadge } from './StatusBadge';
-
-const message = (failure: unknown) => (failure instanceof ApiError ? failure.message : String(failure));
 
 type Props = {
   summary: FeedbackPost;
@@ -43,7 +42,7 @@ export const PostDetail = ({ summary, user, admin, onBack, onChanged, onDeleted 
     let cancelled = false;
     getPost(id)
       .then(({ post: loaded }) => !cancelled && setPost(loaded))
-      .catch((failure) => !cancelled && setError(message(failure)));
+      .catch((failure) => !cancelled && setError(failure instanceof Error ? failure.message : String(failure)));
     return () => {
       cancelled = true;
     };
@@ -51,13 +50,15 @@ export const PostDetail = ({ summary, user, admin, onBack, onChanged, onDeleted 
 
   if (!tl) return null;
 
+  const explain = (failure: unknown) => apiMessage(tl, failure);
+
   const attempt = async (work: () => Promise<void>) => {
     setBusy(true);
     setError(null);
     try {
       await work();
     } catch (failure) {
-      setError(message(failure));
+      setError(explain(failure));
     } finally {
       setBusy(false);
     }

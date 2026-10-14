@@ -31,6 +31,23 @@ afterAll(async () => {
 });
 
 describe('createPost and listPosts', () => {
+  test('quotes and statement breaks are stored as text and the tables stay', async () => {
+    const title = "'; DROP TABLE posts; --";
+    const created = await posts.createPost(alice.guid, request(title, '1; SELECT * FROM users'));
+    const { posts: list } = await posts.listPosts({ sort: 'new' });
+    expect(list.map((post) => post.title)).toContain(title);
+    const loaded = await posts.getPost(created.id, alice.guid);
+    expect(loaded?.body).toBe('1; SELECT * FROM users');
+    await expect(posts.listPosts({ sort: 'new', cursor: "'; DROP TABLE posts; --" })).rejects.toBeInstanceOf(
+      posts.InvalidPostError
+    );
+    await expect(posts.listPosts({ sort: 'new', kind: "request' OR '1'='1" as never })).rejects.toBeInstanceOf(
+      posts.InvalidPostError
+    );
+    const { rows } = await (await db.getPool())!.query<{ name: string }>("SELECT to_regclass('public.posts') AS name");
+    expect(rows[0].name).toBe('posts');
+  });
+
   test('creates a request and lists it newest first', async () => {
     await posts.createPost(alice.guid, request('First'));
     await posts.createPost(bob.guid, request('Second'));

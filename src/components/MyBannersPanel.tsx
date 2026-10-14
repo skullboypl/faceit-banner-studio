@@ -1,6 +1,5 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
 import {
-  ApiError,
   createBanner,
   deleteBanner,
   listBanners,
@@ -8,6 +7,7 @@ import {
   type SavedBanner,
   type User,
 } from '../cloud/api';
+import { apiMessage } from '../cloud/messages';
 import { fromDelta, toDelta } from '../cloud/delta';
 import { LanguageContext, SettingsContext } from '../generator/contexts';
 import type { SettingKey } from '../settings/manager';
@@ -50,11 +50,11 @@ export const MyBannersPanel = ({ user }: { user: User | null }) => {
     try {
       await work();
     } catch (failure) {
-      setError(failure instanceof ApiError ? failure.message : String(failure));
+      setError(tl ? apiMessage(tl, failure) : String(failure));
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [tl]);
 
   if (!tl || !settings) return null;
 

@@ -1,6 +1,6 @@
 import { useContext, useState } from 'react';
 import pkg from '../../package.json';
-import { ApiError } from '../cloud/api';
+import { apiMessage } from '../cloud/messages';
 import { toDelta } from '../cloud/delta';
 import { LanguageContext, SettingsContext } from '../generator/contexts';
 import { createPost, type FeedbackPost, type PostKind } from './api';
@@ -22,6 +22,7 @@ export const PostForm = ({
   const settings = useContext(SettingsContext);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [website, setWebsite] = useState('');
   const [attachSettings, setAttachSettings] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,17 +40,18 @@ export const PostForm = ({
               kind,
               title: title.trim(),
               body: body.trim(),
+              website,
               context: {
                 userAgent: navigator.userAgent,
                 appVersion: pkg.version,
                 ...(attachSettings && settings ? { settings: toDelta(settings.settings) } : {}),
               },
             }
-          : { kind, title: title.trim(), body: body.trim() };
+          : { kind, title: title.trim(), body: body.trim(), website };
       const { post } = await createPost(input);
       onCreated(post);
     } catch (failure) {
-      setError(failure instanceof ApiError ? failure.message : String(failure));
+      setError(apiMessage(tl, failure));
     } finally {
       setBusy(false);
     }
@@ -64,6 +66,19 @@ export const PostForm = ({
       }}
     >
       <h4>{kind === 'bug' ? tl('feedback.form.bug_heading') : tl('feedback.form.request_heading')}</h4>
+      <div className="feedback-hp" aria-hidden="true">
+        <label>
+          Website
+          <input
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            value={website}
+            onChange={(event) => setWebsite(event.target.value)}
+          />
+        </label>
+      </div>
       <label>
         <span>{tl('feedback.form.title')}</span>
         <input type="text" value={title} maxLength={TITLE_MAX} onChange={(event) => setTitle(event.target.value)} />

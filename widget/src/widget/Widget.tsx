@@ -417,10 +417,22 @@ export const Widget = ({
   );
 
   const [searchParams] = useSearchParams();
+  const presenceInfo = useRef<(() => { nickname: string; elo: number; level: number; country?: string; style: string; playerId: string } | undefined) | null>(null);
+  presenceInfo.current = () => {
+    if (!username || !elo) return undefined;
+    return {
+      nickname: username,
+      elo,
+      level,
+      country,
+      style: resolvedStyle,
+      playerId: String(SETTINGS.get('playerId') || ''),
+    };
+  };
   useEffect(() => {
     /* The preview frames inside the generator are not people using the banner */
     if (preview || new URLSearchParams(window.location.search).get('presence') === 'off') return;
-    return startPresenceHeartbeat();
+    return startPresenceHeartbeat(() => presenceInfo.current?.());
   }, [preview]);
   // Dynamicznie dodaj/usuń link do Kick Font
   useEffect(() => {

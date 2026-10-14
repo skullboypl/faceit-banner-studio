@@ -1162,6 +1162,30 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
 .studio-sidebar .tabs {
   flex: 1 1 auto;
 }
+/* The rail is a fixed column. Tabs scroll; the counter, support and language stay inside the screen. */
+@media (min-width: 1001px) {
+  html.generator .studio-sidebar {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+  html.generator .studio-sidebar .tabs {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  html.generator .studio-sidebar .sidebar-foot,
+  html.generator .studio-sidebar .sidebar-note {
+    flex-shrink: 0;
+  }
+  html.generator .studio-sidebar .sidebar-foot {
+    margin-top: auto;
+  }
+}
 .studio-sidebar .sidebar-lang {
   display: flex;
   flex-direction: column;
@@ -1247,6 +1271,51 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
     > .studio-icon:last-child {
       display: none;
     }
+  }
+  /* Icon rail is 76px. Foot controls must stay inside it, and the language menu opens beside the rail. */
+  html.generator .studio-sidebar {
+    overflow: visible;
+  }
+  html.generator .studio-sidebar .tabs > button,
+  html.generator .studio-sidebar .tabs > .docs-tab {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0;
+    justify-content: center;
+  }
+  html.generator .studio-sidebar .sidebar-foot {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+  }
+  html.generator .studio-sidebar .sidebar-foot > *,
+  html.generator .studio-sidebar .online-banners,
+  html.generator .studio-sidebar .donate-link--header,
+  html.generator .studio-sidebar .lang-select,
+  html.generator .studio-sidebar .lang-trigger {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  html.generator .studio-sidebar .online-banners,
+  html.generator .studio-sidebar .donate-link--header,
+  html.generator .studio-sidebar .lang-trigger {
+    justify-content: center;
+    padding: 8px 4px;
+  }
+  html.generator .studio-sidebar .lang-list {
+    left: calc(100% + 8px);
+    right: auto;
+    bottom: 0;
+    min-width: 168px;
   }
 }
 @media (max-width: 1000px) {
@@ -2146,6 +2215,7 @@ html.generator .feedback-detail {
   form { display: grid; gap: 8px; textarea { margin: 0; } button { width: auto; justify-self: start; margin: 0; } }
 }
 html.generator .feedback-form {
+  position: relative;
   display: grid;
   gap: 10px;
   h4 { margin: 0; font-size: 16px; }
@@ -2153,6 +2223,7 @@ html.generator .feedback-form {
   .feedback-attach { display: flex; align-items: center; gap: 8px; input { width: auto; } }
   .feedback-error { margin: 0; padding: 8px 10px; font-size: 12px; color: #ff9a9a; background: #2a1414; border: 1px solid #5a2a2a; border-radius: 8px; }
   .feedback-form-actions { display: flex; gap: 8px; button { width: auto; margin: 0; } }
+  .feedback-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 }
 
 /* Admin queue for feedback posts */
@@ -2200,6 +2271,8 @@ a.sync-chip-action, a.sync-chip-action:hover, a.sync-chip-action:focus, a.sync-c
 a.primary-action, a.primary-action:hover, a.primary-action:focus, a.primary-action:visited,
 a.admin-login, a.admin-login:hover, a.admin-login:focus, a.admin-login:visited { color: #fff; }
 a.donate-link, a.donate-link:hover, a.donate-link:focus, a.donate-link:visited { color: #ffd2b8; }
+a.online-banners, a.online-banners:hover, a.online-banners:focus, a.online-banners:visited { color: inherit; text-decoration: none; cursor: pointer; }
+a.online-banners:hover, a.online-banners.is-current { border-color: #36e77c; }
 .account-popup > a, .account-popup > a:hover, .account-popup > a:focus, .account-popup > a:visited { color: #e6e6ea; }
 a.mobile-menu-item, a.mobile-menu-item:hover, a.mobile-menu-item:focus, a.mobile-menu-item:visited { color: #e6e6ea; }
 a.mobile-menu-item--hub, a.mobile-menu-item--hub:hover, a.mobile-menu-item--hub:focus { color: #f3c36a; }
@@ -2211,3 +2284,90 @@ a.donate-link:hover { background: #271a12; border-color: #ff6b18; }
 .account-popup { box-sizing: border-box; overflow: hidden; }
 .account-popup > button, .account-popup > a, .account-popup > .sync-chip { box-sizing: border-box; max-width: 100%; }
 .lang-list, .lang-list li { box-sizing: border-box; }
+
+/* Reset lives in the preview box header; the tooltip says it only touches this widget's settings */
+.preview-heading { flex-wrap: wrap; }
+.preview-reset { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.preview-reset .cache-reset-button { width: auto; min-height: 28px; padding: 4px 10px; font-size: 11px; margin: 0; }
+.preview-reset .badge.help { cursor: help; }
+
+/* Profile card: one-click "use my account" or a login prompt for guests */
+.account-hint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: @subtext0;
+  a { color: #ff8a45; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+  a:hover { color: #ffb48a; }
+}
+.account-cta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 12px; }
+.account-cta small { color: @subtext0; font-size: 11px; }
+.account-cta .faceit-login.login-cta { margin: 0; padding: 9px 16px 9px 12px; font-size: 13px; }
+.account-cta .account-cta-button {
+  display: inline-flex; align-items: center; gap: 10px; width: auto; padding: 9px 14px;
+  color: #fff; background: #271a12; border: 1px solid #ff6b18; border-radius: 8px; cursor: pointer;
+}
+.account-cta .account-cta-button svg { width: 16px; height: 16px; color: #ff6b18; }
+.account-cta .account-cta-button span { display: inline-flex; flex-direction: column; text-align: left; font-size: 12px; line-height: 1.25; }
+.account-cta .account-cta-button strong { color: #ff8a45; font-size: 13px; }
+.account-cta .account-cta-button:hover:not(:disabled), .account-cta .account-cta-button:focus-visible { background: #34210f; border-color: #ff8a45; color: #fff; }
+.account-cta .account-cta-button:disabled { opacity: .55; cursor: default; }
+
+.live-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  color: #8fe7b0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #36e77c;
+    box-shadow: 0 0 0 4px #36e77c33;
+  }
+}
+.live-list { display: grid; align-content: start; width: 100%; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.live-row {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 36px 22px minmax(0, 1fr) 28px auto;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #141416;
+  border: 1px solid #2a2a2e;
+  border-radius: 12px;
+}
+.live-row--1 { border-color: #ff6b18; background: linear-gradient(90deg, #2a160c, #141416 42%); }
+.live-row--2 { border-color: #8d8d96; }
+.live-row--3 { border-color: #a56a3a; }
+.live-rank { color: #8b8683; font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.live-row--1 .live-rank { color: #ff8a45; }
+.live-flag { width: 18px; height: 12px; object-fit: cover; border-radius: 2px; }
+.live-flag--empty { display: inline-block; }
+.live-nick, .live-nick:hover, .live-nick:focus, .live-nick:visited {
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.live-nick:hover { color: #ffb48a; }
+.live-level { font-size: 13px; font-weight: 800; text-align: center; }
+.live-elo { color: #fff; font-size: 18px; font-variant-numeric: tabular-nums; letter-spacing: -0.4px; }
+.live-empty, .live-note { color: #a6adc8; height: auto; }
+.live-empty { margin: 28px 0; padding: 28px 18px; text-align: center; background: #141416; border: 1px dashed #3a3a3e; border-radius: 12px; }
+.live-note { margin: 18px 0 0; font-size: 12px; line-height: 1.5; }
+@media (max-width: 640px) {
+  .live-row { grid-template-columns: 28px 18px minmax(0, 1fr) auto; padding: 12px; }
+  .live-level { display: none; }
+}

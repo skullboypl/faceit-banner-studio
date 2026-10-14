@@ -235,6 +235,44 @@ describe('banners', () => {
     expect(deleted.status).toBe(200);
   });
 
+  test('a profane name is 400 content_blocked and the word is not quoted', async () => {
+    const { createMeHandlers } = await import('./me-handlers');
+    const gated = createMeHandlers({ unlimited: true });
+    const cookie = await login(alice);
+    const response = await gated.createBanner(call('POST', '/api/me/banners', { cookie, body: { name: 'my shit banner', settings: {} } }));
+    const payload = await json(response);
+    expect(response.status).toBe(400);
+    expect(payload).toMatchObject({ error: 'content_blocked', category: 'profanity' });
+    expect(JSON.stringify(payload).toLowerCase()).not.toContain('shit');
+
+    const { banner } = await json(await create(cookie, 'Main'));
+    const renamed = await gated.updateBanner(
+      call('PATCH', `/api/me/banners/${banner.id}`, { cookie, body: { name: 'fuck this' } }),
+      withId(banner.id)
+    );
+    const renamedBody = await json(renamed);
+    expect(renamed.status).toBe(400);
+    expect(renamedBody.category).toBe('profanity');
+    expect(JSON.stringify(renamedBody).toLowerCase()).not.toContain('fuck');
+  });
+
+  test('five blocked names lock the next rename', async () => {
+    const { createMeHandlers } = await import('./me-handlers');
+    const gated = createMeHandlers({ unlimited: true });
+    const cookie = await login(bob);
+    const { banner } = await json(await create(cookie, 'Main'));
+    const rename = () =>
+      gated.updateBanner(call('PATCH', `/api/me/banners/${banner.id}`, { cookie, body: { name: 'shit banner' } }), withId(banner.id));
+    for (let i = 0; i < 5; i++) expect((await rename()).status).toBe(400);
+    const locked = await gated.updateBanner(
+      call('PATCH', `/api/me/banners/${banner.id}`, { cookie, body: { name: 'Clean name' } }),
+      withId(banner.id)
+    );
+    expect(locked.status).toBe(429);
+    expect((await json(locked)).error).toBe('writing_locked');
+    expect(Number(locked.headers.get('retry-after'))).toBeGreaterThan(3000);
+  });
+
   test('PATCH with no fields is a 400', async () => {
     const cookie = await login(alice);
     const { banner } = await json(await create(cookie, 'x'));

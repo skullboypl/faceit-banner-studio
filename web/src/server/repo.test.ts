@@ -32,6 +32,16 @@ afterAll(async () => {
 });
 
 describe('banners', () => {
+  test('a name that looks like SQL is stored as a name', async () => {
+    const name = "Robert'); DROP TABLE saved_banners;--";
+    await banners.createBanner(alice.guid, name, {});
+    expect((await banners.listBanners(alice.guid)).map((banner) => banner.name)).toContain(name);
+    const { rows } = await (await db.getPool())!.query<{ name: string }>(
+      "SELECT to_regclass('public.saved_banners') AS name"
+    );
+    expect(rows[0].name).toBe('saved_banners');
+  });
+
   test('creates and lists banners newest first', async () => {
     await banners.createBanner(alice.guid, 'first', { bannerRadius: 10 });
     await banners.createBanner(alice.guid, 'second', {});

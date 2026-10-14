@@ -183,10 +183,12 @@ describe('creating', () => {
     const { createFeedbackHandlers } = await import('./feedback-handlers');
     const limited = createFeedbackHandlers();
     const cookie = await login(alice);
-    const post = () =>
-      limited.createPost(call('POST', '/api/posts', { cookie, body: { kind: 'request', title: 'Idea number', body: 'x' } }));
-    for (let i = 0; i < 3; i++) expect((await post()).status).toBe(201);
-    const fourth = await post();
+    const post = (n: number) =>
+      limited.createPost(
+        call('POST', '/api/posts', { cookie, body: { kind: 'request', title: `Idea number ${n}`, body: `please ${n}` } })
+      );
+    for (let i = 0; i < 3; i++) expect((await post(i)).status).toBe(201);
+    const fourth = await post(3);
     expect(fourth.status).toBe(429);
     expect(fourth.headers.get('retry-after')).not.toBeNull();
   });
@@ -265,10 +267,13 @@ describe('votes and comments', () => {
     const limited = createFeedbackHandlers();
     const { data } = await create(await login(alice));
     const cookie = await login(bob);
-    const comment = () =>
-      limited.addComment(call('POST', `/api/posts/${data.post.id}/comments`, { cookie, body: { body: 'hi' } }), withId(data.post.id));
-    for (let i = 0; i < 6; i++) expect((await comment()).status).toBe(201);
-    expect((await comment()).status).toBe(429);
+    const comment = (n: number) =>
+      limited.addComment(
+        call('POST', `/api/posts/${data.post.id}/comments`, { cookie, body: { body: `hi ${n}` } }),
+        withId(data.post.id)
+      );
+    for (let i = 0; i < 6; i++) expect((await comment(i)).status).toBe(201);
+    expect((await comment(6)).status).toBe(429);
   });
 
   test('an admin comment is flagged byAdmin', async () => {
@@ -279,6 +284,110 @@ describe('votes and comments', () => {
       withId(data.post.id)
     );
     expect((await json(response)).comment.byAdmin).toBe(true);
+  });
+});
+
+describe('moderation', () => {
+  const spammer = { guid: 'guid-spam', nickname: 'spammer', avatar: null };
+
+  test('a profane title or body is 400 content_blocked and the matched word is not quoted', async () => {
+    const { createFeedbackHandlers } = await import('./feedback-handlers');
+    const gated = createFeedbackHandlers({ unlimited: true });
+    const cookie = await login(spammer);
+    const title = await gated.createPost(
+      call('POST', '/api/posts', { cookie, body: { kind: 'request', title: 'to jest kurwa', body: 'A normal description.' } })
+    );
+    const titleBody = await json(title);
+    expect(title.status).toBe(400);
+    expect(titleBody).toMatchObject({ error: 'content_blocked', category: 'profanity' });
+    expect(JSON.stringify(titleBody).toLowerCase()).not.toContain('kurwa');
+
+    const body = await gated.createPost(
+      call('POST', '/api/posts', { cookie, body: { kind: 'request', title: 'Dark theme', body: 'what the fuck is this' } })
+    );
+    const blockedBody = await json(body);
+    expect(blockedBody).toMatchObject({ error: 'content_blocked', category: 'profanity' });
+    expect(JSON.stringify(blockedBody).toLowerCase()).not.toContain('fuck');
+    expect((await json(await gated.listPosts(call('GET', '/api/posts')))).posts).toEqual([]);
+  });
+
+  test('a profane comment is blocked the same way', async () => {
+    const { createFeedbackHandlers } = await import('./feedback-handlers');
+    const gated = createFeedbackHandlers({ unlimited: true });
+    const cookie = await login(alice);
+    const { data } = await create(cookie);
+    const response = await gated.addComment(
+      call('POST', `/api/posts/${data.post.id}/comments`, { cookie, body: { body: 'fuck this' } }),
+      withId(data.post.id)
+    );
+    const payload = await json(response);
+    expect(response.status).toBe(400);
+    expect(payload).toMatchObject({ error: 'content_blocked', category: 'profanity' });
+    expect(JSON.stringify(payload).toLowerCase()).not.toContain('fuck');
+  });
+
+  test('a filled website field is rejected as spam and nothing is stored', async () => {
+    const { createFeedbackHandlers } = await import('./feedback-handlers');
+    const gated = createFeedbackHandlers({ unlimited: true });
+    const cookie = await login(spammer);
+    const response = await gated.createPost(
+      call('POST', '/api/posts', {
+        cookie,
+        body: { kind: 'request', title: 'Legit title', body: 'Legit body here.', website: 'http://spam.example' },
+      })
+    );
+    const payload = await json(response);
+    expect(response.status).toBe(400);
+    expect(payload).toMatchObject({ error: 'content_blocked', category: 'spam' });
+    expect(JSON.stringify(payload)).not.toContain('spam.example');
+    expect((await json(await gated.listPosts(call('GET', '/api/posts')))).posts).toEqual([]);
+  });
+
+  test('the same author cannot post the same text twice, even with different spacing or case', async () => {
+    const cookie = await login(alice);
+    expect((await create(cookie, { title: 'Dark theme', body: 'Please add one.' })).response.status).toBe(201);
+    const again = await create(cookie, { title: '  dark   theme ', body: 'PLEASE ADD ONE.' });
+    expect(again.response.status).toBe(409);
+    expect(again.data.error).toBe('duplicate_content');
+    expect(JSON.stringify(again.data)).not.toContain('Dark theme');
+    const bobCookie = await login(bob);
+    expect((await create(bobCookie, { title: 'Dark theme', body: 'Please add one.' })).response.status).toBe(201);
+  });
+
+  test('the same comment twice on one post is a duplicate; another person may repeat it', async () => {
+    const aliceCookie = await login(alice);
+    const bobCookie = await login(bob);
+    const { data } = await create(aliceCookie);
+    const comment = (cookie: string) =>
+      handlers.addComment(
+        call('POST', `/api/posts/${data.post.id}/comments`, { cookie, body: { body: 'Same thought' } }),
+        withId(data.post.id)
+      );
+    expect((await comment(aliceCookie)).status).toBe(201);
+    const duplicate = await comment(aliceCookie);
+    expect(duplicate.status).toBe(409);
+    expect((await json(duplicate)).error).toBe('duplicate_content');
+    expect((await comment(bobCookie)).status).toBe(201);
+  });
+
+  test('deleting the post frees the content hash', async () => {
+    const cookie = await login(alice);
+    const { data } = await create(cookie, { title: 'Once more', body: 'With feeling.' });
+    expect((await handlers.deletePost(call('DELETE', `/api/posts/${data.post.id}`, { cookie }), withId(data.post.id))).status).toBe(200);
+    expect((await create(cookie, { title: 'Once more', body: 'With feeling.' })).response.status).toBe(201);
+  });
+
+  test('five blocked posts lock the next write for an hour', async () => {
+    const { createFeedbackHandlers } = await import('./feedback-handlers');
+    const gated = createFeedbackHandlers({ unlimited: true });
+    const cookie = await login(spammer);
+    const post = (title: string) =>
+      gated.createPost(call('POST', '/api/posts', { cookie, body: { kind: 'request', title, body: 'A normal description.' } }));
+    for (let i = 0; i < 5; i++) expect((await post('kurwa title')).status).toBe(400);
+    const locked = await post('A perfectly fine title');
+    expect(locked.status).toBe(429);
+    expect((await json(locked)).error).toBe('writing_locked');
+    expect(Number(locked.headers.get('retry-after'))).toBeGreaterThan(3000);
   });
 });
 

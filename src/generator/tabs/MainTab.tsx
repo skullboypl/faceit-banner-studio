@@ -13,6 +13,7 @@ import type { VersusPlayer } from '../../../widget/src/widget/Widget.tsx';
 import { isVersusStyle } from '../../../widget/src/styles/styles.ts';
 import { UserIcon } from '../../assets/icons/tabler/UserIcon.tsx';
 import { StudioIcon } from '../../components/StudioIcon.tsx';
+import { LOGIN_URL } from '../../components/FaceitLoginButton.tsx';
 
 type Props = {
   playerExists: boolean | undefined;
@@ -32,6 +33,8 @@ type Props = {
   setSelectedTabIndex: Dispatch<number>;
   opponent?: VersusPlayer;
   setOpponent: Dispatch<VersusPlayer | undefined>;
+  /** Nickname of the logged-in FACEIT account, when there is one. */
+  accountNickname?: string;
 };
 
 export const MainTab = ({
@@ -52,6 +55,7 @@ export const MainTab = ({
   setSelectedTabIndex,
   opponent,
   setOpponent,
+  accountNickname,
 }: Props) => {
   const tl = useContext(LanguageContext);
   const settings = useContext(SettingsContext);
@@ -240,6 +244,29 @@ export const MainTab = ({
           {tl('studio.profile')}
         </h3>
         <div className={'setting'}>
+          {accountNickname ? (
+            <div className="account-cta">
+              <button
+                type="button"
+                className="account-cta-button"
+                disabled={accountNickname.toLowerCase() === username.toLowerCase()}
+                title={tl('profile.use_account.hint')}
+                onClick={() => setUsername(accountNickname.slice(0, 12))}
+              >
+                <UserIcon />
+                <span>
+                  {tl('profile.use_account')}
+                  <strong>{accountNickname}</strong>
+                </span>
+              </button>
+              <small>{tl('profile.or_type')}</small>
+            </div>
+          ) : (
+            <p className="account-hint">
+              {tl('profile.guest_hint')}{' '}
+              <a href={LOGIN_URL}>{tl('profile.guest_login')}</a>
+            </p>
+          )}
           <div className={'flex profile-row'}>
             {playerAvatar ? (
               <img src={playerAvatar} className={'player-avatar'} alt="" />

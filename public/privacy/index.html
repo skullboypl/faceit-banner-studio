@@ -58,8 +58,11 @@
             Nie trafiają na nasz serwer.
           </li>
           <li>
-            <strong>Licznik aktywnych banerów:</strong> przeglądarka wysyła losowy identyfikator (bez nicku, bez e-maila),
-            który serwer trzyma w pamięci przez około 2 minuty, żeby policzyć, ile banerów jest teraz otwartych.
+            <strong>Banery na żywo:</strong> widżet wysyła losowy identyfikator oraz publiczne dane z banera
+            (nick, ELO, level, kraj, styl). Serwer trzyma je w pamięci około 2 minut, żeby policzyć otwarte banery
+            i pokazać ranking ELO na stronie „Na żywo”. Bez nicku widać tylko liczbę. Ranking nie pokazuje adresu IP.
+            Adres służy tylko do limitu, ile banerów może zgłosić jedna sieć, i znika razem z wpisem.
+            Parametr <code>presence=off</code> w adresie widżetu wyłącza to całkowicie.
           </li>
           <li>
             <strong>Statystyki FACEIT:</strong> dla wpisanego nicku lub ID gracza baner pobiera publiczne dane z API
@@ -148,8 +151,11 @@
         <ul>
           <li><strong>Generator settings</strong> are kept only in your browser (localStorage), not on our server.</li>
           <li>
-            <strong>Active banner counter:</strong> your browser sends a random identifier (no nickname, no email) that the
-            server keeps in memory for about 2 minutes to count banners currently open.
+            <strong>Live banners:</strong> the widget sends a random identifier plus the public banner fields
+            (nickname, ELO, level, country, style). The server keeps them in memory for about 2 minutes to count open
+            banners and to show the ELO ranking on the Live page. Without a nickname only the count is visible.
+            The ranking does not show the IP address. The address is used only to limit how many banners one network
+            can report, and it is dropped with the row. <code>presence=off</code> on the widget URL turns this off.
           </li>
           <li>
             <strong>FACEIT statistics:</strong> for the nickname or player ID you enter, the banner fetches public data from

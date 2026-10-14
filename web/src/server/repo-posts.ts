@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { getPool } from './db';
 
 export const POST_KINDS = ['request', 'bug'] as const;
@@ -13,6 +14,15 @@ export const COMMENT_MAX = 2000;
 export const CONTEXT_MAX_BYTES = 16_384;
 
 export class InvalidPostError extends Error {}
+export class DuplicateContentError extends Error {}
+
+const isUniqueViolation = (error: unknown) => (error as { code?: string }).code === '23505';
+
+/** Same letters, spacing and case count as the same post. The hash is not shown to clients. */
+function contentHash(parts: string[]): string {
+  const normalized = parts.map((part) => part.trim().replace(/\s+/g, ' ').toLowerCase()).join('\n');
+  return createHash('sha256').update(normalized).digest('hex');
+}
 
 export type PostSummary = {
   id: string;
@@ -108,12 +118,17 @@ export async function createPost(
     }
   }
   const pool = await requirePool();
-  const { rows } = await pool.query<{ id: string }>(
-    'INSERT INTO posts (kind, author_guid, title, body, context) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-    [input.kind, guid, title, body, context]
-  );
-  const created = await fetchSummary(rows[0].id, guid);
-  return created!;
+  try {
+    const { rows } = await pool.query<{ id: string }>(
+      'INSERT INTO posts (kind, author_guid, title, body, context, content_hash) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      [input.kind, guid, title, body, context, contentHash([title, body])]
+    );
+    const created = await fetchSummary(rows[0].id, guid);
+    return created!;
+  } catch (error) {
+    if (isUniqueViolation(error)) throw new DuplicateContentError('This content has already been posted.');
+    throw error;
+  }
 }
 
 async function fetchSummary(id: string, viewerGuid: string | null): Promise<PostSummary | null> {
@@ -274,16 +289,17 @@ export async function addComment(
       return null;
     }
     const { rows } = await client.query(
-      `WITH c AS (INSERT INTO comments (post_id, author_guid, body, by_admin) VALUES ($1, $2, $3, $4) RETURNING *)
+      `WITH c AS (INSERT INTO comments (post_id, author_guid, body, by_admin, content_hash) VALUES ($1, $2, $3, $4, $5) RETURNING *)
        SELECT c.id, c.post_id, c.body, c.by_admin, c.created_at, c.author_guid, u.nickname
        FROM c JOIN users u ON u.guid = c.author_guid`,
-      [postId, guid, body, byAdmin]
+      [postId, guid, body, byAdmin, contentHash([body])]
     );
     await recountComments(client, postId);
     await client.query('COMMIT');
     return toComment(rows[0]);
   } catch (error) {
     await client.query('ROLLBACK').catch(() => undefined);
+    if (isUniqueViolation(error)) throw new DuplicateContentError('This content has already been posted.');
     throw error;
   } finally {
     client.release();

@@ -1,8 +1,11 @@
 import schemaJson from '../../../shared/settings-schema.json';
 import { validateDelta, type SettingsSchema } from '../../../shared/settings-delta.mjs';
+import { createContentGate } from './content-gate';
 import { fail, guard, isAdmin, isFail, json, readBody, tooManyRequests, type Fail } from './http';
 import { createLimits } from './limits';
+import type { ModerationKind } from './moderation';
 import {
+  DuplicateContentError,
   InvalidPostError,
   POST_KINDS,
   POST_STATUSES,
@@ -83,6 +86,7 @@ function cleanContext(raw: unknown): Record<string, unknown> | null | Fail {
 
 export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
   const limits = createLimits(options.unlimited);
+  const gate = createContentGate();
 
   const member = (request: Request, extra: Parameters<typeof guard>[1] = {}) =>
     guard(request, { unauthorizedCode: 'login_required', ip: limits.ip, ...extra });
@@ -91,6 +95,7 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
     try {
       return await work();
     } catch (error) {
+      if (error instanceof DuplicateContentError) return fail(409, 'duplicate_content', error.message).response;
       if (error instanceof InvalidPostError) return fail(400, 'invalid_post', error.message).response;
       if ((error as Error).message === 'database_unavailable') {
         return fail(503, 'database_unavailable', 'Storage is temporarily unavailable.').response;
@@ -133,10 +138,18 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
 
     createPost: (request: Request) =>
       run(async () => {
-        const user = await member(request, { write: true, limiter: limits.post, retryAfter: '600' });
+        const user = await member(request, { write: true });
         if (isFail(user)) return user.response;
         const body = await readBody(request);
         if (isFail(body)) return body.response;
+        const trap = gate.honeypot(user.guid, body.website);
+        if (trap) return trap;
+        const fields: { text: string; kind: ModerationKind }[] = [];
+        if (typeof body.title === 'string') fields.push({ text: body.title, kind: 'title' });
+        if (typeof body.body === 'string') fields.push({ text: body.body, kind: 'body' });
+        const blocked = gate.screen(user.guid, fields);
+        if (blocked) return blocked;
+        if (!limits.post(user.guid)) return tooManyRequests('600');
         if (typeof body.kind !== 'string' || !POST_KINDS.includes(body.kind as PostKind)) {
           return fail(400, 'invalid_kind', 'kind must be request or bug.').response;
         }
@@ -179,10 +192,13 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
 
     addComment: (request: Request, ctx: Ctx) =>
       run(async () => {
-        const user = await member(request, { write: true, limiter: limits.comment, retryAfter: '30' });
+        const user = await member(request, { write: true });
         if (isFail(user)) return user.response;
         const body = await readBody(request);
         if (isFail(body)) return body.response;
+        const blocked = gate.screen(user.guid, typeof body.body === 'string' ? [{ text: body.body, kind: 'comment' }] : []);
+        if (blocked) return blocked;
+        if (!limits.comment(user.guid)) return tooManyRequests('30');
         const comment = await addComment(user.guid, (await ctx.params).id, body.body as string, isAdmin(user));
         return comment ? json(201, { comment: commentView(comment, user) }) : notFound();
       }),

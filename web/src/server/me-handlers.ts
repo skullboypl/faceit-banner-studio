@@ -10,6 +10,7 @@ import {
   listBanners,
   updateBanner,
 } from './repo-banners';
+import { createContentGate } from './content-gate';
 import { fail, guard, isFail, json, readBody, type Fail } from './http';
 import { createLimits } from './limits';
 import { getWorkspace, putWorkspace } from './workspace';
@@ -21,6 +22,7 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export function createMeHandlers(options: { unlimited?: boolean } = {}) {
   const limits = createLimits(options.unlimited);
+  const gate = createContentGate();
   const workspaceLimit = limits.workspace;
   const bannerLimit = limits.banner;
 
@@ -91,6 +93,8 @@ export function createMeHandlers(options: { unlimited?: boolean } = {}) {
         if (isFail(user)) return user.response;
         const body = await readBody(request);
         if (isFail(body)) return body.response;
+        const blocked = gate.screen(user.guid, typeof body.name === 'string' ? [{ text: body.name, kind: 'name' }] : []);
+        if (blocked) return blocked;
         if (typeof body.name !== 'string') return fail(400, 'invalid_name', 'name is required.').response;
         const settings = validSettings(body.settings);
         if (isFail(settings)) return settings.response;
@@ -107,6 +111,8 @@ export function createMeHandlers(options: { unlimited?: boolean } = {}) {
         const patch: { name?: string; settings?: Record<string, unknown> } = {};
         if (body.name !== undefined) {
           if (typeof body.name !== 'string') return fail(400, 'invalid_name', 'name must be a string.').response;
+          const blocked = gate.screen(user.guid, [{ text: body.name, kind: 'name' }]);
+          if (blocked) return blocked;
           patch.name = body.name;
         }
         if (body.settings !== undefined) {

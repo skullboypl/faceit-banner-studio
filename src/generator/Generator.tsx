@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { LanguageContext, SettingsContext } from './contexts.ts';
 import { Widget } from '../../widget/src/widget/Widget.tsx';
 import {
@@ -20,6 +21,7 @@ import { InfoBox } from '../components/InfoBox.tsx';
 import { Footer } from '../components/Footer.tsx';
 import { PreviewCarousel } from '../components/PreviewCarousel.tsx';
 import { StudioIcon } from '../components/StudioIcon.tsx';
+import { LiveRanking } from '../live/LiveRanking.tsx';
 import { TimelineIcon } from '../assets/icons/tabler/TimelineIcon.tsx';
 import { ShareIcon } from '../assets/icons/tabler/ShareIcon.tsx';
 import { BrandTwitchIcon } from '../assets/icons/tabler/BrandTwitchIcon.tsx';
@@ -116,7 +118,12 @@ export const Generator = () => {
     null
   );
 
-  const [selectedTabIndex, setSelectedTabIndex] = useState(0);
+  const onLive = useLocation().pathname === '/live';
+  const navigate = useNavigate();
+  const [selectedTabIndex, setSelectedTabIndex] = useState(() => {
+    const value = Number(new URLSearchParams(window.location.search).get('tab'));
+    return Number.isInteger(value) && value >= 0 && value <= 4 ? value : 0;
+  });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [introReplay, setIntroReplay] = useState(0);
   const selectTab = useCallback((index: number) => {
@@ -524,6 +531,7 @@ export const Generator = () => {
           setSelectedTabIndex={selectTab}
           opponent={opponent}
           setOpponent={setOpponent}
+          accountNickname={session.user?.nickname}
         />
       ),
     },
@@ -629,12 +637,16 @@ export const Generator = () => {
                   key={tab.name}
                   aria-label={tab.name}
                   title={tab.name}
-                  aria-current={index === selectedTabIndex ? 'page' : undefined}
+                  aria-current={!onLive && index === selectedTabIndex ? 'page' : undefined}
                   data-overflow={index >= PINNED_TABS ? 'true' : undefined}
                   onClick={() => {
+                    if (onLive) {
+                      navigate(`/?tab=${index}`);
+                      return;
+                    }
                     selectTab(index);
                   }}
-                  className={index === selectedTabIndex ? 'active' : ''}
+                  className={!onLive && index === selectedTabIndex ? 'active' : ''}
                 >
                   <StudioIcon name={TAB_ICONS[index]} />
                   <span>{tab.name}</span>
@@ -696,7 +708,7 @@ export const Generator = () => {
             <span>
               {tl('studio.workspace')}{' '}
               <span className="breadcrumb-divider">/</span>{' '}
-              <strong>{tabs[selectedTabIndex].name}</strong>
+              <strong>{onLive ? tl('live.title') : tabs[selectedTabIndex].name}</strong>
             </span>
             <span className="topbar-right">
               <span className="obs-tag">
@@ -728,8 +740,8 @@ export const Generator = () => {
               <StudioIcon name="layers" />
             </span>
           </div>
-          <main
-            className={`studio-main${selectedTabIndex === FEEDBACK_TAB_INDEX ? ' studio-main--wide' : ''}`}
+            <main
+            className={`studio-main${!onLive && selectedTabIndex === FEEDBACK_TAB_INDEX ? ' studio-main--wide' : ''}`}
           >
             <section
               className={'fixed-width'}
@@ -737,20 +749,15 @@ export const Generator = () => {
             >
               <div className="section-heading">
                 <h2 id="studio-settings-title">
-                  {tabs[selectedTabIndex].name}
+                  {onLive ? tl('live.title') : tabs[selectedTabIndex].name}
                 </h2>
-                <span>{tl('studio.settings_hint')}</span>
+                <span>{onLive ? tl('live.lead') : tl('studio.settings_hint')}</span>
               </div>
-              <div className="tab-content" key={selectedTabIndex}>
-                {tabs[selectedTabIndex].component}
-              </div>
-              <div className={'cache-reset-row'}>
-                <button className={'cache-reset-button'} onClick={clearCache}>
-                  {tl('generator.cache.clear')}
-                </button>
+              <div className="tab-content" key={onLive ? 'live' : selectedTabIndex}>
+                {onLive ? <LiveRanking /> : tabs[selectedTabIndex].component}
               </div>
             </section>
-            {selectedTabIndex !== FEEDBACK_TAB_INDEX && (
+            {(onLive || selectedTabIndex !== FEEDBACK_TAB_INDEX) && (
               <section className={'preview'}>
                 <div className={'settings preview-card'}>
                   <div className="preview-heading">
@@ -761,6 +768,24 @@ export const Generator = () => {
                     <span className="live-label">
                       <i />
                       {tl('studio.live')}
+                    </span>
+                    <span className="preview-reset">
+                      <button
+                        type="button"
+                        className="cache-reset-button"
+                        onClick={clearCache}
+                      >
+                        {tl('generator.cache.clear')}
+                      </button>
+                      <span
+                        className="badge help"
+                        role="img"
+                        tabIndex={0}
+                        title={tl('generator.cache.tooltip')}
+                        aria-label={tl('generator.cache.tooltip')}
+                      >
+                        ?
+                      </span>
                     </span>
                   </div>
                   <div className="preview-stage">

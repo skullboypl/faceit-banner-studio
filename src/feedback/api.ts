@@ -34,7 +34,7 @@ export type FeedbackDetail = FeedbackPost & {
 };
 
 export type ListQuery = { kind?: PostKind; status?: PostStatus; sort: 'top' | 'new'; cursor?: string };
-export type NewPost = { kind: PostKind; title: string; body: string; context?: Record<string, unknown> };
+export type NewPost = { kind: PostKind; title: string; body: string; context?: Record<string, unknown>; website?: string };
 
 const query = (params: Record<string, string | undefined>) => {
   const search = new URLSearchParams();
