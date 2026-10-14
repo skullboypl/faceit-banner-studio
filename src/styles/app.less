@@ -2169,3 +2169,9 @@ html.generator .studio-sidebar .sidebar-note {
   }
   .admin-queue-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; select, button { width: auto; margin: 0; font-size: 12px; } .danger { color: #ff9a9a; } }
 }
+
+/* Feedback tab: full width, no widget preview */
+html.generator .studio-main.studio-main--wide {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 1100px;
+}

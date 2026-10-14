@@ -63,6 +63,8 @@ export { LanguageContext, SettingsContext } from './contexts.ts';
 const DEFAULT_GENERATOR_USERNAME = 'donk666';
 /** Tabs pinned to the phone's bottom bar; the rest live in the full-screen menu. */
 const PINNED_TABS = 3;
+/** The feedback board needs the whole width, so it hides the widget preview. */
+const FEEDBACK_TAB_INDEX = 4;
 const TAB_ICONS = ['settings', 'palette', 'stats', 'cloud', 'message'] as const;
 const PREVIEW_BACKGROUNDS: Record<string, string> = {
   nuke: nukePreview,
@@ -96,7 +98,9 @@ export const Generator = () => {
       {
         param: searchParams.get('lang'),
         saved: localStorage.getItem('fcw_lang'),
-        browser: navigator.languages?.length ? navigator.languages : [navigator.language],
+        browser: navigator.languages?.length
+          ? navigator.languages
+          : [navigator.language],
       },
       languages
     )
@@ -545,7 +549,11 @@ export const Generator = () => {
     {
       name: tl('feedback.title'),
       component: (
-        <FeedbackBoard key={'feedback'} user={session.user} admin={session.admin} />
+        <FeedbackBoard
+          key={'feedback'}
+          user={session.user}
+          admin={session.admin}
+        />
       ),
     },
   ];
@@ -559,7 +567,10 @@ export const Generator = () => {
         <MobileMenu
           open={mobileMenuOpen}
           onClose={() => setMobileMenuOpen(false)}
-          tabs={tabs.map((tab, index) => ({ name: tab.name, icon: TAB_ICONS[index] }))}
+          tabs={tabs.map((tab, index) => ({
+            name: tab.name,
+            icon: TAB_ICONS[index],
+          }))}
           selectedIndex={selectedTabIndex}
           onSelectTab={selectTab}
           languages={languages}
@@ -625,9 +636,7 @@ export const Generator = () => {
                   }}
                   className={index === selectedTabIndex ? 'active' : ''}
                 >
-                  <StudioIcon
-                    name={TAB_ICONS[index]}
-                  />
+                  <StudioIcon name={TAB_ICONS[index]} />
                   <span>{tab.name}</span>
                   <StudioIcon name="chevron" />
                 </button>
@@ -719,7 +728,9 @@ export const Generator = () => {
               <StudioIcon name="layers" />
             </span>
           </div>
-          <main className="studio-main">
+          <main
+            className={`studio-main${selectedTabIndex === FEEDBACK_TAB_INDEX ? ' studio-main--wide' : ''}`}
+          >
             <section
               className={'fixed-width'}
               aria-labelledby="studio-settings-title"
@@ -739,199 +750,202 @@ export const Generator = () => {
                 </button>
               </div>
             </section>
-            <section className={'preview'}>
-              <div className={'settings preview-card'}>
-                <div className="preview-heading">
-                  <h2>
-                    <StudioIcon name="monitor" />
-                    {translate(language, 'generator.preview.title')}
-                  </h2>
-                  <span className="live-label">
-                    <i />
-                    {tl('studio.live')}
-                  </span>
-                </div>
-                <div className="preview-stage">
-                  <div
-                    key={previewBackground}
-                    className="preview-scene"
-                    style={{
-                      backgroundImage: `url(${PREVIEW_BACKGROUNDS[previewBackground]})`,
-                    }}
-                  />
-                  <span className="scene-label">
-                    CS2<span>/</span>
-                    {tl(`generator.preview.${previewBackground}`)}
-                  </span>
-                  <div
-                    className={`${resolveBannerStyle(getSetting('style'), getSetting('bannerDesign'))}-theme ${getSetting('colorScheme')}-scheme preview ${previewBackground}`}
-                  >
-                    {(getSetting('style') !== 'custom' ||
-                      (getSetting('style') === 'custom' &&
-                        getSetting('customCSS') !== 'https://example.com')) && (
-                      <Widget
-                        preview={true}
-                        introReplay={introReplay}
-                        previewAvatar={playerAvatar}
-                        previewBanner={playerBanner}
-                        previewUsername={username}
-                        previewRegion={playerRegion}
-                        previewCountry={playerCountry}
-                        previewVerifiedBadge={playerVerifiedBadge}
-                        previewElo={playerElo}
-                        previewLevel={playerLevel}
-                        previewLanguage={language}
-                        previewOpponent={opponent}
-                      />
-                    )}
+            {selectedTabIndex !== FEEDBACK_TAB_INDEX && (
+              <section className={'preview'}>
+                <div className={'settings preview-card'}>
+                  <div className="preview-heading">
+                    <h2>
+                      <StudioIcon name="monitor" />
+                      {translate(language, 'generator.preview.title')}
+                    </h2>
+                    <span className="live-label">
+                      <i />
+                      {tl('studio.live')}
+                    </span>
                   </div>
-                </div>
-                <PreviewCarousel
-                  language={language}
-                  previewBackground={previewBackground}
-                  setPreviewBackground={setPreviewBackground}
-                />
-                <p className="preview-caption">{tl('studio.preview_hint')}</p>
-                {getSetting('showUpdateIntro') && (
-                  <button
-                    className="secondary-link intro-replay"
-                    onClick={() => setIntroReplay((value) => value + 1)}
-                  >
-                    {tl('studio.replay_intro')}
-                  </button>
-                )}
-                <div className="export-heading">
-                  <h3>{tl('studio.export_title')}</h3>
-                  <span>OBS · Streamlabs</span>
-                </div>
-                <div className={'flex export-actions'}>
-                  <button
-                    className={'with-icon primary-action'}
-                    onClick={() => {
-                      generateWidgetURL();
-                    }}
-                  >
-                    <TimelineIcon />
-                    {tl('studio.generate')}
-                    <StudioIcon name="arrow" />
-                  </button>
-                  <button
-                    className={'with-icon'}
-                    onClick={() => {
-                      copySettingsURLToClipboard();
-                    }}
-                  >
-                    <ShareIcon />
-                    {tl('generator.share.button')}
-                  </button>
-                </div>
-                <details className="import-settings">
-                  <summary>{tl('studio.import')}</summary>
-                  <div className={'import-link-row'}>
-                    <input
-                      type={'text'}
-                      aria-label={tl('generator.import.placeholder')}
-                      value={importLinkValue}
-                      onChange={(event) => {
-                        setImportLinkValue(event.target.value);
-                        if (importStatus) {
-                          setImportStatus(null);
-                          setImportStatusText('');
-                        }
+                  <div className="preview-stage">
+                    <div
+                      key={previewBackground}
+                      className="preview-scene"
+                      style={{
+                        backgroundImage: `url(${PREVIEW_BACKGROUNDS[previewBackground]})`,
                       }}
-                      placeholder={tl('generator.import.placeholder')}
                     />
-                    <button onClick={importSettingsFromBannerURL}>
-                      {tl('generator.import.button')}
+                    <span className="scene-label">
+                      CS2<span>/</span>
+                      {tl(`generator.preview.${previewBackground}`)}
+                    </span>
+                    <div
+                      className={`${resolveBannerStyle(getSetting('style'), getSetting('bannerDesign'))}-theme ${getSetting('colorScheme')}-scheme preview ${previewBackground}`}
+                    >
+                      {(getSetting('style') !== 'custom' ||
+                        (getSetting('style') === 'custom' &&
+                          getSetting('customCSS') !==
+                            'https://example.com')) && (
+                        <Widget
+                          preview={true}
+                          introReplay={introReplay}
+                          previewAvatar={playerAvatar}
+                          previewBanner={playerBanner}
+                          previewUsername={username}
+                          previewRegion={playerRegion}
+                          previewCountry={playerCountry}
+                          previewVerifiedBadge={playerVerifiedBadge}
+                          previewElo={playerElo}
+                          previewLevel={playerLevel}
+                          previewLanguage={language}
+                          previewOpponent={opponent}
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <PreviewCarousel
+                    language={language}
+                    previewBackground={previewBackground}
+                    setPreviewBackground={setPreviewBackground}
+                  />
+                  <p className="preview-caption">{tl('studio.preview_hint')}</p>
+                  {getSetting('showUpdateIntro') && (
+                    <button
+                      className="secondary-link intro-replay"
+                      onClick={() => setIntroReplay((value) => value + 1)}
+                    >
+                      {tl('studio.replay_intro')}
+                    </button>
+                  )}
+                  <div className="export-heading">
+                    <h3>{tl('studio.export_title')}</h3>
+                    <span>OBS · Streamlabs</span>
+                  </div>
+                  <div className={'flex export-actions'}>
+                    <button
+                      className={'with-icon primary-action'}
+                      onClick={() => {
+                        generateWidgetURL();
+                      }}
+                    >
+                      <TimelineIcon />
+                      {tl('studio.generate')}
+                      <StudioIcon name="arrow" />
+                    </button>
+                    <button
+                      className={'with-icon'}
+                      onClick={() => {
+                        copySettingsURLToClipboard();
+                      }}
+                    >
+                      <ShareIcon />
+                      {tl('generator.share.button')}
                     </button>
                   </div>
-                </details>
-                {shareCopied && (
-                  <small style={{ display: 'block', marginTop: '8px' }}>
-                    {tl('generator.share.copied_to_clipboard')}
-                  </small>
-                )}
-                {importStatus && (
-                  <small
-                    className={
-                      importStatus === 'success'
-                        ? 'import-status success'
-                        : 'import-status error'
-                    }
-                  >
-                    {importStatusText}
-                  </small>
-                )}
-              </div>
-              <div className="obs-guide">
-                <span className="guide-icon">
-                  <StudioIcon name="monitor" />
-                </span>
-                <div>
-                  <h3>{tl('studio.obs_title')}</h3>
-                  <p>{tl('studio.obs_help')}</p>
-                </div>
-              </div>
-              <div className={'social-links-wrap'}>
-                <p className={'social-links-label'}>
-                  {tl('generator.socials')}
-                </p>
-                <div className={'social-links'}>
-                  <a
-                    href={'https://www.twitch.tv/skullboypl'}
-                    target={'_blank'}
-                    rel={'noreferrer'}
-                    title={'Twitch'}
-                  >
-                    <BrandTwitchIcon />
-                  </a>
-                  <a
-                    href={'https://www.youtube.com/watch?v=IcJNgxAH2Ps'}
-                    target={'_blank'}
-                    rel={'noreferrer'}
-                    title={'YouTube'}
-                  >
-                    <BrandYoutubeIcon />
-                  </a>
-                  <a
-                    href={'https://discord.skullmedia.pl'}
-                    target={'_blank'}
-                    rel={'noreferrer'}
-                    title={'Discord'}
-                  >
-                    <BrandDiscordIcon />
-                  </a>
-                  <a
-                    href={'https://www.tiktok.com/@skullboypl'}
-                    target={'_blank'}
-                    rel={'noreferrer'}
-                    title={'TikTok'}
-                  >
-                    <BrandTiktokIcon />
-                  </a>
-                </div>
-                <div className={'mini-promo'}>
-                  <p>{tl('generator.recommended')}</p>
-                  <a
-                    className={'smoothwizard-promo'}
-                    href={'https://smoothwizard.com/'}
-                    target={'_blank'}
-                    rel={'noreferrer'}
-                  >
-                    <img
-                      src={
-                        'https://smoothwizard.com/wp-content/uploads/2023/12/SmoothWizard-Logo-e1701539638732.png'
+                  <details className="import-settings">
+                    <summary>{tl('studio.import')}</summary>
+                    <div className={'import-link-row'}>
+                      <input
+                        type={'text'}
+                        aria-label={tl('generator.import.placeholder')}
+                        value={importLinkValue}
+                        onChange={(event) => {
+                          setImportLinkValue(event.target.value);
+                          if (importStatus) {
+                            setImportStatus(null);
+                            setImportStatusText('');
+                          }
+                        }}
+                        placeholder={tl('generator.import.placeholder')}
+                      />
+                      <button onClick={importSettingsFromBannerURL}>
+                        {tl('generator.import.button')}
+                      </button>
+                    </div>
+                  </details>
+                  {shareCopied && (
+                    <small style={{ display: 'block', marginTop: '8px' }}>
+                      {tl('generator.share.copied_to_clipboard')}
+                    </small>
+                  )}
+                  {importStatus && (
+                    <small
+                      className={
+                        importStatus === 'success'
+                          ? 'import-status success'
+                          : 'import-status error'
                       }
-                      alt={'SmoothWizard'}
-                    />
-                    <span>
-                      <strong>{tl('generator.smoothwizard.title')}</strong>
-                      <small>{tl('generator.smoothwizard.subtitle')}</small>
-                    </span>
-                  </a>
+                    >
+                      {importStatusText}
+                    </small>
+                  )}
                 </div>
-              </div>
-            </section>
+                <div className="obs-guide">
+                  <span className="guide-icon">
+                    <StudioIcon name="monitor" />
+                  </span>
+                  <div>
+                    <h3>{tl('studio.obs_title')}</h3>
+                    <p>{tl('studio.obs_help')}</p>
+                  </div>
+                </div>
+                <div className={'social-links-wrap'}>
+                  <p className={'social-links-label'}>
+                    {tl('generator.socials')}
+                  </p>
+                  <div className={'social-links'}>
+                    <a
+                      href={'https://www.twitch.tv/skullboypl'}
+                      target={'_blank'}
+                      rel={'noreferrer'}
+                      title={'Twitch'}
+                    >
+                      <BrandTwitchIcon />
+                    </a>
+                    <a
+                      href={'https://www.youtube.com/watch?v=IcJNgxAH2Ps'}
+                      target={'_blank'}
+                      rel={'noreferrer'}
+                      title={'YouTube'}
+                    >
+                      <BrandYoutubeIcon />
+                    </a>
+                    <a
+                      href={'https://discord.skullmedia.pl'}
+                      target={'_blank'}
+                      rel={'noreferrer'}
+                      title={'Discord'}
+                    >
+                      <BrandDiscordIcon />
+                    </a>
+                    <a
+                      href={'https://www.tiktok.com/@skullboypl'}
+                      target={'_blank'}
+                      rel={'noreferrer'}
+                      title={'TikTok'}
+                    >
+                      <BrandTiktokIcon />
+                    </a>
+                  </div>
+                  <div className={'mini-promo'}>
+                    <p>{tl('generator.recommended')}</p>
+                    <a
+                      className={'smoothwizard-promo'}
+                      href={'https://smoothwizard.com/'}
+                      target={'_blank'}
+                      rel={'noreferrer'}
+                    >
+                      <img
+                        src={
+                          'https://smoothwizard.com/wp-content/uploads/2023/12/SmoothWizard-Logo-e1701539638732.png'
+                        }
+                        alt={'SmoothWizard'}
+                      />
+                      <span>
+                        <strong>{tl('generator.smoothwizard.title')}</strong>
+                        <small>{tl('generator.smoothwizard.subtitle')}</small>
+                      </span>
+                    </a>
+                  </div>
+                </div>
+              </section>
+            )}
           </main>
           <Footer />
         </div>
