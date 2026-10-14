@@ -36,7 +36,15 @@ const call = (
     body: raw ?? (body === undefined ? undefined : JSON.stringify(body)),
   });
 
-const json = async (response: Response) => response.json() as Promise<Record<string, any>>;
+type Json = {
+  error?: string;
+  version?: number;
+  workspace?: { version?: number; settings?: unknown } | null;
+  banner?: { id?: string; name?: string; settings?: unknown };
+  banners?: { id?: string; name?: string }[];
+  [key: string]: unknown;
+};
+const json = async (response: Response) => response.json() as Promise<Json>;
 const withId = (id: string) => ({ params: Promise.resolve({ id }) });
 
 beforeAll(async () => {

@@ -1,9 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useContext, useEffect, useState } from 'react';
 import { LanguageContext } from '../generator/contexts';
-import { getOnlineBannerCount } from '../utils/presence';
-
-const REFRESH_MS = 30_000;
+import { getOnlineBannerCount, PRESENCE_REFRESH_MS, subscribeOnlineCount } from '../utils/presence';
 
 export function OnlineBannerCount() {
   const tl = useContext(LanguageContext);
@@ -14,25 +12,34 @@ export function OnlineBannerCount() {
   useEffect(() => {
     let active = true;
     const controller = new AbortController();
+    const unsubscribe = subscribeOnlineCount((value) => {
+      if (!active) return;
+      setCount(value);
+      setAvailable(true);
+    });
+    // On /live the ranking request already carries this number. A second poll would hit the same snapshot.
     const refresh = async () => {
+      if (onLive) return;
       try {
-        const value = await getOnlineBannerCount(controller.signal);
-        if (active) {
-          setCount(value);
-          setAvailable(true);
-        }
+        await getOnlineBannerCount(controller.signal);
       } catch {
-        if (active) setAvailable(false);
+        if (active && !controller.signal.aborted) setAvailable(false);
       }
     };
     void refresh();
-    const interval = window.setInterval(refresh, REFRESH_MS);
+    const interval = window.setInterval(refresh, PRESENCE_REFRESH_MS);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
     return () => {
       active = false;
       controller.abort();
       window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+      unsubscribe();
     };
-  }, []);
+  }, [onLive]);
 
   if (!tl) return null;
   const label = tl('live.open');

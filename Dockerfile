@@ -18,6 +18,9 @@ ENV VITE_FACEIT_API_KEY=${VITE_FACEIT_API_KEY}
 
 RUN pnpm run build
 
+# Accounts, saved banners and the feedback board. Nginx in the runtime image proxies /api/me and /api/posts here.
+RUN cd /app/web && pnpm install --frozen-lockfile && pnpm run build
+
 FROM nginx:1.27-alpine
 
 # Same key the widget uses, so a banner that only reports player_id can still be named on the live board.
@@ -33,7 +36,11 @@ COPY shared /app/shared
 COPY server /app/server
 RUN cd /app/server && npm install --omit=dev --no-audit --no-fund
 
+# Next standalone server (accounts API). Static chunks sit next to server.js; nginx does not serve them.
+COPY --from=build /app/web/.next/standalone /app/next-standalone
+COPY --from=build /app/web/.next/static /app/next-standalone/web/.next/static
+
 EXPOSE 80
 
-# Restart the API if it exits. Nginx stays up either way, but a dead process is what turns the counter and login into 502.
-CMD ["sh", "-c", "while true; do node /app/server/presence-service.mjs; echo \"presence exited $?\"; sleep 2; done & exec nginx -g 'daemon off;'"]
+# Restart either API if it exits. Nginx stays up, but a dead process is a 502: 3001 is login and the counter, 3100 is saved banners.
+CMD ["sh", "-c", "while true; do node /app/server/presence-service.mjs; echo \"presence exited $?\"; sleep 2; done & while true; do PORT=3100 HOSTNAME=127.0.0.1 node /app/next-standalone/web/server.js; echo \"accounts exited $?\"; sleep 2; done & exec nginx -g 'daemon off;'"]

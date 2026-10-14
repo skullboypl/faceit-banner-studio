@@ -4,6 +4,7 @@ import { LanguageContext } from '../generator/contexts';
 import { languages, tl as translate } from '../translations/translations';
 import { pickLanguage } from '../translations/detect';
 import { AdminQueue } from './AdminQueue';
+import { CookieNotice } from '../components/CookieNotice';
 
 type User = { guid: string; nickname: string; avatar: string | null };
 type Login = {
@@ -154,6 +155,7 @@ export const AdminPage = () => {
           </>
         )}
       </main>
+      <CookieNotice placement="plain" />
     </LanguageContext.Provider>
   );
 };

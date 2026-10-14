@@ -43,3 +43,9 @@ Home: https://faceitbanner.vxh.pl/
 - [How the widget works](https://faceitbanner.vxh.pl/en/docs/dev/widget/): How the widget works in OBS: loading data from the FACEIT API, refreshing, the session stored in the browser, the banner size algorithm and animations.
 - [Build and deployment](https://faceitbanner.vxh.pl/en/docs/dev/build-and-deploy/): How FACEIT Banner is built and deployed: the Dockerfile, CapRover, nginx, rendering the documentation to HTML, the sitemap and llms.txt.
 - [Contributing](https://faceitbanner.vxh.pl/en/docs/dev/contributing/): How to contribute to FACEIT Banner: adding translations, code style, commit convention, versioning and the licence.
+
+## Wiki, regulamin, prywatność
+
+- [Wiki](https://faceitbanner.vxh.pl/wiki/)
+- [Regulamin](https://faceitbanner.vxh.pl/terms/)
+- [Polityka prywatności](https://faceitbanner.vxh.pl/privacy/)

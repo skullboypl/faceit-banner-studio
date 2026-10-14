@@ -28,7 +28,7 @@ function wikiDevRewritePlugin(): Plugin {
     const [pathname, query] = url.split('?');
     const suffix = query ? `?${query}` : '';
 
-    const section = ['/wiki', '/docs', '/en/docs'].find(
+    const section = ['/wiki', '/docs', '/en/docs', '/terms', '/privacy'].find(
       (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
     );
     if (!section) {

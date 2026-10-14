@@ -214,7 +214,15 @@ async function fetchThread(postId: string): Promise<CommentRow[]> {
   return rows.map(toComment);
 }
 
-const toComment = (row: Record<string, any>): CommentRow => ({
+const toComment = (row: {
+  id: string;
+  post_id: string;
+  body: string;
+  by_admin: boolean;
+  created_at: Date;
+  author_guid: string;
+  nickname: string;
+}): CommentRow => ({
   id: row.id,
   postId: row.post_id,
   body: row.body,

@@ -4,6 +4,8 @@ import { createServer } from 'node:http';
 import { playerIdFromReferer, publicRanking, sanitizeInfo } from '../server/live.mjs';
 import { createPresenceMiddleware } from '../server/presence.mjs';
 
+process.env.LIVE_BOARD_TTL_MS = '0';
+
 test('sanitizeInfo keeps a valid banner and drops a bad elo, level and player id', () => {
   const info = sanitizeInfo({
     nickname: '  donk666  ',
@@ -121,7 +123,23 @@ test('the live board is public, ordered, and hides the session id', async () => 
       globalThis.fetch = original;
       delete process.env.FACEIT_API_KEY;
     }
+
+    process.env.LIVE_BOARD_TTL_MS = '250';
+    const before = await (await fetch(`${base}/api/presence/live`, { headers: { 'x-forwarded-for': '203.0.113.50' } })).json();
+    assert.equal((await beat('latearrivalheart01', { nickname: 'LateArrival', elo: 10 })).status, 200);
+    const during = await (await fetch(`${base}/api/presence/live`, { headers: { 'x-forwarded-for': '203.0.113.51' } })).json();
+    const duringCount = await (await fetch(`${base}/api/presence`, { headers: { 'x-forwarded-for': '203.0.113.52' } })).json();
+    assert.equal(during.players.some((player) => player.nickname === 'LateArrival'), false);
+    assert.equal(during.online, before.online);
+    assert.equal(duringCount.online, before.online);
+    assert.match(duringCount.windowSeconds.toString(), /^\d+$/);
+    await new Promise((resolve) => setTimeout(resolve, 320));
+    const after = await (await fetch(`${base}/api/presence/live`, { headers: { 'x-forwarded-for': '203.0.113.53' } })).json();
+    assert.equal(after.players.some((player) => player.nickname === 'LateArrival'), true);
+    assert.equal(after.online >= before.online + 1, true);
+    process.env.LIVE_BOARD_TTL_MS = '0';
   } finally {
+    process.env.LIVE_BOARD_TTL_MS = '0';
     await close();
   }
 });

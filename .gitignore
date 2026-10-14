@@ -18,6 +18,7 @@ SAMPLE/*
 .ssr
 public/docs/
 public/en/
+web/.next/
 
 # lokalne dane dostępowe (hasła) - nie commitować
 LOCALDATA/

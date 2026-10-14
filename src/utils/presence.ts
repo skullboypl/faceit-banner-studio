@@ -1,5 +1,25 @@
 const PRESENCE_ID_KEY = 'fcw_presence_id';
 const HEARTBEAT_MS = 60_000;
+/** Matches the server snapshot TTL. The menu count and the live list both use it. */
+export const PRESENCE_REFRESH_MS = 30_000;
+
+type OnlineListener = (count: number) => void;
+const onlineListeners = new Set<OnlineListener>();
+let lastOnline: number | null = null;
+
+function publishOnlineCount(count: number) {
+  lastOnline = count;
+  for (const listener of onlineListeners) listener(count);
+}
+
+/** The live list and the menu share one number so a studio on /live does not fetch it twice. */
+export function subscribeOnlineCount(listener: OnlineListener) {
+  onlineListeners.add(listener);
+  if (lastOnline !== null) listener(lastOnline);
+  return () => {
+    onlineListeners.delete(listener);
+  };
+}
 
 export type PresenceInfo = {
   nickname?: string;
@@ -52,7 +72,9 @@ export async function getOnlineBannerCount(signal?: AbortSignal) {
   const response = await fetch('/api/presence', { cache: 'no-store', signal });
   if (!response.ok) throw new Error('presence_unavailable');
   const data = (await response.json()) as { online?: number };
-  return Math.max(0, Number(data.online) || 0);
+  const count = Math.max(0, Number(data.online) || 0);
+  publishOnlineCount(count);
+  return count;
 }
 
 export type LivePlayer = {
@@ -75,8 +97,10 @@ export async function getLiveBoard(signal?: AbortSignal): Promise<LiveBoard> {
   if (!response.ok) throw new Error('presence_unavailable');
   const data = (await response.json()) as Partial<LiveBoard>;
   const players = Array.isArray(data.players) ? data.players.filter((player) => player && typeof player.nickname === 'string') : [];
+  const online = Math.max(0, Number(data.online) || 0);
+  publishOnlineCount(online);
   return {
-    online: Math.max(0, Number(data.online) || 0),
+    online,
     ranked: Math.max(0, Number(data.ranked) || players.length),
     windowSeconds: Math.max(0, Number(data.windowSeconds) || 0),
     players,

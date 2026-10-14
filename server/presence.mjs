@@ -60,8 +60,38 @@ export const getPresenceCount = () => {
   return sessions.size;
 };
 
-/** Public board: nick, ELO, level, country. No session id and no address. */
-export async function getLiveBoard() {
+/** Public menu count and the live list share one snapshot so open studios do not each rebuild it. */
+const PUBLIC_TTL_MS = 30_000;
+
+function publicTtlMs() {
+  const raw = process.env.LIVE_BOARD_TTL_MS;
+  if (raw === undefined || raw === '') return PUBLIC_TTL_MS;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : PUBLIC_TTL_MS;
+}
+
+let countCache = null;
+let boardCache = null;
+let boardInflight = null;
+
+function fresh(entry) {
+  return Boolean(entry) && Date.now() - entry.at < publicTtlMs();
+}
+
+function rememberCount(online, at = Date.now()) {
+  countCache = { at, body: { online, windowSeconds: ACTIVE_WINDOW_MS / 1000 } };
+  return countCache.body;
+}
+
+/** Cheap counter for the studio menu. Reuses the live-list snapshot when that one is still warm. */
+export function getPublicOnline() {
+  if (fresh(boardCache)) return { online: boardCache.body.online, windowSeconds: boardCache.body.windowSeconds };
+  if (fresh(countCache)) return countCache.body;
+  prune();
+  return rememberCount(sessions.size);
+}
+
+async function buildLiveBoard() {
   prune();
   const entries = [];
   for (const entry of sessions.values()) {
@@ -69,12 +99,27 @@ export async function getLiveBoard() {
   }
   await fillFromPlayerId(entries);
   const players = publicRanking(entries);
-  return {
+  const at = Date.now();
+  const body = {
     online: sessions.size,
     ranked: players.length,
     windowSeconds: ACTIVE_WINDOW_MS / 1000,
     players: players.slice(0, 200),
   };
+  boardCache = { at, body };
+  rememberCount(body.online, at);
+  return body;
+}
+
+/** Public board: nick, ELO, level, country. No session id and no address. */
+export async function getLiveBoard() {
+  if (fresh(boardCache)) return boardCache.body;
+  if (!boardInflight) {
+    boardInflight = buildLiveBoard().finally(() => {
+      boardInflight = null;
+    });
+  }
+  return boardInflight;
 }
 
 const trustedHops = () => Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS) || 1);
@@ -89,17 +134,16 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
     if (pathname !== '/api/presence' && pathname !== '/api/presence/live') return next();
 
     const now = Date.now();
-    prune(now);
     const ip = clientIp(req.headers, req.socket.remoteAddress, trustedHops());
 
     if (req.method === 'GET') {
       if (!getLimit(ip)) return sendJson(res, 429, { error: 'rate_limited' }, { 'Retry-After': '60' });
-      if (pathname === '/api/presence/live') return sendJson(res, 200, await getLiveBoard());
-      return sendJson(res, 200, {
-        online: sessions.size,
-        windowSeconds: ACTIVE_WINDOW_MS / 1000,
-      });
+      const cacheControl = { 'Cache-Control': `public, max-age=${Math.floor(publicTtlMs() / 1000)}` };
+      if (pathname === '/api/presence/live') return sendJson(res, 200, await getLiveBoard(), cacheControl);
+      return sendJson(res, 200, getPublicOnline(), cacheControl);
     }
+
+    prune(now);
 
     if (pathname !== '/api/presence' || req.method !== 'POST') {
       res.setHeader('Allow', 'GET, POST');

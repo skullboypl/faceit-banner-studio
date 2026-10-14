@@ -170,7 +170,7 @@ describe('violation tracker', () => {
   });
 
   test('retryAfterSeconds tells how long the lock lasts', () => {
-    let now = 0;
+    const now = 0;
     const tracker = createViolationTracker({ now: () => now });
     for (let i = 0; i < 5; i++) tracker.record('u1');
     expect(tracker.retryAfterSeconds('u1')).toBeGreaterThan(3500);

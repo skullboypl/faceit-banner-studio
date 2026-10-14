@@ -374,8 +374,11 @@ export const DocsPage = ({
                   : 'A FACEIT statistics widget for your stream.'}
               </p>
               <small>
-                <a href="/wiki/">Wiki</a> ·{' '}
-                <a href="https://github.com/skullboypl/faceit-banner-faceitbanner.vxh.pl">GitHub</a>
+                <a href="/wiki/">Wiki</a>
+                {' · '}
+                <a href="/terms/">{lang === 'pl' ? 'Regulamin' : 'Terms'}</a>
+                {' · '}
+                <a href="/privacy/">{lang === 'pl' ? 'Prywatność' : 'Privacy'}</a>
               </small>
             </div>
           </header>

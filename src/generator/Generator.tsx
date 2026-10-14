@@ -19,6 +19,7 @@ import { StatisticsTab } from './tabs/StatisticsTab.tsx';
 import { GeneratedWidgetModal } from '../components/GeneratedWidgetModal.tsx';
 import { InfoBox } from '../components/InfoBox.tsx';
 import { Footer } from '../components/Footer.tsx';
+import { CookieNotice } from '../components/CookieNotice.tsx';
 import { PreviewCarousel } from '../components/PreviewCarousel.tsx';
 import { StudioIcon } from '../components/StudioIcon.tsx';
 import { LiveRanking } from '../live/LiveRanking.tsx';
@@ -640,11 +641,8 @@ export const Generator = () => {
                   aria-current={!onLive && index === selectedTabIndex ? 'page' : undefined}
                   data-overflow={index >= PINNED_TABS ? 'true' : undefined}
                   onClick={() => {
-                    if (onLive) {
-                      navigate(`/?tab=${index}`);
-                      return;
-                    }
                     selectTab(index);
+                    if (onLive) navigate(`/?tab=${index}`);
                   }}
                   className={!onLive && index === selectedTabIndex ? 'active' : ''}
                 >
@@ -741,7 +739,7 @@ export const Generator = () => {
             </span>
           </div>
             <main
-            className={`studio-main${!onLive && selectedTabIndex === FEEDBACK_TAB_INDEX ? ' studio-main--wide' : ''}`}
+            className={`studio-main${onLive ? ' studio-main--live' : selectedTabIndex === FEEDBACK_TAB_INDEX ? ' studio-main--wide' : ''}`}
           >
             <section
               className={'fixed-width'}
@@ -757,7 +755,7 @@ export const Generator = () => {
                 {onLive ? <LiveRanking /> : tabs[selectedTabIndex].component}
               </div>
             </section>
-            {(onLive || selectedTabIndex !== FEEDBACK_TAB_INDEX) && (
+            {!onLive && selectedTabIndex !== FEEDBACK_TAB_INDEX && (
               <section className={'preview'}>
                 <div className={'settings preview-card'}>
                   <div className="preview-heading">
@@ -973,6 +971,7 @@ export const Generator = () => {
             )}
           </main>
           <Footer />
+          <CookieNotice />
         </div>
       </SettingsContext.Provider>
     </LanguageContext.Provider>

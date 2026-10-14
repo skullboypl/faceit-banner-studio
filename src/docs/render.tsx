@@ -15,6 +15,7 @@ import {
   buildDocsPages,
   docsPath,
 } from './content';
+import { sitePages } from './site-pages';
 
 const PUBLIC_DIR = join(process.cwd(), 'public');
 const LANGS: DocsLang[] = ['pl', 'en'];
@@ -33,6 +34,11 @@ for (const lang of LANGS) {
     writePage(path, renderToStaticMarkup(<DocsPage lang={lang} page={page} pages={pages} />));
     written.push(path);
   }
+}
+
+for (const page of sitePages) {
+  writePage(page.path, renderToStaticMarkup(page.element));
+  written.push(page.path);
 }
 
 /* Sitemap: home, docs in both languages (with hreflang alternates) and the wiki pages */
@@ -81,6 +87,14 @@ for (const lang of LANGS) {
     llmsLines.push(`- [${page.h1}](${SITE_URL}${docsPath(lang, page.id)}): ${page.description}`);
   }
 }
+llmsLines.push(
+  '',
+  '## Wiki, regulamin, prywatność',
+  '',
+  `- [Wiki](${SITE_URL}/wiki/)`,
+  `- [Regulamin](${SITE_URL}/terms/)`,
+  `- [Polityka prywatności](${SITE_URL}/privacy/)`,
+);
 writeFileSync(join(PUBLIC_DIR, 'llms.txt'), `${llmsLines.join('\n')}\n`);
 
 writeFileSync(

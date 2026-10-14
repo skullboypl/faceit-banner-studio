@@ -1,9 +1,14 @@
 import { useContext, useEffect, useState } from 'react';
 import { LanguageContext } from '../generator/contexts';
-import { getLiveBoard, type LivePlayer } from '../utils/presence';
+import { getLiveBoard, PRESENCE_REFRESH_MS, type LivePlayer } from '../utils/presence';
 
-const REFRESH_MS = 30_000;
+const PAGE_SIZE = 15;
 const LEVEL_COLOR = ['#d5d5d8', '#22a84a', '#3cb54a', '#8fce3a', '#e2c044', '#e08a2c', '#e05a28', '#d63b4a', '#b44ad6', '#ff5500'];
+
+function pageWindow(current: number, count: number) {
+  const pages = new Set([0, count - 1, current - 1, current, current + 1]);
+  return [...pages].filter((page) => page >= 0 && page < count).sort((a, b) => a - b);
+}
 
 const flagUrl = (country: string) => `https://flagcdn.com/${country}.svg`;
 
@@ -16,6 +21,7 @@ export function LiveRanking() {
   const [players, setPlayers] = useState<LivePlayer[] | null>(null);
   const [online, setOnline] = useState(0);
   const [error, setError] = useState(false);
+  const [pageIndex, setPageIndex] = useState(0);
 
   useEffect(() => {
     if (!t) return;
@@ -35,16 +41,27 @@ export function LiveRanking() {
       }
     };
     void refresh();
-    const interval = window.setInterval(refresh, REFRESH_MS);
+    const interval = window.setInterval(refresh, PRESENCE_REFRESH_MS);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
     return () => {
       active = false;
       controller.abort();
       window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
       document.title = previousTitle;
     };
   }, [t]);
 
   if (!t) return null;
+
+  const pageCount = Math.max(1, Math.ceil((players?.length ?? 0) / PAGE_SIZE));
+  const page = Math.min(pageIndex, pageCount - 1);
+  const start = page * PAGE_SIZE;
+  const visible = (players ?? []).slice(start, start + PAGE_SIZE);
+  const pages = pageWindow(page, pageCount);
 
   return (
     <div className="settings live-panel">
@@ -57,29 +74,60 @@ export function LiveRanking() {
       ) : players && players.length === 0 ? (
         <p className="live-empty">{t('live.empty')}</p>
       ) : (
-        <ol className="live-list">
-          {(players ?? []).map((player, index) => (
-            <li key={`${player.nickname}-${index}`} className={index < 3 ? `live-row live-row--${index + 1}` : 'live-row'}>
-              <span className="live-rank">{String(index + 1).padStart(2, '0')}</span>
-              {player.country ? (
-                <img className="live-flag" src={flagUrl(player.country)} alt="" />
-              ) : (
-                <span className="live-flag live-flag--empty" />
-              )}
-              <a className="live-nick" href={faceitProfile(player.nickname)} target="_blank" rel="noreferrer noopener">
-                {player.nickname}
-              </a>
-              {player.level ? (
-                <span className="live-level" style={{ color: LEVEL_COLOR[player.level - 1] }}>
-                  {player.level}
-                </span>
-              ) : (
-                <span className="live-level" />
-              )}
-              <strong className="live-elo">{Number.isInteger(player.elo) ? player.elo!.toLocaleString() : '—'}</strong>
-            </li>
-          ))}
+        <ol className="live-list" start={start + 1}>
+          {visible.map((player, index) => {
+            const rank = start + index + 1;
+            return (
+              <li key={`${player.nickname}-${rank}`} className={rank <= 3 ? `live-row live-row--${rank}` : 'live-row'}>
+                <span className="live-rank">{String(rank).padStart(2, '0')}</span>
+                {player.country ? (
+                  <img className="live-flag" src={flagUrl(player.country)} alt="" />
+                ) : (
+                  <span className="live-flag live-flag--empty" />
+                )}
+                <a className="live-nick" href={faceitProfile(player.nickname)} target="_blank" rel="noreferrer noopener">
+                  {player.nickname}
+                </a>
+                {player.level ? (
+                  <span className="live-level" style={{ color: LEVEL_COLOR[player.level - 1] }}>
+                    {player.level}
+                  </span>
+                ) : (
+                  <span className="live-level" />
+                )}
+                <strong className="live-elo">{Number.isInteger(player.elo) ? player.elo!.toLocaleString() : '—'}</strong>
+              </li>
+            );
+          })}
         </ol>
+      )}
+      {players && players.length > PAGE_SIZE && (
+        <nav className="live-pages" aria-label={t('live.pages')}>
+          <button type="button" disabled={page === 0} onClick={() => setPageIndex(page - 1)}>
+            {t('live.prev')}
+          </button>
+          <span className="live-pages-status">{t('live.page', [String(page + 1), String(pageCount)])}</span>
+          <span className="live-pages-nums">
+            {pages.map((entry, index) => {
+              const gap = index > 0 && entry - pages[index - 1] > 1;
+              return (
+                <span key={entry}>
+                  {gap && <span className="live-pages-gap">…</span>}
+                  <button
+                    type="button"
+                    aria-current={entry === page ? 'page' : undefined}
+                    onClick={() => setPageIndex(entry)}
+                  >
+                    {entry + 1}
+                  </button>
+                </span>
+              );
+            })}
+          </span>
+          <button type="button" disabled={page >= pageCount - 1} onClick={() => setPageIndex(page + 1)}>
+            {t('live.next')}
+          </button>
+        </nav>
       )}
       <p className="live-note">{t('live.note')}</p>
     </div>
