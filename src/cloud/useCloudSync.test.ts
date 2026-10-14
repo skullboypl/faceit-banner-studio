@@ -71,6 +71,19 @@ describe('debounced saving', () => {
     });
   });
 
+  test('re-renders with an identical settings object do not postpone the save', async () => {
+    getWorkspace.mockResolvedValue(cloud({}, 1, 'this-device'));
+    const { rerender } = setup(defaults());
+    await flush();
+    rerender({ settings: withRadius(10), who: user });
+    for (let elapsed = 0; elapsed < 1400; elapsed += 350) {
+      await flush(350);
+      rerender({ settings: withRadius(10), who: user }); // new object, same values (the app does this every ~700 ms)
+    }
+    await flush(200);
+    expect(putWorkspace).toHaveBeenCalledTimes(1);
+  });
+
   test('does not talk to the server for a guest', async () => {
     const { rerender } = setup(defaults(), false);
     rerender({ settings: withRadius(10), who: null });

@@ -1,5 +1,6 @@
 import { useContext } from 'react';
 import { LanguageContext } from '../generator/Generator.tsx';
+import { DonateLink } from './DonateLink.tsx';
 import { BrandGithubIcon } from '../assets/icons/tabler/BrandGithubIcon.tsx';
 
 const GITHUB_REPO_URL =
@@ -37,6 +38,7 @@ export const Footer = () => {
         </small>
       </div>
       <div className="footer-right">
+        <DonateLink variant="footer" />
         <a
           className="footer-github-link"
           href={GITHUB_REPO_URL}

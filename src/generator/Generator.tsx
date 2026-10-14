@@ -1,11 +1,11 @@
 import {
-  createContext,
   useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
 } from 'react';
+import { LanguageContext, SettingsContext } from './contexts.ts';
 import { Widget } from '../../widget/src/widget/Widget.tsx';
 import {
   Language,
@@ -33,7 +33,6 @@ import dust2Preview from '../assets/previews/dust2.png';
 import overpassPreview from '../assets/previews/overpass.png';
 import { useSearchParams } from 'react-router-dom';
 import {
-  SetSettingFunction,
   SettingValue,
   SettingDefinition,
   SettingKey,
@@ -46,16 +45,15 @@ import { resolveBannerStyle } from '../../widget/src/styles/styles';
 import type { VersusPlayer } from '../../widget/src/widget/Widget.tsx';
 import { VerifiedBadgeType } from '../../widget/src/utils/faceit_util.ts';
 import { OnlineBannerCount } from '../components/OnlineBannerCount.tsx';
+import { ConflictDialog } from '../components/ConflictDialog.tsx';
+import { DonateLink } from '../components/DonateLink.tsx';
+import { MyBannersPanel } from '../components/MyBannersPanel.tsx';
+import { SyncChip } from '../components/SyncChip.tsx';
+import { useCloudSync } from '../cloud/useCloudSync.ts';
+import { useSession } from '../cloud/useSession.ts';
 import { getPlayerProfile } from '../../widget/src/utils/faceit_util.ts';
 
-export const LanguageContext = createContext<
-  ((text: string, args?: string[]) => string) | null
->(null);
-export const SettingsContext = createContext<{
-  settings: Settings;
-  get: <K extends SettingKey>(key: K) => SettingValueType<K>;
-  set: SetSettingFunction;
-} | null>(null);
+export { LanguageContext, SettingsContext } from './contexts.ts';
 
 const DEFAULT_GENERATOR_USERNAME = 'donk666';
 const PREVIEW_BACKGROUNDS: Record<string, string> = {
@@ -131,6 +129,17 @@ export const Generator = () => {
     const description = document.getElementsByName('description');
     (description[0] as HTMLMetaElement).content = tl('meta.description');
   }, [language]);
+
+  const session = useSession();
+  const applyCloudSettings = useCallback(
+    (cloud: Partial<Settings>) => {
+      for (const [key, value] of Object.entries(cloud)) {
+        setSetting(key as SettingKey, value as never);
+      }
+    },
+    [setSetting]
+  );
+  const cloudSync = useCloudSync(settings, applyCloudSettings, session.user);
 
   useEffect(() => {
     document.getElementsByTagName('html')[0].classList.add(`generator`);
@@ -513,6 +522,10 @@ export const Generator = () => {
       name: tl('generator.stats.title'),
       component: <StatisticsTab key={'stats'} />,
     },
+    {
+      name: tl('banners.title'),
+      component: <MyBannersPanel key={'banners'} user={session.user} />,
+    },
   ];
 
   return (
@@ -520,6 +533,7 @@ export const Generator = () => {
       <SettingsContext.Provider
         value={{ settings, get: getSetting, set: setSetting }}
       >
+        <ConflictDialog conflict={cloudSync.conflict} />
         <GeneratedWidgetModal
           language={language}
           url={generatedURL}
@@ -567,7 +581,7 @@ export const Generator = () => {
                   className={index === selectedTabIndex ? 'active' : ''}
                 >
                   <StudioIcon
-                    name={(['settings', 'palette', 'stats'] as const)[index]}
+                    name={(['settings', 'palette', 'stats', 'cloud'] as const)[index]}
                   />
                   <span>{tab.name}</span>
                   <StudioIcon name="chevron" />
@@ -594,6 +608,14 @@ export const Generator = () => {
               <StudioIcon name="arrow" />
             </a>
           </nav>
+          <div className="sidebar-account">
+            <SyncChip
+              state={cloudSync.state}
+              lastSavedAt={cloudSync.lastSavedAt}
+              user={session.user}
+            />
+            <DonateLink variant="header" />
+          </div>
           <div
             className="sidebar-lang"
             role="group"

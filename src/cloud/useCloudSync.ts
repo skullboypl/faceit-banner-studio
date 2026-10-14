@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Settings } from '../settings/manager';
 import { ApiError, getWorkspace, putWorkspace, type CloudWorkspace, type User } from './api';
 import { canonical, fromDelta, toDelta } from './delta';
@@ -230,17 +230,18 @@ export function useCloudSync(settings: Settings, apply: (settings: Partial<Setti
       cancelled = true;
       clearTimers();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guid]);
 
-  // Debounced write of every later change.
+  // Debounced write of every later change. It keys off the delta's content, not the settings object:
+  // the generator re-creates that object with identical values every ~700 ms, which must not postpone the save.
+  const deltaCanon = useMemo(() => canonical(toDelta(settings)), [settings]);
   useEffect(() => {
     if (!guid || !loaded.current || conflictOpen.current) return;
-    if (canonical(toDelta(settings)) === syncedCanon.current) return;
+    if (deltaCanon === syncedCanon.current) return;
     setState((current) => (current === 'unauthorized' ? current : 'saving'));
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => void send(), DEBOUNCE_MS);
-  }, [settings, guid, send]);
+  }, [deltaCanon, guid, send]);
 
   // Leaving the page with an unsent change: send it with keepalive so the browser finishes the request.
   useEffect(() => {
