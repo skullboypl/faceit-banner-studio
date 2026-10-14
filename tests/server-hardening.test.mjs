@@ -40,6 +40,10 @@ test('login is limited per IP and then locked out', async () => {
     assert.equal(statuses.slice(0, 10).every((s) => s === 302), true, 'first 10 pass');
     assert.equal(statuses.slice(10).every((s) => s === 429), true, 'the rest are rejected');
     assert.equal((await hit(base, '/api/auth/login', { ip: '198.51.100.2' })).status, 302, 'other IPs are fine');
+    const pkce = await hit(base, '/api/auth/login', { ip: '198.51.100.20' });
+    const location = new URL(pkce.headers.get('location'));
+    assert.equal(location.searchParams.get('code_challenge_method'), 'S256');
+    assert.ok(location.searchParams.get('code_challenge'));
   } finally {
     await close();
   }

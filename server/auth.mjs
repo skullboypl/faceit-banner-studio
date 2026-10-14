@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { clientIp as resolveClientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
 import { getPresenceCount } from './presence.mjs';
@@ -80,13 +80,17 @@ async function handleLogin(req, res) {
   const clientId = process.env.FACEIT_OAUTH_CLIENT_ID;
   if (!clientId) return sendJson(res, 503, { error: 'oauth_not_configured' });
   const state = randomBytes(24).toString('hex');
-  await saveState(state);
+  const verifier = randomBytes(32).toString('base64url');
+  const challenge = createHash('sha256').update(verifier).digest('base64url');
+  await saveState(state, verifier);
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: clientId,
     redirect_uri: `${publicUrl(req)}/api/auth/callback`,
     scope: 'openid profile',
     state,
+    code_challenge: challenge,
+    code_challenge_method: 'S256',
   });
   redirect(res, `${AUTHORIZE_URL}?${params}`);
 }
@@ -101,7 +105,8 @@ async function handleCallback(req, res, url) {
   if (url.searchParams.get('error') || !code || !state) {
     return redirect(res, '/?login=cancelled');
   }
-  if (!(await consumeState(state))) return redirect(res, '/?login=expired');
+  const verifier = await consumeState(state);
+  if (!verifier) return redirect(res, '/?login=expired');
 
   const basic = Buffer.from(`${clientId}:${secret}`).toString('base64');
   const tokenResponse = await fetch(TOKEN_URL, {
@@ -114,6 +119,7 @@ async function handleCallback(req, res, url) {
       grant_type: 'authorization_code',
       code,
       redirect_uri: `${publicUrl(req)}/api/auth/callback`,
+      code_verifier: verifier,
     }),
   });
   if (!tokenResponse.ok) return redirect(res, '/?login=failed');

@@ -122,23 +122,30 @@ export async function deleteSession(id) {
   if (!removed) memorySessions.delete(id);
 }
 
-/** One-time OAuth state, valid for 10 minutes and consumed on first use. */
-export async function saveState(state) {
-  const stored = await withRedis((redis) => redis.set(`fb:state:${state}`, '1', 'EX', 600));
+/** One-time OAuth state plus its PKCE verifier, valid for 10 minutes and consumed on first use. */
+export async function saveState(state, verifier) {
+  const value = typeof verifier === 'string' && verifier ? verifier : '1';
+  const stored = await withRedis((redis) => redis.set(`fb:state:${state}`, value, 'EX', 600));
   if (stored) return;
-  memorySessions.set(`state:${state}`, { user: true, expires: Date.now() + 600_000 });
+  memorySessions.set(`state:${state}`, { verifier: value, expires: Date.now() + 600_000 });
 }
 
 export async function consumeState(state) {
   try {
     const redis = await getRedis();
-    if (redis) return (await redis.del(`fb:state:${state}`)) === 1;
+    if (redis) {
+      const value = await redis.get(`fb:state:${state}`);
+      if (!value) return null;
+      await redis.del(`fb:state:${state}`);
+      return value;
+    }
   } catch (error) {
     markRedisDown(error);
   }
   const entry = memorySessions.get(`state:${state}`);
   memorySessions.delete(`state:${state}`);
-  return Boolean(entry && entry.expires >= Date.now());
+  if (!entry || entry.expires < Date.now()) return null;
+  return entry.verifier || null;
 }
 
 function rememberLogin(entry) {
