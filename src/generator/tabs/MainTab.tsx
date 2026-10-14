@@ -288,7 +288,6 @@ export const MainTab = ({
               {tl(`style.${String(settings.get('style'))}`)}
             </strong>
           </div>
-      {mode === 'popup' && <PopupOptions />}
           <button
             type="button"
             className="look-cta-button"
@@ -299,6 +298,7 @@ export const MainTab = ({
           </button>
         </div>
       </div>
+      {mode === 'popup' && <PopupOptions />}
       <div className={'settings'}>
         <h3 className="card-heading">
           <UserIcon />
