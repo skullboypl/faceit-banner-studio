@@ -34,7 +34,9 @@ export const Footer = () => {
           </a>
         </small>
         <small>
-          <a href="/docs/">Docs</a> · <a href="/wiki/">Wiki</a>
+          <a href="/docs/">Docs</a> · <a href="/wiki/">Wiki</a> ·{' '}
+          <a href="/terms/">{tl('footer.terms')}</a> ·{' '}
+          <a href="/privacy/">{tl('footer.privacy')}</a>
         </small>
       </div>
       <div className="footer-right">

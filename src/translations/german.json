@@ -462,5 +462,7 @@
   "account.admin": "Admin-Panel",
   "menu.title": "Menü",
   "menu.close": "Menü schließen",
-  "menu.open": "Menü öffnen"
+  "menu.open": "Menü öffnen",
+  "footer.terms": "Nutzungsbedingungen",
+  "footer.privacy": "Datenschutz"
 }

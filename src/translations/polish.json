@@ -462,5 +462,7 @@
   "account.admin": "Panel admina",
   "menu.title": "Menu",
   "menu.close": "Zamknij menu",
-  "menu.open": "Otwórz menu"
+  "menu.open": "Otwórz menu",
+  "footer.terms": "Regulamin",
+  "footer.privacy": "Prywatność"
 }

@@ -462,5 +462,7 @@
   "account.admin": "Admin panel",
   "menu.title": "Menu",
   "menu.close": "Close menu",
-  "menu.open": "Open menu"
+  "menu.open": "Open menu",
+  "footer.terms": "Terms",
+  "footer.privacy": "Privacy"
 }

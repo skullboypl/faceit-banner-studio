@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Polityka prywatności · FACEIT Banner Studio</title>
+    <meta name="description" content="Jakie dane zbiera FACEIT Banner Studio, po co i jak możesz je usunąć." />
+    <link rel="icon" href="/brand/logo-100.png" />
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; font: 16px/1.65 system-ui, 'Segoe UI', sans-serif; color: #e8e6e4; background: #0d0d0e; }
+      main { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+      a { color: #ff8a4a; }
+      h1 { margin: 0 0 6px; font-size: 30px; }
+      h2 { margin: 36px 0 8px; font-size: 20px; color: #fff; }
+      h3 { margin: 22px 0 6px; font-size: 16px; color: #ffb48a; }
+      .meta, .jump { color: #8b8683; font-size: 14px; }
+      .jump a { margin-right: 12px; }
+      ul { padding-left: 22px; }
+      li { margin: 4px 0; }
+      table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      th, td { padding: 8px 10px; text-align: left; vertical-align: top; border-top: 1px solid #2a2a2c; }
+      th { color: #ffb48a; }
+      hr { margin: 56px 0 0; border: 0; border-top: 1px solid #2a2a2c; }
+      nav { margin-bottom: 24px; font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <nav><a href="/">← FACEIT Banner Studio</a> · <a href="/terms/">Regulamin</a></nav>
+      <p class="jump"><a href="#pl">Polski</a><a href="#en">English</a></p>
+
+      <section id="pl" lang="pl">
+        <h1>Polityka prywatności</h1>
+        <p class="meta">Obowiązuje od 14 października 2026.</p>
+
+        <h2>Kto jest administratorem</h2>
+        <p>
+          Administratorem danych jest autor serwisu, <strong>Skull (skullboypl)</strong>, prowadzący FACEIT Banner Studio
+          pod adresem <a href="https://faceitbanner.vxh.pl">faceitbanner.vxh.pl</a>. Kontakt w sprawach danych osobowych:
+          <a href="https://discord.skullmedia.pl">Discord</a>.
+        </p>
+
+        <h2>Co robi serwis</h2>
+        <p>
+          Generator tworzy banery ze statystykami FACEIT do OBS i Streamlabs. Z generatora możesz korzystać bez konta.
+          Konto (logowanie przez FACEIT) jest opcjonalne i daje zapis banerów w chmurze oraz udział w tablicy zgłoszeń.
+        </p>
+
+        <h2>Jakie dane przetwarzamy</h2>
+        <h3>Bez logowania</h3>
+        <ul>
+          <li>
+            <strong>Ustawienia generatora</strong> zapisują się wyłącznie w pamięci Twojej przeglądarki (localStorage).
+            Nie trafiają na nasz serwer.
+          </li>
+          <li>
+            <strong>Licznik aktywnych banerów:</strong> przeglądarka wysyła losowy identyfikator (bez nicku, bez e-maila),
+            który serwer trzyma w pamięci przez około 2 minuty, żeby policzyć, ile banerów jest teraz otwartych.
+          </li>
+          <li>
+            <strong>Statystyki FACEIT:</strong> dla wpisanego nicku lub ID gracza baner pobiera publiczne dane z API
+            FACEIT. Te zapytania wysyła Twoja przeglądarka (lub OBS) do FACEIT.
+          </li>
+          <li>
+            <strong>Flagi krajów</strong> ładują się z flagcdn.com, więc ten dostawca widzi adres IP przeglądarki.
+          </li>
+        </ul>
+
+        <h3>Po zalogowaniu przez FACEIT</h3>
+        <table>
+          <thead><tr><th>Dane</th><th>Po co</th><th>Jak długo</th></tr></thead>
+          <tbody>
+            <tr><td>Identyfikator konta FACEIT (guid), nick i adres awatara (od FACEIT)</td><td>Konto, podpisanie zgłoszeń i komentarzy</td><td>Do usunięcia konta</td></tr>
+            <tr><td>Historia logowań: identyfikator, nick, awatar, adres IP, czas</td><td>Bezpieczeństwo i wykrywanie nadużyć</td><td>Dopóki jest potrzebna do bezpieczeństwa; usuwamy na Twoją prośbę</td></tr>
+            <tr><td>Sesja logowania (ciasteczko <code>fb_session</code>)</td><td>Utrzymanie zalogowania</td><td>Do 7 dni</td></tr>
+            <tr><td>Zapisane banery i bieżące ustawienia synchronizowane z kontem</td><td>Dostęp do banerów z każdego urządzenia</td><td>Do usunięcia przez Ciebie lub usunięcia konta</td></tr>
+            <tr><td>Zgłoszenia, komentarze, głosy, ewentualny kontekst błędu (przeglądarka, wersja, wybrane ustawienia banera)</td><td>Tablica próśb i błędów</td><td>Do usunięcia przez Ciebie lub administratora</td></tr>
+          </tbody>
+        </table>
+        <p>
+          Nie prosimy o hasło ani adres e-mail. Nie otrzymujemy Twojego hasła do FACEIT: logowanie odbywa się na stronie
+          FACEIT.
+        </p>
+
+        <h2>Podstawa prawna</h2>
+        <p>
+          Zapewnienie funkcji konta: art. 6 ust. 1 lit. b RODO. Bezpieczeństwo serwisu, ochrona przed nadużyciami i
+          moderacja: prawnie uzasadniony interes administratora (art. 6 ust. 1 lit. f RODO).
+        </p>
+
+        <h2>Ciasteczka i reklamy</h2>
+        <p>
+          Używamy jednego technicznego ciasteczka sesji (<code>fb_session</code>, tylko po zalogowaniu). Nie ma
+          reklam, śledzenia ani ciasteczek analitycznych.
+        </p>
+
+        <h2>Kto jeszcze widzi dane</h2>
+        <ul>
+          <li><strong>FACEIT</strong>: logowanie i publiczne statystyki, według własnych zasad FACEIT.</li>
+          <li>
+            <strong>Inni zalogowani użytkownicy</strong> widzą Twój nick przy zgłoszeniach i komentarzach. Niezalogowani
+            widzą tylko tytuły, status i liczniki.
+          </li>
+          <li><strong>Hosting:</strong> dane są na serwerze VPS administratora; nie sprzedajemy ich ani nie udostępniamy reklamodawcom.</li>
+          <li>
+            <strong>Wsparcie projektu</strong> (<a href="https://donate.skullmedia.pl">donate.skullmedia.pl</a>) to osobna
+            strona z własnymi zasadami; nie przekazujemy jej danych z kont.
+          </li>
+        </ul>
+
+        <h2>Twoje prawa</h2>
+        <p>
+          Możesz żądać dostępu do danych, ich sprostowania, usunięcia, ograniczenia przetwarzania, sprzeciwu oraz
+          przeniesienia danych. Możesz też złożyć skargę do Prezesa Urzędu Ochrony Danych Osobowych. Napisz przez
+          <a href="https://discord.skullmedia.pl">Discord</a>, a usuniemy konto razem z zapisanymi banerami, zgłoszeniami i
+          historią logowań, o ile prawo nie wymaga ich zachowania.
+        </p>
+
+        <h2>Zmiany</h2>
+        <p>Zmiany tej polityki publikujemy na tej stronie z nową datą.</p>
+      </section>
+
+      <hr />
+
+      <section id="en" lang="en">
+        <h1>Privacy policy</h1>
+        <p class="meta">Effective 14 October 2026.</p>
+
+        <h2>Who is responsible</h2>
+        <p>
+          The controller is the author of the service, <strong>Skull (skullboypl)</strong>, who runs FACEIT Banner Studio at
+          <a href="https://faceitbanner.vxh.pl">faceitbanner.vxh.pl</a>. For data protection matters contact us on
+          <a href="https://discord.skullmedia.pl">Discord</a>.
+        </p>
+
+        <h2>What the service does</h2>
+        <p>
+          The generator creates banners with FACEIT statistics for OBS and Streamlabs. You can use it without an account.
+          Logging in with FACEIT is optional and adds cloud-saved banners and the requests and bug board.
+        </p>
+
+        <h2>What we process</h2>
+        <h3>Without logging in</h3>
+        <ul>
+          <li><strong>Generator settings</strong> are kept only in your browser (localStorage), not on our server.</li>
+          <li>
+            <strong>Active banner counter:</strong> your browser sends a random identifier (no nickname, no email) that the
+            server keeps in memory for about 2 minutes to count banners currently open.
+          </li>
+          <li>
+            <strong>FACEIT statistics:</strong> for the nickname or player ID you enter, the banner fetches public data from
+            the FACEIT API. Your browser (or OBS) sends those requests to FACEIT.
+          </li>
+          <li><strong>Country flags</strong> load from flagcdn.com, so that provider sees the browser's IP address.</li>
+        </ul>
+
+        <h3>After logging in with FACEIT</h3>
+        <table>
+          <thead><tr><th>Data</th><th>Purpose</th><th>Retention</th></tr></thead>
+          <tbody>
+            <tr><td>FACEIT account id (guid), nickname and avatar URL (from FACEIT)</td><td>Account, signing posts and comments</td><td>Until the account is deleted</td></tr>
+            <tr><td>Login history: id, nickname, avatar, IP address, time</td><td>Security and abuse detection</td><td>As long as needed for security; deleted on request</td></tr>
+            <tr><td>Login session (<code>fb_session</code> cookie)</td><td>Keeping you logged in</td><td>Up to 7 days</td></tr>
+            <tr><td>Saved banners and working settings synced to the account</td><td>Access from every device</td><td>Until you or an account deletion remove them</td></tr>
+            <tr><td>Posts, comments, votes, optional bug context (browser, version, chosen banner settings)</td><td>Requests and bugs board</td><td>Until you or an administrator remove them</td></tr>
+          </tbody>
+        </table>
+        <p>We do not ask for a password or an email address. We never receive your FACEIT password: login happens on FACEIT's own page.</p>
+
+        <h2>Legal basis</h2>
+        <p>
+          Providing account features: Art. 6(1)(b) GDPR. Service security, abuse protection and moderation: the controller's
+          legitimate interest (Art. 6(1)(f) GDPR).
+        </p>
+
+        <h2>Cookies and ads</h2>
+        <p>
+          We use one technical session cookie (<code>fb_session</code>, only after login). There are no ads, tracking or
+          analytics cookies.
+        </p>
+
+        <h2>Who else sees data</h2>
+        <ul>
+          <li><strong>FACEIT</strong>: login and public statistics, under FACEIT's own terms.</li>
+          <li>
+            <strong>Other logged-in users</strong> see your nickname next to posts and comments. Visitors who are not logged
+            in see only titles, status and counters.
+          </li>
+          <li><strong>Hosting:</strong> data lives on the controller's VPS; we do not sell it or share it with advertisers.</li>
+          <li>
+            <strong>Supporting the project</strong> (<a href="https://donate.skullmedia.pl">donate.skullmedia.pl</a>) is a
+            separate site with its own rules; we pass no account data to it.
+          </li>
+        </ul>
+
+        <h2>Your rights</h2>
+        <p>
+          You can request access, rectification, erasure, restriction, objection and data portability, and you can complain
+          to your data protection authority (in Poland: the President of the Personal Data Protection Office). Write on
+          <a href="https://discord.skullmedia.pl">Discord</a> and we will delete the account with its saved banners, posts
+          and login history unless the law requires us to keep them.
+        </p>
+
+        <h2>Changes</h2>
+        <p>We publish changes to this policy on this page with a new date.</p>
+      </section>
+    </main>
+  </body>
+</html>
