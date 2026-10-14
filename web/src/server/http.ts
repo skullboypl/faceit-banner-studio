@@ -1,3 +1,4 @@
+import { DEV_ADMIN_USER, localDevAdmin } from './dev-admin';
 import { getSessionUser } from './session';
 import { upsertUser, type SessionUser } from './repo-users';
 
@@ -36,6 +37,14 @@ const allowedOrigins = (): string[] =>
 export function originAllowed(request: Request): boolean {
   const origin = request.headers.get('origin');
   if (!origin) return false;
+  if (localDevAdmin(request)) {
+    try {
+      const host = new URL(origin).hostname;
+      if (host === '127.0.0.1' || host === 'localhost' || host === '::1') return true;
+    } catch {
+      return false;
+    }
+  }
   try {
     return allowedOrigins().includes(new URL(origin).origin);
   } catch {
@@ -89,7 +98,10 @@ export const adminGuids = (): string[] =>
     .filter(Boolean);
 
 export const isAdmin = (user: { guid: string } | null): boolean =>
-  Boolean(user && adminGuids().includes(user.guid.toLowerCase()));
+  Boolean(
+    (user?.guid === DEV_ADMIN_USER.guid && process.env.DEV_ADMIN === '1' && process.env.NODE_ENV !== 'production') ||
+      (user && adminGuids().includes(user.guid.toLowerCase()))
+  );
 
 export type GuardOptions = {
   write?: boolean;

@@ -1,7 +1,7 @@
 /** Longest side of an uploaded image after compression. */
 export const MAX_SIDE = 1600;
-/** Target size of a compressed image. */
-export const MAX_BYTES = 1_500_000;
+/** Target size after browser compression. The server still refuses anything over 1 MB. */
+export const MAX_BYTES = 600 * 1024;
 
 const BASE_QUALITY = 0.82;
 

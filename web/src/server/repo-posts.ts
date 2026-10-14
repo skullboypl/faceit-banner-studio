@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { getPool } from './db';
+import { attachmentsForPost, claimAttachments, type AttachmentView } from './repo-attachments';
 
 export const POST_KINDS = ['request', 'bug'] as const;
 export const POST_STATUSES = ['new', 'planned', 'in_progress', 'done', 'declined', 'duplicate'] as const;
@@ -51,6 +52,7 @@ export type PostDetail = PostSummary & {
   body: string;
   context: Record<string, unknown> | null;
   thread: CommentRow[];
+  attachments: AttachmentView[];
 };
 
 type PostRow = {
@@ -68,7 +70,7 @@ type PostRow = {
   voted: boolean;
 };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const POST_SELECT = `p.id, p.kind, p.title, p.body, p.status, p.context, p.votes, p.comments, p.created_at,
   p.author_guid, u.nickname,
   EXISTS (SELECT 1 FROM post_votes v WHERE v.post_id = p.id AND v.user_guid = $VIEWER) AS voted`;
@@ -105,11 +107,16 @@ function validateText(value: unknown, label: string, min: number, max: number): 
 
 export async function createPost(
   guid: string,
-  input: { kind: PostKind; title: string; body: string; context?: Record<string, unknown> | null }
+  input: { kind: PostKind; title: string; body: string; context?: Record<string, unknown> | null; attachmentIds?: string[] }
 ): Promise<PostSummary> {
   if (!POST_KINDS.includes(input.kind)) throw new InvalidPostError('kind must be request or bug');
   const title = validateText(input.title, 'title', TITLE_MIN, TITLE_MAX);
   const body = validateText(input.body, 'body', 1, BODY_MAX);
+  const attachmentIds = input.attachmentIds ?? [];
+  if (attachmentIds.length > 3) throw new InvalidPostError('attachment_limit');
+  if (new Set(attachmentIds).size !== attachmentIds.length || attachmentIds.some((id) => !UUID.test(id))) {
+    throw new InvalidPostError('attachment_invalid');
+  }
   let context: string | null = null;
   if (input.kind === 'bug' && input.context) {
     context = JSON.stringify(input.context);
@@ -118,16 +125,26 @@ export async function createPost(
     }
   }
   const pool = await requirePool();
+  const client = await pool.connect();
   try {
-    const { rows } = await pool.query<{ id: string }>(
+    await client.query('BEGIN');
+    const { rows } = await client.query<{ id: string }>(
       'INSERT INTO posts (kind, author_guid, title, body, context, content_hash) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
       [input.kind, guid, title, body, context, contentHash([title, body])]
     );
+    if (!(await claimAttachments(client, guid, rows[0].id, attachmentIds))) {
+      throw new InvalidPostError('attachment_invalid');
+    }
+    await client.query('COMMIT');
     const created = await fetchSummary(rows[0].id, guid);
     return created!;
   } catch (error) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    if (error instanceof InvalidPostError) throw error;
     if (isUniqueViolation(error)) throw new DuplicateContentError('This content has already been posted.');
     throw error;
+  } finally {
+    client.release();
   }
 }
 
@@ -241,7 +258,8 @@ export async function getPost(id: string, viewerGuid: string | null): Promise<Po
     [id, viewerGuid]
   );
   if (!rows[0]) return null;
-  return { ...toSummary(rows[0]), body: rows[0].body, context: rows[0].context, thread: await fetchThread(id) };
+  const [thread, attachments] = await Promise.all([fetchThread(id), attachmentsForPost(id)]);
+  return { ...toSummary(rows[0]), body: rows[0].body, context: rows[0].context, thread, attachments };
 }
 
 export async function toggleVote(guid: string, postId: string): Promise<{ voted: boolean; votes: number } | null> {
@@ -392,6 +410,10 @@ export async function exportPost(id: string): Promise<string | null> {
   ];
   if (post.context) {
     lines.push('', '## Context', '', '```json', JSON.stringify(post.context, null, 2), '```');
+  }
+  if (post.attachments.length) {
+    lines.push('', '## Screenshots', '');
+    post.attachments.forEach((image, index) => lines.push(`${index + 1}. ${image.url}`));
   }
   lines.push('', `## Comments (${post.thread.length})`, '');
   post.thread.forEach((comment, index) => {

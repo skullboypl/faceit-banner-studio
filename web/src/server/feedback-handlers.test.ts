@@ -1,6 +1,10 @@
 import { randomBytes } from 'node:crypto';
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest';
+import { PutObjectCommand, type S3Client } from '@aws-sdk/client-s3';
+import sharp from 'sharp';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from 'vitest';
+import { sweepAttachments } from './attachment-sweep';
 import { TEST_DATABASE_URL, TEST_REDIS_URL } from './test-env';
+import { useObjectClient } from './r2';
 
 process.env.DATABASE_URL = TEST_DATABASE_URL;
 process.env.REDIS_URL = TEST_REDIS_URL;
@@ -489,5 +493,103 @@ describe('admin', () => {
     expect(
       (await handlers.adminDeletePost(call('DELETE', `/api/admin/posts/${data.post.id}`, { cookie: rootCookie }), withId(data.post.id))).status
     ).toBe(404);
+  });
+});
+
+describe('attachments', () => {
+  const stored = new Map<string, Uint8Array>();
+  const r2Names = ['R2_BUCKET', 'R2_ENDPOINT', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_PUBLIC_URL'] as const;
+
+  beforeEach(() => {
+    stored.clear();
+    process.env.R2_BUCKET = 'banners-vxh';
+    process.env.R2_ENDPOINT = 'https://example.r2.cloudflarestorage.com';
+    process.env.R2_ACCESS_KEY_ID = 'key';
+    process.env.R2_SECRET_ACCESS_KEY = 'secret';
+    process.env.R2_PUBLIC_URL = 'https://fbstorage.vxh.pl';
+    useObjectClient({
+      send: async (command: { constructor: { name: string }; input: { Key?: string; Body?: Uint8Array } }) => {
+        const key = command.input.Key ?? '';
+        if (command.constructor.name === PutObjectCommand.name && command.input.Body) stored.set(key, command.input.Body);
+        else stored.delete(key);
+      },
+    } as unknown as S3Client);
+  });
+
+  afterEach(() => {
+    useObjectClient(null);
+    for (const name of r2Names) delete process.env[name];
+  });
+
+  const upload = async (cookie: string, bytes: Buffer) => {
+    const form = new FormData();
+    form.set('file', new File([bytes], 'shot.bin', { type: 'application/octet-stream' }));
+    return handlers.upload(
+      new Request('http://127.0.0.1:3100/api/attachments', { method: 'POST', headers: { cookie, origin: ORIGIN }, body: form })
+    );
+  };
+
+  test('rejects a GIF and a file over 1 MB, then stores a re-encoded WebP under a random key', async () => {
+    const cookie = await login(alice);
+    expect((await upload(cookie, Buffer.from('GIF89a not a screenshot'))).status).toBe(400);
+    expect((await json(await upload(cookie, Buffer.alloc(1024 * 1024 + 1)))).error).toBe('too_big');
+    const png = await sharp({ create: { width: 6, height: 4, channels: 3, background: { r: 10, g: 20, b: 30 } } }).png().toBuffer();
+    const response = await upload(cookie, png);
+    const saved = await json(response);
+    expect(response.status).toBe(201);
+    expect(saved.url).toMatch(/^https:\/\/fbstorage\.vxh\.pl\/att\/[a-f0-9]{32}\.webp$/);
+    expect(stored.size).toBe(1);
+
+    const created = await json(
+      await handlers.createPost(
+        call('POST', '/api/posts', {
+          cookie,
+          body: { kind: 'bug', title: 'Glow is cut', body: 'Left side.', attachmentIds: [saved.id] },
+        })
+      )
+    );
+    const loaded = await json(await handlers.getPost(call('GET', `/api/posts/${created.post?.id}`, { cookie }), withId(created.post?.id ?? '')));
+    expect(loaded.post).toMatchObject({ attachments: [{ url: saved.url, width: 6, height: 4 }] });
+
+    const guest = await json(await handlers.listPosts(call('GET', '/api/posts?sort=new')));
+    expect(JSON.stringify(guest)).not.toContain('fbstorage');
+
+    const queue = await json(await handlers.adminList(call('GET', '/api/admin/posts?status=new', { cookie: await login(root) })));
+    expect(JSON.stringify(queue)).toContain(saved.url);
+
+    const stolen = await handlers.createPost(
+      call('POST', '/api/posts', {
+        cookie: await login(bob),
+        body: { kind: 'bug', title: 'Not mine', body: 'Trying.', attachmentIds: [saved.id] },
+      })
+    );
+    expect((await json(stolen)).error).toBe('attachment_invalid');
+  });
+
+  test('an admin hide removes the object, and an upload left unused for a day is swept', async () => {
+    const cookie = await login(alice);
+    const png = await sharp({ create: { width: 2, height: 2, channels: 3, background: 'red' } }).png().toBuffer();
+    const saved = await json(await upload(cookie, png));
+    const created = await json(
+      await handlers.createPost(
+        call('POST', '/api/posts', { cookie, body: { kind: 'bug', title: 'With shot', body: 'See image.', attachmentIds: [saved.id] } })
+      )
+    );
+    const rootCookie = await login(root);
+    const removed = await handlers.adminDeleteAttachment(
+      call('DELETE', `/api/admin/attachments/${saved.id}`, { cookie: rootCookie }),
+      withId(String(saved.id))
+    );
+    expect(removed.status).toBe(200);
+    expect(stored.size).toBe(0);
+    const loaded = await json(await handlers.getPost(call('GET', `/api/posts/${created.post?.id}`, { cookie }), withId(created.post?.id ?? '')));
+    expect(loaded.post).toMatchObject({ attachments: [] });
+
+    const orphan = await json(await upload(cookie, png));
+    await (await db.getPool())!.query(`UPDATE attachments SET created_at = NOW() - INTERVAL '2 days' WHERE id = $1`, [orphan.id]);
+    expect(await sweepAttachments(new Date(), { lock: false })).toBe(2);
+    expect(stored.size).toBe(0);
+    const left = await (await db.getPool())!.query('SELECT id FROM attachments WHERE id = $1', [orphan.id]);
+    expect(left.rowCount).toBe(0);
   });
 });

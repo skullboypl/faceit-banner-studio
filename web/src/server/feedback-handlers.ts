@@ -1,6 +1,8 @@
+import { randomBytes } from 'node:crypto';
 import schemaJson from '../../../shared/settings-schema.json';
 import { validateDelta, type SettingsSchema } from '../../../shared/settings-delta.mjs';
 import { createContentGate } from './content-gate';
+import { ImageReject, MAX_UPLOAD_BYTES, toWebp } from './images';
 import { fail, guard, isAdmin, isFail, json, readBody, tooManyRequests, type Fail } from './http';
 import { createLimits } from './limits';
 import type { ModerationKind } from './moderation';
@@ -24,7 +26,9 @@ import {
   type PostStatus,
   type PostSummary,
 } from './repo-posts';
+import { attachmentsForPosts, insertAttachment, softDeleteAttachment } from './repo-attachments';
 import type { SessionUser } from './repo-users';
+import { isR2Configured, publicUrl, putObject, deleteObject } from './r2';
 import { getSessionUser } from './session';
 
 const schema = schemaJson as SettingsSchema;
@@ -62,6 +66,7 @@ const detailView = (post: PostDetail, user: SessionUser) => ({
   body: post.body,
   context: post.context,
   thread: post.thread.map((comment) => commentView(comment, user)),
+  attachments: post.attachments,
 });
 
 const shortText = (value: unknown, max: number) => (typeof value === 'string' ? value.slice(0, max) : undefined);
@@ -96,7 +101,16 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
       return await work();
     } catch (error) {
       if (error instanceof DuplicateContentError) return fail(409, 'duplicate_content', error.message).response;
+      if (error instanceof InvalidPostError && error.message === 'attachment_limit') {
+        return fail(400, 'attachment_limit', 'At most 3 images per report.').response;
+      }
+      if (error instanceof InvalidPostError && error.message === 'attachment_invalid') {
+        return fail(400, 'attachment_invalid', 'Those images cannot be attached.').response;
+      }
       if (error instanceof InvalidPostError) return fail(400, 'invalid_post', error.message).response;
+      if ((error as Error).message === 'r2_not_configured') {
+        return fail(503, 'r2_not_configured', 'File storage is not configured.').response;
+      }
       if ((error as Error).message === 'database_unavailable') {
         return fail(503, 'database_unavailable', 'Storage is temporarily unavailable.').response;
       }
@@ -155,11 +169,16 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
         }
         const context = body.kind === 'bug' ? cleanContext(body.context) : null;
         if (isFail(context)) return context.response;
+        const rawIds = Array.isArray(body.attachmentIds) ? body.attachmentIds : [];
+        if (rawIds.some((id) => typeof id !== 'string')) {
+          return fail(400, 'attachment_invalid', 'Those images cannot be attached.').response;
+        }
         const created = await createPost(user.guid, {
           kind: body.kind as PostKind,
           title: body.title as string,
           body: body.body as string,
           context,
+          attachmentIds: rawIds as string[],
         });
         return json(201, { post: memberView(created, user) });
       }),
@@ -215,7 +234,11 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
           sort: new URL(request.url).searchParams.get('sort') ? query.sort : 'new',
           viewerGuid: user.guid,
         });
-        return json(200, { posts: page.posts.map((post) => memberView(post, user)), next: page.next });
+        const images = await attachmentsForPosts(page.posts.map((post) => post.id));
+        return json(200, {
+          posts: page.posts.map((post) => ({ ...memberView(post, user), attachments: images.get(post.id) ?? [] })),
+          next: page.next,
+        });
       }),
 
     adminSetStatus: (request: Request, ctx: Ctx) =>
@@ -244,6 +267,54 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
         const user = await member(request, { write: true, admin: true, limiter: limits.admin });
         if (isFail(user)) return user.response;
         return (await deleteComment((await ctx.params).id)) ? json(200, { ok: true }) : notFound();
+      }),
+
+    upload: (request: Request) =>
+      run(async () => {
+        const user = await member(request, { write: true, limiter: limits.upload, retryAfter: '60' });
+        if (isFail(user)) return user.response;
+        const locked = gate.screen(user.guid, []);
+        if (locked) return locked;
+        const declared = Number(request.headers.get('content-length'));
+        if (Number.isFinite(declared) && declared > MAX_UPLOAD_BYTES + 16_384) {
+          return fail(413, 'too_big', 'Image is larger than 1 MB.').response;
+        }
+        const form = await request.formData();
+        const file = form.get('file');
+        if (!(file instanceof File)) return fail(400, 'bad_type', 'Choose one PNG, JPEG or WebP image.').response;
+        if (file.size > MAX_UPLOAD_BYTES) return fail(413, 'too_big', 'Image is larger than 1 MB.').response;
+        let image: { body: Buffer; width: number; height: number };
+        try {
+          image = await toWebp(Buffer.from(await file.arrayBuffer()));
+        } catch (error) {
+          if (error instanceof ImageReject) {
+            const status = error.code === 'too_big' ? 413 : 400;
+            const message = error.code === 'too_big' ? 'Image is larger than 1 MB.' : 'Choose one PNG, JPEG or WebP image.';
+            return fail(status, error.code, message).response;
+          }
+          throw error;
+        }
+        if (!isR2Configured()) return fail(503, 'r2_not_configured', 'File storage is not configured.').response;
+        const key = `att/${randomBytes(16).toString('hex')}.webp`;
+        await putObject(key, image.body, 'image/webp');
+        const saved = await insertAttachment({
+          ownerGuid: user.guid,
+          key,
+          bytes: image.body.length,
+          width: image.width,
+          height: image.height,
+        });
+        return json(201, { id: saved.id, url: publicUrl(key), width: image.width, height: image.height });
+      }),
+
+    adminDeleteAttachment: (request: Request, ctx: Ctx) =>
+      run(async () => {
+        const user = await member(request, { write: true, admin: true, limiter: limits.admin });
+        if (isFail(user)) return user.response;
+        const key = await softDeleteAttachment((await ctx.params).id);
+        if (!key) return fail(404, 'not_found', 'Attachment not found.').response;
+        await deleteObject(key).catch(() => undefined);
+        return json(200, { ok: true });
       }),
 
     adminExport: (request: Request, ctx: Ctx) =>

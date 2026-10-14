@@ -1,0 +1,350 @@
+/* Same brand, navigation states and breakpoints as the generator sidebar. */
+.admin-side {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 30px 18px 22px;
+  background: #111112;
+  border-right: 1px solid #252527;
+  overflow-y: auto;
+}
+.admin-shell .studio-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: #f5f5f5;
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.9px;
+  line-height: 1.1;
+  text-decoration: none;
+}
+.admin-shell .studio-mark {
+  display: grid;
+  flex: 0 0 35px;
+  place-items: center;
+  width: 35px;
+  height: 42px;
+  color: #ff5900;
+}
+.admin-shell .studio-mark .studio-icon {
+  width: 34px;
+  height: 34px;
+  stroke-width: 1.8;
+}
+.admin-shell .brand-subtitle {
+  display: block;
+  margin-top: 7px;
+  color: #8e8e94;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 1.9px;
+}
+.admin-nav-label {
+  margin: 58px 12px 16px;
+  color: #777780;
+  font-size: 10px;
+  letter-spacing: 1.7px;
+  text-transform: uppercase;
+}
+.admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.admin-shell .admin-nav button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 46px;
+  margin: 0;
+  padding: 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #a3a3ab;
+  font-size: 13px;
+  text-align: left;
+  font-weight: 500;
+}
+.admin-shell .admin-nav button:hover {
+  color: #f4f4f4;
+  background: #1b1b1e;
+}
+.admin-shell .admin-nav button > .studio-icon:last-child {
+  margin-left: auto;
+  width: 13px;
+  flex-basis: 13px;
+  opacity: 0;
+}
+.admin-shell .admin-nav button[aria-current='page'] {
+  color: #fff;
+  background: #24201d;
+  border-color: #3b2d23;
+  font-weight: 700;
+}
+.admin-shell .admin-nav button[aria-current='page'] > .studio-icon {
+  color: #ff5900;
+  opacity: 1;
+}
+.admin-shell .admin-nav button[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  left: -19px;
+  height: 22px;
+  width: 3px;
+  background: #ff5900;
+  border-radius: 0 2px 2px 0;
+}
+.admin-shell .admin-nav .admin-menu-toggle {
+  display: none;
+}
+.admin-side-links {
+  display: grid;
+  gap: 8px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid #29292c;
+}
+.admin-side-links a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #a3a3ab;
+  font-size: 12px;
+}
+.admin-side-links a:hover {
+  color: #f4f4f4;
+  background: #1b1b1e;
+  border-color: #ff6b18;
+}
+.admin-side-note {
+  margin-top: auto;
+  padding: 30px 12px 0;
+  color: #82828b;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.admin-side-note p {
+  margin: 10px 0 14px;
+}
+.admin-side-note small {
+  color: #aaa;
+  font-size: 11px;
+}
+.admin-eyebrow {
+  color: #ff5900;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+.admin-account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 5px 3px 4px;
+  background: #17120f;
+  border: 1px solid #3a2a20;
+  border-radius: 999px;
+}
+.admin-account .admin-avatar {
+  border-radius: 50%;
+  border-color: #ff6b18;
+  background: #241710;
+  color: #ffb48a;
+}
+.admin-account .admin-player {
+  gap: 8px;
+}
+.admin-account .admin-player > strong {
+  max-width: 120px;
+  font-size: 11px;
+}
+.admin-shell .admin-account button {
+  display: grid;
+  place-items: center;
+  min-height: 28px;
+  padding: 4px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+}
+.admin-account .studio-icon {
+  width: 16px;
+  height: 16px;
+}
+dialog.admin-mobile-menu[open] {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color-scheme: dark;
+  box-sizing: border-box;
+  transform: none;
+  opacity: 1;
+  animation: none;
+  text-align: left;
+}
+.admin-mobile-menu::backdrop {
+  background: #0009;
+}
+.admin-shell .admin-mobile-menu .mobile-menu-item {
+  display: flex;
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e6e6ea;
+  background: #151515;
+  border: 1px solid #2c2c2c;
+  border-radius: 12px;
+}
+.admin-shell .admin-mobile-menu .mobile-menu-item[aria-current='page'] {
+  background: #241710;
+  border-color: #ff6b18;
+  color: #fff;
+}
+.admin-shell .admin-mobile-menu .mobile-menu-item--danger {
+  color: #ff9a9a;
+}
+.admin-shell .admin-mobile-menu .mobile-menu-head button {
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 0;
+  color: #e6e6ea;
+  background: #17120f;
+  border: 1px solid #3a2a20;
+  border-radius: 12px;
+}
+@media (max-width: 1280px) and (min-width: 701px) {
+  .admin-shell {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+  .admin-side {
+    padding: 18px 8px 16px;
+  }
+  .admin-shell .studio-brand {
+    justify-content: center;
+  }
+  .admin-shell .studio-brand > span:last-child,
+  .admin-nav-label,
+  .admin-side-note {
+    display: none;
+  }
+  .admin-nav {
+    margin-top: 12px;
+  }
+  .admin-shell .admin-nav button,
+  .admin-side-links a {
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+  .admin-shell .admin-nav button > span,
+  .admin-shell .admin-nav button > .studio-icon:last-child,
+  .admin-side-links a > span {
+    display: none;
+  }
+  .admin-shell .admin-nav button[aria-current='page']::before {
+    left: -9px;
+  }
+}
+@media (max-width: 700px) {
+  .admin-side {
+    padding: 14px 16px 10px;
+    border-right: 0;
+    border-bottom: 1px solid #252527;
+    overflow: visible;
+  }
+  .admin-shell .studio-brand {
+    font-size: 22px;
+  }
+  .admin-nav-label,
+  .admin-side-links,
+  .admin-side-note {
+    display: none;
+  }
+  .admin-nav {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 60;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 2px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    background: #111112f2;
+    backdrop-filter: blur(10px);
+    border-top: 1px solid #29292c;
+  }
+  .admin-shell .admin-nav button {
+    flex: 1 1 0;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    min-height: 54px;
+    gap: 4px;
+    padding: 6px 2px;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.15;
+    text-align: center;
+    background: transparent;
+    border: 0;
+    border-radius: 10px;
+  }
+  .admin-shell .admin-nav button > span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .admin-shell .admin-nav button > .studio-icon {
+    width: 22px;
+    height: 22px;
+  }
+  .admin-shell .admin-nav button > .studio-icon:last-child,
+  .admin-shell .admin-nav button[data-overflow] {
+    display: none;
+  }
+  .admin-shell .admin-nav .admin-menu-toggle {
+    display: flex;
+  }
+  .admin-shell .admin-nav button[aria-current='page'] {
+    color: #fff;
+    background: #24201d;
+    box-shadow: inset 0 2px 0 #ff5900;
+  }
+  .admin-shell .admin-nav button[aria-current='page']::before {
+    display: none;
+  }
+  .admin-account .admin-player > strong {
+    max-width: 80px;
+  }
+  .admin-utility > span {
+    font-size: 0;
+  }
+  .admin-utility > span b {
+    font-size: 11px;
+  }
+  .admin-main {
+    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+  }
+}

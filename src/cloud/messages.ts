@@ -16,6 +16,18 @@ export function apiMessage(tl: (key: string, args?: string[]) => string, failure
       const translated = tl('feedback.writing_locked');
       if (translated !== 'feedback.writing_locked') return translated;
     }
+    const attachmentKey =
+      failure.code === 'too_big'
+        ? 'attachment.too_big'
+        : failure.code === 'bad_type'
+          ? 'attachment.bad_type'
+          : failure.code === 'attachment_limit' || failure.code === 'attachment_invalid'
+            ? 'attachment.limit'
+            : null;
+    if (attachmentKey) {
+      const translated = tl(attachmentKey);
+      if (translated !== attachmentKey) return translated;
+    }
     return failure.message;
   }
   return String(failure);

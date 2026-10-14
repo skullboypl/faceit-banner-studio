@@ -22,6 +22,7 @@ import { Footer } from '../components/Footer.tsx';
 import { CookieNotice } from '../components/CookieNotice.tsx';
 import { PreviewCarousel } from '../components/PreviewCarousel.tsx';
 import { StudioIcon } from '../components/StudioIcon.tsx';
+import { StudioBrand } from '../components/StudioBrand.tsx';
 import { LiveRanking } from '../live/LiveRanking.tsx';
 import { TimelineIcon } from '../assets/icons/tabler/TimelineIcon.tsx';
 import { ShareIcon } from '../assets/icons/tabler/ShareIcon.tsx';
@@ -605,18 +606,7 @@ export const Generator = () => {
           setURL={setGeneratedURL}
         />
         <header className="studio-sidebar">
-          <a
-            className="studio-brand"
-            href="/"
-            aria-label="FACEIT Banner Studio"
-          >
-            <span className="studio-mark" aria-hidden="true">
-              <StudioIcon name="layers" />
-            </span>
-            <span>
-              Banner<span className="brand-subtitle">STUDIO / FACEIT</span>
-            </span>
-          </a>
+          <StudioBrand />
           <p className="nav-caption">{tl('studio.workspace')}</p>
           {import.meta.env.VITE_IS_TESTING && (
             <InfoBox

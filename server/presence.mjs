@@ -2,7 +2,8 @@ import { clientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
 import { fillFromPlayerId, playerIdFromReferer, publicRanking, sanitizeInfo } from './live.mjs';
 
-const ACTIVE_WINDOW_MS = 135_000;
+/** Current widgets ping every minute. Older banners and OBS browser sources can ping only every few minutes, so a two-minute window dropped them. */
+export const ACTIVE_WINDOW_MS = 15 * 60_000;
 const MAX_SESSIONS = 100_000;
 /** More distinct banners than this from one address is not a streamer, it is somebody inflating the counter. */
 const MAX_BANNERS_PER_IP = 30;

@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { renderWithApp } from '../components/test-utils';
 import { getLiveBoard } from '../utils/presence';
@@ -34,5 +34,74 @@ describe('LiveRanking', () => {
     expect(screen.getByRole('link', { name: 'player16' })).toBeTruthy();
     expect(screen.getByText('16')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'player1' })).toBeNull();
+  });
+
+  test('shows real level artwork and only the verification badge supplied by the server', async () => {
+    vi.mocked(getLiveBoard).mockResolvedValue({
+      online: 3,
+      ranked: 3,
+      windowSeconds: 135,
+      players: [
+        { ...players[0], verifiedBadge: 'gold' },
+        { ...players[1], verifiedBadge: 'verified', level: 4 },
+        { ...players[2], verifiedBadge: 'none' },
+      ],
+    });
+    renderWithApp(<LiveRanking />);
+    await screen.findByRole('link', { name: 'player1' });
+    const rows = screen.getAllByRole('listitem');
+    expect(
+      within(rows[0]).getByRole('img', {
+        name: 'Zweryfikowane konto FACEIT Premium',
+      })
+    ).toBeTruthy();
+    expect(
+      within(rows[1]).getByRole('img', { name: 'Zweryfikowane konto FACEIT' })
+    ).toBeTruthy();
+    expect(
+      within(rows[2]).queryByRole('img', { name: /Zweryfikowane/ })
+    ).toBeNull();
+    expect(
+      within(rows[0])
+        .getByRole('img', { name: 'Poziom FACEIT 10' })
+        .querySelector('svg.faceit-level')
+    ).toBeTruthy();
+    expect(
+      within(rows[1])
+        .getByRole('img', { name: 'Poziom FACEIT 4' })
+        .querySelector('svg.faceit-level')
+    ).toBeTruthy();
+  });
+
+  test('does not poll hidden tabs or duplicate an in-flight request', async () => {
+    vi.useFakeTimers();
+    const hidden = vi.spyOn(document, 'hidden', 'get');
+    hidden.mockReturnValue(false);
+    let complete!: (value: Awaited<ReturnType<typeof getLiveBoard>>) => void;
+    vi.mocked(getLiveBoard)
+      .mockClear()
+      .mockReturnValue(
+        new Promise((resolve) => {
+          complete = resolve;
+        })
+      );
+    try {
+      renderWithApp(<LiveRanking />);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60000);
+      });
+      expect(getLiveBoard).toHaveBeenCalledTimes(1);
+      await act(async () =>
+        complete({ online: 0, ranked: 0, windowSeconds: 135, players: [] })
+      );
+      hidden.mockReturnValue(true);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60000);
+      });
+      expect(getLiveBoard).toHaveBeenCalledTimes(1);
+    } finally {
+      hidden.mockRestore();
+      vi.useRealTimers();
+    }
   });
 });

@@ -10,7 +10,7 @@ const config = {
   output: 'standalone',
   // The repo root has its own lockfile, so trace from there. The server file lands at .next/standalone/web/server.js.
   outputFileTracingRoot: path.join(webDir, '..'),
-  serverExternalPackages: ['ioredis', 'pg'],
+  serverExternalPackages: ['ioredis', 'pg', 'sharp', '@aws-sdk/client-s3'],
   poweredByHeader: false,
 };
 

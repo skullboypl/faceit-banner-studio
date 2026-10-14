@@ -6,6 +6,7 @@ import {
   consumeState,
   deleteSession,
   loadSession,
+  loginActivity,
   recentLogins,
   recordLogin,
   saveSession,
@@ -62,7 +63,32 @@ function clientIp(req) {
   return resolveClientIp(req.headers, req.socket.remoteAddress, trustedHops());
 }
 
+const DEV_ADMIN_USER = { guid: 'dev-admin', nickname: 'Dev Admin', avatar: null };
+
+function requestHost(req) {
+  const raw = String(req.headers.host || '');
+  if (raw.startsWith('[')) {
+    const end = raw.indexOf(']');
+    return end === -1 ? raw : raw.slice(1, end);
+  }
+  return raw.split(':')[0];
+}
+
+/** Local `dev:admin` only. Production and any public host never receive this user. */
+export function localDevAdmin(req) {
+  if (process.env.DEV_ADMIN !== '1' || process.env.NODE_ENV === 'production') return false;
+  const host = requestHost(req);
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+}
+
 export function isAdmin(user) {
+  if (
+    user?.guid === DEV_ADMIN_USER.guid &&
+    process.env.DEV_ADMIN === '1' &&
+    process.env.NODE_ENV !== 'production'
+  ) {
+    return true;
+  }
   const admins = String(process.env.ADMIN_FACEIT_GUIDS || process.env.ADMIN_FACEIT_GUID || '')
     .split(',')
     .map((guid) => guid.trim().toLowerCase())
@@ -72,8 +98,11 @@ export function isAdmin(user) {
 
 async function currentUser(req) {
   const id = parseCookies(req.headers.cookie)[SESSION_COOKIE];
-  if (!id || !/^[a-f0-9]{48}$/.test(id)) return null;
-  return loadSession(id);
+  if (id && /^[a-f0-9]{48}$/.test(id)) {
+    const user = await loadSession(id);
+    if (user) return user;
+  }
+  return localDevAdmin(req) ? DEV_ADMIN_USER : null;
 }
 
 async function handleLogin(req, res) {
@@ -222,6 +251,7 @@ export function createAuthMiddleware() {
           online: presence,
           storage: await storageStatus(),
           logins: await recentLogins(50),
+          activity: await loginActivity(30),
         });
       }
       res.statusCode = 404;

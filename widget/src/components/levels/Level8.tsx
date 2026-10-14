@@ -8,15 +8,15 @@ export const Level8 = () => {
     >
       <circle cx="12" cy="12" r="12" fill="#1F1F22"></circle>
       <path
-        fill-rule="evenodd"
-        clip-rule="evenodd"
+        fillRule="evenodd"
+        clipRule="evenodd"
         d="M16.686 17.467a7.2 7.2 0 1 0-9.371 0l-1.563 1.822A9.58 9.58 0 0 1 2.4 12 9.6 9.6 0 0 1 12 2.4a9.6 9.6 0 0 1 9.6 9.6 9.58 9.58 0 0 1-3.352 7.29l-1.562-1.823z"
         fill="#CDCDCD"
-        fill-opacity=".1"
+        fillOpacity=".1"
       ></path>
       <path
-        fill-rule="evenodd"
-        clip-rule="evenodd"
+        fillRule="evenodd"
+        clipRule="evenodd"
         d="M19.2 12h2.4A9.6 9.6 0 0 0 12 2.4 9.6 9.6 0 0 0 2.4 12a9.58 9.58 0 0 0 3.352 7.29l1.562-1.823A7.2 7.2 0 1 1 19.2 12z"
         fill="currentcolor"
       ></path>
@@ -27,3 +27,4 @@ export const Level8 = () => {
     </svg>
   );
 };
+

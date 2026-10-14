@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import { originAllowed } from './http';
+import { isAdmin, originAllowed } from './http';
 
 const request = (origin?: string) => new Request('http://localhost:3100/api/x', { method: 'POST', headers: origin ? { origin } : {} });
 const original = process.env.PUBLIC_URL;
@@ -31,5 +31,26 @@ describe('originAllowed', () => {
     expect(originAllowed(request())).toBe(false);
     delete process.env.PUBLIC_URL;
     expect(originAllowed(request('https://faceitbanner.vxh.pl'))).toBe(false);
+  });
+
+  test('dev:admin may change tickets from the local studio', () => {
+    process.env.DEV_ADMIN = '1';
+    process.env.NODE_ENV = 'development';
+    process.env.PUBLIC_URL = 'https://faceitbanner.vxh.pl';
+    const local = new Request('http://127.0.0.1:3100/api/admin/posts/x', {
+      method: 'PATCH',
+      headers: { origin: 'http://127.0.0.1:5173', host: '127.0.0.1:3100' },
+    });
+    expect(originAllowed(local)).toBe(true);
+    expect(isAdmin({ guid: 'dev-admin' })).toBe(true);
+    const remote = new Request('http://127.0.0.1:3100/api/admin/posts/x', {
+      method: 'PATCH',
+      headers: { origin: 'https://evil.example', host: 'faceitbanner.vxh.pl' },
+    });
+    expect(originAllowed(remote)).toBe(false);
+    process.env.NODE_ENV = 'production';
+    expect(isAdmin({ guid: 'dev-admin' })).toBe(false);
+    delete process.env.DEV_ADMIN;
+    process.env.NODE_ENV = 'test';
   });
 });

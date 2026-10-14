@@ -1,9 +1,10 @@
-import { useContext, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import pkg from '../../package.json';
 import { apiMessage } from '../cloud/messages';
 import { toDelta } from '../cloud/delta';
 import { LanguageContext, SettingsContext } from '../generator/contexts';
-import { createPost, type FeedbackPost, type PostKind } from './api';
+import { createPost, uploadAttachment, type FeedbackAttachment, type FeedbackPost, type PostKind } from './api';
+import { compressImage, MAX_BYTES } from './compressImage';
 
 const TITLE_MIN = 3;
 const TITLE_MAX = 120;
@@ -24,9 +25,36 @@ export const PostForm = ({
   const [body, setBody] = useState('');
   const [website, setWebsite] = useState('');
   const [attachSettings, setAttachSettings] = useState(true);
+  const [shots, setShots] = useState<FeedbackAttachment[]>([]);
+  const [progress, setProgress] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const picking = useRef(false);
   if (!tl) return null;
+
+  const addShot = async (file: File) => {
+    if (picking.current || shots.length >= 3) {
+      if (shots.length >= 3) setError(tl('attachment.limit'));
+      return;
+    }
+    picking.current = true;
+    setError(null);
+    setProgress(0);
+    try {
+      const blob = await compressImage(file);
+      if (blob.size > MAX_BYTES) {
+        setError(tl('attachment.too_big'));
+        return;
+      }
+      const saved = await uploadAttachment(blob, setProgress);
+      setShots((current) => (current.length >= 3 ? current : [...current, saved]));
+    } catch (failure) {
+      setError(apiMessage(tl, failure));
+    } finally {
+      picking.current = false;
+      setProgress(null);
+    }
+  };
 
   const valid = title.trim().length >= TITLE_MIN && body.trim().length >= 1;
 
@@ -48,7 +76,7 @@ export const PostForm = ({
               },
             }
           : { kind, title: title.trim(), body: body.trim(), website };
-      const { post } = await createPost(input);
+      const { post } = await createPost(shots.length ? { ...input, attachmentIds: shots.map((shot) => shot.id) } : input);
       onCreated(post);
     } catch (failure) {
       setError(apiMessage(tl, failure));
@@ -60,6 +88,13 @@ export const PostForm = ({
   return (
     <form
       className="feedback-form"
+      onPaste={(event) => {
+        if (kind !== 'bug') return;
+        const file = [...event.clipboardData.files].find((entry) => entry.type.startsWith('image/'));
+        if (!file) return;
+        event.preventDefault();
+        void addShot(file);
+      }}
       onSubmit={(event) => {
         event.preventDefault();
         if (valid && !busy) void submit();
@@ -93,13 +128,52 @@ export const PostForm = ({
           <span>{tl('feedback.form.attach_settings')}</span>
         </label>
       )}
+      {kind === 'bug' && (
+        <div
+          className="attachment-drop"
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            const file = event.dataTransfer.files[0];
+            if (file) void addShot(file);
+          }}
+        >
+          <span>{tl('attachment.screenshot')}</span>
+          <p>{tl('attachment.drop')}</p>
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            aria-label={tl('attachment.screenshot')}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = '';
+              if (file) void addShot(file);
+            }}
+          />
+          {progress !== null && (
+            <progress value={progress} max={1} aria-label={tl('attachment.screenshot')} />
+          )}
+          {shots.length > 0 && (
+            <ul className="attachment-drafts">
+              {shots.map((shot) => (
+                <li key={shot.id}>
+                  <img src={shot.url} alt="" width={shot.width} height={shot.height} />
+                  <button type="button" onClick={() => setShots((current) => current.filter((entry) => entry.id !== shot.id))}>
+                    {tl('attachment.remove')}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {error && (
         <p className="feedback-error" role="alert">
           {error}
         </p>
       )}
       <div className="feedback-form-actions">
-        <button type="submit" className="primary-action" disabled={!valid || busy}>
+        <button type="submit" className="primary-action" disabled={!valid || busy || progress !== null}>
           {tl('feedback.form.submit')}
         </button>
         <button type="button" onClick={onCancel}>

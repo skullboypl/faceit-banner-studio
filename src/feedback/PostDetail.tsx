@@ -6,12 +6,14 @@ import { LanguageContext } from '../generator/contexts';
 import {
   POST_STATUSES,
   addComment,
+  adminDeleteAttachment,
   adminDeleteComment,
   adminDeletePost,
   adminExport,
   adminSetStatus,
   deletePost,
   getPost,
+  type FeedbackAttachment,
   type FeedbackDetail,
   type FeedbackPost,
   type PostStatus,
@@ -34,6 +36,7 @@ export const PostDetail = ({ summary, user, admin, onBack, onChanged, onDeleted 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [openShot, setOpenShot] = useState<FeedbackAttachment | null>(null);
 
   const id = summary.id;
   const guid = user?.guid;
@@ -96,6 +99,15 @@ export const PostDetail = ({ summary, user, admin, onBack, onChanged, onDeleted 
     });
   };
 
+  const shots = post?.attachments ?? summary.attachments ?? [];
+
+  const removeShot = (attachmentId: string) =>
+    attempt(async () => {
+      await adminDeleteAttachment(attachmentId);
+      setPost((current) => current && { ...current, attachments: (current.attachments ?? []).filter((shot) => shot.id !== attachmentId) });
+      if (openShot?.id === attachmentId) setOpenShot(null);
+    });
+
   const removeComment = (commentId: string) =>
     attempt(async () => {
       await adminDeleteComment(commentId);
@@ -125,6 +137,27 @@ export const PostDetail = ({ summary, user, admin, onBack, onChanged, onDeleted 
       ) : (
         <>
           <p className="feedback-body">{shown.body}</p>
+          {shots.length > 0 && (
+            <ul className="attachment-gallery">
+              {shots.map((shot) => (
+                <li key={shot.id}>
+                  <button type="button" onClick={() => setOpenShot(shot)} aria-label={tl('attachment.open')}>
+                    <img src={shot.url} alt="" width={shot.width} height={shot.height} loading="lazy" decoding="async" />
+                  </button>
+                  {admin && (
+                    <button type="button" className="danger" disabled={busy} onClick={() => void removeShot(shot.id)}>
+                      {tl('attachment.remove')}
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          {openShot && (
+            <button type="button" className="attachment-lightbox" onClick={() => setOpenShot(null)} aria-label={tl('attachment.open')}>
+              <img src={openShot.url} alt="" width={openShot.width} height={openShot.height} />
+            </button>
+          )}
           {shown.context && (
             <details className="feedback-context">
               <summary>{tl('feedback.context')}</summary>

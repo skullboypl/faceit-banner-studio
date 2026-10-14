@@ -4,6 +4,8 @@ export type PostKind = 'request' | 'bug';
 export type PostStatus = 'new' | 'planned' | 'in_progress' | 'done' | 'declined' | 'duplicate';
 export const POST_STATUSES: PostStatus[] = ['new', 'planned', 'in_progress', 'done', 'declined', 'duplicate'];
 
+export type FeedbackAttachment = { id: string; url: string; width: number; height: number };
+
 /** `author`, `mine` and `voted` are only present for logged-in viewers. */
 export type FeedbackPost = {
   id: string;
@@ -16,6 +18,7 @@ export type FeedbackPost = {
   author?: string;
   mine?: boolean;
   voted?: boolean;
+  attachments?: FeedbackAttachment[];
 };
 
 export type FeedbackComment = {
@@ -31,10 +34,18 @@ export type FeedbackDetail = FeedbackPost & {
   body: string;
   context: Record<string, unknown> | null;
   thread: FeedbackComment[];
+  attachments?: FeedbackAttachment[];
 };
 
 export type ListQuery = { kind?: PostKind; status?: PostStatus; sort: 'top' | 'new'; cursor?: string };
-export type NewPost = { kind: PostKind; title: string; body: string; context?: Record<string, unknown>; website?: string };
+export type NewPost = {
+  kind: PostKind;
+  title: string;
+  body: string;
+  context?: Record<string, unknown>;
+  website?: string;
+  attachmentIds?: string[];
+};
 
 const query = (params: Record<string, string | undefined>) => {
   const search = new URLSearchParams();
@@ -54,12 +65,44 @@ export const vote = (id: string) => request<{ voted: boolean; votes: number }>('
 export const addComment = (id: string, body: string) =>
   request<{ comment: FeedbackComment }>('POST', `/api/posts/${id}/comments`, { body });
 
-export const adminList = (status?: PostStatus) =>
-  request<{ posts: FeedbackPost[]; next: string | null }>('GET', `/api/admin/posts?${query({ status })}`.replace(/\?$/, ''));
+export const adminList = (status?: PostStatus, cursor?: string) =>
+  request<{ posts: FeedbackPost[]; next: string | null }>('GET', `/api/admin/posts?${query({ status, cursor })}`.replace(/\?$/, ''));
 export const adminSetStatus = (id: string, status: PostStatus) =>
   request<{ post: FeedbackPost }>('PATCH', `/api/admin/posts/${id}`, { status });
 export const adminDeletePost = (id: string) => request<{ ok: true }>('DELETE', `/api/admin/posts/${id}`);
 export const adminDeleteComment = (id: string) => request<{ ok: true }>('DELETE', `/api/admin/comments/${id}`);
+export const adminDeleteAttachment = (id: string) => request<{ ok: true }>('DELETE', `/api/admin/attachments/${id}`);
+
+export type UploadedAttachment = FeedbackAttachment;
+
+/** Multipart upload with progress. The browser has already re-encoded the image as WebP. */
+export function uploadAttachment(file: Blob, onProgress?: (ratio: number) => void): Promise<UploadedAttachment> {
+  return new Promise((resolve, reject) => {
+    const body = new FormData();
+    body.append('file', file, 'image.webp');
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/attachments');
+    xhr.withCredentials = true;
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && onProgress) onProgress(event.loaded / event.total);
+    };
+    xhr.onload = () => {
+      let data: { error?: string; message?: string; id?: string; url?: string; width?: number; height?: number } = {};
+      try {
+        data = JSON.parse(xhr.responseText || '{}') as typeof data;
+      } catch {
+        data = {};
+      }
+      if (xhr.status >= 200 && xhr.status < 300 && data.id && data.url) {
+        resolve({ id: data.id, url: data.url, width: data.width ?? 0, height: data.height ?? 0 });
+        return;
+      }
+      reject(new ApiError(xhr.status, data.error ?? 'error', data.message ?? xhr.statusText));
+    };
+    xhr.onerror = () => reject(new ApiError(0, 'network', 'Upload failed.'));
+    xhr.send(body);
+  });
+}
 
 /** Markdown for pasting into a chat with Claude. */
 export async function adminExport(id: string): Promise<string> {

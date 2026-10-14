@@ -69,7 +69,7 @@ export function startPresenceHeartbeat(readInfo?: () => PresenceInfo | undefined
 }
 
 export async function getOnlineBannerCount(signal?: AbortSignal) {
-  const response = await fetch('/api/presence', { cache: 'no-store', signal });
+  const response = await fetch('/api/presence', { cache: 'default', signal });
   if (!response.ok) throw new Error('presence_unavailable');
   const data = (await response.json()) as { online?: number };
   const count = Math.max(0, Number(data.online) || 0);
@@ -79,6 +79,8 @@ export async function getOnlineBannerCount(signal?: AbortSignal) {
 
 export type LivePlayer = {
   nickname: string;
+  avatar?: string;
+  verifiedBadge?: 'none' | 'verified' | 'gold';
   elo?: number;
   level?: number;
   country?: string;
@@ -93,7 +95,7 @@ export type LiveBoard = {
 };
 
 export async function getLiveBoard(signal?: AbortSignal): Promise<LiveBoard> {
-  const response = await fetch('/api/presence/live', { cache: 'no-store', signal });
+  const response = await fetch('/api/presence/live', { cache: 'default', signal });
   if (!response.ok) throw new Error('presence_unavailable');
   const data = (await response.json()) as Partial<LiveBoard>;
   const players = Array.isArray(data.players) ? data.players.filter((player) => player && typeof player.nickname === 'string') : [];

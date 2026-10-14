@@ -15,6 +15,8 @@ export const POLICY = {
   banner: { perMinute: 12, perHour: 120 },
   workspace: { perSecond: 1, perMinute: 40 },
   admin: { perMinute: 120 },
+  /** Screenshots. The IP write limit still applies on top of this. */
+  upload: { perMinute: 10, perHour: 60, perDay: 200 },
 } satisfies Record<string, RateLimiterOptions>;
 
 export type Limiter = (key: string) => boolean;
@@ -37,6 +39,7 @@ export function createLimits(unlimited = false) {
     banner: make(POLICY.banner),
     workspace: make(POLICY.workspace),
     admin: make(POLICY.admin),
+    upload: make(POLICY.upload),
   };
 }
 

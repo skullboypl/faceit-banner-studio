@@ -1,0 +1,372 @@
+/* Live ranking uses the studio palette and the actual FACEIT level artwork. */
+html.generator .settings.live-panel {
+  padding: 22px;
+  border: 1px solid #2b2b2e;
+  background: #151516;
+  box-shadow: none;
+}
+.live-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.live-summary > span {
+  color: #9c9ca3;
+  font-size: 11px;
+}
+.live-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  color: #8fe7b0;
+  font-size: 12px;
+  font-weight: 700;
+}
+.live-kicker i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #36e77c;
+  box-shadow: 0 0 0 4px #36e77c19;
+}
+.live-columns {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 48px 104px;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px 12px;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #91919a;
+}
+.live-columns > span:nth-child(3) {
+  text-align: center;
+}
+.live-columns > span:last-child {
+  text-align: right;
+}
+.live-list {
+  display: grid;
+  align-content: start;
+  width: 100%;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.live-row {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 48px 104px;
+  align-items: center;
+  width: 100%;
+  min-height: 78px;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid #2b2b2e;
+  border-radius: 9px;
+  background: #111112;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.live-row:hover,
+.live-row:focus-within {
+  background: #1b1b1d;
+  border-color: #55555d;
+}
+.live-row--1 {
+  border-color: #704021;
+  background: linear-gradient(90deg, #2c1c13, #151516 60%);
+}
+.live-row--2 {
+  border-left: 3px solid #9da4af;
+  padding-left: 14px;
+}
+.live-row--3 {
+  border-left: 3px solid #b47c53;
+  padding-left: 14px;
+}
+.live-rank {
+  color: #92929b;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.live-row--1 .live-rank {
+  color: #ff8a4a;
+}
+.live-row--2 .live-rank {
+  color: #c8cdd5;
+}
+.live-row--3 .live-rank {
+  color: #cf9b77;
+}
+.live-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.live-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  overflow: hidden;
+  background: #242427;
+  border: 1px solid #38383e;
+  border-radius: 10px;
+  color: #a5a5ae;
+  font-size: 17px;
+  font-weight: 700;
+}
+.live-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.live-avatar img[hidden] {
+  display: none;
+}
+.live-profile {
+  min-width: 0;
+}
+.live-player-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.live-nick,
+.live-nick:hover,
+.live-nick:focus,
+.live-nick:visited {
+  color: #f0f0f2;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.live-nick:hover {
+  color: #ffb48a;
+}
+.live-nick:focus-visible {
+  outline: 2px solid #ff6b18;
+  outline-offset: 3px;
+}
+.live-verified {
+  display: inline-flex;
+  flex: 0 0 18px;
+  align-items: center;
+}
+.live-verified svg {
+  width: 18px;
+  height: 18px;
+}
+.live-player-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 6px;
+  color: #9c9ca3;
+  font-size: 10px;
+}
+.live-player-meta > span {
+  color: #585861;
+}
+.live-flag {
+  width: 15px;
+  height: 10px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+.live-level {
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  width: 40px;
+  height: 40px;
+}
+.live-level svg.faceit-level {
+  display: block;
+  width: 40px;
+  height: 40px;
+}
+.live-level-unknown {
+  color: #777780;
+  font-size: 18px;
+}
+.live-elo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  color: #f0f0f2;
+  font-family: 'Inter', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.6px;
+  white-space: nowrap;
+}
+.live-elo small {
+  color: #82828b;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+.live-row--1 .live-elo {
+  color: #ff9b64;
+}
+.live-empty {
+  margin: 20px 0;
+  padding: 32px 18px;
+  color: #a1a1aa;
+  font-size: 13px;
+  text-align: center;
+  border: 1px dashed #3a3a3e;
+  border-radius: 10px;
+}
+.live-note {
+  margin: 20px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid #29292c;
+  color: #9c9ca3;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.live-warning {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  color: #f3c36a;
+  background: #2a2115;
+  border: 1px solid #66502b;
+  border-radius: 7px;
+  font-size: 12px;
+}
+.live-pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+.live-pages button {
+  width: auto;
+  min-width: 36px;
+  margin: 0;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.live-pages button[aria-current='page'] {
+  color: #fff;
+  background: #241710;
+  border-color: #ff6b18;
+}
+.live-pages-nums {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.live-pages-nums > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.live-pages-gap {
+  color: #8b8683;
+}
+.live-pages-status {
+  display: none;
+  color: #a6adc8;
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  html.generator .settings.live-panel {
+    padding: 16px 10px;
+  }
+  .live-columns,
+  .live-row {
+    grid-template-columns: 22px minmax(0, 1fr) 30px 67px;
+    gap: 8px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .live-columns {
+    font-size: 9px;
+  }
+  .live-row {
+    min-height: 72px;
+  }
+  .live-row--2,
+  .live-row--3 {
+    padding-left: 8px;
+  }
+  .live-identity {
+    gap: 8px;
+  }
+  .live-avatar {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    font-size: 13px;
+    border-radius: 7px;
+  }
+  .live-nick {
+    font-size: 12px;
+  }
+  .live-player-name {
+    gap: 4px;
+  }
+  .live-verified {
+    flex-basis: 15px;
+  }
+  .live-verified svg {
+    width: 15px;
+    height: 15px;
+  }
+  .live-level,
+  .live-level svg.faceit-level {
+    width: 30px;
+    height: 30px;
+  }
+  .live-elo {
+    font-size: 17px;
+  }
+  .live-rank {
+    font-size: 11px;
+  }
+  .live-pages-nums {
+    display: none;
+  }
+  .live-pages-status {
+    display: block;
+    margin-right: auto;
+    font-size: 10px;
+  }
+}
+@media (max-width: 380px) {
+  .live-avatar {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-row {
+    transition: none;
+  }
+}

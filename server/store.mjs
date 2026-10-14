@@ -194,3 +194,92 @@ export async function storageStatus() {
     logins: process.env.DATABASE_URL ? 'postgres' : 'memory',
   };
 }
+
+/** Continuous UTC days, with empty days as zero, so the admin chart does not skip quiet dates. */
+export function fillDailyCounts(rows, days, now = new Date()) {
+  const span = Math.min(90, Math.max(1, Number(days) || 30));
+  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const keys = [];
+  for (let i = span - 1; i >= 0; i -= 1) {
+    const day = new Date(end);
+    day.setUTCDate(end.getUTCDate() - i);
+    keys.push(day.toISOString().slice(0, 10));
+  }
+  const byDay = new Map();
+  for (const row of rows || []) {
+    const day = String(row.day || '').slice(0, 10);
+    if (!day) continue;
+    byDay.set(day, {
+      count: Math.max(0, Number(row.count) || 0),
+      players: Math.max(0, Number(row.players) || 0),
+    });
+  }
+  return keys.map((day) => ({
+    day,
+    count: byDay.get(day)?.count ?? 0,
+    players: byDay.get(day)?.players ?? 0,
+  }));
+}
+
+function activityFromEntries(entries, days) {
+  const grouped = new Map();
+  for (const entry of entries) {
+    const created = new Date(entry.createdAt);
+    if (Number.isNaN(created.getTime())) continue;
+    const day = created.toISOString().slice(0, 10);
+    const bucket = grouped.get(day) || { day, count: 0, guids: new Set() };
+    bucket.count += 1;
+    if (entry.guid) bucket.guids.add(entry.guid);
+    grouped.set(day, bucket);
+  }
+  const series = fillDailyCounts(
+    [...grouped.values()].map((bucket) => ({ day: bucket.day, count: bucket.count, players: bucket.guids.size })),
+    days
+  );
+  const inRange = series.reduce((sum, point) => sum + point.count, 0);
+  const unique = new Set(
+    entries
+      .filter((entry) => series.some((point) => point.day === String(entry.createdAt).slice(0, 10)))
+      .map((entry) => entry.guid)
+      .filter(Boolean)
+  ).size;
+  return { days: series.length, total: entries.length, inRange, unique, series };
+}
+
+/** Login counts per day for the admin charts. Postgres when it is configured, otherwise the in-memory list. */
+export async function loginActivity(days = 30) {
+  const span = Math.min(90, Math.max(1, Number(days) || 30));
+  try {
+    const pool = await getPostgres();
+    if (pool) {
+      const { rows } = await pool.query(
+        `SELECT to_char(date_trunc('day', created_at AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS day,
+                COUNT(*)::int AS count,
+                COUNT(DISTINCT guid)::int AS players
+         FROM logins
+         WHERE created_at >= NOW() - make_interval(days => $1)
+         GROUP BY 1
+         ORDER BY 1`,
+        [span]
+      );
+      const totals = await pool.query(
+        `SELECT COUNT(*)::int AS total,
+                COUNT(*) FILTER (WHERE created_at >= NOW() - make_interval(days => $1))::int AS in_range,
+                COUNT(DISTINCT guid) FILTER (WHERE created_at >= NOW() - make_interval(days => $1))::int AS unique_players
+         FROM logins`,
+        [span]
+      );
+      const row = totals.rows[0] || {};
+      return {
+        days: span,
+        total: Number(row.total) || 0,
+        inRange: Number(row.in_range) || 0,
+        unique: Number(row.unique_players) || 0,
+        series: fillDailyCounts(rows, span),
+      };
+    }
+  } catch (error) {
+    markPostgresDown(error);
+  }
+  return activityFromEntries(memoryLogins, span);
+}

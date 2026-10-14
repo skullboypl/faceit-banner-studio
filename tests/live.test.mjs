@@ -2,9 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { playerIdFromReferer, publicRanking, sanitizeInfo } from '../server/live.mjs';
-import { createPresenceMiddleware } from '../server/presence.mjs';
+import { ACTIVE_WINDOW_MS, createPresenceMiddleware } from '../server/presence.mjs';
 
 process.env.LIVE_BOARD_TTL_MS = '0';
+
+test('a banner that pings only every few minutes stays on the live list', () => {
+  assert.equal(ACTIVE_WINDOW_MS, 15 * 60_000);
+});
 
 test('sanitizeInfo keeps a valid banner and drops a bad elo, level and player id', () => {
   const info = sanitizeInfo({
@@ -117,7 +121,7 @@ test('the live board is public, ordered, and hides the session id', async () => 
       const named = await (await fetch(`${base}/api/presence/live`, { headers: { 'x-forwarded-for': '203.0.113.41' } })).json();
       assert.deepEqual(
         named.players.find((player) => player.nickname === 'OldBanner'),
-        { nickname: 'OldBanner', elo: 1500, level: 7, country: 'pl' }
+        { nickname: 'OldBanner', elo: 1500, level: 7, country: 'pl', verifiedBadge: 'none' }
       );
     } finally {
       globalThis.fetch = original;

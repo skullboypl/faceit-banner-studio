@@ -94,6 +94,8 @@ export default defineConfig({
       '/api/posts': 'http://127.0.0.1:3100',
       '/api/admin/posts': 'http://127.0.0.1:3100',
       '/api/admin/comments': 'http://127.0.0.1:3100',
+      '/api/admin/attachments': 'http://127.0.0.1:3100',
+      '/api/attachments': 'http://127.0.0.1:3100',
     },
   },
   plugins: [react(), presenceDevPlugin(), wikiDevRewritePlugin(), ...(mode === 'https' ? [basicSsl()] : [])],

@@ -18,12 +18,18 @@ export function OnlineBannerCount() {
       setAvailable(true);
     });
     // On /live the ranking request already carries this number. A second poll would hit the same snapshot.
+    let pending = false;
+    let refreshedAt = -Infinity;
     const refresh = async () => {
-      if (onLive) return;
+      if (onLive || document.hidden || pending || Date.now() - refreshedAt < PRESENCE_REFRESH_MS) return;
+      pending = true;
+      refreshedAt = Date.now();
       try {
         await getOnlineBannerCount(controller.signal);
       } catch {
         if (active && !controller.signal.aborted) setAvailable(false);
+      } finally {
+        pending = false;
       }
     };
     void refresh();

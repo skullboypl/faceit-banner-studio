@@ -86,6 +86,19 @@ export async function migrate(pool: pg.Pool): Promise<void> {
         ON posts (author_guid, content_hash) WHERE deleted_at IS NULL AND content_hash IS NOT NULL;
       CREATE UNIQUE INDEX IF NOT EXISTS comments_author_content
         ON comments (post_id, author_guid, content_hash) WHERE deleted_at IS NULL AND content_hash IS NOT NULL;
+      CREATE TABLE IF NOT EXISTS attachments (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        owner_guid TEXT NOT NULL REFERENCES users(guid) ON DELETE CASCADE,
+        post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+        key TEXT NOT NULL UNIQUE,
+        bytes INTEGER NOT NULL,
+        width INTEGER NOT NULL,
+        height INTEGER NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        deleted_at TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS attachments_post ON attachments (post_id) WHERE deleted_at IS NULL;
+      CREATE INDEX IF NOT EXISTS attachments_owner_created ON attachments (owner_guid, created_at DESC);
     `);
   } finally {
     await client.query('SELECT pg_advisory_unlock(727001)').catch(() => undefined);
