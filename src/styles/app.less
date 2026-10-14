@@ -1482,6 +1482,7 @@ dialog.generated .obs-frame {
 
 /* Admin panel */
 .admin-page {
+  display: block;
   max-width: 860px;
   margin: 0 auto;
   padding: 32px 20px 60px;
@@ -1510,6 +1511,7 @@ dialog.generated .obs-frame {
     gap: 12px;
     img { width: 36px; height: 36px; border-radius: 50%; }
     span { flex: 1; font-weight: 700; }
+    button { width: auto; margin: 0; }
   }
   .admin-grid {
     display: grid;
@@ -2098,7 +2100,7 @@ html.generator .studio-sidebar .sidebar-note {
   display: grid;
   gap: 12px;
   .feedback-back { width: auto; margin: 0; justify-self: start; padding: 6px 12px; font-size: 12px; }
-  header { display: grid; gap: 6px; h3 { margin: 0; font-size: 18px; overflow-wrap: anywhere; } small { color: #8b8683; } }
+  header { display: grid; justify-items: start; gap: 6px; text-align: left; h3 { margin: 0; font-size: 18px; overflow-wrap: anywhere; } small { color: #8b8683; } }
   .feedback-body { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
   .feedback-context { font-size: 12px; pre { max-height: 220px; padding: 10px; overflow: auto; background: #0f0f10; border-radius: 8px; } }
   .feedback-login { padding: 14px; background: #17120f; border: 1px solid #3a2a20; border-radius: 12px; p { margin: 0 0 8px; } }
@@ -2135,4 +2137,35 @@ html.generator .studio-sidebar .sidebar-note {
   .feedback-attach { display: flex; align-items: center; gap: 8px; input { width: auto; } }
   .feedback-error { margin: 0; padding: 8px 10px; font-size: 12px; color: #ff9a9a; background: #2a1414; border: 1px solid #5a2a2a; border-radius: 8px; }
   .feedback-form-actions { display: flex; gap: 8px; button { width: auto; margin: 0; } }
+}
+
+/* Admin queue for feedback posts */
+.admin-queue {
+  .admin-queue-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; h2 { margin: 0; } select { width: auto; margin: 0; } }
+  .admin-queue-empty { margin: 12px 0 0; color: #8b8683; font-size: 13px; }
+  .admin-queue-list { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+  .admin-queue-list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 14px;
+    padding: 10px 12px;
+    background: #101010;
+    border: 1px solid #262626;
+    border-radius: 10px;
+  }
+  .admin-queue-main { display: grid; gap: 4px; min-width: 0; strong { font-size: 14px; overflow-wrap: anywhere; } small { color: #8b8683; font-size: 11px; } }
+  .admin-kind {
+    justify-self: start;
+    padding: 1px 8px;
+    font-size: 10px;
+    font-weight: 800;
+    color: #ffb48a;
+    background: #261710;
+    border: 1px solid #6a3a1a;
+    border-radius: 999px;
+    &--bug { color: #ff9a9a; background: #2a1414; border-color: #5a2a2a; }
+  }
+  .admin-queue-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; select, button { width: auto; margin: 0; font-size: 12px; } .danger { color: #ff9a9a; } }
 }

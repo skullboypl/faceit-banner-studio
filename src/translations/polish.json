@@ -505,5 +505,8 @@
   "feedback.admin.copied": "Skopiowano",
   "feedback.admin.delete": "Usuń zgłoszenie",
   "feedback.admin.delete_comment": "Usuń komentarz",
-  "feedback.delete_confirm": "Usunąć zgłoszenie „{{0}}”?"
+  "feedback.delete_confirm": "Usunąć zgłoszenie „{{0}}”?",
+  "admin.queue": "Zgłoszenia do obsłużenia",
+  "admin.queue_empty": "Nic do obsłużenia w tym statusie.",
+  "admin.kind.request": "Prośba"
 }

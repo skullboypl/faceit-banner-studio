@@ -505,5 +505,8 @@
   "feedback.admin.copied": "Kopiert",
   "feedback.admin.delete": "Beitrag löschen",
   "feedback.admin.delete_comment": "Kommentar löschen",
-  "feedback.delete_confirm": "Beitrag „{{0}}“ löschen?"
+  "feedback.delete_confirm": "Beitrag „{{0}}“ löschen?",
+  "admin.queue": "Zu bearbeitende Beiträge",
+  "admin.queue_empty": "Nichts zu bearbeiten in diesem Status.",
+  "admin.kind.request": "Wunsch"
 }

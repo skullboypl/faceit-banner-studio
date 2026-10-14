@@ -505,5 +505,8 @@
   "feedback.admin.copied": "Copied",
   "feedback.admin.delete": "Delete post",
   "feedback.admin.delete_comment": "Delete comment",
-  "feedback.delete_confirm": "Delete the post “{{0}}”?"
+  "feedback.delete_confirm": "Delete the post “{{0}}”?",
+  "admin.queue": "Posts to handle",
+  "admin.queue_empty": "Nothing to handle in this status.",
+  "admin.kind.request": "Request"
 }

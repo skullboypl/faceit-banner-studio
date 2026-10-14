@@ -293,6 +293,9 @@ export const DocsPage = ({
         <meta name="description" content={page.description} />
         <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
         <meta name="theme-color" content="#0b0e14" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/brand/favicon-32.png" />
+        <link rel="apple-touch-icon" href="/brand/logo-192.png" />
         <meta name="author" content="Skull" />
         <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt" />
         <link rel="canonical" href={url} />
