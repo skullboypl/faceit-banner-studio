@@ -45,6 +45,39 @@ export async function migrate(pool: pg.Pool): Promise<void> {
         device_id TEXT NOT NULL,
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+      CREATE TABLE IF NOT EXISTS posts (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        kind TEXT NOT NULL CHECK (kind IN ('request', 'bug')),
+        author_guid TEXT NOT NULL REFERENCES users(guid) ON DELETE CASCADE,
+        title VARCHAR(120) NOT NULL,
+        body TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'new'
+          CHECK (status IN ('new', 'planned', 'in_progress', 'done', 'declined', 'duplicate')),
+        context JSONB,
+        votes INTEGER NOT NULL DEFAULT 0,
+        comments INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        deleted_at TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS posts_list ON posts (kind, status, created_at DESC) WHERE deleted_at IS NULL;
+      CREATE INDEX IF NOT EXISTS posts_top ON posts (votes DESC, created_at DESC) WHERE deleted_at IS NULL;
+      CREATE TABLE IF NOT EXISTS post_votes (
+        post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+        user_guid TEXT NOT NULL REFERENCES users(guid) ON DELETE CASCADE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (post_id, user_guid)
+      );
+      CREATE TABLE IF NOT EXISTS comments (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+        author_guid TEXT NOT NULL REFERENCES users(guid) ON DELETE CASCADE,
+        body VARCHAR(2000) NOT NULL,
+        by_admin BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        deleted_at TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS comments_post ON comments (post_id, created_at);
     `);
   } finally {
     await client.query('SELECT pg_advisory_unlock(727001)').catch(() => undefined);
