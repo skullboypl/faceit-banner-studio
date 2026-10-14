@@ -20,6 +20,19 @@ describe('createRateLimiter', () => {
     expect(allow('a')).toBe(true);
   });
 
+  test('allows 5 per hour and blocks the 6th until the hour has passed', () => {
+    let now = 0;
+    const allow = createRateLimiter({ perMinute: 100, perHour: 5, now: () => now });
+    for (let i = 0; i < 5; i++) {
+      now += 10_000;
+      expect(allow('a')).toBe(true);
+    }
+    now += 10_000;
+    expect(allow('a')).toBe(false);
+    now = 3_600_000 + 10_001;
+    expect(allow('a')).toBe(true);
+  });
+
   test('keys are independent', () => {
     const allow = createRateLimiter({ perMinute: 1 });
     expect(allow('a')).toBe(true);

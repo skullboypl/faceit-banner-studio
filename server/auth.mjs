@@ -140,7 +140,7 @@ export function createAuthMiddleware() {
   return async (req, res, next) => {
     const url = new URL(req.url || '/', 'http://localhost');
     const { pathname } = url;
-    if (!pathname.startsWith('/api/auth/') && !pathname.startsWith('/api/admin/')) {
+    if (!pathname.startsWith('/api/auth/') && pathname !== '/api/admin/overview') {
       return next();
     }
 
