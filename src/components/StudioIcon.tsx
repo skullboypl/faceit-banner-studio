@@ -12,7 +12,8 @@ export type IconName =
   | 'cloud'
   | 'heart'
   | 'menu'
-  | 'close';
+  | 'close'
+  | 'message';
 
 const paths: Record<IconName, string> = {
   settings: 'M4 7h9m4 0h3M4 17h3m4 0h9M13 4v6M7 14v6',
@@ -26,6 +27,7 @@ const paths: Record<IconName, string> = {
   back: 'M19 12H5m6-6-6 6 6 6',
   home: 'M4 11.5 12 4l8 7.5M6 10v10h12V10M10 20v-6h4v6',
   cloud: 'M7 18a4 4 0 0 1-.6-7.96A6 6 0 0 1 18.4 9.5 4.3 4.3 0 0 1 17.5 18H7Z',
+  message: 'M4 5h16v11H9l-5 4V5Z',
   menu: 'M4 7h16M4 12h16M4 17h16',
   close: 'M6 6l12 12M18 6 6 18',
   heart: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z',

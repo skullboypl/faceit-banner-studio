@@ -51,6 +51,7 @@ import { MyBannersPanel } from '../components/MyBannersPanel.tsx';
 import { AccountMenu } from '../components/AccountMenu.tsx';
 import { LanguageSelect } from '../components/LanguageSelect.tsx';
 import { MobileMenu } from '../components/MobileMenu.tsx';
+import { FeedbackBoard } from '../feedback/FeedbackBoard.tsx';
 import { pickLanguage } from '../translations/detect.ts';
 import { useCloudSync } from '../cloud/useCloudSync.ts';
 import { logout as apiLogout } from '../cloud/api.ts';
@@ -62,7 +63,7 @@ export { LanguageContext, SettingsContext } from './contexts.ts';
 const DEFAULT_GENERATOR_USERNAME = 'donk666';
 /** Tabs pinned to the phone's bottom bar; the rest live in the full-screen menu. */
 const PINNED_TABS = 3;
-const TAB_ICONS = ['settings', 'palette', 'stats', 'cloud'] as const;
+const TAB_ICONS = ['settings', 'palette', 'stats', 'cloud', 'message'] as const;
 const PREVIEW_BACKGROUNDS: Record<string, string> = {
   nuke: nukePreview,
   mirage: miragePreview,
@@ -540,6 +541,12 @@ export const Generator = () => {
     {
       name: tl('banners.title'),
       component: <MyBannersPanel key={'banners'} user={session.user} />,
+    },
+    {
+      name: tl('feedback.title'),
+      component: (
+        <FeedbackBoard key={'feedback'} user={session.user} admin={session.admin} />
+      ),
     },
   ];
 
