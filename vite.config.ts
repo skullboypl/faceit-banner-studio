@@ -84,6 +84,8 @@ loadServerEnv();
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Accounts, saved banners and cloud sync live in the Next.js app (web/, port 3100).
+  server: { proxy: { '/api/me': 'http://127.0.0.1:3100' } },
   plugins: [react(), presenceDevPlugin(), wikiDevRewritePlugin()],
   build: {
     rollupOptions: {
