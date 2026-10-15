@@ -82,15 +82,15 @@ describe('MatchPopup content options', () => {
   });
 
   test('the streamer is highlighted in the roster only when asked', () => {
-    expect(draw({ highlightMe: true }).querySelector('.popup-sides li.is-me span')?.textContent).toBe('skullboy');
+    expect(draw({ highlightMe: true }).querySelector('.popup-sides li.is-me .popup-nick')?.textContent).toBe('skullboy');
     expect(draw({ highlightMe: false }).querySelector('.popup-sides li.is-me')).toBeNull();
   });
 
   test('rosters can be sorted by ELO, highest first', () => {
-    const names = (root: HTMLElement) => [...root.querySelectorAll('.popup-sides section:last-child li span')].map((node) => node.textContent);
+    const names = (root: HTMLElement) => [...root.querySelectorAll('.popup-sides section:last-child li .popup-nick')].map((node) => node.textContent);
     expect(names(draw({ sortElo: false }))[0]).toBe('NiKo');
     expect(names(draw({ sortElo: true }))).toEqual(['NiKo', 'm0NESY', 'huNter', 'nexa', 'Snax']);
-    const left = [...draw({ sortElo: true }).querySelectorAll('.popup-sides section:first-child li span')].map((node) => node.textContent);
+    const left = [...draw({ sortElo: true }).querySelectorAll('.popup-sides section:first-child li .popup-nick')].map((node) => node.textContent);
     expect(left[0]).toBe('ropz');
   });
 });

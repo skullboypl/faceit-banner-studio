@@ -122,6 +122,7 @@ describe('TeamBanner options', () => {
       [...root.querySelectorAll('li')].find((item) => item.querySelector('.team-name')?.textContent === name);
     expect(row('bravo')?.querySelector('[data-tier="challenger"]')).toBeTruthy();
     expect(row('alpha')?.querySelector('[data-tier="challenger"]')).toBeNull();
+    expect(row('alpha')?.querySelector('.faceit-level-mark')?.getAttribute('style')).toContain('--faceit-level-7');
   });
 
   test('each column and picture can be hidden on its own', async () => {

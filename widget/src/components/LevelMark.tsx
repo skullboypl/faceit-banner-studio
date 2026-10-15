@@ -12,6 +12,24 @@ import { Challenger } from './levels/Challenger';
 
 const MARKS = [Level1, Level2, Level3, Level4, Level5, Level6, Level7, Level8, Level9, Level10];
 
+/** Same palette as the banner color scheme, used when the CSS variables are not on an ancestor. */
+const LEVEL_COLOR = [
+  '#eee',
+  '#1CE400',
+  '#1CE400',
+  '#FFC800',
+  '#FFC800',
+  '#FFC800',
+  '#FFC800',
+  '#FF6309',
+  '#FF6309',
+  '#FE1F00',
+  '#e80128',
+  '#d9a441',
+  '#c7d0d5',
+  '#bf7145',
+];
+
 /**
  * Visual tier for a level icon. Level 10 in the regional top 1000 is the
  * challenger mark (11), with 12–14 for the podium. There is no second icon.
@@ -31,12 +49,11 @@ export function levelVisual(level: number, ranking?: number): number {
 export function LevelMark({ level, ranking }: { level: number; ranking?: number }) {
   const visual = levelVisual(level, ranking);
   const Icon = visual > 10 ? Challenger : MARKS[visual - 1] ?? Level1;
-  if (visual <= 10) return <Icon />;
   return (
     <span
       className="faceit-level-mark"
-      data-tier="challenger"
-      style={{ color: `var(--faceit-level-${visual}, #e80128)`, display: 'contents' }}
+      data-tier={visual > 10 ? 'challenger' : undefined}
+      style={{ color: `var(--faceit-level-${visual}, ${LEVEL_COLOR[visual - 1]})`, display: 'contents' }}
     >
       <Icon />
     </span>
