@@ -10,6 +10,7 @@ const stub = (items: { stats: Record<string, string> }[] | undefined, statsOk = 
     'fetch',
     vi.fn(async (url: string) => {
       if (String(url).includes('/games/cs2/stats')) return reply({ items }, statsOk);
+      if (String(url).includes('/rankings/')) return reply({ position: 717, items: [] });
       return reply({
         player_id: '0a1b2c3d-1111-4222-8333-444455556666',
         nickname: 'skull',
@@ -88,6 +89,7 @@ describe('lookupRosterCard', () => {
       losses: 1,
       streak: 1,
       form: ['W', 'L'],
+      ranking: 717,
     });
     const url = String(vi.mocked(fetch).mock.calls.find(([called]) => String(called).includes('/stats'))?.[0]);
     expect(url).toContain('/games/cs2/stats?limit=20');
@@ -108,6 +110,24 @@ describe('lookupRosterCard', () => {
   test('when the stats request fails the row still has ELO and level', async () => {
     stub(undefined, false);
     expect(await lookupRosterCard('skull')).toMatchObject({ elo: 2100, level: 10, kd: 0, hs: 0, adr: 0, matches: 0 });
+  });
+
+  test('a level 10 who is off the ladder does not get a ranking', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (String(url).includes('/rankings/')) return reply({ position: 0, items: [] });
+        if (String(url).includes('/games/cs2/stats')) return reply({ items: [] });
+        return reply({
+          player_id: '0a1b2c3d-1111-4222-8333-444455556666',
+          nickname: 'off',
+          games: { cs2: { faceit_elo: 3700, skill_level: 10, region: 'EU' } },
+        });
+      })
+    );
+    const card = await lookupRosterCard('off');
+    expect(card.level).toBe(10);
+    expect(card.ranking).toBeUndefined();
   });
 
   test('an unknown player is a missing row', async () => {

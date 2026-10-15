@@ -8,7 +8,8 @@ vi.mock('../widget/src/utils/faceit_util', () => ({
     username: name,
     avatar: name === 'noavatar' ? undefined : `https://cdn.test/${name}.jpg`,
     elo: { alpha: 1500, bravo: 2200, charlie: 1800, noavatar: 1000 }[name] ?? 1000,
-    level: 7,
+    level: name === 'bravo' ? 10 : 7,
+    ranking: name === 'bravo' ? 50 : undefined,
     kd: { alpha: 1.1, bravo: 1.4, charlie: 1.25 }[name] ?? 1.25,
     winRate: 55,
     hs: { alpha: 40, bravo: 55, charlie: 47 }[name] ?? 40,
@@ -113,6 +114,14 @@ describe('TeamBanner options', () => {
     expect(root.querySelectorAll('li img').length).toBe(3);
     expect(root.querySelectorAll('li svg').length).toBe(3);
     expect(root.querySelectorAll('li p').length).toBe(9);
+  });
+
+  test('a level 10 in the top 1000 uses the challenger mark as the level icon', async () => {
+    const root = await draw({}, 'alpha,bravo');
+    const row = (name: string) =>
+      [...root.querySelectorAll('li')].find((item) => item.querySelector('.team-name')?.textContent === name);
+    expect(row('bravo')?.querySelector('[data-tier="challenger"]')).toBeTruthy();
+    expect(row('alpha')?.querySelector('[data-tier="challenger"]')).toBeNull();
   });
 
   test('each column and picture can be hidden on its own', async () => {

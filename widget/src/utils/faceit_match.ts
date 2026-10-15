@@ -1,5 +1,5 @@
 import { averageElo, matchPhase } from '../../../shared/banner-modes.mjs';
-import { faceitGet, lookupPlayer } from './faceit_util';
+import { faceitGet, getPlayerRankingPosition, lookupPlayer } from './faceit_util';
 
 export type PlayerStats = { kills: number; deaths: number; assists: number; adr: number; kd: number; hs: number; mvps: number };
 
@@ -9,6 +9,8 @@ export type RosterPlayer = {
   avatar?: string;
   level: number;
   elo: number;
+  /** Regional place when the player is in the top 1000. The level icon becomes the challenger mark. */
+  ranking?: number;
   missing?: boolean;
   /** Filled once the match is over. */
   stats?: PlayerStats;
@@ -31,15 +33,22 @@ export type LiveMatch = {
   me?: PlayerStats;
 };
 
-const eloCache = new Map<string, { elo: number; at: number }>();
+const cardCache = new Map<string, { elo: number; level?: number; ranking?: number; at: number }>();
 
-async function eloFor(id: string) {
-  const cached = eloCache.get(id);
-  if (cached && Date.now() - cached.at < 10 * 60_000) return cached.elo;
+async function cardFor(id: string) {
+  const cached = cardCache.get(id);
+  if (cached && Date.now() - cached.at < 10 * 60_000) return cached;
   const profile = await lookupPlayer(id);
-  const elo = profile?.games.cs2?.faceit_elo ?? 0;
-  if (elo > 0) eloCache.set(id, { elo, at: Date.now() });
-  return elo;
+  const game = profile?.games.cs2;
+  const elo = game?.faceit_elo ?? 0;
+  const level = game?.skill_level;
+  const ranking =
+    profile && level === 10
+      ? await getPlayerRankingPosition(profile.player_id, game?.region || 'EU')
+      : undefined;
+  const card = { elo, level, ranking, at: Date.now() };
+  if (elo > 0) cardCache.set(id, card);
+  return card;
 }
 
 function sideFrom(raw: unknown, fallback: string): MatchSide {
@@ -81,15 +90,19 @@ function numberAt(source: unknown, key: string) {
 async function enrich(match: LiveMatch) {
   const ids = match.sides.flatMap((side) => side.players.map((player) => player.id).filter(Boolean)) as string[];
   const unique = [...new Set(ids)];
-  const elos = new Map<string, number>();
+  const cards = new Map<string, { elo: number; level?: number; ranking?: number }>();
   for (let index = 0; index < unique.length; index += 4) {
     const slice = unique.slice(index, index + 4);
-    const found = await Promise.all(slice.map(async (id) => [id, await eloFor(id)] as const));
-    found.forEach(([id, elo]) => elos.set(id, elo));
+    const found = await Promise.all(slice.map(async (id) => [id, await cardFor(id)] as const));
+    found.forEach(([id, card]) => cards.set(id, card));
   }
   match.sides.forEach((side) => {
     side.players.forEach((player) => {
-      if (player.id && elos.get(player.id)) player.elo = elos.get(player.id) as number;
+      const card = player.id ? cards.get(player.id) : undefined;
+      if (!card) return;
+      if (card.elo) player.elo = card.elo;
+      if (card.level) player.level = card.level;
+      if (card.ranking) player.ranking = card.ranking;
     });
     side.avg = averageElo(side.players);
   });

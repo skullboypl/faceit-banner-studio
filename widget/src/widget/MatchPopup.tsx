@@ -122,7 +122,7 @@ function Table({ players, username, options }: { players: RosterPlayer[]; userna
                     {player.avatar ? <img src={player.avatar} alt="" loading="lazy" /> : player.nickname.slice(0, 1).toUpperCase()}
                   </span>
                 )}
-                {options.showLevels && <LevelMark level={player.level || 1} />}
+                {options.showLevels && <LevelMark level={player.level || 1} ranking={player.ranking} />}
                 <span className="popup-nick">{player.nickname}</span>
               </span>
             </td>
@@ -180,7 +180,7 @@ function Side({
                   {player.avatar ? <img src={player.avatar} alt="" loading="lazy" /> : player.nickname.slice(0, 1).toUpperCase()}
                 </span>
               )}
-              {options.showLevels && <LevelMark level={player.level || 1} />}
+              {options.showLevels && <LevelMark level={player.level || 1} ranking={player.ranking} />}
               <span className="popup-nick">{player.nickname}</span>
               {options.showElo && <b>{player.elo > 0 ? player.elo : '—'}</b>}
             </li>

@@ -50,7 +50,9 @@ interface V4StatsResponse {
 
 /** Player ranking returned by API v4 */
 interface V4RankingResponse {
-  items: {
+  /** The player's own place. 0 means they are off the ladder. */
+  position?: number;
+  items?: {
     player_id: string;
     position: number;
   }[];
@@ -114,7 +116,7 @@ export const getVerifiedBadgeType = (profile: {
   return 'verified';
 };
 
-async function getPlayerRankingPosition(
+export async function getPlayerRankingPosition(
   id: string,
   region: string,
   country?: string
@@ -124,8 +126,11 @@ async function getPlayerRankingPosition(
   );
   if (response.ok) {
     const data = (await response.json()) as V4RankingResponse;
-    const item = data.items.find((i) => i.player_id === id);
-    return item ? item.position : undefined;
+    if (Number.isInteger(data.position) && (data.position as number) >= 1 && (data.position as number) <= 1000) {
+      return data.position;
+    }
+    const item = data.items?.find((i) => i.player_id === id);
+    return item && item.position >= 1 && item.position <= 1000 ? item.position : undefined;
   } else {
     console.error(
       `Failed to fetch ranking: ${response.status} ${await response.text()}`
@@ -339,6 +344,8 @@ export type RosterCard = {
   /** Averages and counts from the recent-match window; 0 when FACEIT sends nothing. */
   hs?: number;
   adr?: number;
+  /** Regional place, only when the player is in the top 1000. */
+  ranking?: number;
   kr?: number;
   matches?: number;
   wins?: number;
@@ -455,11 +462,16 @@ export async function lookupRosterCard(name: string, matchWindow = 20): Promise<
   } catch {
     /* the row still shows ELO and level */
   }
+  let ranking: number | undefined;
+  if (game.skill_level === 10) {
+    ranking = await getPlayerRankingPosition(profile.player_id, game.region || 'EU');
+  }
   return {
     username: profile.nickname,
     avatar: profile.avatar,
     elo: game.faceit_elo,
     level: game.skill_level,
+    ranking,
     ...recent,
   };
 }

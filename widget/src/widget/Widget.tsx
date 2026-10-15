@@ -39,6 +39,7 @@ import { Level8 } from '../components/levels/Level8.tsx';
 import { Level9 } from '../components/levels/Level9.tsx';
 import { Level10 } from '../components/levels/Level10.tsx';
 import { Challenger } from '../components/levels/Challenger.tsx';
+import { levelVisual } from '../components/LevelMark.tsx';
 
 import { StatisticType } from '../../../src/generator/tabs/StatisticsTab.tsx';
 
@@ -269,6 +270,8 @@ export type VersusPlayer = {
   country?: string;
   elo: number;
   level: number;
+  /** Regional place. 1–1000 on level 10 turns the level icon into the challenger mark. */
+  ranking?: number;
   kd: number;
   adr: number;
   winRate: number;
@@ -951,6 +954,7 @@ export const Widget = ({
           country: player.country,
           elo: player.elo,
           level: player.level,
+          ranking: player.ranking,
           kd: Math.round((player.avg.kd / matches) * 100) / 100,
           adr: Math.round((player.avg.adr / matches) * 10) / 10,
           winRate: Math.round((player.avg.wins / matches) * 100),
@@ -1320,6 +1324,7 @@ export const Widget = ({
       country: (country || previewCountry) || 'pl',
       elo,
       level,
+      ranking: sample ? undefined : ranking,
       kd: sample
         ? 1.22
         : avgMatches
@@ -1344,14 +1349,16 @@ export const Widget = ({
       '--vs-me': myAccent,
       '--vs-rival': rivalAccent,
     } as CSSProperties;
-    const orbFor = (player: VersusPlayer) =>
-      renderOrb(
+    const orbFor = (player: VersusPlayer) => {
+      const visual = levelVisual(player.level, player.ranking);
+      return renderOrb(
         player.avatar,
         player.username,
-        player.level,
+        visual,
         player.elo,
-        levelIcons[player.level - 1]
+        levelIcons[visual - 1]
       );
+    };
     const flag = (player: VersusPlayer) =>
       player.country ? (
         <img

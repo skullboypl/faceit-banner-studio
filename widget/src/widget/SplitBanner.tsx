@@ -118,14 +118,14 @@ function CameraPlate({
       ) : camera === 'elo' ? (
         <div className="split-identity">
           <b>{elo > 0 ? elo : '—'}</b>
-          <LevelMark level={level} />
+          <LevelMark level={level} ranking={ranking} />
         </div>
       ) : (
         <div className="split-who">
           {avatar ? <img src={avatar} alt="" /> : <i />}
           <div>
             <strong>{username}</strong>
-            <LevelMark level={level} />
+            <LevelMark level={level} ranking={ranking} />
           </div>
           <div className="split-identity">
             <b>{elo > 0 ? elo : '—'}</b>

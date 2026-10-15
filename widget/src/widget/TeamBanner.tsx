@@ -163,7 +163,7 @@ export function TeamBanner({
             >
               {options.rank && <span className="team-rank">{index + 1}</span>}
               {options.avatars && (member.avatar ? <img src={member.avatar} alt="" /> : <i />)}
-              {options.levels && <LevelMark level={member.level || 1} />}
+              {options.levels && <LevelMark level={member.level || 1} ranking={member.ranking} />}
               <div className="team-who">
                 <span className="team-name">{member.username}</span>
                 {options.eloBar && best > 0 && (
