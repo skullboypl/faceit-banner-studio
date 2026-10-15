@@ -176,6 +176,21 @@ html.generator .settings.live-panel {
   width: 18px;
   height: 18px;
 }
+.live-confirmed {
+  display: inline-flex;
+  flex: 0 0 16px;
+  align-items: center;
+  color: #ff6b18;
+}
+.live-confirmed svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .live-player-meta {
   display: flex;
   align-items: center;
@@ -339,6 +354,13 @@ html.generator .settings.live-panel {
   .live-verified svg {
     width: 15px;
     height: 15px;
+  }
+  .live-confirmed {
+    flex-basis: 14px;
+  }
+  .live-confirmed svg {
+    width: 14px;
+    height: 14px;
   }
   .live-level,
   .live-level svg.faceit-level {

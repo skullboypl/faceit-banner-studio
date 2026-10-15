@@ -10,6 +10,13 @@ test('a banner that only reports after a win stays on the live list for an hour'
   assert.equal(ACTIVE_WINDOW_MS, 60 * 60_000);
 });
 
+test('sanitizeInfo ignores a sign-in mark sent by the widget', () => {
+  const info = sanitizeInfo({ nickname: 'player', confirmed: true, guid: '11111111-1111-1111-1111-111111111111' });
+  assert.equal(info.nickname, 'player');
+  assert.equal('confirmed' in info, false);
+  assert.equal('guid' in info, false);
+});
+
 test('sanitizeInfo keeps a valid banner and drops a bad elo, level and player id', () => {
   const info = sanitizeInfo({
     nickname: '  donk666  ',
@@ -47,6 +54,45 @@ test('publicRanking sorts by elo descending, puts a missing elo last and keeps o
   ]);
   assert.deepEqual(rows.map((row) => row.nickname), ['top', 'low', 'bare']);
   assert.equal('playerId' in rows[1], false);
+  assert.equal('confirmed' in rows[1], false);
+});
+
+test('publicRanking serves avatars from this site and keeps only a challenger place', () => {
+  const id = '11111111-1111-1111-1111-111111111111';
+  const [row] = publicRanking([
+    {
+      info: {
+        nickname: 'ayan',
+        elo: 3900,
+        playerId: id,
+        region: 'EU',
+        avatar: 'https://assets.faceit-cdn.net/avatars/ayan.jpg',
+        ranking: 42,
+      },
+      lastSeen: 1,
+    },
+  ]);
+  assert.equal(row.avatar, `/api/presence/avatar/${id}`);
+  assert.equal(row.ranking, 42);
+  assert.equal('region' in row, false);
+  assert.equal('playerId' in row, false);
+  const [plain] = publicRanking([
+    { info: { nickname: 'mid', elo: 2500, ranking: 4000, region: 'EU' }, lastSeen: 1 },
+  ]);
+  assert.equal('ranking' in plain, false);
+});
+
+test('publicRanking keeps a sign-in mark and drops the account id', () => {
+  const id = '11111111-1111-1111-1111-111111111111';
+  const [row] = publicRanking([
+    { info: { nickname: 'signed', elo: 2000, playerId: id, confirmed: true }, lastSeen: 1 },
+  ]);
+  assert.equal(row.confirmed, true);
+  assert.equal('playerId' in row, false);
+  const [forged] = publicRanking([
+    { info: { nickname: 'forged', elo: 2000, confirmed: 'yes' }, lastSeen: 1 },
+  ]);
+  assert.equal('confirmed' in forged, false);
 });
 
 async function serve(middleware) {

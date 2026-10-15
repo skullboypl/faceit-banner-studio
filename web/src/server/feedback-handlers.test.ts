@@ -566,6 +566,30 @@ describe('attachments', () => {
     expect((await json(stolen)).error).toBe('attachment_invalid');
   });
 
+  test('the same pixels are stored once, and hiding one post leaves the other copy in R2', async () => {
+    const cookie = await login(alice);
+    const png = await sharp({ create: { width: 8, height: 8, channels: 3, background: { r: 1, g: 2, b: 3 } } }).png().toBuffer();
+    const first = await json(await upload(cookie, png));
+    const second = await json(await upload(cookie, png));
+    expect(stored.size).toBe(1);
+    expect(second.url).toBe(first.url);
+    expect(second.id).not.toBe(first.id);
+
+    const rootCookie = await login(root);
+    const removed = await handlers.adminDeleteAttachment(
+      call('DELETE', `/api/admin/attachments/${first.id}`, { cookie: rootCookie }),
+      withId(String(first.id))
+    );
+    expect(removed.status).toBe(200);
+    expect(stored.size).toBe(1);
+    const removedAgain = await handlers.adminDeleteAttachment(
+      call('DELETE', `/api/admin/attachments/${second.id}`, { cookie: rootCookie }),
+      withId(String(second.id))
+    );
+    expect(removedAgain.status).toBe(200);
+    expect(stored.size).toBe(0);
+  });
+
   test('an admin hide removes the object, and an upload left unused for a day is swept', async () => {
     const cookie = await login(alice);
     const png = await sharp({ create: { width: 2, height: 2, channels: 3, background: 'red' } }).png().toBuffer();

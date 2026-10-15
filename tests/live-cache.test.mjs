@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  avatarAllowed,
+  avatarContentType,
   createPlayerLookup,
   PROFILE_TTL_MS,
   LEGACY_STATS_TTL_MS,
@@ -148,4 +150,13 @@ test('unknown players are negatively cached and synchronous failures can be retr
   time += 60_000;
   await cache.lookup(id, { freshStats: true });
   assert.equal(calls, 2);
+});
+
+test('avatar bytes are accepted only from a FACEIT host and a real image', () => {
+  assert.equal(avatarAllowed('https://assets.faceit-cdn.net/avatars/a.jpg'), true);
+  assert.equal(avatarAllowed('https://evil.example/a.jpg'), false);
+  assert.equal(avatarAllowed('not a url'), false);
+  const jpeg = Buffer.from([0xff, 0xd8, 0xff, ...new Array(40).fill(1)]);
+  assert.equal(avatarContentType(jpeg), 'image/jpeg');
+  assert.equal(avatarContentType(Buffer.from('hello')), null);
 });

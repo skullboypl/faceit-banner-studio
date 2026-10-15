@@ -1,5 +1,7 @@
 import { averageElo, matchPhase } from '../../../shared/banner-modes.mjs';
-import { API_KEY, lookupPlayer } from './faceit_util';
+import { faceitGet, lookupPlayer } from './faceit_util';
+
+export type PlayerStats = { kills: number; deaths: number; assists: number; adr: number; kd: number; hs: number; mvps: number };
 
 export type RosterPlayer = {
   id?: string;
@@ -8,6 +10,8 @@ export type RosterPlayer = {
   level: number;
   elo: number;
   missing?: boolean;
+  /** Filled once the match is over. */
+  stats?: PlayerStats;
 };
 
 export type MatchSide = {
@@ -24,11 +28,7 @@ export type LiveMatch = {
   winner?: 'a' | 'b';
   finishedAt?: number;
   sides: [MatchSide, MatchSide];
-  me?: { kills: number; deaths: number; assists: number; adr: number; kd: number; hs: number; mvps: number };
-};
-
-const HEADERS = {
-  Authorization: `Bearer ${API_KEY}`,
+  me?: PlayerStats;
 };
 
 const eloCache = new Map<string, { elo: number; at: number }>();
@@ -96,50 +96,48 @@ async function enrich(match: LiveMatch) {
   return match;
 }
 
-function mine(stats: unknown, playerId: string): LiveMatch['me'] {
+/** Per-player totals from a FACEIT match stats response (rounds are summed, so a BO3 would add up). */
+export function collectStats(stats: unknown): Map<string, PlayerStats> {
   const rounds = (stats as { rounds?: unknown[] } | undefined)?.rounds ?? [];
-  let kills = 0;
-  let deaths = 0;
-  let assists = 0;
-  let mvps = 0;
-  let hs = 0;
-  let adr = 0;
-  let seen = false;
+  const totals = new Map<string, { kills: number; deaths: number; assists: number; mvps: number; hs: number; adr: number }>();
   for (const round of rounds) {
     const teams = (round as { teams?: { players?: unknown[] }[] }).teams ?? [];
     for (const team of teams) {
       for (const row of team.players ?? []) {
         const player = row as { player_id?: string; player_stats?: Record<string, string> };
-        if (player.player_id !== playerId) continue;
+        if (!player.player_id) continue;
         const bag = player.player_stats ?? {};
-        kills += Number(bag.Kills || 0);
-        deaths += Number(bag.Deaths || 0);
-        assists += Number(bag.Assists || 0);
-        mvps += Number(bag.MVPs || 0);
-        hs = Number(bag['Headshots %'] || hs || 0);
-        adr = Number(bag.ADR || bag['Average Damage per Round'] || adr || 0);
-        seen = true;
+        const sum = totals.get(player.player_id) ?? { kills: 0, deaths: 0, assists: 0, mvps: 0, hs: 0, adr: 0 };
+        sum.kills += Number(bag.Kills || 0);
+        sum.deaths += Number(bag.Deaths || 0);
+        sum.assists += Number(bag.Assists || 0);
+        sum.mvps += Number(bag.MVPs || 0);
+        sum.hs = Number(bag['Headshots %'] || sum.hs || 0);
+        sum.adr = Number(bag.ADR || bag['Average Damage per Round'] || sum.adr || 0);
+        totals.set(player.player_id, sum);
       }
     }
   }
-  if (!seen) return undefined;
-  const kd = deaths > 0 ? Math.round((kills / deaths) * 100) / 100 : kills;
-  return { kills, deaths, assists, adr: Math.round(adr), kd, hs: Math.round(hs), mvps };
+  const result = new Map<string, PlayerStats>();
+  for (const [id, sum] of totals) {
+    const kd = sum.deaths > 0 ? Math.round((sum.kills / sum.deaths) * 100) / 100 : sum.kills;
+    result.set(id, { kills: sum.kills, deaths: sum.deaths, assists: sum.assists, adr: Math.round(sum.adr), kd, hs: Math.round(sum.hs), mvps: sum.mvps });
+  }
+  return result;
 }
 
 /** Newest CS2 match for this player: lobby, live, or the result. */
 export async function fetchLatestMatch(playerId: string): Promise<LiveMatch | undefined> {
-  if (!playerId || !API_KEY) return undefined;
-  const history = await fetch(
-    `https://open.faceit.com/data/v4/players/${playerId}/history?game=cs2&offset=0&limit=1`,
-    { headers: HEADERS }
+  if (!playerId) return undefined;
+  const history = await faceitGet(
+    `/players/${playerId}/history?game=cs2&offset=0&limit=1`
   );
   if (!history.ok) return undefined;
   const body = (await history.json()) as { items?: Record<string, unknown>[] };
   const item = body.items?.[0];
   if (!item || typeof item.match_id !== 'string') return undefined;
 
-  const detailsResponse = await fetch(`https://open.faceit.com/data/v4/matches/${item.match_id}`, { headers: HEADERS });
+  const detailsResponse = await faceitGet(`/matches/${item.match_id}`);
   const details = detailsResponse.ok ? ((await detailsResponse.json()) as Record<string, unknown>) : item;
   const teams = (details.teams ?? item.teams) as Record<string, unknown> | undefined;
   const results = (details.results ?? item.results) as { winner?: string; score?: Record<string, unknown> } | undefined;
@@ -160,8 +158,16 @@ export async function fetchLatestMatch(playerId: string): Promise<LiveMatch | un
   };
 
   if (phase === 'post') {
-    const stats = await fetch(`https://open.faceit.com/data/v4/matches/${item.match_id}/stats`, { headers: HEADERS });
-    if (stats.ok) match.me = mine(await stats.json(), playerId);
+    const stats = await faceitGet(`/matches/${item.match_id}/stats`);
+    if (stats.ok) {
+      const byPlayer = collectStats(await stats.json());
+      match.me = byPlayer.get(playerId);
+      match.sides.forEach((side) =>
+        side.players.forEach((player) => {
+          if (player.id) player.stats = byPlayer.get(player.id);
+        })
+      );
+    }
   }
   return enrich(match);
 }

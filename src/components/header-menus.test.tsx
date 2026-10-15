@@ -14,6 +14,7 @@ const account = (overrides: Partial<Parameters<typeof AccountMenu>[0]> = {}) =>
       syncState="saved"
       lastSavedAt={null}
       onOpenBanners={vi.fn()}
+      onOpenProfile={vi.fn()}
       onLogout={vi.fn()}
       {...overrides}
     />
@@ -60,8 +61,13 @@ describe('AccountMenu', () => {
 
   test('my banners and logout call back and close the menu', () => {
     const onOpenBanners = vi.fn();
+    const onOpenProfile = vi.fn();
     const onLogout = vi.fn();
-    account({ onOpenBanners, onLogout });
+    account({ onOpenBanners, onOpenProfile, onLogout });
+    fireEvent.click(screen.getByRole('button', { name: /skullboy/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Profil' }));
+    expect(onOpenProfile).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('menu')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /skullboy/ }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Moje banery' }));
     expect(onOpenBanners).toHaveBeenCalledTimes(1);

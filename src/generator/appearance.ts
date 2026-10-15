@@ -16,15 +16,19 @@ export type AppearanceControls = {
 const ALL: AppearanceControls = { radius: true, scheme: true, font: true, fontSizes: true, iconScale: true, surface: true };
 
 /**
- * Which Look-tab controls change something in a given widget mode. Solo and versus banners use the classic
- * element markup; team and split render their own components, and the popup is a transparent full-frame card
+ * Which Look-tab controls change something in a given widget mode. Only the solo banner uses the classic
+ * element markup; versus, team and split render their own components, and the popup is a transparent full-frame card
  * with its own theme, so hiding what does nothing keeps the tab honest.
  */
 export function appearanceFor(mode: string): AppearanceControls {
   if (mode === 'popup') {
     return { radius: false, scheme: false, font: true, fontSizes: false, iconScale: false, surface: false };
   }
-  if (mode === 'team' || mode === 'split') {
+  if (mode === 'team') {
+    /* The roster draws its own panel: theme, radius and opacity are options of its own */
+    return { radius: false, scheme: false, font: true, fontSizes: false, iconScale: false, surface: false };
+  }
+  if (mode === 'split' || mode === 'versus') {
     return { ...ALL, fontSizes: false, iconScale: false };
   }
   return ALL;
@@ -42,6 +46,6 @@ export type SettingsControls = {
 /** Which Settings-tab cards and options apply to a widget mode. */
 export function settingsFor(mode: string): SettingsControls {
   if (mode === 'popup') return { elements: false, autoWidth: false, session: false };
-  if (mode === 'team' || mode === 'split') return { elements: false, autoWidth: true, session: false };
+  if (mode === 'team' || mode === 'split' || mode === 'versus') return { elements: false, autoWidth: true, session: false };
   return { elements: true, autoWidth: true, session: true };
 }

@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { createPresenceMiddleware, hydratePresence } from './presence.mjs';
+import { createPresenceMiddleware, hydratePresence, startOnlineHistory } from './presence.mjs';
 import { createAuthMiddleware } from './auth.mjs';
 
 const port = Number(process.env.PRESENCE_PORT) || 3001;
@@ -17,6 +17,7 @@ const server = createServer((req, res) => {
 });
 
 void hydratePresence();
+startOnlineHistory();
 server.listen(port, '127.0.0.1', () => {
   console.log(`presence and auth listening on 127.0.0.1:${port}`);
 });

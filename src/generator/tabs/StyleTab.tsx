@@ -11,7 +11,8 @@ import { LanguageContext, SettingsContext } from '../Generator.tsx';
 import { ShowRanking } from '../../../widget/src/widget/Widget.tsx';
 import { PresetSettings } from '../../components/PresetSettings';
 import { appearanceFor } from '../appearance';
-import { PopupLookOptions } from '../../components/PopupOptions.tsx';
+import { PopupLayoutPicker, PopupLookOptions } from '../../components/PopupOptions.tsx';
+import { TeamLookOptions } from '../../components/ModeOptions.tsx';
 import { PresetCards } from '../../components/PresetCards';
 import {
   BannerRadiusControl,
@@ -206,7 +207,8 @@ export const StyleTab = ({
         {settings.get('bannerDesign') === '2026' && (
           <PresetCards mode={String(settings.get('widgetMode') || 'solo')} />
         )}
-        <BannerSizeControls />
+        {settings.get('bannerDesign') === '2026' && settings.get('widgetMode') === 'popup' && <PopupLayoutPicker />}
+        {settings.get('widgetMode') !== 'popup' && <BannerSizeControls />}
         {ui.radius && <BannerRadiusControl />}
         <div className={'setting'}>
           <div className={'flex style-mode-row'}>
@@ -400,8 +402,8 @@ export const StyleTab = ({
         )}
       </div>
 
-      <PresetSettings />
-      {settings.get('widgetMode') === 'popup' && <PopupLookOptions />}
+      {settings.get('widgetMode') === 'popup' ? <PopupLookOptions /> : <PresetSettings />}
+      {settings.get('widgetMode') === 'team' && <TeamLookOptions />}
       <div className={'settings'}>
         <Checkbox
           text={tl('generator.theme.banner_font.adjust')}

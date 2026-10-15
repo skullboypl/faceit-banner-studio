@@ -122,7 +122,7 @@ export const broadcastPresets: readonly {
   { id: 'lineup', width: 440, height: 460, group: 'team' },
   { id: 'sheet', width: 680, height: 300, group: 'team' },
   { id: 'splitset', width: 300, height: 300, square: true, group: 'split' },
-  { id: 'livecard', width: 640, height: 520, group: 'popup' },
+  { id: 'livecard', width: 1920, height: 1080, group: 'popup' },
 ];
 
 export type BannerMode = 'solo' | 'versus' | 'team' | 'split' | 'popup';

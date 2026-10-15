@@ -3,12 +3,15 @@ import { clientIp as resolveClientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
 import { getPresenceCount, hydratePresence } from './presence.mjs';
 import { readBannerCatalog, writeBannerCatalog } from './catalog.mjs';
+import { lookupPlayer, lookupRanking } from './live.mjs';
 import {
   consumeState,
   deleteSession,
   loadSession,
   loginActivity,
+  onlineHistory,
   recentLogins,
+  loginsForUser,
   recordLogin,
   saveSession,
   saveState,
@@ -254,7 +257,7 @@ export function createAuthMiddleware() {
       ? 'login'
       : pathname.endsWith('/callback')
         ? 'callback'
-        : pathname.endsWith('/me')
+        : pathname.endsWith('/me') || pathname.endsWith('/profile')
           ? 'me'
         : pathname.endsWith('/logout')
           ? 'logout'
@@ -276,6 +279,30 @@ export function createAuthMiddleware() {
       if (pathname === '/api/auth/me' && req.method === 'GET') {
         const user = await currentUser(req);
         return sendJson(res, 200, user ? { user, admin: isAdmin(user) } : { user: null, admin: false });
+      }
+      if (pathname === '/api/auth/profile' && req.method === 'GET') {
+        const user = await currentUser(req);
+        if (!user) return sendJson(res, 401, { error: 'unauthorized' });
+        const faceitId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.guid)
+          ? user.guid.toLowerCase()
+          : '';
+        const profile = faceitId ? await lookupPlayer(faceitId) : null;
+        const ranking = profile?.level === 10 ? await lookupRanking(faceitId, profile.region) : null;
+        const logins = await loginsForUser(user.guid, 8);
+        return sendJson(res, 200, {
+          nickname: user.nickname,
+          avatar: faceitId ? `/api/presence/avatar/${faceitId}` : null,
+          faceit: profile
+            ? {
+                elo: Number.isInteger(profile.elo) ? profile.elo : null,
+                level: Number.isInteger(profile.level) ? profile.level : null,
+                country: profile.country || null,
+                ranking: Number.isInteger(ranking) && ranking >= 1 && ranking <= 1000 ? ranking : null,
+                verifiedBadge: profile.verifiedBadge || 'none',
+              }
+            : null,
+          logins: logins.map((entry) => ({ createdAt: entry.createdAt })),
+        });
       }
       if (pathname === '/api/auth/logout' && req.method === 'POST') {
         if (!originAllowed(req)) return sendJson(res, 403, { error: 'bad_origin' });
@@ -311,6 +338,7 @@ export function createAuthMiddleware() {
           storage: await storageStatus(),
           logins: await recentLogins(50),
           activity: await loginActivity(30),
+          onlineHistory: await onlineHistory(24 * 30),
         });
       }
       res.statusCode = 404;

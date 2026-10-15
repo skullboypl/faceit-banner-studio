@@ -10,16 +10,43 @@ async function pool() {
   return current;
 }
 
+const liveObject = `a.deleted_at IS NULL AND (a.post_id IS NULL OR p.deleted_at IS NULL)`;
+
+/** Key of an identical image that is still on a draft or a visible post. Avoids a second upload. */
+export async function findLiveKey(contentHash: string): Promise<string | null> {
+  const { rows } = await (await pool()).query<{ key: string }>(
+    `SELECT a.key FROM attachments a
+     LEFT JOIN posts p ON p.id = a.post_id
+     WHERE a.content_hash = $1 AND ${liveObject}
+     LIMIT 1`,
+    [contentHash]
+  );
+  return rows[0]?.key ?? null;
+}
+
+/** True when some draft or visible post still points at this stored file. */
+export async function hasLiveObject(key: string, exceptIds: string[] = []): Promise<boolean> {
+  const { rows } = await (await pool()).query(
+    `SELECT 1 FROM attachments a
+     LEFT JOIN posts p ON p.id = a.post_id
+     WHERE a.key = $1 AND NOT (a.id = ANY($2::uuid[])) AND ${liveObject}
+     LIMIT 1`,
+    [key, exceptIds]
+  );
+  return rows.length > 0;
+}
+
 export async function insertAttachment(input: {
   ownerGuid: string;
   key: string;
   bytes: number;
   width: number;
   height: number;
+  contentHash: string;
 }): Promise<{ id: string }> {
   const { rows } = await (await pool()).query<{ id: string }>(
-    `INSERT INTO attachments (owner_guid, key, bytes, width, height) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-    [input.ownerGuid, input.key, input.bytes, input.width, input.height]
+    `INSERT INTO attachments (owner_guid, key, bytes, width, height, content_hash) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [input.ownerGuid, input.key, input.bytes, input.width, input.height, input.contentHash]
   );
   return rows[0];
 }
@@ -69,13 +96,18 @@ export async function attachmentsForPosts(postIds: string[]): Promise<Map<string
   return grouped;
 }
 
-/** Hides the image immediately. The stored key is what the sweeper deletes from R2. */
-export async function softDeleteAttachment(id: string): Promise<string | null> {
+/**
+ * Hides one reference. `release` is true only when no draft or visible post still uses the file,
+ * so a shared screenshot is not deleted out from under the other post.
+ */
+export async function softDeleteAttachment(id: string): Promise<{ key: string; release: boolean } | null> {
   const { rows } = await (await pool()).query<{ key: string }>(
     `UPDATE attachments SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING key`,
     [id]
   );
-  return rows[0]?.key ?? null;
+  const key = rows[0]?.key;
+  if (!key) return null;
+  return { key, release: !(await hasLiveObject(key)) };
 }
 
 /** Orphans older than a day, images an admin already hid, and images on a deleted post. */

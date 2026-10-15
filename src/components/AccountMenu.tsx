@@ -13,13 +13,14 @@ type Props = {
   syncState: SyncState;
   lastSavedAt: number | null;
   onOpenBanners: () => void;
+  onOpenProfile: () => void;
   onLogout: () => void;
   /** Session request still running: show a placeholder instead of flashing the login button. */
   loading?: boolean;
 };
 
 /** Top-bar account area: a FACEIT login button for guests, avatar + nickname with a menu once logged in. */
-export const AccountMenu = ({ user, admin, syncState, lastSavedAt, onOpenBanners, onLogout, loading = false }: Props) => {
+export const AccountMenu = ({ user, admin, syncState, lastSavedAt, onOpenBanners, onOpenProfile, onLogout, loading = false }: Props) => {
   const tl = useContext(LanguageContext);
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -56,6 +57,10 @@ export const AccountMenu = ({ user, admin, syncState, lastSavedAt, onOpenBanners
       {open && (
         <div className="account-popup" role="menu" aria-label={tl('account.menu')}>
           <SyncChip state={syncState} lastSavedAt={lastSavedAt} user={user} showUser={false} />
+          <button type="button" role="menuitem" onClick={choose(onOpenProfile)}>
+            <StudioIcon name="user" />
+            {tl('account.profile')}
+          </button>
           <button type="button" role="menuitem" onClick={choose(onOpenBanners)}>
             <StudioIcon name="cloud" />
             {tl('banners.title')}

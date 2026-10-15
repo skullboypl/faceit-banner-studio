@@ -17,6 +17,10 @@ export type Overview = {
     unique: number;
     series: DayPoint[];
   };
+  onlineHistory?: {
+    hours: number;
+    series: { hour: string; online: number }[];
+  };
 };
 export const storageLabel = (value: string) =>
   ({ postgres: 'PostgreSQL', redis: 'Redis' })[value] ?? 'Pamięć lokalna';

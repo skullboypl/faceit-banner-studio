@@ -45,6 +45,14 @@ describe('AdminPage', () => {
               },
             ],
             activity: { days: 14, total: 40, inRange: 17, unique: 8, series },
+            onlineHistory: {
+              hours: 48,
+              series: [
+                { hour: '2026-10-13T22:00:00.000Z', online: 4 },
+                { hour: '2026-10-13T23:00:00.000Z', online: 15 },
+                { hour: '2026-10-14T00:00:00.000Z', online: 12 },
+              ],
+            },
           });
         }
         return json({}, false);
@@ -59,7 +67,13 @@ describe('AdminPage', () => {
       </MemoryRouter>
     );
     expect(await screen.findByText('Banery online')).toBeTruthy();
-    expect(screen.getByText('12')).toBeTruthy();
+    expect(
+      screen.getByText('Banery online').closest('article')?.querySelector('strong')
+        ?.textContent
+    ).toBe('12');
+    expect(
+      screen.getByRole('img', { name: 'Banery online w czasie' })
+    ).toBeTruthy();
     expect(
       screen.getByRole('img', { name: 'Logowania dziennie' })
     ).toBeTruthy();
@@ -73,6 +87,44 @@ describe('AdminPage', () => {
       target: { value: 'brak' },
     });
     expect(screen.getByText('Brak wpisów.')).toBeTruthy();
+  });
+
+  test('has its own tab for verifying profile pictures, separate from the feedback queue', async () => {
+    const fetcher = vi.mocked(fetch);
+    const original = fetcher.getMockImplementation()!;
+    fetcher.mockImplementation((async (input: RequestInfo | URL, init?: RequestInit) =>
+      String(input).includes('/api/admin/profile-images')
+        ? json({
+            images: [
+              {
+                id: 'img-1',
+                ownerGuid: 'guid-alice',
+                nickname: 'alice',
+                kind: 'avatar',
+                status: 'pending',
+                url: 'https://fbstorage.vxh.pl/pf/avatar/aa.webp',
+                width: 512,
+                height: 512,
+                rejectReason: null,
+                reports: 0,
+                createdAt: '2026-10-15T10:00:00.000Z',
+              },
+            ],
+          })
+        : original(input, init)) as unknown as typeof fetch
+    );
+    render(
+      <MemoryRouter>
+        <AdminPage />
+      </MemoryRouter>
+    );
+    await screen.findByText('Banery online');
+    fireEvent.click(screen.getByRole('button', { name: 'Zgłoszenia' }));
+    expect(screen.queryByText('Zdjęcia profilowe do moderacji')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Grafiki' }));
+    expect(await screen.findByText('Zdjęcia profilowe do moderacji')).toBeTruthy();
+    expect(await screen.findByText('alice')).toBeTruthy();
+    expect(fetcher.mock.calls.some(([url]) => String(url).includes('/api/admin/profile-images?status=pending'))).toBe(true);
   });
 
   test('sends a signed-out visitor straight to the homepage', async () => {

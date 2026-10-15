@@ -16,6 +16,8 @@ import { BANNER_MODES, type BannerCatalog } from '../../../shared/banner-catalog
 import { UserIcon } from '../../assets/icons/tabler/UserIcon.tsx';
 import { StudioIcon } from '../../components/StudioIcon.tsx';
 import { PopupOptions } from '../../components/PopupOptions.tsx';
+import { OverrideNotice } from '../../components/ProfileImages.tsx';
+import { TeamOptionsPanel } from '../../components/ModeOptions.tsx';
 import { settingsFor } from '../appearance';
 import { LOGIN_URL } from '../../components/FaceitLoginButton.tsx';
 
@@ -39,6 +41,8 @@ type Props = {
   setOpponent: Dispatch<VersusPlayer | undefined>;
   /** Nickname of the logged-in FACEIT account, when there is one. */
   accountNickname?: string;
+  /** FACEIT id of the logged-in account; tells the owner of a custom picture from a visitor. */
+  accountGuid?: string;
   /** Admins see every mode. Everyone else only sees modes the catalog marks visible. */
   admin?: boolean;
   catalog?: BannerCatalog;
@@ -63,11 +67,14 @@ export const MainTab = ({
   opponent,
   setOpponent,
   accountNickname,
+  accountGuid,
   admin = false,
   catalog,
 }: Props) => {
   const tl = useContext(LanguageContext);
   const settings = useContext(SettingsContext);
+  /** Which pictures of the typed player were replaced for the banners (shown with a report option). */
+  const [overridden, setOverridden] = useState<{ avatar?: boolean; cover?: boolean }>();
   const [opponentStatus, setOpponentStatus] = useState<
     'idle' | 'loading' | 'found' | 'missing'
   >('idle');
@@ -135,6 +142,7 @@ export const MainTab = ({
       getPlayerProfile(username).then((res) => {
         if (res && res.games.cs2) {
           settings.set('playerId', res.player_id);
+          setOverridden(res.overridden);
           setPlayerAvatar(res.avatar);
           setPlayerBanner(res.cover_image);
           setPlayerRegion(res.games.cs2.region);
@@ -357,6 +365,14 @@ export const MainTab = ({
               style={'severe'}
             />
           )}
+          {playerExists && (
+            <OverrideNotice
+              playerId={String(settings.get('playerId') || '')}
+              overridden={overridden}
+              loggedIn={Boolean(accountGuid)}
+              own={Boolean(accountGuid) && accountGuid === String(settings.get('playerId') || '')}
+            />
+          )}
         </div>
         <div className={'setting flex'}>
           <div>
@@ -414,6 +430,7 @@ export const MainTab = ({
         </div>
       </div>
       {mode === 'popup' && <PopupOptions />}
+      {mode === 'team' && <TeamOptionsPanel />}
       {ui.elements && (
       <div className={'settings'}>
         <h3 className="card-heading">

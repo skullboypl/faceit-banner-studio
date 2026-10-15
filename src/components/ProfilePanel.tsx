@@ -1,0 +1,131 @@
+import { useContext, useEffect, useState } from 'react';
+import { LanguageContext } from '../generator/contexts';
+import { FaceitLevel } from '../live/FaceitLevel';
+import { VerifiedBadgeIcon } from '../assets/icons/faceit/VerifiedBadgeIcon';
+import { VerifiedGoldBadgeIcon } from '../assets/icons/faceit/VerifiedGoldBadgeIcon';
+import { ProfileImages } from './ProfileImages';
+import { StudioIcon } from './StudioIcon';
+
+type FaceitCard = {
+  elo: number | null;
+  level: number | null;
+  country: string | null;
+  ranking: number | null;
+  verifiedBadge: 'none' | 'verified' | 'gold';
+};
+
+type Profile = {
+  nickname: string;
+  avatar: string | null;
+  faceit: FaceitCard | null;
+  logins: { createdAt: string }[];
+};
+
+export function ProfilePanel() {
+  const tl = useContext(LanguageContext);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let cancel = false;
+    fetch('/api/auth/profile', { cache: 'no-store' })
+      .then((response) => {
+        if (!response.ok) throw new Error('profile');
+        return response.json();
+      })
+      .then((body) => {
+        if (!cancel) setProfile(body);
+      })
+      .catch(() => {
+        if (!cancel) setError(true);
+      });
+    return () => {
+      cancel = true;
+    };
+  }, []);
+
+  if (!tl) return null;
+  if (error) return <p className="profile-empty" role="alert">{tl('profile.unavailable')}</p>;
+  if (!profile) return <p className="profile-empty" role="status">{tl('profile.loading')}</p>;
+
+  const faceit = profile.faceit;
+  const when = (value: string) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+  };
+
+  return (
+    <div className="profile-panel">
+      <section className="settings">
+        <div className="profile-identity">
+          <span className="profile-avatar" aria-hidden="true">
+            {profile.nickname.charAt(0).toUpperCase()}
+            {profile.avatar && (
+              <img
+                src={profile.avatar}
+                alt=""
+                onError={(event) => {
+                  event.currentTarget.hidden = true;
+                }}
+              />
+            )}
+          </span>
+          <div>
+            <h3 className="profile-name">
+              {profile.nickname}
+              {faceit?.verifiedBadge === 'gold' && <VerifiedGoldBadgeIcon />}
+              {faceit?.verifiedBadge === 'verified' && <VerifiedBadgeIcon />}
+            </h3>
+            <p>
+              {faceit?.country ? faceit.country.toUpperCase() : 'FACEIT'}
+              <span>·</span>
+              CS2
+            </p>
+          </div>
+          {faceit?.level ? (
+            <FaceitLevel
+              level={faceit.level}
+              ranking={faceit.ranking ?? undefined}
+              label={
+                faceit.ranking
+                  ? tl('live.challenger', [String(faceit.ranking)])
+                  : tl('live.level', [String(faceit.level)])
+              }
+            />
+          ) : null}
+        </div>
+        <ul className="profile-stats">
+          <li>
+            <strong>{faceit?.elo ? faceit.elo.toLocaleString() : '—'}</strong>
+            <span>ELO</span>
+          </li>
+          <li>
+            <strong>{faceit?.level ?? '—'}</strong>
+            <span>{tl('profile.level')}</span>
+          </li>
+          <li>
+            <strong>{faceit?.ranking ? `#${faceit.ranking}` : '—'}</strong>
+            <span>{tl('profile.place')}</span>
+          </li>
+        </ul>
+      </section>
+      <ProfileImages />
+      <section className="settings profile-logins">
+        <h3 className="card-heading">
+          <StudioIcon name="book" />
+          {tl('profile.logins')}
+        </h3>
+        <p>{tl('profile.logins_note')}</p>
+        {profile.logins.length === 0 ? (
+          <p className="profile-empty">{tl('profile.logins_empty')}</p>
+        ) : (
+          <ol>
+            {profile.logins.map((entry) => (
+              <li key={entry.createdAt}>{when(entry.createdAt)}</li>
+            ))}
+          </ol>
+        )}
+      </section>
+    </div>
+  );
+}

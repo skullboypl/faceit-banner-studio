@@ -19,10 +19,13 @@ export function PresetCards({ mode }: { mode: string }) {
             ? 'popup.layouts'
             : 'studio.presets';
 
+  const presets = broadcastPresets.filter((preset) => (preset.group ?? (preset.versus ? 'versus' : 'solo')) === mode);
+  /* One theme means nothing to choose: the layout picker below takes over */
+  if (presets.length < 2) return null;
+
   return (
     <div className="broadcast-presets" role="group" aria-label={tl(label)}>
-      {broadcastPresets
-        .filter((preset) => (preset.group ?? (preset.versus ? 'versus' : 'solo')) === mode)
+      {presets
         .map((preset) => (
           <button
             key={preset.id}

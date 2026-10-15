@@ -1,53 +1,49 @@
 import { useState } from 'react';
 
 export type DayPoint = { day: string; count: number; players: number };
-
-const labelOf = (day: string) => {
-  const [, month, date] = day.split('-');
-  return `${Number(date)}.${month}`;
-};
+export type ChartPoint = { key: string; label: string; value: number };
 
 export function AdminChart({
   title,
   hint,
-  series,
-  field,
+  points,
   summary,
+  column,
+  tone = 'count',
 }: {
   title: string;
   hint: string;
-  series: DayPoint[];
-  field: 'count' | 'players';
+  points: ChartPoint[];
   summary: string;
+  column: string;
+  tone?: 'count' | 'players' | 'online';
 }) {
   const [hover, setHover] = useState<number | null>(null);
-  const values = series.map((point) => point[field]);
-  const max = Math.max(1, ...values);
+  const max = Math.max(1, ...points.map((point) => point.value));
   const width = 640;
   const height = 220;
   const pad = { left: 36, right: 12, top: 16, bottom: 28 };
   const innerW = width - pad.left - pad.right;
   const innerH = height - pad.top - pad.bottom;
-  const step = series.length > 1 ? innerW / (series.length - 1) : 0;
-  const points = series.map((point, index) => ({
+  const step = points.length > 1 ? innerW / (points.length - 1) : 0;
+  const plotted = points.map((point, index) => ({
     ...point,
-    value: point[field],
     x: pad.left + index * step,
-    y: pad.top + innerH - (point[field] / max) * innerH,
+    y: pad.top + innerH - (point.value / max) * innerH,
   }));
-  const line = points
+  const line = plotted
     .map(
       (point, index) =>
         `${index === 0 ? 'M' : 'L'}${point.x.toFixed(1)},${point.y.toFixed(1)}`
     )
     .join(' ');
   const area =
-    points.length > 0
-      ? `${line} L${points[points.length - 1].x.toFixed(1)},${pad.top + innerH} L${points[0].x.toFixed(1)},${pad.top + innerH} Z`
+    plotted.length > 0
+      ? `${line} L${plotted[plotted.length - 1].x.toFixed(1)},${pad.top + innerH} L${plotted[0].x.toFixed(1)},${pad.top + innerH} Z`
       : '';
-  if (points.length === 0) {
+  if (plotted.length === 0) {
     return (
-      <section className="admin-chart">
+      <section className={`admin-chart admin-chart--${tone}`}>
         <header>
           <div>
             <h2>{title}</h2>
@@ -60,18 +56,18 @@ export function AdminChart({
     );
   }
 
-  const active = hover !== null ? points[hover] : null;
+  const active = hover !== null ? plotted[hover] : null;
   const ticks = [...new Set([max, Math.round(max / 2), 0])];
   const xLabels = [
     0,
-    Math.floor((points.length - 1) / 2),
-    points.length - 1,
+    Math.floor((plotted.length - 1) / 2),
+    plotted.length - 1,
   ].filter(
     (index, position, all) => index >= 0 && all.indexOf(index) === position
   );
 
   return (
-    <section className={`admin-chart admin-chart--${field}`}>
+    <section className={`admin-chart admin-chart--${tone}`}>
       <header>
         <div>
           <h2>{title}</h2>
@@ -84,7 +80,7 @@ export function AdminChart({
         role="img"
         aria-label={title}
         tabIndex={0}
-        onFocus={() => setHover(points.length - 1)}
+        onFocus={() => setHover(plotted.length - 1)}
         onBlur={() => setHover(null)}
         onKeyDown={(event) => {
           if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
@@ -93,8 +89,8 @@ export function AdminChart({
             Math.max(
               0,
               Math.min(
-                points.length - 1,
-                (current ?? points.length - 1) +
+                plotted.length - 1,
+                (current ?? plotted.length - 1) +
                   (event.key === 'ArrowLeft' ? -1 : 1)
               )
             )
@@ -102,12 +98,12 @@ export function AdminChart({
         }}
         onMouseLeave={() => setHover(null)}
         onMouseMove={(event) => {
-          if (points.length === 0) return;
+          if (plotted.length === 0) return;
           const rect = event.currentTarget.getBoundingClientRect();
           const x = ((event.clientX - rect.left) / rect.width) * width;
           let nearest = 0;
           let best = Infinity;
-          points.forEach((point, index) => {
+          plotted.forEach((point, index) => {
             const distance = Math.abs(point.x - x);
             if (distance < best) {
               best = distance;
@@ -144,19 +140,19 @@ export function AdminChart({
         )}
         {xLabels.map((index) => (
           <text
-            key={points[index].day}
+            key={plotted[index].key}
             className="admin-chart-x"
-            x={points[index].x}
+            x={plotted[index].x}
             y={height - 8}
             textAnchor="middle"
           >
-            {labelOf(points[index].day)}
+            {plotted[index].label}
           </text>
         ))}
       </svg>
       <p className="admin-chart-tip" aria-live="polite">
         {active
-          ? `${labelOf(active.day)} · ${active.value}`
+          ? `${active.label} · ${active.value}`
           : 'Najedź na wykres lub użyj strzałek po zaznaczeniu.'}
       </p>
       <details className="admin-chart-data">
@@ -165,17 +161,15 @@ export function AdminChart({
           <table>
             <thead>
               <tr>
-                <th scope="col">Dzień (UTC)</th>
-                <th scope="col">
-                  {field === 'count' ? 'Logowania' : 'Gracze'}
-                </th>
+                <th scope="col">Czas (UTC)</th>
+                <th scope="col">{column}</th>
               </tr>
             </thead>
             <tbody>
-              {series.map((point) => (
-                <tr key={point.day}>
-                  <td>{point.day}</td>
-                  <td>{point[field]}</td>
+              {points.map((point) => (
+                <tr key={point.key}>
+                  <td>{point.label}</td>
+                  <td>{point.value}</td>
                 </tr>
               ))}
             </tbody>

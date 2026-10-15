@@ -3,6 +3,8 @@ import sharp from 'sharp';
 /** Server refuses anything larger than this before decoding. The browser aims for 600 KB. */
 export const MAX_UPLOAD_BYTES = 1024 * 1024;
 export const MAX_EDGE = 4096;
+/** Longest side stored in R2. The lightbox never needs more than a desktop screenshot. */
+export const STORE_EDGE = 1920;
 export const MAX_ATTACHMENTS = 3;
 
 const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
@@ -45,7 +47,11 @@ export async function toWebp(bytes: Buffer): Promise<{ body: Buffer; width: numb
     const meta = await source.metadata();
     if (!meta.width || !meta.height || (meta.pages ?? 1) > 1) throw new ImageReject('bad_type');
     if (Math.max(meta.width, meta.height) > MAX_EDGE) throw new ImageReject('too_big');
-    const { data, info } = await source.rotate().webp({ quality: 82 }).toBuffer({ resolveWithObject: true });
+    const { data, info } = await source
+      .rotate()
+      .resize({ width: STORE_EDGE, height: STORE_EDGE, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .toBuffer({ resolveWithObject: true });
     return { body: data, width: info.width, height: info.height };
   } catch (error) {
     if (error instanceof ImageReject) throw error;

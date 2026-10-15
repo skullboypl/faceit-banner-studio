@@ -545,6 +545,7 @@ export const sitePages: { path: string; element: ReactElement }[] = [
                 <tr><td>Historia logowań: identyfikator, nick, awatar, adres IP, czas</td><td>Bezpieczeństwo i wykrywanie nadużyć</td><td>Dopóki jest potrzebna do bezpieczeństwa; usuwamy na Twoją prośbę</td></tr>
                 <tr><td>Sesja logowania (ciasteczko <code>fb_session</code>)</td><td>Utrzymanie zalogowania</td><td>Do 7 dni</td></tr>
                 <tr><td>Zapisane banery i bieżące ustawienia synchronizowane z kontem</td><td>Dostęp do banerów z każdego urządzenia</td><td>Do usunięcia przez Ciebie lub usunięcia konta</td></tr>
+                <tr><td>Własny avatar i tło dla banerów (pliki obrazów), status moderacji i zgłoszenia nadużyć</td><td>Pokazanie ich w banerach każdemu, kto wpisze Twój nick; moderacja</td><td>Do usunięcia przez Ciebie lub administratora; po akceptacji obrazy są publiczne</td></tr>
                 <tr><td>Zgłoszenia, komentarze, głosy, ewentualny kontekst błędu (przeglądarka, wersja, wybrane ustawienia banera)</td><td>Tablica próśb i błędów</td><td>Do usunięcia przez Ciebie lub administratora</td></tr>
               </tbody>
             </table>
@@ -561,6 +562,7 @@ export const sitePages: { path: string; element: ReactElement }[] = [
           <ul>
             <li><strong>FACEIT</strong>: logowanie i publiczne statystyki, według własnych zasad FACEIT.</li>
             <li><strong>Inni zalogowani użytkownicy</strong> widzą Twój nick przy zgłoszeniach i komentarzach. Niezalogowani widzą tylko tytuły, status i liczniki.</li>
+            <li><strong>Każdy odwiedzający:</strong> jeśli ustawisz własny avatar lub tło dla banerów i administrator je zatwierdzi, widzi je każdy, kto wpisze Twój nick w generatorze lub otworzy Twój baner. Obrazy są w publicznym magazynie plików; osoby zgłaszające obraz nie są ujawniane jego właścicielowi.</li>
             <li><strong>Hosting:</strong> dane są na serwerze VPS administratora; nie sprzedajemy ich ani nie udostępniamy reklamodawcom.</li>
             <li><strong>Wsparcie projektu</strong> (<a href="https://donate.skullmedia.pl">donate.skullmedia.pl</a>) to osobna strona z własnymi zasadami; nie przekazujemy jej danych z kont.</li>
           </ul>
@@ -610,6 +612,7 @@ export const sitePages: { path: string; element: ReactElement }[] = [
                 <tr><td>Login history: id, nickname, avatar, IP address, time</td><td>Security and abuse detection</td><td>As long as needed for security; deleted on request</td></tr>
                 <tr><td>Login session (<code>fb_session</code> cookie)</td><td>Keeping you logged in</td><td>Up to 7 days</td></tr>
                 <tr><td>Saved banners and working settings synced to the account</td><td>Access from every device</td><td>Until you or an account deletion remove them</td></tr>
+                <tr><td>Your own avatar and background for banners (image files), moderation status and abuse reports</td><td>Showing them on banners to anyone who types your nickname; moderation</td><td>Until you or an administrator delete them; after approval the images are public</td></tr>
                 <tr><td>Posts, comments, votes, optional bug context (browser, version, chosen banner settings)</td><td>Requests and bugs board</td><td>Until you or an administrator remove them</td></tr>
               </tbody>
             </table>
@@ -623,6 +626,7 @@ export const sitePages: { path: string; element: ReactElement }[] = [
           <ul>
             <li><strong>FACEIT</strong>: login and public statistics, under FACEIT's own terms.</li>
             <li><strong>Other logged-in users</strong> see your nickname next to posts and comments. Visitors who are not logged in see only titles, status and counters.</li>
+            <li><strong>Any visitor:</strong> if you set your own avatar or background for banners and an administrator approves it, everyone who types your nickname in the generator or opens your banner sees it. The images sit in a public file store; people who report an image are not revealed to its owner.</li>
             <li><strong>Hosting:</strong> data lives on the controller's VPS; we do not sell it or share it with advertisers.</li>
             <li><strong>Supporting the project</strong> (<a href="https://donate.skullmedia.pl">donate.skullmedia.pl</a>) is a separate site with its own rules; we pass no account data to it.</li>
           </ul>

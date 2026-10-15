@@ -1,7 +1,9 @@
 import { Language, tl } from '../translations/translations.ts';
-import { Dispatch, useEffect, useRef, useCallback, useState } from 'react';
+import { Dispatch, ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { broadcastPresets } from '../../widget/src/styles/styles';
 import { SPLIT_PARTS } from '../../widget/src/widget/SplitBanner';
+import { readTeamOptions, teamRecommendedWidth } from '../../widget/src/widget/team-options';
+import { settingsFromQuery } from '../settings/query-values';
 
 type SourceSize = { width: number; height: number };
 
@@ -10,6 +12,42 @@ const PREVIEW_SIZES: { id: string; width: number; height: number }[] = [
   { id: '1280x720', width: 1280, height: 720 },
   { id: '800x600', width: 800, height: 600 },
 ];
+
+/** Scale that fits a frame of `frame` px into `room` px of width; never enlarges, and 1 until measured. */
+export function fitScale(room: number, frame: number): number {
+  if (room <= 0 || frame <= 0) return 1;
+  return Math.min(1, Math.round((room / frame) * 1000) / 1000);
+}
+
+/** Shows a fixed-size frame (an OBS source) scaled down to the width available, so it never needs scrollbars. */
+function FitFrame({
+  width,
+  height,
+  children,
+}: {
+  width: number;
+  height: number;
+  children: (style: { transform?: string; transformOrigin?: string }) => ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [room, setRoom] = useState(0);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const measure = () => setRoom(element.clientWidth);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  const scale = fitScale(room, width);
+  return (
+    <div ref={ref} className="fit-frame" style={{ height: Math.round(height * scale) }}>
+      {children(scale < 1 ? { transform: `scale(${scale})`, transformOrigin: '0 0' } : {})}
+    </div>
+  );
+}
 
 export const GeneratedWidgetModal = ({
   language,
@@ -91,7 +129,7 @@ export const GeneratedWidgetModal = ({
 
   /* The real widget knows its own size: read it from the preview once data has loaded */
   useEffect(() => {
-    if (!url || mode !== 'widget' || !preset || isSplitLink) return;
+    if (!url || mode !== 'widget' || !preset || isSplitLink || preset.group === 'popup') return;
     let tries = 0;
     const timer = window.setInterval(() => {
       tries += 1;
@@ -147,9 +185,14 @@ export const GeneratedWidgetModal = ({
     }
   }, [url, writeClipboard]);
 
+  /* A roster is as wide as its columns need, so the size follows the link, not the preset's fixed width */
+  const teamWidth =
+    preset && query?.get('mode') === 'team'
+      ? teamRecommendedWidth(readTeamOptions(settingsFromQuery(query)), preset.id === 'sheet' ? 'sheet' : 'lineup')
+      : undefined;
   const recommended: SourceSize | undefined = preset
     ? {
-        width: measured?.width ?? preset.width,
+        width: measured?.width ?? teamWidth ?? preset.width,
         height: measured?.height ?? preset.height,
       }
     : undefined;
@@ -219,17 +262,22 @@ export const GeneratedWidgetModal = ({
                   {copiedLabel === entry.part ? ' ✓' : ''}
                 </button>
                 <div className="iframe-preview obs-frame">
-                  <iframe
-                    title={tl(language, `split.link.${entry.part}`)}
-                    src={`${entry.href}&presence=off`}
-                    style={{
-                      border: 0,
-                      width: `${entry.width}px`,
-                      height: `${entry.height}px`,
-                      display: 'block',
-                      background: 'transparent',
-                    }}
-                  />
+                  <FitFrame width={entry.width} height={entry.height}>
+                    {(fit) => (
+                      <iframe
+                        title={tl(language, `split.link.${entry.part}`)}
+                        src={`${entry.href}&presence=off`}
+                        style={{
+                          border: 0,
+                          width: `${entry.width}px`,
+                          height: `${entry.height}px`,
+                          display: 'block',
+                          background: 'transparent',
+                          ...fit,
+                        }}
+                      />
+                    )}
+                  </FitFrame>
                 </div>
               </div>
             ))}
@@ -335,19 +383,24 @@ export const GeneratedWidgetModal = ({
             </div>
             <p>{tl(language, 'obs.preview.hint')}</p>
             <div className="iframe-preview obs-frame">
-              <iframe
-                ref={frameRef}
-                title={'Widget preview from generated link'}
-                src={`${url}${url.includes('?') ? '&' : '?'}presence=off`}
-                style={{
-                  border: 0,
-                  width: `${frameSize.width}px`,
-                  minWidth: `${frameSize.width}px`,
-                  height: `${frameSize.height}px`,
-                  display: 'block',
-                  background: 'transparent',
-                }}
-              />
+              <FitFrame width={frameSize.width} height={frameSize.height}>
+                {(fit) => (
+                  <iframe
+                    ref={frameRef}
+                    title={'Widget preview from generated link'}
+                    src={`${url}${url.includes('?') ? '&' : '?'}presence=off`}
+                    style={{
+                      border: 0,
+                      width: `${frameSize.width}px`,
+                      minWidth: `${frameSize.width}px`,
+                      height: `${frameSize.height}px`,
+                      display: 'block',
+                      background: 'transparent',
+                      ...fit,
+                    }}
+                  />
+                )}
+              </FitFrame>
             </div>
           </div>
         )}

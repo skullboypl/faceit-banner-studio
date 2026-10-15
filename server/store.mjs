@@ -7,6 +7,9 @@ const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 const memorySessions = new Map();
 const memoryLogins = [];
+const memoryOnline = [];
+const memoryVerified = new Set();
+const ACCOUNT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 let redisPromise;
 let postgresPromise;
@@ -68,6 +71,18 @@ async function getPostgres() {
         );
         CREATE INDEX IF NOT EXISTS idx_logins_guid ON logins (guid);
         CREATE INDEX IF NOT EXISTS idx_logins_created ON logins (created_at);
+        CREATE TABLE IF NOT EXISTS verified_accounts (
+          guid VARCHAR(64) PRIMARY KEY,
+          verified_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        INSERT INTO verified_accounts (guid)
+        SELECT DISTINCT lower(guid) FROM logins
+        WHERE guid ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        ON CONFLICT (guid) DO NOTHING;
+        CREATE TABLE IF NOT EXISTS online_samples (
+          bucket TIMESTAMPTZ PRIMARY KEY,
+          online INTEGER NOT NULL
+        );
       `);
       return pool;
     })
@@ -188,12 +203,55 @@ export async function recordLogin(user, ip) {
         entry.avatar,
         entry.ip,
       ]);
+      await markVerified(entry.guid);
       return;
     }
   } catch (error) {
     markPostgresDown(error);
   }
   rememberLogin(entry);
+  await markVerified(entry.guid);
+}
+
+/** Remembers that this FACEIT account signed in. The public board only learns a yes or no later. */
+export async function markVerified(guid) {
+  const id = String(guid || '').trim().toLowerCase();
+  if (!ACCOUNT_ID.test(id)) return;
+  memoryVerified.add(id);
+  await postgresCall((pool) =>
+    pool.query('INSERT INTO verified_accounts (guid) VALUES ($1) ON CONFLICT (guid) DO NOTHING', [id])
+  );
+}
+
+/** Which of these account ids have signed in. Anything else from the login row stays in the database. */
+export async function verifiedAmong(guids) {
+  const wanted = [...new Set(guids.map((guid) => String(guid || '').trim().toLowerCase()).filter((id) => ACCOUNT_ID.test(id)))];
+  const found = new Set();
+  for (const id of wanted) if (memoryVerified.has(id)) found.add(id);
+  if (wanted.length === 0) return found;
+  const result = await postgresCall((pool) =>
+    pool.query('SELECT guid FROM verified_accounts WHERE guid = ANY($1::text[])', [wanted])
+  );
+  for (const row of result?.rows ?? []) found.add(String(row.guid).toLowerCase());
+  return found;
+}
+
+/** This account's own studio sign-ins. The address stays in the database and is not returned. */
+export async function loginsForUser(guid, limit = 8) {
+  const cap = Math.min(20, Math.max(1, Number(limit) || 8));
+  try {
+    const pool = await getPostgres();
+    if (pool) {
+      const { rows } = await pool.query(
+        'SELECT created_at AS "createdAt" FROM logins WHERE guid = $1 ORDER BY id DESC LIMIT $2',
+        [guid, cap]
+      );
+      return rows;
+    }
+  } catch (error) {
+    markPostgresDown(error);
+  }
+  return memoryLogins.filter((entry) => entry.guid === guid).slice(0, cap).map(({ createdAt }) => ({ createdAt }));
 }
 
 export async function recentLogins(limit = 50) {
@@ -217,6 +275,78 @@ export async function storageStatus() {
     sessions: process.env.REDIS_URL ? 'redis' : 'memory',
     logins: process.env.DATABASE_URL ? 'postgres' : 'memory',
   };
+}
+
+const HOUR_MS = 60 * 60 * 1000;
+const ONLINE_KEEP_HOURS = 24 * 90;
+
+function hourBucket(at) {
+  const date = new Date(at);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setUTCMinutes(0, 0, 0);
+  return date.toISOString();
+}
+
+function rememberOnline(bucket, online) {
+  const index = memoryOnline.findIndex((row) => row.bucket === bucket);
+  if (index >= 0) memoryOnline[index].online = online;
+  else memoryOnline.push({ bucket, online });
+  const cutoff = Date.now() - ONLINE_KEEP_HOURS * HOUR_MS;
+  for (let i = memoryOnline.length - 1; i >= 0; i -= 1) {
+    if (Date.parse(memoryOnline[i].bucket) < cutoff) memoryOnline.splice(i, 1);
+  }
+}
+
+/** One count for this UTC hour. A later sample in the same hour replaces it. */
+export async function recordOnlineSample(online, at = new Date()) {
+  const bucket = hourBucket(at);
+  if (!bucket) return;
+  const count = Math.max(0, Math.min(1_000_000, Math.round(Number(online) || 0)));
+  const saved = await postgresCall(async (pool) => {
+    await pool.query(
+      `INSERT INTO online_samples (bucket, online) VALUES ($1, $2)
+       ON CONFLICT (bucket) DO UPDATE SET online = EXCLUDED.online`,
+      [bucket, count]
+    );
+    await pool.query(`DELETE FROM online_samples WHERE bucket < NOW() - INTERVAL '90 days'`);
+    return true;
+  });
+  if (saved === undefined) rememberOnline(bucket, count);
+}
+
+/** Hourly online counts. Hours before the first saved sample are left out; a missed hour is zero. */
+export function fillHourlyCounts(rows, hours, now = new Date()) {
+  const span = Math.min(ONLINE_KEEP_HOURS, Math.max(1, Number(hours) || 1));
+  const end = hourBucket(now);
+  if (!end) return [];
+  const endMs = Date.parse(end);
+  const byHour = new Map();
+  for (const row of rows || []) {
+    const key = hourBucket(row.bucket);
+    if (!key) continue;
+    byHour.set(key, Math.max(0, Number(row.online) || 0));
+  }
+  const series = [];
+  for (let i = span - 1; i >= 0; i -= 1) {
+    const key = new Date(endMs - i * HOUR_MS).toISOString();
+    series.push({ hour: key, online: byHour.get(key) ?? 0 });
+  }
+  const first = series.findIndex((point) => byHour.has(point.hour));
+  return first < 0 ? [] : series.slice(first);
+}
+
+export async function onlineHistory(hours = 24 * 30, now = new Date()) {
+  const span = Math.min(ONLINE_KEEP_HOURS, Math.max(1, Number(hours) || 24 * 30));
+  const result = await postgresCall((pool) =>
+    pool.query(
+      `SELECT bucket, online FROM online_samples
+       WHERE bucket >= NOW() - make_interval(hours => $1::int)
+       ORDER BY bucket`,
+      [span]
+    )
+  );
+  const rows = result === undefined ? memoryOnline : result.rows;
+  return { hours: span, series: fillHourlyCounts(rows, span, now) };
 }
 
 /** Continuous UTC days, with empty days as zero, so the admin chart does not skip quiet dates. */

@@ -1,7 +1,8 @@
 import { clientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
-import { fillFromPlayerId, playerIdFromReferer, publicRanking, sanitizeInfo } from './live.mjs';
-import { withRedis } from './store.mjs';
+import { fillFromPlayerId, loadAvatar, playerIdFromReferer, publicRanking, sanitizeInfo } from './live.mjs';
+import { handleFaceitProxy } from './faceit-proxy.mjs';
+import { recordOnlineSample, verifiedAmong, withRedis } from './store.mjs';
 
 /** Current widgets ping every minute. Older banners refresh only after a win and never send a heartbeat, so the live pool keeps a banner for an hour after its last contact. */
 export const ACTIVE_WINDOW_MS = 60 * 60_000;
@@ -163,6 +164,26 @@ export const getPresenceCount = () => {
   return sessions.size;
 };
 
+const SAMPLE_MS = 60 * 60 * 1000;
+let samplerStarted = false;
+
+/** Writes the live banner count once per UTC hour. The timer does not keep the process alive. */
+export function startOnlineHistory() {
+  if (samplerStarted) return;
+  samplerStarted = true;
+  const sample = () => {
+    void recordOnlineSample(getPresenceCount()).catch(() => undefined);
+  };
+  sample();
+  const wait = SAMPLE_MS - (Date.now() % SAMPLE_MS);
+  const starter = setTimeout(() => {
+    sample();
+    const timer = setInterval(sample, SAMPLE_MS);
+    timer.unref?.();
+  }, wait);
+  starter.unref?.();
+}
+
 /** Public menu count and the live list share one snapshot so open studios do not each rebuild it. */
 const PUBLIC_TTL_MS = 30_000;
 
@@ -201,6 +222,10 @@ async function buildLiveBoard() {
     if (entry.info) entries.push({ info: { ...entry.info }, lastSeen: entry.lastSeen });
   }
   await fillFromPlayerId(entries);
+  const signedIn = await verifiedAmong(entries.map((entry) => entry.info?.playerId));
+  for (const entry of entries) {
+    if (entry.info?.playerId && signedIn.has(entry.info.playerId)) entry.info.confirmed = true;
+  }
   const players = publicRanking(entries);
   const at = Date.now();
   const body = {
@@ -233,12 +258,33 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
   const getLimit = unlimitedRate ? allow : createRateLimiter({ perMinute: 60, blockAfter: LOCKOUT });
 
   return async (req, res, next) => {
+    if (await handleFaceitProxy(req, res, { unlimitedRate })) return;
     const pathname = new URL(req.url || '/', 'http://localhost').pathname;
-    if (pathname !== '/api/presence' && pathname !== '/api/presence/live') return next();
+    const avatarId = pathname.startsWith('/api/presence/avatar/')
+      ? pathname.slice('/api/presence/avatar/'.length)
+      : '';
+    if (pathname !== '/api/presence' && pathname !== '/api/presence/live' && !/^[0-9a-f-]{36}$/i.test(avatarId)) {
+      return next();
+    }
 
     const now = Date.now();
     const ip = clientIp(req.headers, req.socket.remoteAddress, trustedHops());
     await hydratePresence();
+
+    if (req.method === 'GET' && avatarId) {
+      if (!getLimit(ip)) return sendJson(res, 429, { error: 'rate_limited' }, { 'Retry-After': '60' });
+      const image = await loadAvatar(avatarId);
+      if (!image) {
+        res.statusCode = 404;
+        res.setHeader('Cache-Control', 'public, max-age=600');
+        return res.end();
+      }
+      res.statusCode = 200;
+      res.setHeader('Content-Type', image.type);
+      res.setHeader('Content-Length', String(image.body.length));
+      res.setHeader('Cache-Control', 'public, max-age=21600');
+      return res.end(image.body);
+    }
 
     if (req.method === 'GET') {
       if (!getLimit(ip)) return sendJson(res, 429, { error: 'rate_limited' }, { 'Retry-After': '60' });

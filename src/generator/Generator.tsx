@@ -49,9 +49,13 @@ import { resolveBannerStyle } from '../../widget/src/styles/styles';
 import type { VersusPlayer } from '../../widget/src/widget/Widget.tsx';
 import { VerifiedBadgeType } from '../../widget/src/utils/faceit_util.ts';
 import { OnlineBannerCount } from '../components/OnlineBannerCount.tsx';
+import { ObsMonitor } from '../components/ObsMonitor.tsx';
+import { lookFor, popupCardWidth, popupCloseUp, readPopupOptions } from '../../widget/src/widget/popup-options';
+import type { PopupPhase } from '../../widget/src/widget/popup-options';
 import { ConflictDialog } from '../components/ConflictDialog.tsx';
 import { DonateLink } from '../components/DonateLink.tsx';
 import { MyBannersPanel } from '../components/MyBannersPanel.tsx';
+import { ProfilePanel } from '../components/ProfilePanel.tsx';
 import { AccountMenu } from '../components/AccountMenu.tsx';
 import { LanguageSelect } from '../components/LanguageSelect.tsx';
 import { MobileMenu } from '../components/MobileMenu.tsx';
@@ -135,6 +139,10 @@ export const Generator = () => {
   const [introReplay, setIntroReplay] = useState(0);
   const selectTab = useCallback((index: number) => {
     setSelectedTabIndex(index);
+    const params = new URLSearchParams(window.location.search);
+    if (onLive || params.get('panel') || params.get('tab') !== String(index)) {
+      navigate(`/?tab=${index}`);
+    }
     if (window.matchMedia('(max-width: 1000px)').matches) {
       requestAnimationFrame(() => {
         document
@@ -144,7 +152,12 @@ export const Generator = () => {
     } else {
       document.getElementById('root')?.scrollTo({ top: 0 });
     }
-  }, []);
+  }, [navigate, onLive]);
+  const openProfile = useCallback(() => {
+    navigate('/?panel=profile');
+    document.getElementById('root')?.scrollTo({ top: 0 });
+  }, [navigate]);
+  const showProfile = !onLive && searchParams.get('panel') === 'profile';
 
   const tl = useCallback(
     (text: string, args?: string[]) => {
@@ -552,6 +565,7 @@ export const Generator = () => {
           opponent={opponent}
           setOpponent={setOpponent}
           accountNickname={session.user?.nickname}
+          accountGuid={session.user?.guid}
           admin={session.admin}
           catalog={catalog}
         />
@@ -588,6 +602,87 @@ export const Generator = () => {
     },
   ];
 
+  /* Popup mode: close-up preview, plus a small OBS monitor that always shows the whole 1920 x 1080 source */
+  const isPopupMode = getSetting('widgetMode') === 'popup';
+  const popupPhase = ((getSetting('popupPreview') as PopupPhase) || 'live') as PopupPhase;
+  const popupOptions = readPopupOptions((key) => getSetting(key as SettingKey));
+  const popupView = lookFor(popupOptions, popupPhase);
+  const popupCardPx = popupCardWidth(popupOptions, popupPhase);
+  const popupSizeKey = `${popupCardPx}|${popupView.scale}|${JSON.stringify(popupView.fonts[popupView.layout] ?? {})}`;
+  const [popupResizing, setPopupResizing] = useState(false);
+  const popupSizeSeen = useRef(popupSizeKey);
+  /* While the size is being changed the main preview shows the whole frame, so the change can be judged in place */
+  useEffect(() => {
+    if (popupSizeSeen.current === popupSizeKey) return;
+    popupSizeSeen.current = popupSizeKey;
+    setPopupResizing(true);
+    const timer = window.setTimeout(() => setPopupResizing(false), 1600);
+    return () => window.clearTimeout(timer);
+  }, [popupSizeKey]);
+  /* The card is measured on the monitor, where the whole frame is visible, and the close-up is fitted to what was measured */
+  const monitorScreen = useRef<HTMLDivElement | null>(null);
+  const [cardShare, setCardShare] = useState<{ width: number; height: number }>();
+  useLayoutEffect(() => {
+    if (!isPopupMode) return;
+    const screen = monitorScreen.current;
+    const article = screen?.querySelector('.match-popup article');
+    const frame = screen?.querySelector('.wrapper');
+    if (!article || !frame) return;
+    const measure = () => {
+      const f = frame.getBoundingClientRect();
+      const a = article.getBoundingClientRect();
+      if (f.width <= 0 || f.height <= 0) return;
+      const next = { width: Math.round((a.width / f.width) * 1000) / 1000, height: Math.round((a.height / f.height) * 1000) / 1000 };
+      setCardShare((prev) => (prev && prev.width === next.width && prev.height === next.height ? prev : next));
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(article);
+    observer.observe(frame);
+    return () => observer.disconnect();
+  });
+  const popupZoom = popupCloseUp(popupOptions, popupPhase, cardShare);
+
+  const previewStage = (
+    <>
+    <div
+      key={previewBackground}
+      className="preview-scene"
+      style={{
+        backgroundImage: `url(${PREVIEW_BACKGROUNDS[previewBackground]})`,
+      }}
+    />
+    <span className="scene-label">
+      CS2<span>/</span>
+      {tl(`generator.preview.${previewBackground}`)}
+    </span>
+    <div
+      className={`${resolveBannerStyle(getSetting('style'), getSetting('bannerDesign'))}-theme ${getSetting('colorScheme')}-scheme preview ${previewBackground}`}
+    >
+      {(getSetting('style') !== 'custom' ||
+        (getSetting('style') === 'custom' &&
+          getSetting('customCSS') !==
+            'https://example.com')) && (
+        <Widget
+          preview={true}
+          introReplay={introReplay}
+          previewAvatar={playerAvatar}
+          previewBanner={playerBanner}
+          previewUsername={username}
+          previewRegion={playerRegion}
+          previewCountry={playerCountry}
+          previewVerifiedBadge={playerVerifiedBadge}
+          previewElo={playerElo}
+          previewLevel={playerLevel}
+          previewLanguage={language}
+          previewOpponent={opponent}
+        />
+      )}
+    </div>
+    </>
+  );
+
   return (
     <LanguageContext.Provider value={tl}>
       <SettingsContext.Provider
@@ -618,6 +713,7 @@ export const Generator = () => {
               .catch(() => undefined)
               .finally(session.refresh);
           }}
+          onOpenProfile={openProfile}
         />
         <GeneratedWidgetModal
           language={language}
@@ -648,13 +744,13 @@ export const Generator = () => {
                   key={tab.name}
                   aria-label={tab.name}
                   title={tab.name}
-                  aria-current={!onLive && index === selectedTabIndex ? 'page' : undefined}
+                  aria-current={!onLive && !showProfile && index === selectedTabIndex ? 'page' : undefined}
                   data-overflow={index >= PINNED_TABS ? 'true' : undefined}
                   onClick={() => {
                     selectTab(index);
                     if (onLive) navigate(`/?tab=${index}`);
                   }}
-                  className={!onLive && index === selectedTabIndex ? 'active' : ''}
+                  className={!onLive && !showProfile && index === selectedTabIndex ? 'active' : ''}
                 >
                   <StudioIcon name={TAB_ICONS[index]} />
                   <span>{tab.name}</span>
@@ -716,7 +812,7 @@ export const Generator = () => {
             <span>
               {tl('studio.workspace')}{' '}
               <span className="breadcrumb-divider">/</span>{' '}
-              <strong>{onLive ? tl('live.title') : tabs[selectedTabIndex].name}</strong>
+              <strong>{onLive ? tl('live.title') : showProfile ? tl('account.profile') : tabs[selectedTabIndex].name}</strong>
             </span>
             <span className="topbar-right">
               <span className="obs-tag">
@@ -730,6 +826,7 @@ export const Generator = () => {
                 syncState={cloudSync.state}
                 lastSavedAt={cloudSync.lastSavedAt}
                 onOpenBanners={() => selectTab(3)}
+                onOpenProfile={openProfile}
                 onLogout={() => {
                   void apiLogout()
                     .catch(() => undefined)
@@ -749,7 +846,7 @@ export const Generator = () => {
             </span>
           </div>
             <main
-            className={`studio-main${onLive ? ' studio-main--live' : selectedTabIndex === FEEDBACK_TAB_INDEX ? ' studio-main--wide' : ''}`}
+            className={`studio-main${onLive ? ' studio-main--live' : selectedTabIndex === FEEDBACK_TAB_INDEX && !showProfile ? ' studio-main--wide' : ''}`}
           >
             <section
               className={'fixed-width'}
@@ -757,15 +854,15 @@ export const Generator = () => {
             >
               <div className="section-heading">
                 <h2 id="studio-settings-title">
-                  {onLive ? tl('live.title') : tabs[selectedTabIndex].name}
+                  {onLive ? tl('live.title') : showProfile ? tl('account.profile') : tabs[selectedTabIndex].name}
                 </h2>
                 <span>{onLive ? tl('live.lead') : tl('studio.settings_hint')}</span>
               </div>
-              <div className="tab-content" key={onLive ? 'live' : selectedTabIndex}>
-                {onLive ? <LiveRanking /> : tabs[selectedTabIndex].component}
+              <div className="tab-content" key={onLive ? 'live' : showProfile ? 'profile' : selectedTabIndex}>
+                {onLive ? <LiveRanking /> : showProfile ? <ProfilePanel /> : tabs[selectedTabIndex].component}
               </div>
             </section>
-            {!onLive && selectedTabIndex !== FEEDBACK_TAB_INDEX && (
+            {!onLive && (showProfile || selectedTabIndex !== FEEDBACK_TAB_INDEX) && (
               <section className={'preview'}>
                 <div className={'settings preview-card'}>
                   <div className="preview-heading">
@@ -796,42 +893,29 @@ export const Generator = () => {
                       </span>
                     </span>
                   </div>
-                  <div className="preview-stage">
-                    <div
-                      key={previewBackground}
-                      className="preview-scene"
-                      style={{
-                        backgroundImage: `url(${PREVIEW_BACKGROUNDS[previewBackground]})`,
-                      }}
-                    />
-                    <span className="scene-label">
-                      CS2<span>/</span>
-                      {tl(`generator.preview.${previewBackground}`)}
-                    </span>
-                    <div
-                      className={`${resolveBannerStyle(getSetting('style'), getSetting('bannerDesign'))}-theme ${getSetting('colorScheme')}-scheme preview ${previewBackground}`}
-                    >
-                      {(getSetting('style') !== 'custom' ||
-                        (getSetting('style') === 'custom' &&
-                          getSetting('customCSS') !==
-                            'https://example.com')) && (
-                        <Widget
-                          preview={true}
-                          introReplay={introReplay}
-                          previewAvatar={playerAvatar}
-                          previewBanner={playerBanner}
-                          previewUsername={username}
-                          previewRegion={playerRegion}
-                          previewCountry={playerCountry}
-                          previewVerifiedBadge={playerVerifiedBadge}
-                          previewElo={playerElo}
-                          previewLevel={playerLevel}
-                          previewLanguage={language}
-                          previewOpponent={opponent}
-                        />
-                      )}
+                  {isPopupMode ? (
+                    <div className="popup-closeup">
+                      <div
+                        className="preview-stage"
+                        style={{
+                          transform: `scale(${popupResizing ? 1 : popupZoom.zoom})`,
+                          transformOrigin: popupZoom.origin,
+                        }}
+                      >
+                        {previewStage}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="preview-stage">{previewStage}</div>
+                  )}
+                  {isPopupMode && (
+                    <div className="obs-monitor-card">
+                      <ObsMonitor cardWidth={popupCardPx} screenRef={(element) => (monitorScreen.current = element)}>
+                        <div className="preview-stage">{previewStage}</div>
+                      </ObsMonitor>
+                      <p className="subtext">{tl('obs.monitor.hint')}</p>
+                    </div>
+                  )}
                   <PreviewCarousel
                     language={language}
                     previewBackground={previewBackground}

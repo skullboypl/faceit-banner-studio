@@ -1,5 +1,10 @@
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
+/**
+ * The file name never changes, so the browser and the Cloudflare edge may keep it for a year.
+ * Page views do not download the bytes through this process: the <img> talks to the public
+ * domain, and a cache hit there is not an R2 read.
+ */
 const CACHE = 'public, max-age=31536000, immutable';
 
 export function isR2Configured(): boolean {

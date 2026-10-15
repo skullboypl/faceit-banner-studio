@@ -1,3 +1,5 @@
+import { redisCall } from './store.mjs';
+
 const NICK_MAX = 32;
 const STYLE_MAX = 24;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -55,7 +57,24 @@ export function publicRanking(entries) {
       if (be !== ae) return be - ae;
       return a.nickname.localeCompare(b.nickname);
     })
-    .map(({ lastSeen, playerId, ...player }) => player);
+    .map(({ lastSeen, playerId, region, ...player }) => {
+      const avatar =
+        playerId && typeof player.avatar === 'string' && player.avatar.startsWith('https://')
+          ? `/api/presence/avatar/${playerId}`
+          : player.avatar;
+      const ranking =
+        Number.isInteger(player.ranking) && player.ranking >= 1 && player.ranking <= 1000
+          ? player.ranking
+          : undefined;
+      const next = { ...player };
+      if (avatar) next.avatar = avatar;
+      else delete next.avatar;
+      if (ranking) next.ranking = ranking;
+      else delete next.ranking;
+      if (player.confirmed === true) next.confirmed = true;
+      else delete next.confirmed;
+      return next;
+    });
 }
 
 /** Profile metadata changes slowly; live ELO still comes from widget heartbeats. */
@@ -162,10 +181,14 @@ export function createPlayerLookup({
               ? 'gold'
               : 'verified'
             : 'none';
+        const regionRaw = data.games?.cs2?.region;
+        profile.region =
+          typeof regionRaw === 'string' && /^[A-Za-z0-9_-]{2,8}$/.test(regionRaw) ? regionRaw : 'EU';
         if (
           typeof data.avatar === 'string' &&
           data.avatar.startsWith('https://') &&
-          data.avatar.length <= 2048
+          data.avatar.length <= 2048 &&
+          avatarAllowed(data.avatar)
         )
           profile.avatar = data.avatar;
         remember(id, { profile, at: now(), retryAt: 0 });
@@ -186,6 +209,122 @@ export function createPlayerLookup({
 }
 const playerLookup = createPlayerLookup();
 export const lookupPlayer = playerLookup.lookup;
+
+const AVATAR_HOSTS = new Set([
+  'assets.faceit-cdn.net',
+  'distribution.faceit-cdn.net',
+  'cdn.faceit.com',
+  'cdn-frontend.faceit.com',
+]);
+const AVATAR_TTL_SECONDS = 6 * 60 * 60;
+const AVATAR_MISS_MS = 10 * 60_000;
+const RANK_TTL_SECONDS = 6 * 60 * 60;
+const avatarMemory = new Map();
+const rankMemory = new Map();
+
+/** FACEIT-owned image hosts only, so the avatar route cannot fetch an arbitrary URL. */
+export function avatarAllowed(value) {
+  try {
+    const host = new URL(value).hostname;
+    return AVATAR_HOSTS.has(host) || host.endsWith('.faceit-cdn.net') || host.endsWith('.faceit.com');
+  } catch {
+    return false;
+  }
+}
+
+export function avatarContentType(buf) {
+  if (!Buffer.isBuffer(buf) || buf.length < 32) return null;
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'image/jpeg';
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return 'image/png';
+  if (buf.toString('ascii', 0, 4) === 'GIF8') return 'image/gif';
+  if (buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') return 'image/webp';
+  return null;
+}
+
+function rememberAvatar(id, image, ttl) {
+  avatarMemory.set(id, { image, at: Date.now(), ttl });
+  while (avatarMemory.size > 500) avatarMemory.delete(avatarMemory.keys().next().value);
+}
+
+/** Downloads a known player's FACEIT avatar once and keeps it for the browser to reuse. */
+export async function loadAvatar(playerId) {
+  const id = String(playerId || '').toLowerCase();
+  if (!UUID.test(id)) return null;
+  const local = avatarMemory.get(id);
+  if (local && Date.now() - local.at < local.ttl) return local.image;
+  const packed = await redisCall((redis) => redis.getBuffer(`fb:avatar:${id}`));
+  const packedType = avatarContentType(packed);
+  if (packedType) {
+    const image = { body: packed, type: packedType };
+    rememberAvatar(id, image, AVATAR_TTL_SECONDS * 1000);
+    return image;
+  }
+  const profile = await lookupPlayer(id);
+  if (!profile?.avatar || !avatarAllowed(profile.avatar)) {
+    rememberAvatar(id, null, AVATAR_MISS_MS);
+    return null;
+  }
+  try {
+    const response = await fetch(profile.avatar, { signal: AbortSignal.timeout(4000), redirect: 'follow' });
+    if (!response.ok || !avatarAllowed(response.url || profile.avatar)) throw new Error('avatar');
+    const body = Buffer.from(await response.arrayBuffer());
+    const type = avatarContentType(body);
+    if (!type || body.length > 512_000) throw new Error('avatar');
+    const image = { body, type };
+    rememberAvatar(id, image, AVATAR_TTL_SECONDS * 1000);
+    await redisCall((redis) => redis.set(`fb:avatar:${id}`, body, 'EX', AVATAR_TTL_SECONDS));
+    return image;
+  } catch {
+    rememberAvatar(id, null, AVATAR_MISS_MS);
+    return null;
+  }
+}
+
+function rankingPosition(data, id) {
+  const direct = Number(data?.position);
+  if (Number.isInteger(direct) && direct >= 1) return direct;
+  const item = Array.isArray(data?.items)
+    ? data.items.find((row) => String(row?.player_id || '').toLowerCase() === id)
+    : null;
+  const position = Number(item?.position);
+  return Number.isInteger(position) && position >= 1 ? position : null;
+}
+
+/** Region place for a level-10 player. Top 1000 is the challenger mark. Cached for six hours. */
+export async function lookupRanking(id, region = 'EU') {
+  const player = String(id || '').toLowerCase();
+  const area = /^[A-Za-z0-9_-]{2,8}$/.test(region) ? region : 'EU';
+  if (!UUID.test(player) || !faceitKey()) return null;
+  const key = `${player}:${area}`;
+  const local = rankMemory.get(key);
+  if (local && Date.now() - local.at < RANK_TTL_SECONDS * 1000) return local.position;
+  const cached = await redisCall((redis) => redis.get(`fb:rank:${key}`));
+  if (typeof cached === 'string') {
+    const position = cached ? Number(cached) : null;
+    const value = Number.isInteger(position) && position >= 1 ? position : null;
+    rankMemory.set(key, { position: value, at: Date.now() });
+    return value;
+  }
+  try {
+    const response = await fetch(
+      `https://open.faceit.com/data/v4/rankings/games/cs2/regions/${encodeURIComponent(area)}/players/${player}`,
+      {
+        headers: { Authorization: `Bearer ${faceitKey()}`, Accept: 'application/json' },
+        signal: AbortSignal.timeout(2500),
+      }
+    );
+    const position = response.ok ? rankingPosition(await response.json(), player) : null;
+    if (response.ok || response.status === 404) {
+      rankMemory.set(key, { position, at: Date.now() });
+      await redisCall((redis) => redis.set(`fb:rank:${key}`, position ? String(position) : '', 'EX', RANK_TTL_SECONDS));
+      return position;
+    }
+  } catch {
+    /* the level icon still renders without the challenger mark */
+  }
+  rankMemory.set(key, { position: null, at: Date.now() - (RANK_TTL_SECONDS * 1000 - 5 * 60_000) });
+  return null;
+}
 
 /** player_id from the banner address. Old widgets never send it in the heartbeat; the browser still puts the page URL in Referer. */
 export function playerIdFromReferer(referer) {
@@ -233,6 +372,10 @@ export async function fillFromPlayerId(entries) {
         );
         const profile = await lookupPlayer(id, { freshStats });
         if (!profile?.nickname) continue;
+        if (profile.level === 10 && !Number.isInteger(profile.ranking)) {
+          const ranking = await lookupRanking(id, profile.region);
+          if (ranking) profile.ranking = ranking;
+        }
         for (const entry of rows) {
           entry.info = {
             ...profile,

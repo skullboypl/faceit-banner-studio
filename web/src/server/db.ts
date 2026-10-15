@@ -99,6 +99,11 @@ export async function migrate(pool: pg.Pool): Promise<void> {
       );
       CREATE INDEX IF NOT EXISTS attachments_post ON attachments (post_id) WHERE deleted_at IS NULL;
       CREATE INDEX IF NOT EXISTS attachments_owner_created ON attachments (owner_guid, created_at DESC);
+      ALTER TABLE attachments ADD COLUMN IF NOT EXISTS content_hash TEXT;
+      ALTER TABLE attachments DROP CONSTRAINT IF EXISTS attachments_key_key;
+      CREATE INDEX IF NOT EXISTS attachments_key ON attachments (key);
+      CREATE INDEX IF NOT EXISTS attachments_hash
+        ON attachments (content_hash) WHERE deleted_at IS NULL AND content_hash IS NOT NULL;
       CREATE TABLE IF NOT EXISTS banner_catalog (
         mode TEXT PRIMARY KEY,
         visible BOOLEAN NOT NULL,
@@ -111,6 +116,29 @@ export async function migrate(pool: pg.Pool): Promise<void> {
         ('split', FALSE),
         ('popup', FALSE)
       ON CONFLICT (mode) DO NOTHING;
+      CREATE TABLE IF NOT EXISTS profile_images (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        owner_guid TEXT NOT NULL REFERENCES users(guid) ON DELETE CASCADE,
+        kind TEXT NOT NULL CHECK (kind IN ('avatar', 'cover')),
+        key TEXT NOT NULL,
+        width INTEGER NOT NULL,
+        height INTEGER NOT NULL,
+        bytes INTEGER NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'hidden')),
+        reject_reason TEXT,
+        reviewed_by TEXT,
+        reviewed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (owner_guid, kind)
+      );
+      CREATE INDEX IF NOT EXISTS profile_images_status_created ON profile_images (status, created_at);
+      CREATE TABLE IF NOT EXISTS profile_image_reports (
+        image_id UUID NOT NULL REFERENCES profile_images(id) ON DELETE CASCADE,
+        reporter_guid TEXT NOT NULL REFERENCES users(guid) ON DELETE CASCADE,
+        reason TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (image_id, reporter_guid)
+      );
     `);
   } finally {
     await client.query('SELECT pg_advisory_unlock(727001)').catch(() => undefined);

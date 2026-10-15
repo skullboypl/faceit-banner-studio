@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { LanguageContext } from '../generator/contexts';
 import { languages, tl as translate } from '../translations/translations';
 import { AdminQueue } from './AdminQueue';
+import { AdminProfileImages } from './AdminProfileImages';
 import { AdminChart } from './AdminChart';
 import { AdminLogins, LoginRows, Player } from './AdminLogins';
 import { storageLabel, type AdminUser, type Overview } from './data';
@@ -20,6 +21,20 @@ type State =
   | { status: 'forbidden'; user: AdminUser }
   | { status: 'ready'; user: AdminUser; overview: Overview };
 type Range = 7 | 14 | 30;
+
+const dayLabel = (day: string) => {
+  const [, month, date] = day.split('-');
+  return `${Number(date)}.${month}`;
+};
+
+const hourLabel = (hour: string) => {
+  const date = new Date(hour);
+  if (Number.isNaN(date.getTime())) return hour;
+  const day = date.getUTCDate();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const clock = String(date.getUTCHours()).padStart(2, '0');
+  return `${day}.${month} ${clock}:00`;
+};
 const tl = (text: string, args?: string[]) =>
   translate(languages.find((language) => language.id === 'pl')!, text, args);
 
@@ -215,6 +230,7 @@ export const AdminPage = () => {
                 <AdminLogins logins={state.overview.logins} />
               )}
               {tab === 'queue' && <AdminQueue user={state.user} />}
+              {tab === 'images' && <AdminProfileImages />}
               {tab === 'system' && (
                 <>
                   <AdminCatalog />
@@ -240,10 +256,11 @@ export const AdminPage = () => {
                   <section className="admin-card">
                     <h2>Zakres danych</h2>
                     <p>
-                      Wykresy obejmują ostatnie{' '}
-                      {state.overview.activity?.days ?? 30} dni (UTC). Lista
-                      logowań zawiera do 50 ostatnich wpisów, z datami w Twojej
-                      strefie czasowej. Licznik banerów pokazuje stan z chwili
+                      Wykresy logowań obejmują ostatnie{' '}
+                      {state.overview.activity?.days ?? 30} dni (UTC). Liczba
+                      banerów online jest zapisywana co godzinę. Lista logowań
+                      zawiera do 50 ostatnich wpisów, z datami w Twojej strefie
+                      czasowej. Kafelek banerów pokazuje stan z chwili
                       aktualizacji.
                     </p>
                   </section>
@@ -329,6 +346,17 @@ function Dashboard({
   setTab: (tab: Tab) => void;
 }) {
   const series = (overview.activity?.series ?? []).slice(-range);
+  const newestOnline = Date.parse(
+    overview.onlineHistory?.series.at(-1)?.hour ?? ''
+  );
+  const onlineSeries = (overview.onlineHistory?.series ?? []).filter(
+    (point) =>
+      Number.isFinite(newestOnline) &&
+      newestOnline - Date.parse(point.hour) < range * 24 * 60 * 60 * 1000
+  );
+  const onlinePeak = onlineSeries.reduce((best, point) =>
+    point.online > best ? point.online : best
+  , 0);
   const total = series.reduce((sum, point) => sum + point.count, 0);
   const peak = series.reduce<(typeof series)[number] | null>(
     (best, point) => (!best || point.count > best.count ? point : best),
@@ -409,21 +437,43 @@ function Dashboard({
       </section>
       <div className="admin-charts">
         <AdminChart
+          title="Banery online w czasie"
+          hint="Zapis co godzinę · UTC. Godzina bez pomiaru ma wartość 0."
+          tone="online"
+          column="Banery"
+          summary={onlinePeak.toLocaleString('pl-PL')}
+          points={onlineSeries.map((point) => ({
+            key: point.hour,
+            label: hourLabel(point.hour),
+            value: point.online,
+          }))}
+        />
+        <AdminChart
           title="Logowania dziennie"
           hint="Udane wejścia przez FACEIT · UTC"
-          series={series}
-          field="count"
+          tone="count"
+          column="Logowania"
           summary={total.toLocaleString('pl-PL')}
+          points={series.map((point) => ({
+            key: point.day,
+            label: dayLabel(point.day),
+            value: point.count,
+          }))}
         />
         <AdminChart
           title="Gracze dziennie"
           hint="Różne konta każdego dnia · szczyt okresu"
-          series={series}
-          field="players"
+          tone="players"
+          column="Gracze"
           summary={Math.max(
             0,
             ...series.map((point) => point.players)
           ).toLocaleString('pl-PL')}
+          points={series.map((point) => ({
+            key: point.day,
+            label: dayLabel(point.day),
+            value: point.players,
+          }))}
         />
       </div>
       <div className="admin-insights">

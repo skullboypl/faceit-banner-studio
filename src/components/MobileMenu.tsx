@@ -25,11 +25,12 @@ type Props = {
   syncState: SyncState;
   lastSavedAt: number | null;
   onLogout: () => void;
+  onOpenProfile: () => void;
 };
 
 /** Phone menu: a full-screen sheet opened from the fourth icon of the bottom bar. */
 export const MobileMenu = (props: Props) => {
-  const { open, onClose, tabs, selectedIndex, onSelectTab, languages, currentLanguage, onLanguage, user, admin } = props;
+  const { open, onClose, tabs, selectedIndex, onSelectTab, languages, currentLanguage, onLanguage, user, admin, onOpenProfile } = props;
   const tl = useContext(LanguageContext);
   const root = useRef<HTMLDivElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
@@ -115,6 +116,10 @@ export const MobileMenu = (props: Props) => {
                 <strong>{user.nickname}</strong>
               </div>
               <SyncChip state={props.syncState} lastSavedAt={props.lastSavedAt} user={user} showUser={false} />
+              <button type="button" className="mobile-menu-item" onClick={done(onOpenProfile)}>
+                <StudioIcon name="user" />
+                <span>{tl('account.profile')}</span>
+              </button>
               {admin && (
                 <a className="mobile-menu-item" href="/admin">
                   <StudioIcon name="settings" />

@@ -84,6 +84,170 @@
       "popup"
     ]
   },
+  "teamShowAvatars": {
+    "type": "boolean",
+    "default": true
+  },
+  "teamShowLevels": {
+    "type": "boolean",
+    "default": true
+  },
+  "teamShowElo": {
+    "type": "boolean",
+    "default": true
+  },
+  "teamShowKd": {
+    "type": "boolean",
+    "default": true
+  },
+  "teamShowWinRate": {
+    "type": "boolean",
+    "default": true
+  },
+  "teamShowAvg": {
+    "type": "boolean",
+    "default": true
+  },
+  "teamDensity": {
+    "type": "string",
+    "default": "comfortable",
+    "options": [
+      "comfortable",
+      "compact"
+    ]
+  },
+  "teamTitle": {
+    "type": "string",
+    "default": "",
+    "regex": "^[^<>\u0000-\u001f]{0,24}$"
+  },
+  "teamTheme": {
+    "type": "string",
+    "default": "dark",
+    "options": [
+      "dark",
+      "glass",
+      "light",
+      "clear"
+    ]
+  },
+  "teamRadius": {
+    "type": "number",
+    "default": 16,
+    "min": 0,
+    "max": 28
+  },
+  "teamOpacity": {
+    "type": "number",
+    "default": 92,
+    "min": 40,
+    "max": 100
+  },
+  "teamRows": {
+    "type": "string",
+    "default": "cards",
+    "options": [
+      "cards",
+      "flat"
+    ]
+  },
+  "teamAvatarShape": {
+    "type": "string",
+    "default": "circle",
+    "options": [
+      "circle",
+      "rounded",
+      "square"
+    ]
+  },
+  "teamShowRank": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamEloBar": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamHighlightTop": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamFontScale": {
+    "type": "number",
+    "default": 100,
+    "min": 80,
+    "max": 140
+  },
+  "teamAnimation": {
+    "type": "string",
+    "default": "stagger",
+    "options": [
+      "none",
+      "fade",
+      "stagger"
+    ]
+  },
+  "teamShowHs": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamShowAdr": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamShowKr": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamShowMatches": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamShowWins": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamShowStreak": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamLabels": {
+    "type": "boolean",
+    "default": true
+  },
+  "teamSort": {
+    "type": "string",
+    "default": "order",
+    "options": [
+      "order",
+      "elo",
+      "kd",
+      "wr",
+      "hs",
+      "adr",
+      "matches"
+    ]
+  },
+  "teamPanelColor": {
+    "type": "string",
+    "default": "",
+    "regex": "^(?:[0-9a-fA-F]{6})?$"
+  },
+  "teamTextColor": {
+    "type": "string",
+    "default": "",
+    "regex": "^(?:[0-9a-fA-F]{6})?$"
+  },
+  "teamBarColor": {
+    "type": "string",
+    "default": "",
+    "regex": "^(?:[0-9a-fA-F]{6})?$"
+  },
+  "teamTopColor": {
+    "type": "string",
+    "default": "",
+    "regex": "^(?:[0-9a-fA-F]{6})?$"
+  },
   "teamRoster": {
     "type": "string",
     "default": ""
@@ -140,6 +304,15 @@
     "min": 0,
     "max": 30
   },
+  "popupLayout": {
+    "type": "string",
+    "default": "card",
+    "options": [
+      "card",
+      "stack",
+      "strip"
+    ]
+  },
   "popupPosition": {
     "type": "string",
     "default": "center",
@@ -161,11 +334,11 @@
     "min": 60,
     "max": 160
   },
-  "popupWidth": {
+  "popupWidthPct": {
     "type": "number",
-    "default": 760,
-    "min": 420,
-    "max": 1200
+    "default": 47,
+    "min": 30,
+    "max": 100
   },
   "popupRadius": {
     "type": "number",
@@ -179,6 +352,26 @@
     "min": 40,
     "max": 100
   },
+  "popupMapBg": {
+    "type": "boolean",
+    "default": false
+  },
+  "popupMapBlur": {
+    "type": "number",
+    "default": 14,
+    "min": 0,
+    "max": 30
+  },
+  "popupMapOpacity": {
+    "type": "number",
+    "default": 100,
+    "min": 10,
+    "max": 100
+  },
+  "popupShowAvatars": {
+    "type": "boolean",
+    "default": false
+  },
   "popupTheme": {
     "type": "string",
     "default": "dark",
@@ -186,7 +379,11 @@
       "dark",
       "glass",
       "light",
-      "clear"
+      "clear",
+      "midnight",
+      "crimson",
+      "carbon",
+      "neon"
     ]
   },
   "popupAnimation": {
@@ -267,6 +464,24 @@
   "popupMeMvps": {
     "type": "boolean",
     "default": false
+  },
+  "popupScoreboard": {
+    "type": "boolean",
+    "default": false
+  },
+  "popupPerPhase": {
+    "type": "boolean",
+    "default": false
+  },
+  "popupPhaseLook": {
+    "type": "string",
+    "default": "",
+    "regex": "^[\\x20-\\x7E]{0,900}$"
+  },
+  "popupFonts": {
+    "type": "string",
+    "default": "",
+    "regex": "^[\\x20-\\x7E]{0,900}$"
   },
   "popupPreview": {
     "type": "string",

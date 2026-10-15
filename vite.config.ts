@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react-swc';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createPresenceMiddleware } from './server/presence.mjs';
+import { createPresenceMiddleware, startOnlineHistory } from './server/presence.mjs';
 import { createAuthMiddleware } from './server/auth.mjs';
 
 function presenceDevPlugin(): Plugin {
@@ -13,6 +13,7 @@ function presenceDevPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use(createPresenceMiddleware());
       server.middlewares.use(createAuthMiddleware());
+      startOnlineHistory();
     },
     configurePreviewServer(server) {
       server.middlewares.use(createPresenceMiddleware());
@@ -94,6 +95,8 @@ export default defineConfig({
       '/api/posts': 'http://127.0.0.1:3100',
       '/api/admin/posts': 'http://127.0.0.1:3100',
       '/api/admin/comments': 'http://127.0.0.1:3100',
+      '/api/admin/profile-images': 'http://127.0.0.1:3100',
+      '/api/profiles': 'http://127.0.0.1:3100',
       '/api/admin/attachments': 'http://127.0.0.1:3100',
       '/api/attachments': 'http://127.0.0.1:3100',
     },

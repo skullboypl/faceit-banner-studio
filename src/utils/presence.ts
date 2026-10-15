@@ -81,8 +81,12 @@ export type LivePlayer = {
   nickname: string;
   avatar?: string;
   verifiedBadge?: 'none' | 'verified' | 'gold';
+  /** True when this FACEIT account has signed in to the studio. No date and no account id. */
+  confirmed?: boolean;
   elo?: number;
   level?: number;
+  /** Region place, only when a level-10 player is inside the top 1000. */
+  ranking?: number;
   country?: string;
   style?: string;
 };

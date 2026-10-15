@@ -1,4 +1,13 @@
+import { applyOverride, fetchProfileOverride } from './profile_override';
+
 export const API_KEY = import.meta.env.VITE_FACEIT_API_KEY;
+
+/** Pictures a player replaced for the banners; the same lookup serves every place a profile is drawn. */
+const withOverride = async <T extends { player_id: string; avatar?: string; cover_image?: string }>(profile: T) =>
+  applyOverride(
+    profile,
+    await fetchProfileOverride(profile.player_id, { storage: typeof sessionStorage === 'undefined' ? undefined : sessionStorage })
+  );
 
 export const SAMPLE_PLAYER_ID = '10b53a6d-5fc9-4095-920c-2953cfa62486';
 
@@ -15,6 +24,8 @@ interface V4PlayersResponse {
   player_id: string;
   avatar: string;
   cover_image: string;
+  /** Set when the player replaced these pictures for the banners. */
+  overridden?: { avatar?: boolean; cover?: boolean };
   nickname: string;
   country: string;
   verified?: boolean;
@@ -80,10 +91,10 @@ interface FaceitPlayer {
   };
 }
 
-const HEADERS = {
-  'Content-Type': 'application/json',
-  Authorization: `Bearer ${API_KEY}`,
-};
+/** Same-origin read. The server holds the FACEIT key and reuses a player for 15 seconds. */
+export function faceitGet(path: string) {
+  return fetch(`/api/faceit/v4${path}`, { headers: { Accept: 'application/json' } });
+}
 
 export const getVerifiedBadgeType = (profile: {
   verified?: boolean;
@@ -106,10 +117,9 @@ async function getPlayerRankingPosition(
   region: string,
   country?: string
 ): Promise<number | undefined> {
-  const url = `https://open.faceit.com/data/v4/rankings/games/cs2/regions/${region}/players/${id}${
-    country ? `?country=${country}` : ''
-  }`;
-  const response = await fetch(url, { headers: HEADERS });
+  const response = await faceitGet(
+    `/rankings/games/cs2/regions/${region}/players/${id}${country ? `?country=${country}` : ''}`
+  );
   if (response.ok) {
     const data = (await response.json()) as V4RankingResponse;
     const item = data.items.find((i) => i.player_id === id);
@@ -129,16 +139,14 @@ export function getPlayerStats(
   onlyOfficial: boolean
 ): Promise<FaceitPlayer | undefined> {
   return new Promise<FaceitPlayer | undefined>((resolve) => {
-    fetch('https://open.faceit.com/data/v4/players/' + id, {
-      headers: HEADERS,
-    }).then(async (response) => {
+    faceitGet('/players/' + id).then(async (response) => {
       if (!response.ok) {
         console.error(await response.text());
         resolve(undefined);
         return;
       }
 
-      const v4PlayersResponse = (await response.json()) as V4PlayersResponse;
+      const v4PlayersResponse = await withOverride((await response.json()) as V4PlayersResponse);
       if (!v4PlayersResponse.games.cs2) {
         console.error('This player never played CS2 on FACEIT.');
         resolve(undefined);
@@ -174,11 +182,8 @@ export function getPlayerStats(
 
       let matchesLength: number = 0;
 
-      const matchStats = await fetch(
-        `https://open.faceit.com/data/v4/players/${playerId}/games/cs2/stats?limit=100`,
-        {
-          headers: HEADERS,
-        }
+      const matchStats = await faceitGet(
+        `/players/${playerId}/games/cs2/stats?limit=100`
       );
 
       if (matchStats.ok) {
@@ -231,10 +236,7 @@ export function getPlayerStats(
         );
       }
 
-      const lifetimeStats = await fetch(
-        `https://open.faceit.com/data/v4/players/${playerId}/stats/cs2`,
-        { headers: HEADERS }
-      );
+      const lifetimeStats = await faceitGet(`/players/${playerId}/stats/cs2`);
       if (lifetimeStats.ok) {
         const lifetime = (await lifetimeStats.json()) as {
           lifetime?: Record<string, string | number>;
@@ -290,9 +292,7 @@ export function getPlayerStats(
 
 export function getPlayerID(username: string): Promise<string | undefined> {
   return new Promise<string | undefined>((resolve) => {
-    fetch('https://open.faceit.com/data/v4/players?nickname=' + username, {
-      headers: HEADERS,
-    }).then(async (response) => {
+    faceitGet('/players?nickname=' + encodeURIComponent(username)).then(async (response) => {
       if (!response.ok) {
         console.error(await response.text());
         resolve(undefined);
@@ -308,19 +308,15 @@ export function getPlayerProfile(
   username: string
 ): Promise<V4PlayersResponse | undefined> {
   return new Promise<V4PlayersResponse | undefined>((resolve) => {
-    fetch(
-      `https://open.faceit.com/data/v4/players${username.length > 12 ? `/${username}` : `?nickname=${username}`}`,
-      {
-        headers: HEADERS,
-      }
+    faceitGet(
+      `/players${username.length > 12 ? `/${username}` : `?nickname=${encodeURIComponent(username)}`}`
     ).then(async (response) => {
       if (!response.ok) {
         console.error(await response.text());
         resolve(undefined);
         return;
       }
-      const v4PlayersResponse = (await response.json()) as V4PlayersResponse;
-      resolve(v4PlayersResponse);
+      resolve(await withOverride((await response.json()) as V4PlayersResponse));
     });
   });
 }
@@ -334,6 +330,13 @@ export type RosterCard = {
   level: number;
   kd: number;
   winRate: number;
+  /** Lifetime averages and totals; 0 when FACEIT does not send them. */
+  hs?: number;
+  adr?: number;
+  kr?: number;
+  matches?: number;
+  wins?: number;
+  streak?: number;
   missing?: boolean;
 };
 
@@ -342,19 +345,32 @@ export async function lookupRosterCard(name: string): Promise<RosterCard> {
   const profile = await lookupPlayer(name);
   const game = profile?.games.cs2;
   if (!profile || !game) {
-    return { username: name.trim(), elo: 0, level: 1, kd: 0, winRate: 0, missing: true };
+    return { username: name.trim(), elo: 0, level: 1, kd: 0, winRate: 0, hs: 0, adr: 0, kr: 0, matches: 0, wins: 0, streak: 0, missing: true };
   }
   let kd = 0;
   let winRate = 0;
+  let more = { hs: 0, adr: 0, kr: 0, matches: 0, wins: 0, streak: 0 };
   try {
-    const response = await fetch(
-      `https://open.faceit.com/data/v4/players/${profile.player_id}/stats/cs2`,
-      { headers: HEADERS }
-    );
+    const response = await faceitGet(`/players/${profile.player_id}/stats/cs2`);
     if (response.ok) {
       const body = (await response.json()) as { lifetime?: Record<string, string | number> };
-      kd = Number(body.lifetime?.['Average K/D Ratio'] || 0);
-      winRate = Number(body.lifetime?.['Win Rate %'] || 0);
+      const stat = (...names: string[]) => {
+        for (const name of names) {
+          const value = Number(body.lifetime?.[name]);
+          if (Number.isFinite(value) && value > 0) return value;
+        }
+        return 0;
+      };
+      kd = stat('Average K/D Ratio');
+      winRate = stat('Win Rate %');
+      more = {
+        hs: stat('Average Headshots %'),
+        adr: stat('ADR', 'Average Damage per Round'),
+        kr: stat('Average K/R Ratio'),
+        matches: stat('Matches'),
+        wins: stat('Wins'),
+        streak: stat('Current Win Streak'),
+      };
     }
   } catch {
     /* the row still shows ELO and level */
@@ -366,6 +382,7 @@ export async function lookupRosterCard(name: string): Promise<RosterCard> {
     level: game.skill_level,
     kd,
     winRate,
+    ...more,
   };
 }
 
@@ -373,11 +390,11 @@ export async function lookupRosterCard(name: string): Promise<RosterCard> {
 export function lookupPlayer(name: string): Promise<V4PlayersResponse | undefined> {
   const trimmed = name.trim();
   if (!trimmed) return Promise.resolve(undefined);
-  const url = PLAYER_ID.test(trimmed)
-    ? `https://open.faceit.com/data/v4/players/${trimmed}`
-    : `https://open.faceit.com/data/v4/players?nickname=${encodeURIComponent(trimmed)}`;
-  return fetch(url, { headers: HEADERS }).then(async (response) => {
+  const path = PLAYER_ID.test(trimmed)
+    ? `/players/${trimmed}`
+    : `/players?nickname=${encodeURIComponent(trimmed)}`;
+  return faceitGet(path).then(async (response) => {
     if (!response.ok) return undefined;
-    return (await response.json()) as V4PlayersResponse;
+    return withOverride((await response.json()) as V4PlayersResponse);
   });
 }

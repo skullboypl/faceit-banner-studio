@@ -8,6 +8,7 @@ import {
 } from '../../widget/src/utils/banner_size';
 import { resolveBannerStyle } from '../../widget/src/styles/styles';
 import { SettingKey } from '../settings/manager';
+import { readTeamOptions, teamRecommendedWidth } from '../../widget/src/widget/team-options';
 
 type Axis = 'Width' | 'Height';
 
@@ -39,7 +40,13 @@ export function BannerSizeControls() {
     width: settings.get('bannerWidth'),
     heightMode,
     height: settings.get('bannerHeight'),
-    recommendedWidth: getRecommendedWidth(style, Boolean(settings.get('showStatistics'))),
+    recommendedWidth:
+      settings.get('widgetMode') === 'team'
+        ? teamRecommendedWidth(
+            readTeamOptions((key) => settings.get(key as SettingKey)),
+            style === 'sheet' ? 'sheet' : 'lineup'
+          )
+        : getRecommendedWidth(style, Boolean(settings.get('showStatistics'))),
     viewportWidth: Infinity,
     viewportHeight: Infinity,
   });

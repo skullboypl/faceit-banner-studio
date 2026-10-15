@@ -73,6 +73,23 @@ describe('LiveRanking', () => {
     ).toBeTruthy();
   });
 
+  test('shows a sign-in mark without an account id', async () => {
+    vi.mocked(getLiveBoard).mockResolvedValue({
+      online: 2,
+      ranked: 2,
+      windowSeconds: 135,
+      players: [
+        { ...players[0], confirmed: true },
+        { ...players[1], confirmed: false },
+      ],
+    });
+    renderWithApp(<LiveRanking />);
+    const rows = await screen.findAllByRole('listitem');
+    expect(within(rows[0]).getByRole('img', { name: 'Potwierdzony logowaniem do studia' })).toBeTruthy();
+    expect(within(rows[1]).queryByRole('img', { name: 'Potwierdzony logowaniem do studia' })).toBeNull();
+    expect(rows[0].textContent).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/i);
+  });
+
   test('does not poll hidden tabs or duplicate an in-flight request', async () => {
     vi.useFakeTimers();
     const hidden = vi.spyOn(document, 'hidden', 'get');

@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 import { describe, expect, test } from 'vitest';
-import { MAX_UPLOAD_BYTES, sniffImage, toWebp } from './images';
+import { MAX_UPLOAD_BYTES, STORE_EDGE, sniffImage, toWebp } from './images';
 
 const png = () =>
   sharp({ create: { width: 4, height: 2, channels: 3, background: { r: 231, g: 0, b: 44 } } })
@@ -25,6 +25,14 @@ describe('toWebp', () => {
     expect(sniffImage(image.body)).toBe('webp');
     expect(image).toMatchObject({ width: 4, height: 2 });
     expect(image.body.includes(Buffer.from('secret-place'))).toBe(false);
+  });
+
+  test('shrinks a long edge above 1920 so R2 does not keep a 4K screenshot', async () => {
+    const wide = await sharp({ create: { width: 2000, height: 1000, channels: 3, background: 'navy' } }).png().toBuffer();
+    const image = await toWebp(wide);
+    expect(Math.max(image.width, image.height)).toBe(STORE_EDGE);
+    expect(image.width).toBe(1920);
+    expect(image.height).toBe(960);
   });
 
   test('rejects a GIF that pretends to be a screenshot and a file over 1 MB', async () => {

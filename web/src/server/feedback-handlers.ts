@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import schemaJson from '../../../shared/settings-schema.json';
 import { validateDelta, type SettingsSchema } from '../../../shared/settings-delta.mjs';
 import { createContentGate } from './content-gate';
@@ -26,7 +26,7 @@ import {
   type PostStatus,
   type PostSummary,
 } from './repo-posts';
-import { attachmentsForPosts, insertAttachment, softDeleteAttachment } from './repo-attachments';
+import { attachmentsForPosts, findLiveKey, insertAttachment, softDeleteAttachment } from './repo-attachments';
 import type { SessionUser } from './repo-users';
 import { isR2Configured, publicUrl, putObject, deleteObject } from './r2';
 import { getSessionUser } from './session';
@@ -295,14 +295,17 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
           throw error;
         }
         if (!isR2Configured()) return fail(503, 'r2_not_configured', 'File storage is not configured.').response;
-        const key = `att/${randomBytes(16).toString('hex')}.webp`;
-        await putObject(key, image.body, 'image/webp');
+        const contentHash = createHash('sha256').update(image.body).digest('hex');
+        const reused = await findLiveKey(contentHash);
+        const key = reused ?? `att/${randomBytes(16).toString('hex')}.webp`;
+        if (!reused) await putObject(key, image.body, 'image/webp');
         const saved = await insertAttachment({
           ownerGuid: user.guid,
           key,
           bytes: image.body.length,
           width: image.width,
           height: image.height,
+          contentHash,
         });
         return json(201, { id: saved.id, url: publicUrl(key), width: image.width, height: image.height });
       }),
@@ -311,9 +314,9 @@ export function createFeedbackHandlers(options: { unlimited?: boolean } = {}) {
       run(async () => {
         const user = await member(request, { write: true, admin: true, limiter: limits.admin });
         if (isFail(user)) return user.response;
-        const key = await softDeleteAttachment((await ctx.params).id);
-        if (!key) return fail(404, 'not_found', 'Attachment not found.').response;
-        await deleteObject(key).catch(() => undefined);
+        const removed = await softDeleteAttachment((await ctx.params).id);
+        if (!removed) return fail(404, 'not_found', 'Attachment not found.').response;
+        if (removed.release) await deleteObject(removed.key).catch(() => undefined);
         return json(200, { ok: true });
       }),
 

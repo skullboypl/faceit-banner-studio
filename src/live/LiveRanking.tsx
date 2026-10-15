@@ -152,6 +152,19 @@ export function LiveRanking() {
                         >
                           {player.nickname}
                         </a>
+                        {player.confirmed === true && (
+                          <span
+                            className="live-confirmed"
+                            role="img"
+                            aria-label={t('live.confirmed')}
+                            title={t('live.confirmed')}
+                          >
+                            <svg viewBox="0 0 16 16" aria-hidden="true">
+                              <circle cx="8" cy="8" r="6.25" />
+                              <path d="M4.8 8.2 7 10.3 11.3 5.7" />
+                            </svg>
+                          </span>
+                        )}
                         {(player.verifiedBadge === 'verified' ||
                           player.verifiedBadge === 'gold') && (
                           <span
@@ -195,8 +208,11 @@ export function LiveRanking() {
                   </div>
                   <FaceitLevel
                     level={player.level}
+                    ranking={player.ranking}
                     label={
-                      player.level
+                      player.ranking
+                        ? t('live.challenger', [String(player.ranking)])
+                        : player.level
                         ? t('live.level', [String(player.level)])
                         : t('live.level_unknown')
                     }

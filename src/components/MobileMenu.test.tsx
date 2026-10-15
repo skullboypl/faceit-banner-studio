@@ -31,6 +31,7 @@ const menu = (overrides: Partial<Parameters<typeof MobileMenu>[0]> = {}) => {
     syncState: 'idle' as const,
     lastSavedAt: null,
     onLogout: vi.fn(),
+    onOpenProfile: vi.fn(),
     ...overrides,
   };
   return { props, ...renderWithApp(<MobileMenu {...props} />) };

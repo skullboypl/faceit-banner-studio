@@ -5,7 +5,7 @@ import { StudioIcon, type IconName } from '../components/StudioIcon';
 import { Player } from './AdminLogins';
 import type { AdminUser } from './data';
 
-export type AdminTab = 'overview' | 'logins' | 'queue' | 'system';
+export type AdminTab = 'overview' | 'logins' | 'queue' | 'images' | 'system';
 export const ADMIN_TABS: {
   id: AdminTab;
   label: string;
@@ -29,6 +29,12 @@ export const ADMIN_TABS: {
     label: 'Zgłoszenia',
     icon: 'message',
     lead: 'Porządkuj pomysły społeczności i zgłoszone błędy.',
+  },
+  {
+    id: 'images',
+    label: 'Grafiki',
+    icon: 'palette',
+    lead: 'Zatwierdzaj, odrzucaj i usuwaj własne avatary i tła graczy.',
   },
   {
     id: 'system',

@@ -1,4 +1,4 @@
-import { attachmentKeysToPurge, removeAttachmentRow } from './repo-attachments';
+import { attachmentKeysToPurge, hasLiveObject, removeAttachmentRow } from './repo-attachments';
 import { getRedis } from './redis';
 import { deleteObject, isR2Configured } from './r2';
 
@@ -16,14 +16,30 @@ export async function sweepAttachments(now = new Date(), options: { lock?: boole
     }
   }
   const rows = await attachmentKeysToPurge(new Date(now.getTime() - DAY_MS));
+  const exceptIds = rows.map((row) => row.id);
   let removed = 0;
+  const pending = new Map<string, string[]>();
   for (const row of rows) {
+    if (await hasLiveObject(row.key, exceptIds)) {
+      try {
+        await removeAttachmentRow(row.id);
+        removed += 1;
+      } catch {
+        // The row stays and the next pass tries again. The shared file is left in R2.
+      }
+      continue;
+    }
+    const ids = pending.get(row.key) ?? [];
+    ids.push(row.id);
+    pending.set(row.key, ids);
+  }
+  for (const [key, ids] of pending) {
     try {
-      await deleteObject(row.key);
-      await removeAttachmentRow(row.id);
-      removed += 1;
+      await deleteObject(key);
+      for (const id of ids) await removeAttachmentRow(id);
+      removed += ids.length;
     } catch {
-      // Leave the row. The next pass tries the object again.
+      // Leave the rows. The next pass tries the object again.
     }
   }
   return removed;

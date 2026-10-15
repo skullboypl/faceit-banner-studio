@@ -123,6 +123,7 @@ import { TeamBanner } from './TeamBanner';
 import { SPLIT_PARTS, SplitBanner, type SplitCamera, type SplitRadar } from './SplitBanner';
 import { MatchPopup } from './MatchPopup';
 import { readPopupOptions } from './popup-options';
+import { readTeamOptions, teamRecommendedWidth } from './team-options';
 import { SettingsContext } from '../../../src/generator/Generator.tsx';
 import { startPresenceHeartbeat } from '../../../src/utils/presence.ts';
 import { SettingKey, useSettings } from '../../../src/settings/manager.ts';
@@ -368,18 +369,27 @@ export const Widget = ({
   const bannerSize = isSizedBanner
     ? resolveBannerSize({
         style: resolvedStyle,
-        widthMode: splitLimits ? 'recommended' : (SETTINGS.get('bannerWidthMode') as BannerSizeMode),
+        /* The popup is a full-screen overlay: its frame is always the whole 1920 x 1080 source */
+        widthMode: splitLimits || isPopup ? 'recommended' : (SETTINGS.get('bannerWidthMode') as BannerSizeMode),
         width: SETTINGS.get('bannerWidth'),
-        heightMode: splitLimits
-          ? 'manual'
-          : (SETTINGS.get('bannerHeightMode') as BannerSizeMode),
+        heightMode:
+          splitLimits || isPopup
+            ? 'manual'
+            : (SETTINGS.get('bannerHeightMode') as BannerSizeMode),
         recommendedWidth: splitLimits
           ? splitLimits.width
-          : getRecommendedWidth(
+          : isPopup
+            ? 1920
+            : isTeam
+              ? teamRecommendedWidth(
+                  readTeamOptions((key) => SETTINGS.get(key as SettingKey)),
+                  resolvedStyle === 'sheet' ? 'sheet' : 'lineup'
+                )
+              : getRecommendedWidth(
               resolvedStyle,
               Boolean(SETTINGS.get('showStatistics'))
             ),
-        height: splitLimits ? splitLimits.height : SETTINGS.get('bannerHeight'),
+        height: splitLimits ? splitLimits.height : isPopup ? 1080 : SETTINGS.get('bannerHeight'),
         limits: splitLimits,
         viewportWidth: previewLimits?.width ?? viewport.width,
         viewportHeight: previewLimits?.height ?? viewport.height,
@@ -2254,7 +2264,8 @@ export const Widget = ({
           } as CSSProperties
         }
       >
-        <UpdateIntro enabled={SETTINGS.get('showUpdateIntro')} language={language} replay={introReplay} />
+        {/* The studio preview stays quiet until the streamer asks for the welcome; the OBS source plays it on load. */}
+        <UpdateIntro enabled={Boolean(SETTINGS.get('showUpdateIntro')) && (!preview || introReplay > 0)} language={language} replay={introReplay} />
         <div
           className={`widget ${SETTINGS.get('useBannerAsBackground') || SETTINGS.get('useAvatarAsBackground') ? 'banner' : ''}`}
         >
@@ -2271,6 +2282,7 @@ export const Widget = ({
             <TeamBanner
               roster={String(SETTINGS.get('teamRoster') || '')}
               layout={resolvedStyle === 'sheet' ? 'sheet' : 'lineup'}
+              options={readTeamOptions((key) => SETTINGS.get(key as SettingKey))}
               translate={translate}
             />
           ) : isSplit && splitPairPreview ? (

@@ -2313,6 +2313,68 @@ a.donate-link:hover { background: #271a12; border-color: #ff6b18; }
 
 
 /* Menu items are 100% wide plus padding: without border-box their hover background spilled out of the popup */
+.profile-panel {
+  display: flex;
+  flex-direction: column;
+}
+.profile-identity {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  .profile-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  p { margin: 3px 0 0; color: #9c9ca3; font-size: 12px; }
+  p span { color: #5c5c66; margin: 0 6px; }
+}
+.profile-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+  color: #ffb48a;
+  font-size: 18px;
+  font-weight: 800;
+  background: #2a1a12;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #ff6b18;
+  img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+}
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 14px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid #2b2b2e;
+  list-style: none;
+  li { min-width: 0; padding: 0 12px; }
+  li:first-child { padding-left: 0; }
+  li + li { border-left: 1px solid #2b2b2e; }
+  strong { display: block; font-size: 18px; font-weight: 700; line-height: 1.2; }
+  span { color: #9c9ca3; font-size: 10px; letter-spacing: 0.6px; text-transform: uppercase; }
+}
+.profile-logins {
+  p { margin: 0 0 8px; color: #9c9ca3; font-size: 12px; line-height: 1.45; }
+  .profile-empty { margin-bottom: 0; }
+  ol { margin: 4px 0 0; padding: 0; list-style: none; }
+  li {
+    padding: 8px 0;
+    color: #e6e6ea;
+    font-size: 13px;
+    border-top: 1px solid #2b2b2e;
+  }
+}
+.profile-empty { color: #9c9ca3; }
 .account-popup { box-sizing: border-box; overflow: hidden; }
 .account-popup > button, .account-popup > a, .account-popup > .sync-chip { box-sizing: border-box; max-width: 100%; }
 .lang-list, .lang-list li { box-sizing: border-box; }
@@ -2408,14 +2470,299 @@ a.donate-link:hover { background: #271a12; border-color: #ff6b18; }
 .popup-options .popup-slider input[type='range'] { width: 100%; }
 .popup-options .setting select { width: 100%; }
 .popup-options .design-switch.popup-phase { margin-top: 12px; }
+.popup-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 12px; margin-top: 6px; }
+
+/* Popup option cards: one rhythm for every control */
+.settings.popup-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.settings.popup-options > .card-heading { margin: 0; }
+.settings.popup-options .popup-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid @surface0;
+}
+.settings.popup-options .popup-group h4 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: @subtext0;
+}
+.popup-field { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+.popup-field label { font-size: 13px; color: @text; }
+.popup-field select { width: 100%; height: 38px; margin: 0; }
+.popup-field input[type='range'] { width: 100%; margin: 0; }
+.popup-field.popup-accent { flex-direction: row; align-items: center; justify-content: space-between; }
+.popup-field.popup-accent input[type='color'] { width: 44px; height: 30px; padding: 0; border-radius: 6px; cursor: pointer; }
+.popup-place { display: flex; align-items: center; gap: 16px; }
+.popup-place .subtext { margin: 0; }
+.settings.popup-options .popup-stat-grid { margin-top: 0; }
+.settings.popup-options .design-switch.popup-phase { margin-top: 0; }
+
+.popup-layout-picker { margin: 14px 0 4px; }
+.popup-layout-title { margin: 0 0 8px; font-size: 13px; }
+.design-switch.popup-layouts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.design-switch.popup-layouts .design-switch-option { min-width: 0; }
+.design-switch.popup-layouts small { display: block; line-height: 1.3; }
+
+.popup-phase-card .design-switch.popup-phase { margin-top: 0; }
+.popup-phase-card .subtext { margin: 8px 0 0; }
+
+.popup-size { margin: 0; }
+.popup-size-body { display: flex; flex-direction: column; gap: 14px; padding: 12px 0 2px; }
+.design-switch.popup-phase small { display: block; line-height: 1.3; }
+
+/* The OBS preview is scaled to the dialog width, so it needs neither scrollbars nor a height cap */
+dialog.generated .obs-frame {
+  max-height: none;
+  overflow: hidden;
+}
+dialog.generated .fit-frame {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Layout choices carry a small drawing; the fonts panel sits at the bottom of the look card */
+.design-switch.popup-layouts .design-switch-option { flex-direction: column; align-items: flex-start; gap: 8px; }
+.popup-layouts .layout-thumb { width: 100%; max-width: 120px; height: auto; color: #8d8d96; }
+.popup-layouts .design-switch-option[aria-pressed='true'] .layout-thumb { color: #ff8a45; }
+.popup-fonts-reset { align-self: flex-start; }
+
+/* Popup preview: a close-up of the card, and a small monitor with the whole OBS source */
+.popup-closeup {
+  position: relative;
+  overflow: hidden;
+  background: #141719;
+  aspect-ratio: 16 / 9;
+}
+.popup-closeup > .preview-stage {
+  position: absolute;
+  inset: 0;
+  min-height: 0 !important;
+  transition: transform 0.45s ease;
+}
+.obs-monitor { display: flex; flex-direction: column; gap: 8px; }
+.obs-monitor-head { display: flex; justify-content: space-between; align-items: baseline; }
+.obs-monitor-head strong { font-size: 13px; }
+.obs-monitor-head span { font-size: 12px; font-weight: 700; color: #ff8a45; }
+.obs-monitor-screen {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border: 5px solid #2a2a2e;
+  border-radius: 8px;
+  background: #000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.obs-monitor-screen > .preview-stage {
+  position: absolute;
+  inset: 0;
+  min-height: 0 !important;
+  padding: 0 !important;
+}
+.obs-monitor-screen .scene-label { display: none; }
+.obs-monitor-rule {
+  position: absolute;
+  z-index: 3;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.obs-monitor-rule--x { left: 50%; bottom: 3px; transform: translateX(-50%); }
+.obs-monitor-rule--y { right: 3px; top: 50%; transform: translateY(-50%); }
+.obs-monitor-card { margin: 14px 20px 6px; }
+.obs-monitor-card .subtext { margin: 0; }
+
+/* Popup views: the stage is exactly the 16:9 source, so the frame fills it and the card sits where OBS puts it */
+html.generator .popup-closeup .preview-stage,
+html.generator .obs-monitor-screen .preview-stage {
+  display: block;
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  min-height: 0;
+}
+html.generator .popup-closeup .preview-stage > .preview,
+html.generator .obs-monitor-screen .preview-stage > .preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  display: block;
+}
+html.generator .popup-closeup .scene-label { display: none; }
+
+/* The OBS monitor is only a small window: the close-up above already shows the card in detail */
+.obs-monitor-card { margin: 12px 20px 4px; }
+.obs-monitor { max-width: 250px; gap: 6px; }
+.obs-monitor-head strong { font-size: 11px; }
+.obs-monitor-head span { font-size: 10px; }
+.obs-monitor-screen { border-width: 3px; border-radius: 6px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); }
+.obs-monitor-rule { font-size: 7px; padding: 0 3px; }
+.obs-monitor .subtext, .obs-monitor-card .subtext { font-size: 10px; line-height: 1.4; }
+
+/* Position picker: a miniature 16:9 screen, the card drawn where it will sit; the nine zones are clickable */
 .popup-position {
-  display: grid; grid-template-columns: repeat(3, 34px); gap: 6px; margin-top: 8px;
-  padding: 8px; width: max-content; border: 1px solid @surface0; border-radius: 10px; background: fade(@base2, 60%);
+  position: relative;
+  display: grid;
+  grid-template: repeat(3, minmax(0, 1fr)) / repeat(3, minmax(0, 1fr));
+  width: 168px;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  gap: 0;
+  flex: none;
+  border: 1px solid #2c2c31;
+  border-radius: 8px;
+  overflow: hidden;
+  background:
+    linear-gradient(#ffffff08 1px, transparent 1px) 0 0 / 100% 33.34%,
+    linear-gradient(90deg, #ffffff08 1px, transparent 1px) 0 0 / 33.34% 100%,
+    linear-gradient(160deg, #1a1c21, #101114);
 }
 .popup-position button {
-  width: 34px; height: 24px; min-height: 0; padding: 0; border-radius: 6px;
-  background: fade(@surface1, 60%); border: 1px solid transparent; cursor: pointer;
+  position: relative;
+  z-index: 1;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
 }
-.popup-position button:hover { border-color: #ff6b18; }
-.popup-position button[aria-checked='true'] { background: #ff6b18; border-color: #ff8a45; }
-.popup-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 12px; margin-top: 6px; }
+.popup-position button:hover { background: #ff6b1822; }
+.popup-position button:focus-visible { outline: 2px solid #ff8a45; outline-offset: -2px; }
+.popup-position button[aria-checked='true'] {
+  background: linear-gradient(180deg, #ff8a4533, #ff6b1840);
+  box-shadow: inset 0 0 0 2px #ff7a30 !important;
+}
+
+/* The OBS monitor shows the source only: no scene caption */
+html.generator .obs-monitor-screen .scene-label,
+html.generator .popup-closeup .scene-label { display: none !important; }
+
+/* Global button styles must not paint over the card marker in the position picker */
+html.generator .settings .popup-position button,
+html.generator .popup-position button {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+html.generator .popup-position button:hover { background: #ff6b1826 !important; }
+html.generator .popup-position button[aria-checked='true'] {
+  background: linear-gradient(180deg, #ff8a4540, #ff6b1850) !important;
+  box-shadow: inset 0 0 0 2px #ff7a30 !important;
+}
+html.generator .popup-position button:focus-visible { outline: 2px solid #ff8a45; outline-offset: -2px; }
+
+/* Zones are sized by the screen, not by the global button minimums (those made the bottom row overflow) */
+html.generator .popup-position button {
+  min-height: 0 !important;
+  height: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 0;
+}
+
+/* Profile pictures for banners: panel cards, the report notice and the moderation list */
+html.generator .profile-images .card-heading { margin-bottom: 6px; }
+.profile-images > p { margin: 0 0 14px; max-width: 62ch; font-size: 12px; color: #9c9ca3; line-height: 1.5; }
+.profile-image-grid { display: flex; flex-direction: column; gap: 10px; }
+.profile-image-card {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center;
+  min-width: 0; padding: 12px 14px;
+  border: 1px solid #2b2b2e; border-radius: 8px; background: #18181a;
+}
+.profile-image-body { display: contents; }
+.profile-image-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.profile-image-card h4 { margin: 0; font-size: 14px; font-weight: 700; }
+.profile-image-default { margin: 0; color: #9c9ca3; font-size: 12px; line-height: 1.3; }
+.profile-image-preview {
+  display: grid; place-items: center; overflow: hidden; flex: none; background: #101012; color: #9c9ca3;
+}
+.profile-image-card.is-avatar .profile-image-preview {
+  width: 64px; height: 64px; border-radius: 50%; background: #2a1a12; box-shadow: 0 0 0 2px #ff6b18;
+}
+.profile-image-card.is-cover .profile-image-preview {
+  width: 148px; height: 64px; border-radius: 10px;
+  background:
+    radial-gradient(90% 140% at 100% 0%, rgba(255, 107, 24, .22), transparent 62%),
+    linear-gradient(180deg, #241912, #121214);
+  border: 1px dashed #4a3a2c;
+}
+.profile-image-card.is-cover[data-status='approved'] .profile-image-preview,
+.profile-image-card.is-cover[data-status='pending'] .profile-image-preview,
+.profile-image-card.is-cover[data-status='rejected'] .profile-image-preview,
+.profile-image-card.is-cover[data-status='hidden'] .profile-image-preview {
+  border-style: solid; border-color: #2b2b2e;
+}
+.profile-image-fallback { display: grid; place-items: center; color: #ff8a45; }
+.profile-image-fallback .studio-icon { width: 22px; height: 22px; }
+.profile-image-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.profile-image-status { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 0; font-size: 12px; }
+.profile-image-status strong {
+  display: inline-flex; align-items: center; width: auto; margin: 0; padding: 3px 8px;
+  border-radius: 999px; background: #242428; font-size: 11px; font-weight: 600; line-height: 1.3;
+}
+.profile-image-status small { color: #9c9ca3; }
+.profile-image-status.is-approved strong { color: #7dffa8; background: #102418; }
+.profile-image-status.is-pending strong { color: #ffb347; background: #2a1c0c; }
+.profile-image-status.is-rejected strong, .profile-image-status.is-hidden strong { color: #ff8a8a; background: #2a1414; }
+.profile-image-error { margin: 0; font-size: 12px; color: #ff8a8a; }
+.profile-image-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.profile-image-pick, .profile-image-remove {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: auto; max-width: 100%; min-height: 34px; margin: 0; padding: 0 14px; box-sizing: border-box;
+  border: 1px solid #ff6b18; border-radius: 8px; background: #ff6b18; color: #1a0d06;
+  font-size: 12px; font-weight: 700; line-height: 1; cursor: pointer;
+}
+.profile-image-pick:hover, .profile-image-pick:focus-within { background: #ff8a45; border-color: #ff8a45; }
+.profile-image-pick.is-busy { opacity: .6; }
+.profile-image-pick input { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; opacity: 0; overflow: hidden; }
+.profile-image-remove { border-color: #3a3a40; background: transparent; color: #cfcfd6; font-weight: 600; }
+.profile-image-remove:hover { border-color: #ff6b6b; color: #fff; background: #2a1414; }
+@media (max-width: 640px) {
+  .profile-image-card { grid-template-columns: auto minmax(0, 1fr); }
+  .profile-image-card.is-cover .profile-image-preview { width: 112px; }
+  .profile-image-actions { grid-column: 1 / -1; }
+  .profile-image-pick, .profile-image-remove { flex: 1 1 auto; justify-content: center; }
+}
+.override-notice {
+  display: flex; flex-direction: column; gap: 6px; margin-top: 10px; padding: 10px 12px;
+  border: 1px solid #3a2a1a; border-radius: 8px; background: #1a130d; font-size: 12px;
+}
+.override-notice p { margin: 0; }
+.override-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.override-actions button {
+  min-height: 28px; padding: 0 10px; border: 1px solid #5a3a22; border-radius: 6px; background: transparent; color: #ffb27f; font-size: 11px; cursor: pointer;
+}
+.override-actions button:hover { background: #271a12; }
+.admin-images-filters { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 12px; }
+.admin-images-filters button[aria-pressed='true'] { border-color: #ff6b18; background: #271a12; }
+.admin-images-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.admin-images-list li { display: grid; grid-template-columns: 96px 1fr auto; gap: 12px; align-items: center; padding: 10px; border: 1px solid #2a2a2e; border-radius: 8px; }
+.admin-images-list li.is-cover { grid-template-columns: 160px 1fr auto; }
+.admin-images-list img { width: 100%; max-height: 96px; object-fit: cover; border-radius: 6px; }
+.admin-images-meta { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.admin-images-reports { color: #ff8a8a; }
+.admin-images-actions { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.admin-images-reason { display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
+.admin-images-error { color: #ff8a8a; font-size: 12px; }
