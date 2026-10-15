@@ -39,6 +39,7 @@ import { Level8 } from '../components/levels/Level8.tsx';
 import { Level9 } from '../components/levels/Level9.tsx';
 import { Level10 } from '../components/levels/Level10.tsx';
 import { Challenger } from '../components/levels/Challenger.tsx';
+import { Calibrating } from '../components/levels/Calibrating.tsx';
 import { levelVisual } from '../components/LevelMark.tsx';
 
 import { StatisticType } from '../../../src/generator/tabs/StatisticsTab.tsx';
@@ -273,6 +274,8 @@ export type VersusPlayer = {
   level: number;
   /** Regional place. 1–1000 on level 10 turns the level icon into the challenger mark. */
   ranking?: number;
+  /** Placements are unfinished. `elo` is the last known value and the level icon stays off. */
+  calibrating?: boolean;
   kd: number;
   adr: number;
   winRate: number;
@@ -289,6 +292,7 @@ export const Widget = ({
   previewVerifiedBadge,
   previewElo,
   previewLevel,
+  previewCalibrating,
   previewLanguage,
   previewOpponent,
   introReplay = 0,
@@ -302,6 +306,7 @@ export const Widget = ({
   previewVerifiedBadge?: VerifiedBadgeType;
   previewElo?: number;
   previewLevel?: number;
+  previewCalibrating?: boolean;
   previewLanguage?: Language;
   previewOpponent?: VersusPlayer;
   introReplay?: number;
@@ -312,6 +317,7 @@ export const Widget = ({
   const [verifiedBadge, setVerifiedBadge] = useState<VerifiedBadgeType>('none');
 
   const [level, setLevel] = useState(1);
+  const [calibrating, setCalibrating] = useState(false);
   const [language, setLanguage] = useState<Language>(languages[0]);
   const [startingElo, setStartingElo] = useState<number>(0);
   const [elo, setElo] = useState(0);
@@ -488,18 +494,20 @@ export const Widget = ({
       elo={elo}
       level={level}
       ranking={ranking}
+      calibrating={calibrating}
+      knownLabel={translate('widget.elo_known')}
     />
   );
 
   const [searchParams] = useSearchParams();
-  const presenceInfo = useRef<(() => { nickname?: string; elo?: number; level?: number; country?: string; style?: string; playerId?: string } | undefined) | null>(null);
+  const presenceInfo = useRef<(() => { nickname?: string; elo?: number; level?: number; country?: string; style?: string; playerId?: string; calibrating?: boolean } | undefined) | null>(null);
   presenceInfo.current = () => {
     const playerId = String(SETTINGS.get('playerId') || '');
     if (!username && !playerId) return undefined;
     return {
       ...(username ? { nickname: username } : {}),
       ...(typeof elo === 'number' && elo > 0 ? { elo } : {}),
-      ...(typeof level === 'number' && level > 0 ? { level } : {}),
+      ...(calibrating ? { calibrating: true } : typeof level === 'number' && level > 0 ? { level } : {}),
       ...(country ? { country } : {}),
       ...(resolvedStyle ? { style: resolvedStyle } : {}),
       ...(playerId ? { playerId } : {}),
@@ -528,11 +536,13 @@ export const Widget = ({
   }, [SETTINGS]);
 
   useEffect(() => {
-    if (!previewElo || !previewLevel || previewLive) return;
+    if (!previewElo || previewLive) return;
+    if (!previewLevel && !previewCalibrating) return;
     setElo(previewElo);
-    setLevel(previewLevel);
-    setCurrentEloDistribution(getEloDistribution(previewLevel, 1337));
-  }, [previewElo, previewLevel, previewLive]);
+    setCalibrating(Boolean(previewCalibrating));
+    setLevel(previewCalibrating ? 0 : (previewLevel as number));
+    if (!previewCalibrating && previewLevel) setCurrentEloDistribution(getEloDistribution(previewLevel, 1337));
+  }, [previewElo, previewLevel, previewCalibrating, previewLive]);
 
   useEffect(() => {
     if (!overrides || !preview) return;
@@ -565,6 +575,8 @@ export const Widget = ({
 
   /** Returns a path to a level icon */
   const getIcon = useCallback(() => {
+    if (calibrating) return <Calibrating />;
+    if (level < 1) return null;
     if (level === 10 && ranking <= 1000 && !sample) {
       if (ranking === 1) return levelIcons[11];
       else if (ranking === 2) return levelIcons[12];
@@ -572,11 +584,12 @@ export const Widget = ({
       return levelIcons[10]; /* Challenger */
     }
     return levelIcons[level - 1];
-  }, [level, ranking, sample]);
+  }, [level, ranking, sample, calibrating]);
 
   /** Returns a color, min ELO and max ELO of a level */
   const getEloDistribution = useCallback(
     (level: number, ranking: number): [number, (string | number)[]] => {
+      if (level < 1) return [0, [0, 0, 0]];
       if (level === 10 && ranking <= 1000) {
         if (ranking === 1) return [12, eloDistribution[11]];
         else if (ranking === 2) return [13, eloDistribution[12]];
@@ -589,12 +602,26 @@ export const Widget = ({
   );
 
   /* Update player stats. The studio preview uses the same FACEIT read as OBS. */
+  const shownPlayerId = useRef('');
   useEffect(() => {
     const saveSession = SETTINGS.get('saveSession');
     const playerId = SETTINGS.get('playerId');
     if (!playerId) {
       return;
     }
+    let cancelled = false;
+    if (shownPlayerId.current && shownPlayerId.current !== playerId) {
+      setUsername(undefined);
+      setAvatar(undefined);
+      setBanner(undefined);
+      setElo(0);
+      setCalibrating(false);
+      setLevel(0);
+      setWins(0);
+      setLosses(0);
+      setPreviewLive(false);
+    }
+    shownPlayerId.current = playerId;
 
     /*
      * The session lives in this browser's own storage (the OBS browser data), so
@@ -619,13 +646,13 @@ export const Widget = ({
         startDate,
         searchParams.get('only_official') === 'true'
       ).then((player) => {
-        if (!player) return;
+        if (cancelled || !player) return;
         setUsername(player.username);
         setAvatar(player.avatar);
         setBanner(player.banner);
         setVerifiedBadge(player.verifiedBadge);
 
-        if (!player || !player.elo || !player.level) return;
+        if (!player.elo || (!player.calibrating && !player.level)) return;
         if (firstTime) {
           const startingElo = saveSession
             ? Number(localStorage.getItem('fcw_session_starting-elo'))
@@ -643,7 +670,8 @@ export const Widget = ({
         }
 
         setElo(player.elo);
-        setLevel(player.level);
+        setCalibrating(Boolean(player.calibrating));
+        setLevel(player.calibrating ? 0 : (player.level as number));
 
         setWins(player.wins);
         setLosses(player.losses);
@@ -666,13 +694,15 @@ export const Widget = ({
         setUtilityDamagePerRound(player.avg.utilityDamagePerRound);
         setFlashSuccessRate(player.avg.flashSuccessRate);
 
-        setRanking(player.ranking);
-        setCountryRanking(player.countryRanking);
+        setRanking(player.calibrating ? 999999 : player.ranking);
+        setCountryRanking(player.calibrating ? 999999 : player.countryRanking);
         setCountry(player.country);
         setRegion(player.region);
-        setCurrentEloDistribution(
-          getEloDistribution(player.level, player.ranking)
-        );
+        if (!player.calibrating) {
+          setCurrentEloDistribution(
+            getEloDistribution(player.level as number, player.ranking)
+          );
+        }
         if (preview) setPreviewLive(true);
       });
     };
@@ -717,6 +747,7 @@ export const Widget = ({
       1000 * SETTINGS.get('refreshInterval') || 60000
     );
     return () => {
+      cancelled = true;
       clearInterval(interval);
       window.removeEventListener('pagehide', extendSession);
       if (!preview) {
@@ -943,6 +974,8 @@ export const Widget = ({
   const opponentId = SETTINGS.get('opponentId');
   useEffect(() => {
     if (!isVersus || !opponentId) return;
+    let cancelled = false;
+    setOpponent(undefined);
     const load = () =>
       getPlayerStats(
         opponentId,
@@ -950,15 +983,16 @@ export const Widget = ({
         new Date(),
         searchParams.get('only_official') === 'true'
       ).then((player) => {
-        if (!player || !player.elo || !player.level) return;
+        if (cancelled || !player || !player.elo || (!player.calibrating && !player.level)) return;
         const matches = player.avg.matches || 1;
         setOpponent({
           username: player.username,
           avatar: player.avatar,
           country: player.country,
           elo: player.elo,
-          level: player.level,
-          ranking: player.ranking,
+          level: player.calibrating ? 0 : (player.level as number),
+          ranking: player.calibrating ? undefined : player.ranking,
+          calibrating: player.calibrating,
           kd: Math.round((player.avg.kd / matches) * 100) / 100,
           adr: Math.round((player.avg.adr / matches) * 10) / 10,
           winRate: Math.round((player.avg.wins / matches) * 100),
@@ -970,7 +1004,10 @@ export const Widget = ({
       load,
       1000 * (SETTINGS.get('refreshInterval') || 60)
     );
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [preview, isVersus, opponentId]);
 
   /* Solo "reel": one statistic at a time, rolling */
@@ -1008,7 +1045,9 @@ export const Widget = ({
 
   /** Share of the current level already earned, used as the avatar ring progress. */
   const levelProgress =
-    level === 10
+    calibrating || level < 1
+      ? 0
+      : level === 10
       ? 1
       : Math.min(
           1,
@@ -1022,24 +1061,24 @@ export const Widget = ({
 
   /** One continuous ring: levels 1-10 with the progress inside the current level. */
   const levelRingFill =
-    level >= 10 ? 1 : Math.max(0.03, (level - 1 + levelProgress) / 10);
+    calibrating || level < 1 ? 0 : level >= 10 ? 1 : Math.max(0.03, (level - 1 + levelProgress) / 10);
 
   const renderOrb = (
     avatarSrc: string | undefined,
     name: string,
     orbLevel: number,
     orbElo: number,
-    icon: ReactElement | undefined
+    icon: ReactElement | null | undefined
   ) => {
     const [, range] = getEloDistribution(orbLevel, sample ? 1337 : ranking);
-    const min = Number(range[1]);
-    const max = Number(range[2]);
+    const min = Number(range?.[1] ?? 0);
+    const max = Number(range?.[2] ?? 0);
     const progress =
-      orbLevel >= 10 || !max
+      orbLevel < 1 ? 0 : orbLevel >= 10 || !max
         ? 1
         : Math.min(1, Math.max(0, (orbElo - min) / (max - min)));
     const fill =
-      orbLevel >= 10 ? 1 : Math.max(0.03, (orbLevel - 1 + progress) / 10);
+      orbLevel < 1 ? 0 : orbLevel >= 10 ? 1 : Math.max(0.03, (orbLevel - 1 + progress) / 10);
     return (
       <div
         className={'avatar-orb'}
@@ -1109,13 +1148,22 @@ export const Widget = ({
             className={`${SETTINGS.get('showUsername') ? '' : 'username-hidden'} ${elo === 0 ? 'skeleton' : ''}`}
           >
             {SETTINGS.get('showIcons') && <TimelineIcon />}{' '}
-            <span className={'elo-value'}>{String(elo)}</span>
-            {SETTINGS.get('showEloSuffix') && (
-              <span className={'elo-suffix'}>ELO</span>
+            {calibrating ? (
+              <span className={'elo-stack'}>
+                <span className={'elo-value'}>{String(elo)}</span>
+                <small className={'elo-known'}>{translate('widget.elo_known')}</small>
+              </span>
+            ) : (
+              <>
+                <span className={'elo-value'}>{String(elo)}</span>
+                {SETTINGS.get('showEloSuffix') && (
+                  <span className={'elo-suffix'}>ELO</span>
+                )}
+              </>
             )}{' '}
             {SETTINGS.get('showEloDiff') && getEloDiff()}
           </p>
-          {SETTINGS.get('showRanking') !== ShowRanking.DISABLED && (
+          {!calibrating && SETTINGS.get('showRanking') !== ShowRanking.DISABLED && (
             <p className={'ranking'}>
               {(SETTINGS.get('showRanking') === ShowRanking.SHOW ||
                 SETTINGS.get('showRanking') === ShowRanking.BOTH ||
@@ -1284,8 +1332,9 @@ export const Widget = ({
                 <span className={'ticker-level'}>{getIcon()}</span>
               )
             )}
-            <span className={`ticker-elo ${elo === 0 ? 'skeleton' : ''}`}>
+            <span className={`ticker-elo ${elo === 0 ? 'skeleton' : ''}${calibrating ? ' elo-stack' : ''}`}>
               {String(elo)}
+              {calibrating && <small className={'elo-known'}>{translate('widget.elo_known')}</small>}
             </span>
           </div>
           {showStats && (
@@ -1296,7 +1345,7 @@ export const Widget = ({
           )}
           <div className={'ticker-right'}>
             <img className={'flag'} src={`https://flagcdn.com/${flagCode}.svg`} alt={flagCode} />
-            <span>#{countryPlace || '?'}</span>
+            {!calibrating && <span>#{countryPlace || '?'}</span>}
           </div>
         </div>
         <div className={'ticker-page'} key={page.id}>
@@ -1328,6 +1377,7 @@ export const Widget = ({
       country: (country || previewCountry) || 'pl',
       elo,
       level,
+      calibrating,
       ranking: sample ? undefined : ranking,
       kd: sample
         ? 1.22
@@ -1354,6 +1404,9 @@ export const Widget = ({
       '--vs-rival': rivalAccent,
     } as CSSProperties;
     const orbFor = (player: VersusPlayer) => {
+      if (player.calibrating) {
+        return renderOrb(player.avatar, player.username, 0, player.elo, <Calibrating />);
+      }
       const visual = levelVisual(player.level, player.ranking);
       return renderOrb(
         player.avatar,
@@ -1379,9 +1432,11 @@ export const Widget = ({
             {flag(player)}
             <span>{player.username}</span>
           </h2>
-          <p>
+          <p className={player.calibrating ? 'is-known' : undefined}>
             <b>{String(player.elo)}</b>
-            <small>ELO</small>
+            <small className={player.calibrating ? 'elo-known' : undefined}>
+              {player.calibrating ? translate('widget.elo_known') : 'ELO'}
+            </small>
           </p>
         </div>
       </div>
@@ -1463,7 +1518,16 @@ export const Widget = ({
       mine > theirs ? 'win' : mine < theirs ? 'lose' : '';
     const cmpCell = (row: (typeof cmpRows)[number]) => (
       <div className={'vs-cell'} key={row.label}>
-        <b className={tone(row.a, row.b)}>{row.fmt(row.a)}</b>
+        <b className={tone(row.a, row.b)}>
+          {row.label === 'ELO' && me.calibrating ? (
+            <span className={'elo-stack'}>
+              {row.fmt(row.a)}
+              <small className={'elo-known'}>{translate('widget.elo_known')}</small>
+            </span>
+          ) : (
+            row.fmt(row.a)
+          )}
+        </b>
         <small>{row.label}</small>
         <b className={tone(row.b, row.a)}>{row.fmt(row.b)}</b>
       </div>
@@ -1595,7 +1659,10 @@ export const Widget = ({
           style={{ left: `${placement(player)}%` }}
         >
           <div className={'ladder-pin'}>{orbFor(player)}</div>
-          <b>{String(player.elo)}</b>
+          <b className={player.calibrating ? 'elo-stack' : undefined}>
+            {String(player.elo)}
+            {player.calibrating && <small className={'elo-known'}>{translate('widget.elo_known')}</small>}
+          </b>
         </div>
       );
       return (
@@ -1756,7 +1823,10 @@ export const Widget = ({
                   <i style={{ width: `${percent}%` }} />
                 </div>
               </div>
-              <b className={'vs-line-elo'}>{String(player.elo)}</b>
+              <b className={`vs-line-elo${player.calibrating ? ' elo-stack' : ''}`}>
+                {String(player.elo)}
+                {player.calibrating && <small className={'elo-known'}>{translate('widget.elo_known')}</small>}
+              </b>
             </div>
           ))}
           <div className={`vs-foot lead-${lead}`}>
@@ -1792,8 +1862,17 @@ export const Widget = ({
     );
     const eloLine = (
       <p className={`solo-elo ${elo === 0 ? 'skeleton' : ''}`}>
-        <b>{String(elo)}</b>
-        {SETTINGS.get('showEloSuffix') && <small>ELO</small>}
+        {calibrating ? (
+          <span className={'elo-stack'}>
+            <b>{String(elo)}</b>
+            <small className={'elo-known'}>{translate('widget.elo_known')}</small>
+          </span>
+        ) : (
+          <>
+            <b>{String(elo)}</b>
+            {SETTINGS.get('showEloSuffix') && <small>ELO</small>}
+          </>
+        )}
         {SETTINGS.get('showEloDiff') && getEloDiff()}
       </p>
     );

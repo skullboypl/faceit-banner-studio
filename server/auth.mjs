@@ -287,7 +287,7 @@ export function createAuthMiddleware() {
           ? user.guid.toLowerCase()
           : '';
         const profile = faceitId ? await lookupPlayer(faceitId) : null;
-        const ranking = profile?.level === 10 ? await lookupRanking(faceitId, profile.region) : null;
+        const ranking = !profile?.calibrating && profile?.level === 10 ? await lookupRanking(faceitId, profile.region) : null;
         const logins = await loginsForUser(user.guid, 8);
         return sendJson(res, 200, {
           nickname: user.nickname,
@@ -295,9 +295,10 @@ export function createAuthMiddleware() {
           faceit: profile
             ? {
                 elo: Number.isInteger(profile.elo) ? profile.elo : null,
-                level: Number.isInteger(profile.level) ? profile.level : null,
+                level: profile.calibrating || !Number.isInteger(profile.level) ? null : profile.level,
+                calibrating: profile.calibrating === true,
                 country: profile.country || null,
-                ranking: Number.isInteger(ranking) && ranking >= 1 && ranking <= 1000 ? ranking : null,
+                ranking: profile.calibrating || !(Number.isInteger(ranking) && ranking >= 1 && ranking <= 1000) ? null : ranking,
                 verifiedBadge: profile.verifiedBadge || 'none',
               }
             : null,

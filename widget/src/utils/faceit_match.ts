@@ -11,6 +11,8 @@ export type RosterPlayer = {
   elo: number;
   /** Regional place when the player is in the top 1000. The level icon becomes the challenger mark. */
   ranking?: number;
+  /** Placements are unfinished, so `elo` is the last known value and there is no level. */
+  calibrating?: boolean;
   missing?: boolean;
   /** Filled once the match is over. */
   stats?: PlayerStats;
@@ -33,7 +35,7 @@ export type LiveMatch = {
   me?: PlayerStats;
 };
 
-const cardCache = new Map<string, { elo: number; level?: number; ranking?: number; at: number }>();
+const cardCache = new Map<string, { elo: number; level?: number; ranking?: number; calibrating?: boolean; at: number }>();
 
 async function cardFor(id: string) {
   const cached = cardCache.get(id);
@@ -41,12 +43,13 @@ async function cardFor(id: string) {
   const profile = await lookupPlayer(id);
   const game = profile?.games.cs2;
   const elo = game?.faceit_elo ?? 0;
-  const level = game?.skill_level;
+  const calibrating = game?.is_calibrating === true;
+  const level = calibrating ? undefined : game?.skill_level;
   const ranking =
-    profile && level === 10
+    profile && !calibrating && level === 10
       ? await getPlayerRankingPosition(profile.player_id, game?.region || 'EU')
       : undefined;
-  const card = { elo, level, ranking, at: Date.now() };
+  const card = { elo, level, ranking, calibrating, at: Date.now() };
   if (elo > 0) cardCache.set(id, card);
   return card;
 }
@@ -90,7 +93,7 @@ function numberAt(source: unknown, key: string) {
 async function enrich(match: LiveMatch) {
   const ids = match.sides.flatMap((side) => side.players.map((player) => player.id).filter(Boolean)) as string[];
   const unique = [...new Set(ids)];
-  const cards = new Map<string, { elo: number; level?: number; ranking?: number }>();
+  const cards = new Map<string, { elo: number; level?: number; ranking?: number; calibrating?: boolean }>();
   for (let index = 0; index < unique.length; index += 4) {
     const slice = unique.slice(index, index + 4);
     const found = await Promise.all(slice.map(async (id) => [id, await cardFor(id)] as const));
@@ -101,8 +104,12 @@ async function enrich(match: LiveMatch) {
       const card = player.id ? cards.get(player.id) : undefined;
       if (!card) return;
       if (card.elo) player.elo = card.elo;
-      if (card.level) player.level = card.level;
-      if (card.ranking) player.ranking = card.ranking;
+      if (card.calibrating) {
+        player.calibrating = true;
+        player.level = 0;
+        player.ranking = undefined;
+      } else if (card.level) player.level = card.level;
+      if (!card.calibrating && card.ranking) player.ranking = card.ranking;
     });
     side.avg = averageElo(side.players);
   });

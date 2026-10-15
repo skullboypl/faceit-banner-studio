@@ -207,10 +207,13 @@ export function LiveRanking() {
                     </div>
                   </div>
                   <FaceitLevel
-                    level={player.level}
-                    ranking={player.ranking}
+                    level={player.calibrating ? undefined : player.level}
+                    ranking={player.calibrating ? undefined : player.ranking}
+                    unranked={player.calibrating}
                     label={
-                      player.ranking
+                      player.calibrating
+                        ? t('live.calibrating')
+                        : player.ranking
                         ? t('live.challenger', [String(player.ranking)])
                         : player.level
                         ? t('live.level', [String(player.level)])
@@ -221,7 +224,9 @@ export function LiveRanking() {
                     {Number.isInteger(player.elo)
                       ? player.elo!.toLocaleString()
                       : '—'}
-                    <small>ELO</small>
+                    <small className={player.calibrating ? 'elo-known' : undefined}>
+                      {player.calibrating ? t('widget.elo_known') : 'ELO'}
+                    </small>
                   </strong>
                 </li>
               );

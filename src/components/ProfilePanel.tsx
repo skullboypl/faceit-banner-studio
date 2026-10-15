@@ -12,6 +12,8 @@ type FaceitCard = {
   country: string | null;
   ranking: number | null;
   verifiedBadge: 'none' | 'verified' | 'gold';
+  /** Season placements are unfinished, so elo is the last known value. */
+  calibrating?: boolean;
 };
 
 type Profile = {
@@ -82,7 +84,9 @@ export function ProfilePanel() {
               CS2
             </p>
           </div>
-          {faceit?.level ? (
+          {faceit?.calibrating ? (
+            <FaceitLevel unranked label={tl('live.calibrating')} />
+          ) : faceit?.level ? (
             <FaceitLevel
               level={faceit.level}
               ranking={faceit.ranking ?? undefined}
@@ -97,10 +101,10 @@ export function ProfilePanel() {
         <ul className="profile-stats">
           <li>
             <strong>{faceit?.elo ? faceit.elo.toLocaleString() : '—'}</strong>
-            <span>ELO</span>
+            <span>{faceit?.calibrating ? tl('widget.elo_known') : 'ELO'}</span>
           </li>
           <li>
-            <strong>{faceit?.level ?? '—'}</strong>
+            <strong>{faceit?.calibrating ? '—' : (faceit?.level ?? '—')}</strong>
             <span>{tl('profile.level')}</span>
           </li>
           <li>

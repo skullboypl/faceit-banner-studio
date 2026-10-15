@@ -341,6 +341,40 @@
     "default": "",
     "regex": "^(?:|none|[a-z]+(?:,[a-z]+)*)$"
   },
+  "splitView": {
+    "type": "string",
+    "default": "chart",
+    "options": [
+      "chart",
+      "data",
+      "motion"
+    ]
+  },
+  "splitChartLook": {
+    "type": "string",
+    "default": "side",
+    "options": [
+      "side",
+      "ring"
+    ]
+  },
+  "splitDataLook": {
+    "type": "string",
+    "default": "tiles",
+    "options": [
+      "tiles",
+      "list",
+      "hero"
+    ]
+  },
+  "splitMotionLook": {
+    "type": "string",
+    "default": "bars",
+    "options": [
+      "bars",
+      "cycle"
+    ]
+  },
   "splitCamera": {
     "type": "string",
     "default": "",

@@ -27,6 +27,8 @@ export type PresenceInfo = {
   elo?: number;
   level?: number;
   country?: string;
+  /** Season placements are unfinished, so elo is the last known value and level is omitted. */
+  calibrating?: boolean;
   style?: string;
 };
 
@@ -85,6 +87,8 @@ export type LivePlayer = {
   confirmed?: boolean;
   elo?: number;
   level?: number;
+  /** Season placements are unfinished. elo is the last known value and there is no level. */
+  calibrating?: boolean;
   /** Region place, only when a level-10 player is inside the top 1000. */
   ranking?: number;
   country?: string;

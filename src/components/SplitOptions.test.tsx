@@ -16,6 +16,23 @@ describe('SplitOptionsPanel', () => {
     expect(set).toHaveBeenCalledWith('splitCamera', 'elo,session');
     fireEvent.click(screen.getByRole('switch', { name: 'K/D' }));
     expect(set).toHaveBeenCalledWith('splitAxes', 'adr,hs,wr,kills');
+    fireEvent.click(screen.getByRole('button', { name: 'Dane' }));
+    expect(set).toHaveBeenCalledWith('splitView', 'data');
+  });
+
+  test('each radar layout offers its own look', () => {
+    const data = renderWithApp(<SplitOptionsPanel />, withSettings({ splitView: 'data' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lista' }));
+    expect(data.set).toHaveBeenCalledWith('splitDataLook', 'list');
+    data.unmount();
+    const motion = renderWithApp(<SplitOptionsPanel />, withSettings({ splitView: 'motion' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cykl' }));
+    expect(motion.set).toHaveBeenCalledWith('splitMotionLook', 'cycle');
+    motion.unmount();
+    const chart = renderWithApp(<SplitOptionsPanel />, withSettings({ splitView: 'chart' }));
+    expect(screen.getByRole('button', { name: 'Obok wykresu' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: 'Na osiach' }));
+    expect(chart.set).toHaveBeenCalledWith('splitChartLook', 'ring');
   });
 
   test('shows the saved mix instead of the legacy preset', () => {

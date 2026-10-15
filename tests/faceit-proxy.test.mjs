@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createFaceitCache, faceitTarget } from '../server/faceit-proxy.mjs';
+import { createFaceitCache, faceitTarget, withCalibration } from '../server/faceit-proxy.mjs';
 
 const id = '11111111-1111-4111-8111-111111111111';
 
@@ -40,4 +40,41 @@ test('the same player is fetched once inside 15 seconds, then again after', asyn
   await cache.load(other);
   assert.equal(calls.length, 3);
   assert.match(calls[2], /\/stats\/cs2$/);
+});
+
+test('a calibrating player is marked once and a failed site lookup keeps the Data API body', async () => {
+  const player = {
+    player_id: id,
+    games: { cs2: { skill_level: 10, faceit_elo: 3737 } },
+  };
+  const site = { payload: { games: { cs2: { is_calibrating: true, faceit_elo: 3737 } } } };
+  const marked = JSON.parse(
+    await withCalibration(JSON.stringify(player), async () => ({ ok: true, text: async () => JSON.stringify(site) }))
+  );
+  assert.equal(marked.games.cs2.is_calibrating, true);
+  assert.equal(marked.games.cs2.faceit_elo, 3737);
+  const kept = await withCalibration(JSON.stringify(player), async () => {
+    throw new Error('offline');
+  });
+  assert.equal(JSON.parse(kept).games.cs2.is_calibrating, undefined);
+
+  let clock = 1_000;
+  const calls = [];
+  const cache = createFaceitCache({
+    now: () => clock,
+    getKey: () => 'test-key',
+    fetcher: async (url) => {
+      calls.push(url);
+      if (String(url).includes('/api/users/')) {
+        return { status: 200, text: async () => JSON.stringify(site) };
+      }
+      return { status: 200, text: async () => JSON.stringify(player) };
+    },
+  });
+  const target = faceitTarget(`/api/faceit/v4/players/${id}`);
+  const first = await cache.load(target);
+  assert.equal(JSON.parse(first.body).games.cs2.is_calibrating, true);
+  clock += 1_000;
+  await cache.load(target);
+  assert.equal(calls.length, 2);
 });

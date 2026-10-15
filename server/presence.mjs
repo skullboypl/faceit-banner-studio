@@ -55,7 +55,7 @@ function dropSession(id) {
 let hydrated = false;
 let hydrating = null;
 
-/** Loads banners that were still inside the 15-minute window when this process started. */
+/** Loads banners that were still inside the activity window when this process started. */
 export function hydratePresence() {
   if (hydrated) return Promise.resolve();
   hydrating ??= loadPresence().finally(() => {
@@ -164,24 +164,32 @@ export const getPresenceCount = () => {
   return sessions.size;
 };
 
-const SAMPLE_MS = 60 * 60 * 1000;
+const SAMPLE_MS = 60_000;
 let samplerStarted = false;
 
-/** Writes the live banner count once per UTC hour. The timer does not keep the process alive. */
+/**
+ * Saves the current banner count into this UTC hour.
+ * Waits until Redis has been read, so a restart cannot store 0 and erase the hour.
+ * Returns null when that read has not succeeded yet.
+ */
+export async function captureOnlineSample() {
+  await hydratePresence();
+  if ((presenceRedis || process.env.REDIS_URL) && !hydrated) return null;
+  const online = getPresenceCount();
+  await recordOnlineSample(online);
+  return online;
+}
+
+/** Keeps the hourly peak. A sample runs every minute; the timer does not keep the process alive. */
 export function startOnlineHistory() {
   if (samplerStarted) return;
   samplerStarted = true;
   const sample = () => {
-    void recordOnlineSample(getPresenceCount()).catch(() => undefined);
+    void captureOnlineSample().catch(() => undefined);
   };
   sample();
-  const wait = SAMPLE_MS - (Date.now() % SAMPLE_MS);
-  const starter = setTimeout(() => {
-    sample();
-    const timer = setInterval(sample, SAMPLE_MS);
-    timer.unref?.();
-  }, wait);
-  starter.unref?.();
+  const timer = setInterval(sample, SAMPLE_MS);
+  timer.unref?.();
 }
 
 /** Public menu count and the live list share one snapshot so open studios do not each rebuild it. */

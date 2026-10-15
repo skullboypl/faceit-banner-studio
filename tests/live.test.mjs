@@ -38,6 +38,12 @@ test('sanitizeInfo keeps a player id when the old banner has not sent a nickname
   assert.equal(sanitizeInfo({ playerId: 'not-a-player' }), null);
 });
 
+test('sanitizeInfo keeps a calibration mark and ignores any other value', () => {
+  assert.equal(sanitizeInfo({ nickname: 'SpavaQu', elo: 3737, calibrating: true }).calibrating, true);
+  assert.equal('level' in sanitizeInfo({ nickname: 'SpavaQu', elo: 3737, calibrating: true, level: 10 }), false);
+  assert.equal('calibrating' in sanitizeInfo({ nickname: 'ranked', elo: 2000, calibrating: 'yes' }), false);
+});
+
 test('sanitizeInfo strips control characters and refuses a nickname that is only markup', () => {
   assert.equal(sanitizeInfo({ nickname: 'a\u0000b<script>' })?.nickname, 'abscript');
   assert.equal(sanitizeInfo({ nickname: '<' }), null);
@@ -140,6 +146,7 @@ test('the live board is public, ordered, and hides the session id', async () => 
     const original = globalThis.fetch;
     process.env.FACEIT_API_KEY = 'test-key';
     globalThis.fetch = async (url, options) => {
+      if (String(url).includes('/api/users/')) return new Response('{}', { status: 404 });
       if (String(url).includes('open.faceit.com')) {
         return new Response(
           JSON.stringify({

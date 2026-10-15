@@ -35,6 +35,8 @@ interface V4PlayersResponse {
       faceit_elo: number;
       skill_level: number;
       region: string;
+      /** True while this season's placements are unfinished. ELO is then the last known value. */
+      is_calibrating?: boolean;
     };
   };
 }
@@ -69,6 +71,8 @@ interface FaceitPlayer {
   verifiedBadge: VerifiedBadgeType;
   level?: number;
   elo?: number;
+  /** Placements for the current season are not finished. `elo` is the last known value, and there is no level. */
+  calibrating?: boolean;
   wins: number;
   /** Session results, newest first. The same window as `wins` and `losses`. */
   form?: ('W' | 'L')[];
@@ -167,7 +171,8 @@ export function getPlayerStats(
       const verifiedBadge = getVerifiedBadgeType(v4PlayersResponse);
       const country: string = v4PlayersResponse.country;
       const region: string = v4PlayersResponse.games.cs2?.region || 'EU';
-      const level: number = v4PlayersResponse.games.cs2?.skill_level || 1;
+      const calibrating = v4PlayersResponse.games.cs2?.is_calibrating === true;
+      const level: number = calibrating ? 0 : v4PlayersResponse.games.cs2?.skill_level || 1;
       const elo: number = v4PlayersResponse.games.cs2?.faceit_elo || 100;
       let ranking: number | undefined = undefined;
       let countryRanking: number | undefined = undefined;
@@ -258,12 +263,14 @@ export function getPlayerStats(
         flashSuccessRate = value('Flash Success Rate') * 100;
       }
 
-      ranking = await getPlayerRankingPosition(playerId, region);
-      countryRanking = await getPlayerRankingPosition(
-        playerId,
-        region,
-        country
-      );
+      if (!calibrating) {
+        ranking = await getPlayerRankingPosition(playerId, region);
+        countryRanking = await getPlayerRankingPosition(
+          playerId,
+          region,
+          country
+        );
+      }
 
       resolve({
         id: playerId,
@@ -273,6 +280,7 @@ export function getPlayerStats(
         verifiedBadge,
         level,
         elo,
+        calibrating,
         ranking: ranking || 999999,
         countryRanking: countryRanking || 999999,
         region,
@@ -346,6 +354,8 @@ export type RosterCard = {
   adr?: number;
   /** Regional place, only when the player is in the top 1000. */
   ranking?: number;
+  /** Current season placements are unfinished, so `elo` is the last known value and `level` is 0. */
+  calibrating?: boolean;
   kr?: number;
   matches?: number;
   wins?: number;
@@ -514,15 +524,17 @@ export async function lookupRosterCard(name: string, matchWindow = 20, sessionSt
   } catch {
     /* the row still shows ELO and level */
   }
+  const calibrating = game.is_calibrating === true;
   let ranking: number | undefined;
-  if (game.skill_level === 10) {
+  if (!calibrating && game.skill_level === 10) {
     ranking = await getPlayerRankingPosition(profile.player_id, game.region || 'EU');
   }
   return {
     username: profile.nickname,
     avatar: profile.avatar,
     elo: game.faceit_elo,
-    level: game.skill_level,
+    level: calibrating ? 0 : game.skill_level,
+    calibrating,
     ranking,
     ...recent,
     session,

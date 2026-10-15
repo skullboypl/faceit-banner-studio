@@ -9,6 +9,22 @@ export type SplitBit = (typeof SPLIT_BITS)[number];
 export const SPLIT_THEMES = ['dark', 'glass', 'light', 'clear'] as const;
 export type SplitTheme = (typeof SPLIT_THEMES)[number];
 
+/** How the radar source is drawn. The camera bar is unchanged. */
+export const SPLIT_VIEWS = ['chart', 'data', 'motion'] as const;
+export type SplitView = (typeof SPLIT_VIEWS)[number];
+
+/** Where the chart prints its numbers. */
+export const SPLIT_CHART_LOOKS = ['side', 'ring'] as const;
+export type SplitChartLook = (typeof SPLIT_CHART_LOOKS)[number];
+
+/** Text-only arrangements of the same stats. */
+export const SPLIT_DATA_LOOKS = ['tiles', 'list', 'hero'] as const;
+export type SplitDataLook = (typeof SPLIT_DATA_LOOKS)[number];
+
+/** Motion arrangements of the same stats. */
+export const SPLIT_MOTION_LOOKS = ['bars', 'cycle'] as const;
+export type SplitMotionLook = (typeof SPLIT_MOTION_LOOKS)[number];
+
 export const SPLIT_RANGES = {
   radius: [8, 48] as const,
   opacity: [40, 100] as const,
@@ -60,6 +76,10 @@ export type SplitStats = Record<SplitAxis, number>;
 export type SplitOptions = {
   axes: SplitAxis[];
   bits: SplitBit[];
+  view: SplitView;
+  chartLook: SplitChartLook;
+  dataLook: SplitDataLook;
+  motionLook: SplitMotionLook;
   theme: SplitTheme;
   /** Accent without the hash. Empty keeps the layout accent. */
   accent: string;
@@ -73,6 +93,11 @@ const clamp = (value: unknown, range: readonly [number, number], fallback: numbe
   if (!Number.isFinite(number)) return fallback;
   return Math.min(range[1], Math.max(range[0], Math.round(number)));
 };
+
+function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  const text = String(value ?? '');
+  return (allowed as readonly string[]).includes(text) ? (text as T) : fallback;
+}
 
 function listed<T extends string>(value: unknown, allowed: readonly T[], fallback: readonly T[]): T[] {
   const text = String(value ?? '').trim();
@@ -100,6 +125,10 @@ export function readSplitOptions(get: (key: string) => unknown): SplitOptions {
   return {
     axes: listed(get('splitAxes'), SPLIT_AXES, RADAR_PRESETS[radar as keyof typeof RADAR_PRESETS] ?? RADAR_PRESETS.combat),
     bits: listed(get('splitCamera'), SPLIT_BITS, CAMERA_PRESETS[camera as keyof typeof CAMERA_PRESETS] ?? CAMERA_PRESETS.identity),
+    view: oneOf(get('splitView'), SPLIT_VIEWS, 'chart'),
+    chartLook: oneOf(get('splitChartLook'), SPLIT_CHART_LOOKS, 'side'),
+    dataLook: oneOf(get('splitDataLook'), SPLIT_DATA_LOOKS, 'tiles'),
+    motionLook: oneOf(get('splitMotionLook'), SPLIT_MOTION_LOOKS, 'bars'),
     theme: (SPLIT_THEMES as readonly string[]).includes(theme) ? (theme as SplitTheme) : 'dark',
     accent: /^[0-9a-fA-F]{6}$/.test(String(get('splitAccent') || '')) ? String(get('splitAccent')) : '',
     radius: clamp(get('splitRadius'), SPLIT_RANGES.radius, 32),

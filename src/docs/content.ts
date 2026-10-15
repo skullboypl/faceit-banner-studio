@@ -394,8 +394,8 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
         {
           type: 'p',
           text: t(
-            'Split to dwa źródła przeglądarki. Radar jest kwadratem 300 × 300, pasek pod kamerkę ma 360 × 128. Na radarze i na pasku włączasz dowolny zestaw: statystyki, ELO, level, wygrane i porażki sesji, serię. Gotowe zestawy, na przykład rozbudowany radar albo samo ELO z sesją, tylko wypełniają przełączniki.',
-            'Split is two browser sources. The radar is a 300 × 300 square and the bar under the camera is 360 × 128. You turn on any mix for each: statistics, ELO, level, session wins and losses, streak. Ready sets, such as an expanded radar or ELO with the session, only fill the switches.'
+            'Split to dwa źródła przeglądarki. Radar jest kwadratem 300 × 300, pasek pod kamerkę ma 360 × 128. Radar może być wykresem z liczbami obok albo na osiach, samymi danymi (kafelki, lista, duże liczby) albo animacją (paski albo cykl). Pod wybranym układem ustawiasz wygląd i zestaw statystyk. Na pasku włączasz dowolny zestaw: ELO, level, wygrane i porażki sesji, serię. Gotowe zestawy tylko wypełniają przełączniki.',
+            'Split is two browser sources. The radar is a 300 × 300 square and the bar under the camera is 360 × 128. The radar can be a chart with the numbers beside it or on the axes, data only (tiles, a list or large numbers), or an animation (bars or a cycle). Under the chosen layout you set the look and the statistics. On the bar you turn on any mix: ELO, level, session wins and losses, streak. Ready sets only fill the switches.'
           ),
         },
         { type: 'h2', id: 'popup', text: t('Popup meczu', 'Match popup') },

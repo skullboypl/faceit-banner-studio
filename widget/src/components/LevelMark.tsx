@@ -9,6 +9,7 @@ import { Level8 } from './levels/Level8';
 import { Level9 } from './levels/Level9';
 import { Level10 } from './levels/Level10';
 import { Challenger } from './levels/Challenger';
+import { Calibrating } from './levels/Calibrating';
 
 const MARKS = [Level1, Level2, Level3, Level4, Level5, Level6, Level7, Level8, Level9, Level10];
 
@@ -46,7 +47,14 @@ export function levelVisual(level: number, ranking?: number): number {
   return skill;
 }
 
-export function LevelMark({ level, ranking }: { level: number; ranking?: number }) {
+export function LevelMark({ level, ranking, unranked }: { level: number; ranking?: number; unranked?: boolean }) {
+  if (unranked) {
+    return (
+      <span className="faceit-level-mark" data-tier="unranked" style={{ display: 'contents' }}>
+        <Calibrating />
+      </span>
+    );
+  }
   const visual = levelVisual(level, ranking);
   const Icon = visual > 10 ? Challenger : MARKS[visual - 1] ?? Level1;
   return (

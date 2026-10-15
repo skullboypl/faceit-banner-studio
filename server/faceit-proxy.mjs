@@ -78,10 +78,45 @@ export function faceitTarget(rawUrl) {
     }
   }
   const query = params.toString();
+  const player = path.toLowerCase() === '/players' || new RegExp(`^\\/players\\/${PLAYER}$`, 'i').test(path);
   return {
     upstream: `https://open.faceit.com/data/v4${path}${query ? `?${query}` : ''}`,
     key: `${path.toLowerCase()}?${query}`,
+    /** Player reads also ask the public site whether this season is still unranked. */
+    calibrate: player,
   };
+}
+
+/**
+ * The Data API keeps the previous season's level and ELO during placements.
+ * The public site profile is the one that says the player is still calibrating.
+ * A failed lookup leaves the Data API body unchanged.
+ */
+export async function withCalibration(body, fetcher) {
+  let data;
+  try {
+    data = JSON.parse(body);
+  } catch {
+    return body;
+  }
+  const id = data?.player_id;
+  if (typeof id !== 'string' || !new RegExp(`^${PLAYER}$`, 'i').test(id) || !data.games?.cs2) return body;
+  try {
+    const response = await fetcher(`https://www.faceit.com/api/users/v1/users/${id}`, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(4000),
+    });
+    const ok = response?.ok === true || response?.status === 200;
+    if (!ok) return body;
+    const site = JSON.parse(await response.text());
+    if (site?.payload?.games?.cs2?.is_calibrating === true) {
+      data.games.cs2.is_calibrating = true;
+      return JSON.stringify(data);
+    }
+  } catch {
+    /* the Data API answer still stands */
+  }
+  return body;
 }
 
 export function createFaceitCache({
@@ -108,7 +143,8 @@ export function createFaceitCache({
           headers: { Authorization: `Bearer ${getKey()}`, Accept: 'application/json' },
           signal: AbortSignal.timeout(8000),
         });
-        const body = (await response.text()).slice(0, MAX_BODY);
+        let body = (await response.text()).slice(0, MAX_BODY);
+        if (response.status === 200 && target.calibrate) body = await withCalibration(body, fetcher);
         const entry = { status: response.status, body, at: now() };
         remember(target.key, entry);
         return entry;

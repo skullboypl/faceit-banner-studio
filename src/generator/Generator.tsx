@@ -99,6 +99,7 @@ export const Generator = () => {
   const [opponent, setOpponent] = useState<VersusPlayer | undefined>();
   const [playerElo, setPlayerElo] = useState<number>(100);
   const [playerLevel, setPlayerLevel] = useState<number>(1);
+  const [playerCalibrating, setPlayerCalibrating] = useState(false);
   const [playerAvatar, setPlayerAvatar] = useState<string | undefined>();
   const [playerBanner, setPlayerBanner] = useState<string | undefined>();
   const [playerRegion, setPlayerRegion] = useState<string | undefined>();
@@ -557,6 +558,7 @@ export const Generator = () => {
           setUsername={setUsername}
           setPlayerElo={setPlayerElo}
           setPlayerLevel={setPlayerLevel}
+          setPlayerCalibrating={setPlayerCalibrating}
           setPlayerAvatar={setPlayerAvatar}
           setPlayerBanner={setPlayerBanner}
           setPlayerRegion={setPlayerRegion}
@@ -678,6 +680,7 @@ export const Generator = () => {
           previewVerifiedBadge={playerVerifiedBadge}
           previewElo={playerElo}
           previewLevel={playerLevel}
+          previewCalibrating={playerCalibrating}
           previewLanguage={language}
           previewOpponent={opponent}
         />

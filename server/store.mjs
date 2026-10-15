@@ -289,7 +289,7 @@ function hourBucket(at) {
 
 function rememberOnline(bucket, online) {
   const index = memoryOnline.findIndex((row) => row.bucket === bucket);
-  if (index >= 0) memoryOnline[index].online = online;
+  if (index >= 0) memoryOnline[index].online = Math.max(memoryOnline[index].online, online);
   else memoryOnline.push({ bucket, online });
   const cutoff = Date.now() - ONLINE_KEEP_HOURS * HOUR_MS;
   for (let i = memoryOnline.length - 1; i >= 0; i -= 1) {
@@ -297,7 +297,7 @@ function rememberOnline(bucket, online) {
   }
 }
 
-/** One count for this UTC hour. A later sample in the same hour replaces it. */
+/** One count for this UTC hour: the highest number of open banners seen in it. */
 export async function recordOnlineSample(online, at = new Date()) {
   const bucket = hourBucket(at);
   if (!bucket) return;
@@ -305,7 +305,7 @@ export async function recordOnlineSample(online, at = new Date()) {
   const saved = await postgresCall(async (pool) => {
     await pool.query(
       `INSERT INTO online_samples (bucket, online) VALUES ($1, $2)
-       ON CONFLICT (bucket) DO UPDATE SET online = EXCLUDED.online`,
+       ON CONFLICT (bucket) DO UPDATE SET online = GREATEST(online_samples.online, EXCLUDED.online)`,
       [bucket, count]
     );
     await pool.query(`DELETE FROM online_samples WHERE bucket < NOW() - INTERVAL '90 days'`);

@@ -986,6 +986,33 @@ dialog {
 }
 
 html.generator .settings .roster-editor {
+  .roster-me {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 8px;
+    small {
+      color: @subtext0;
+      font-size: 12px;
+    }
+    .roster-me-button {
+      width: auto;
+      margin: 0;
+      min-height: 28px;
+      padding: 0 12px;
+      border: 1px solid #ff6b18;
+      border-radius: 999px;
+      background: transparent;
+      color: #ff8a45;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+      &:hover { background: #34210f; color: #fff; }
+      &:disabled { opacity: 0.4; cursor: default; }
+    }
+  }
   .roster-add {
     display: flex;
     align-items: center;
@@ -2471,6 +2498,15 @@ a.donate-link:hover { background: #271a12; border-color: #ff6b18; }
 .popup-options .setting select { width: 100%; }
 .popup-options .design-switch.popup-phase { margin-top: 12px; }
 .popup-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 12px; margin-top: 6px; }
+.settings .split-kicker {
+  margin: 2px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8d8680;
+}
+
 .settings .split-presets {
   display: flex;
   flex-wrap: wrap;

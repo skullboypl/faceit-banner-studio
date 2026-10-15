@@ -21,6 +21,11 @@ const profile = (extra = {}) => ({
   ...extra,
 });
 const response = (data) => new Response(JSON.stringify(data), { status: 200 });
+/** Calibration is a second read. Tests count only the Data API call. */
+const quietUsers = (fetcher) => async (url, init) => {
+  if (String(url).includes('/api/users/')) return response({ payload: { games: { cs2: {} } } });
+  return fetcher(url, init);
+};
 
 test('verification and avatars cannot be supplied by a public heartbeat', () => {
   const info = sanitizeInfo({
@@ -39,10 +44,10 @@ test('badge/profile metadata stays cached for six hours and simultaneous request
   const cache = createPlayerLookup({
     now: () => time,
     getKey: () => 'test',
-    fetcher: async () => {
+    fetcher: quietUsers(async () => {
       calls++;
       return response(profile());
-    },
+    }),
   });
   const profiles = await Promise.all(
     Array.from({ length: 20 }, () => cache.lookup(id))
@@ -63,10 +68,10 @@ test('old ID-only banners can refresh stats sooner without shortening metadata T
   const cache = createPlayerLookup({
     now: () => time,
     getKey: () => 'test',
-    fetcher: async () => {
+    fetcher: quietUsers(async () => {
       calls++;
       return response(profile());
-    },
+    }),
   });
   await cache.lookup(id);
   time = LEGACY_STATS_TTL_MS;
@@ -82,10 +87,10 @@ test('an outage retains cached metadata and backs off for five minutes', async (
   const cache = createPlayerLookup({
     now: () => time,
     getKey: () => 'test',
-    fetcher: async () => {
+    fetcher: quietUsers(async () => {
       if (++calls > 1) throw new Error('offline');
       return response(profile());
-    },
+    }),
   });
   await cache.lookup(id);
   time = PROFILE_TTL_MS;
@@ -105,13 +110,13 @@ test('rate limiting pauses lookups globally and honors Retry-After', async () =>
   const cache = createPlayerLookup({
     now: () => time,
     getKey: () => 'test',
-    fetcher: async () => {
+    fetcher: quietUsers(async () => {
       calls++;
       return new Response('', {
         status: 429,
         headers: { 'Retry-After': '600' },
       });
-    },
+    }),
   });
   assert.equal(await cache.lookup(id), null);
   await cache.lookup(other);
@@ -126,10 +131,26 @@ test('rate limiting pauses lookups globally and honors Retry-After', async () =>
 test('unverified Premium accounts have no badge and a mismatched player is rejected', async () => {
   const cache = createPlayerLookup({
     getKey: () => 'test',
-    fetcher: async () => response(profile({ verified: false })),
+    fetcher: quietUsers(async () => response(profile({ verified: false }))),
   });
   assert.equal((await cache.lookup(id)).verifiedBadge, 'none');
   assert.equal(await cache.lookup(other), null);
+});
+
+test('a calibrating profile keeps the last ELO and drops the level', async () => {
+  const cache = createPlayerLookup({
+    getKey: () => 'test',
+    fetcher: async (url) => {
+      if (String(url).includes('/api/users/')) {
+        return response({ payload: { games: { cs2: { is_calibrating: true } } } });
+      }
+      return response(profile());
+    },
+  });
+  const found = await cache.lookup(id);
+  assert.equal(found.elo, 2400);
+  assert.equal(found.calibrating, true);
+  assert.equal('level' in found, false);
 });
 
 test('unknown players are negatively cached and synchronous failures can be retried', async () => {
@@ -138,11 +159,11 @@ test('unknown players are negatively cached and synchronous failures can be retr
   const cache = createPlayerLookup({
     now: () => time,
     getKey: () => 'test',
-    fetcher: () => {
+    fetcher: quietUsers(() => {
       calls++;
       if (calls === 1) throw new Error('sync failure');
       return Promise.resolve(new Response('', { status: 404 }));
-    },
+    }),
   });
   await cache.lookup(id);
   time = 5 * 60_000;

@@ -118,6 +118,7 @@ export function TeamBanner({
   const sortBy = options.sort === 'order' ? undefined : SORT_VALUE[options.sort];
   const shown = sortBy ? [...loaded].sort((a, b) => sortBy(b) - sortBy(a)) : loaded;
   const avg = averageElo(shown);
+  const avgKnown = shown.length > 0 && shown.every((member) => member.calibrating);
   const columns = COLUMNS.filter((column) => column.show(options));
   const firstSession = columns.find((column) => column.session)?.key;
   const best = shown.reduce((top, member) => Math.max(top, member.elo), 0);
@@ -152,7 +153,11 @@ export function TeamBanner({
             {options.kicker && <span>{options.title || translate('team.kicker')}</span>}
             {options.average && (
               <em>
-                {translate('team.avg')} <strong>{avg || '—'}</strong>
+                {translate('team.avg')}{' '}
+                <span className={avgKnown ? 'elo-stack' : undefined}>
+                  <strong>{avg || '—'}</strong>
+                  {avgKnown && <small className="elo-known">{translate('widget.elo_known')}</small>}
+                </span>
               </em>
             )}
           </div>
@@ -187,7 +192,9 @@ export function TeamBanner({
             >
               {options.rank && <span className="team-rank">{index + 1}</span>}
               {options.avatars && (member.avatar ? <img src={member.avatar} alt="" /> : <i />)}
-              {options.levels && <LevelMark level={member.level || 1} ranking={member.ranking} />}
+              {options.levels && (
+                <LevelMark level={member.level || 1} ranking={member.ranking} unranked={member.calibrating} />
+              )}
               <div className="team-who">
                 <span className="team-name">{member.username}</span>
                 {options.eloBar && best > 0 && (
@@ -207,7 +214,10 @@ export function TeamBanner({
                     className={`team-stat team-stat-${column.key}${column.session ? ' is-session' : ''}${column.key === firstSession ? ' is-session-start' : ''}`}
                   >
                     <b>{column.value(member)}</b>
-                    {options.labels && <small>{column.label(translate)}</small>}
+                    {column.key === 'elo' && member.calibrating && (
+                      <small className="elo-known">{translate('widget.elo_known')}</small>
+                    )}
+                    {options.labels && !(column.key === 'elo' && member.calibrating) && <small>{column.label(translate)}</small>}
                   </p>
                 ))}
               </div>

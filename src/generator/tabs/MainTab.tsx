@@ -1,6 +1,6 @@
 import { Language, languages } from '../../translations/translations.ts';
 import { Checkbox } from '../../components/Checkbox.tsx';
-import { Dispatch, useContext, useEffect, useState } from 'react';
+import { Dispatch, useContext, useEffect, useRef, useState } from 'react';
 import { LanguageContext, SettingsContext } from '../Generator.tsx';
 import { InfoBox } from '../../components/InfoBox.tsx';
 import {
@@ -31,6 +31,7 @@ type Props = {
   setUsername: Dispatch<string>;
   setPlayerElo: Dispatch<number>;
   setPlayerLevel: Dispatch<number>;
+  setPlayerCalibrating: Dispatch<boolean>;
   setPlayerAvatar: Dispatch<string | undefined>;
   setPlayerBanner: Dispatch<string | undefined>;
   setPlayerRegion: Dispatch<string | undefined>;
@@ -58,6 +59,7 @@ export const MainTab = ({
   setUsername,
   setPlayerElo,
   setPlayerLevel,
+  setPlayerCalibrating,
   setPlayerAvatar,
   setPlayerBanner,
   setPlayerRegion,
@@ -93,16 +95,20 @@ export const MainTab = ({
       return;
     }
     setOpponentStatus('loading');
+    let cancelled = false;
     const timeout = setTimeout(() => {
       getPlayerProfile(name).then((res) => {
+        if (cancelled) return;
         if (res && res.games.cs2) {
           settings.set('opponentId', res.player_id);
+          const calibrating = res.games.cs2.is_calibrating === true;
           setOpponent({
             username: res.nickname,
             avatar: res.avatar,
             country: res.country,
             elo: res.games.cs2.faceit_elo,
-            level: res.games.cs2.skill_level,
+            level: calibrating ? 0 : res.games.cs2.skill_level,
+            calibrating,
             kd: 0,
             adr: 0,
             winRate: 0,
@@ -115,7 +121,10 @@ export const MainTab = ({
         }
       });
     }, 500);
-    return () => clearTimeout(timeout);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [opponentName, versusMode]);
 
   const switchMode = (next: BannerMode) => {
@@ -137,20 +146,30 @@ export const MainTab = ({
     }
   };
 
+  const settingsLive = useRef(settings);
+  settingsLive.current = settings;
+
   useEffect(() => {
-    if (!settings || !tl) return;
+    const current = settingsLive.current;
+    if (!current || !tl) return;
+    let cancelled = false;
     const timeout = setTimeout(() => {
       getPlayerProfile(username).then((res) => {
+        if (cancelled) return;
+        const live = settingsLive.current;
+        if (!live) return;
         if (res && res.games.cs2) {
-          settings.set('playerId', res.player_id);
+          live.set('playerId', res.player_id);
           setOverridden(res.overridden);
           setPlayerAvatar(res.avatar);
           setPlayerBanner(res.cover_image);
           setPlayerRegion(res.games.cs2.region);
           setPlayerCountry(res.country);
           setPlayerVerifiedBadge(getVerifiedBadgeType(res));
+          const calibrating = res.games.cs2.is_calibrating === true;
           setPlayerElo(res.games.cs2.faceit_elo);
-          setPlayerLevel(res.games.cs2.skill_level);
+          setPlayerLevel(calibrating ? 0 : res.games.cs2.skill_level);
+          setPlayerCalibrating(calibrating);
           setPlayerExists(true);
         } else {
           setPlayerRegion(undefined);
@@ -158,16 +177,17 @@ export const MainTab = ({
           setPlayerVerifiedBadge('none');
           setPlayerElo(100);
           setPlayerLevel(1);
+          setPlayerCalibrating(false);
           setPlayerExists(false);
         }
       });
     }, 500);
     return () => {
+      cancelled = true;
       clearTimeout(timeout);
     };
   }, [
     username,
-    settings,
     tl,
     setPlayerAvatar,
     setPlayerBanner,
@@ -175,6 +195,7 @@ export const MainTab = ({
     setPlayerElo,
     setPlayerExists,
     setPlayerLevel,
+    setPlayerCalibrating,
     setPlayerRegion,
     setPlayerVerifiedBadge,
   ]);
@@ -247,7 +268,8 @@ export const MainTab = ({
               )}
               {opponentStatus === 'found' && opponent && (
                 <p className="subtext">
-                  {opponent.username} · {opponent.elo} ELO · lvl {opponent.level}
+                  {opponent.username} · {opponent.elo}{' '}
+                  {opponent.calibrating ? tl('widget.elo_known') : `ELO · lvl ${opponent.level}`}
                 </p>
               )}
               {opponentStatus === 'idle' && (
@@ -256,9 +278,9 @@ export const MainTab = ({
             </div>
           </>
         )}
-        {mode === 'team' && (
-          <TeamRosterEditor />
-        )}
+          {mode === 'team' && (
+            <TeamRosterEditor accountNickname={accountNickname} />
+          )}
         <div className="look-cta">
           <div className="look-cta-text">
             <small>{tl(mode === 'solo' ? 'cta.layout' : `cta.${mode}_layout`)}</small>
@@ -514,20 +536,47 @@ export const MainTab = ({
   );
 };
 
-function TeamRosterEditor() {
+function TeamRosterEditor({ accountNickname }: { accountNickname?: string }) {
   const tl = useContext(LanguageContext);
   const settings = useContext(SettingsContext);
   const [draft, setDraft] = useState('');
   if (!tl || !settings) return null;
   const names = parseRoster(String(settings.get('teamRoster') || ''));
+  const mine = accountNickname?.trim();
+  const alreadyIn = Boolean(
+    mine && names.some((name) => name.toLowerCase() === mine.toLowerCase())
+  );
   const add = () => {
     const next = parseRoster([...names, draft].join(','));
     settings.set('teamRoster', next.join(','));
     setDraft('');
   };
+  const addMe = () => {
+    if (!mine || alreadyIn || names.length >= 10) return;
+    settings.set('teamRoster', parseRoster([...names, mine].join(',')).join(','));
+  };
   return (
     <div className="setting roster-editor">
       <p>{tl('team.roster')}</p>
+      {mine && (
+        <p className="roster-me">
+          <small>
+            {alreadyIn
+              ? tl('team.add_me.already', [mine])
+              : tl('team.add_me.hint', [mine])}
+          </small>
+          {!alreadyIn && (
+            <button
+              type="button"
+              className="roster-me-button"
+              onClick={addMe}
+              disabled={names.length >= 10}
+            >
+              {tl('team.add_me')}
+            </button>
+          )}
+        </p>
+      )}
       <div className="roster-add">
         <input
           aria-label={tl('team.roster')}

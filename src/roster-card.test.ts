@@ -142,6 +142,23 @@ describe('lookupRosterCard', () => {
     expect(card.ranking).toBeUndefined();
   });
 
+  test('a calibrating player keeps the last ELO, drops the level and skips the ladder', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (String(url).includes('/rankings/')) return reply({ position: 4, items: [] });
+      if (String(url).includes('/games/cs2/stats')) return reply({ items: [] });
+      return reply({
+        player_id: '0a1b2c3d-1111-4222-8333-444455556666',
+        nickname: 'SpavaQu',
+        games: { cs2: { faceit_elo: 3737, skill_level: 10, region: 'EU', is_calibrating: true } },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const card = await lookupRosterCard('SpavaQu');
+    expect(card).toMatchObject({ elo: 3737, level: 0, calibrating: true });
+    expect(card.ranking).toBeUndefined();
+    expect(fetchMock.mock.calls.some((call) => String(call[0]).includes('/rankings/'))).toBe(false);
+  });
+
   test('an unknown player is a missing row', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => reply({}, false)));
     expect(await lookupRosterCard('nobody')).toMatchObject({ username: 'nobody', missing: true, hs: 0, adr: 0, matches: 0 });

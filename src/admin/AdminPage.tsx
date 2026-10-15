@@ -438,7 +438,7 @@ function Dashboard({
       <div className="admin-charts">
         <AdminChart
           title="Banery online w czasie"
-          hint="Zapis co godzinę · UTC. Godzina bez pomiaru ma wartość 0."
+          hint="Najwyższa liczba otwartych banerów w danej godzinie UTC. Godzina bez pomiaru ma wartość 0."
           tone="online"
           column="Banery"
           summary={onlinePeak.toLocaleString('pl-PL')}

@@ -97,7 +97,17 @@ function StripTeam({ side, lead, options }: { side: LiveMatch['sides'][number]; 
   );
 }
 
-function Table({ players, username, options }: { players: RosterPlayer[]; username: string; options: PopupOptions }) {
+function Table({
+  players,
+  username,
+  options,
+  translate,
+}: {
+  players: RosterPlayer[];
+  username: string;
+  options: PopupOptions;
+  translate: Props['translate'];
+}) {
   const columns = POPUP_ME_STATS.filter((key) => options.me[key]);
   const mine = username.trim().toLowerCase();
   const ranked = [...players].sort((a, b) => (b.stats?.kills ?? 0) - (a.stats?.kills ?? 0));
@@ -122,7 +132,7 @@ function Table({ players, username, options }: { players: RosterPlayer[]; userna
                     {player.avatar ? <img src={player.avatar} alt="" loading="lazy" /> : player.nickname.slice(0, 1).toUpperCase()}
                   </span>
                 )}
-                {options.showLevels && <LevelMark level={player.level || 1} ranking={player.ranking} />}
+                {options.showLevels && <LevelMark level={player.level || 1} ranking={player.ranking} unranked={player.calibrating} />}
                 <span className="popup-nick">{player.nickname}</span>
               </span>
             </td>
@@ -131,7 +141,14 @@ function Table({ players, username, options }: { players: RosterPlayer[]; userna
                 {player.stats ? ME_LABEL[key].value(player.stats) : '—'}
               </td>
             ))}
-            {options.showElo && <td className="stat">{player.elo > 0 ? player.elo : '—'}</td>}
+            {options.showElo && (
+              <td className="stat">
+                <span className={player.calibrating ? 'elo-stack' : undefined}>
+                  {player.elo > 0 ? player.elo : '—'}
+                  {player.calibrating && <small className="elo-known">{translate('widget.elo_known')}</small>}
+                </span>
+              </td>
+            )}
           </tr>
         ))}
       </tbody>
@@ -145,12 +162,14 @@ function Side({
   username,
   options,
   table,
+  translate,
 }: {
   side: LiveMatch['sides'][number];
   lead: boolean;
   username: string;
   options: PopupOptions;
   table: boolean;
+  translate: Props['translate'];
 }) {
   const players = options.sortElo ? [...side.players].sort((a, b) => b.elo - a.elo) : side.players;
   const mine = username.trim().toLowerCase();
@@ -167,7 +186,7 @@ function Side({
           )}
         </header>
       )}
-      {table && <Table players={players} username={username} options={options} />}
+      {table && <Table players={players} username={username} options={options} translate={translate} />}
       {!options.compact && !table && (
         <ol>
           {players.map((player) => (
@@ -180,9 +199,14 @@ function Side({
                   {player.avatar ? <img src={player.avatar} alt="" loading="lazy" /> : player.nickname.slice(0, 1).toUpperCase()}
                 </span>
               )}
-              {options.showLevels && <LevelMark level={player.level || 1} ranking={player.ranking} />}
+              {options.showLevels && <LevelMark level={player.level || 1} ranking={player.ranking} unranked={player.calibrating} />}
               <span className="popup-nick">{player.nickname}</span>
-              {options.showElo && <b>{player.elo > 0 ? player.elo : '—'}</b>}
+              {options.showElo && (
+                <b className={player.calibrating ? 'elo-stack' : undefined}>
+                  {player.elo > 0 ? player.elo : '—'}
+                  {player.calibrating && <small className="elo-known">{translate('widget.elo_known')}</small>}
+                </b>
+              )}
             </li>
           ))}
         </ol>
@@ -354,8 +378,8 @@ export function MatchPopup({ preview, playerId, username, phase, options, transl
           <>
             {scoreNode}
             <div className={`popup-sides${table ? ' has-table' : ''}`}>
-              <Side side={left} lead={match.winner === 'a'} username={username} options={view} table={table} />
-              <Side side={right} lead={match.winner === 'b'} username={username} options={view} table={table} />
+              <Side side={left} lead={match.winner === 'a'} username={username} options={view} table={table} translate={translate} />
+              <Side side={right} lead={match.winner === 'b'} username={username} options={view} table={table} translate={translate} />
             </div>
           </>
         )}

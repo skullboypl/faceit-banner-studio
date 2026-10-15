@@ -1,3 +1,4 @@
+import { withCalibration } from './faceit-proxy.mjs';
 import { redisCall } from './store.mjs';
 
 const NICK_MAX = 32;
@@ -30,6 +31,10 @@ export function sanitizeInfo(raw) {
   if (Number.isInteger(elo) && elo >= 0 && elo <= 10000) info.elo = elo;
   const level = Number(raw.level);
   if (Number.isInteger(level) && level >= 1 && level <= 10) info.level = level;
+  if (raw.calibrating === true) {
+    info.calibrating = true;
+    delete info.level;
+  }
   if (typeof raw.country === 'string' && /^[a-z]{2}$/i.test(raw.country))
     info.country = raw.country.toLowerCase();
   if (typeof raw.style === 'string') {
@@ -163,15 +168,17 @@ export function createPlayerLookup({
           }
           throw new Error('profile_unavailable');
         }
-        const data = await response.json();
+        const data = JSON.parse(await withCalibration(await response.text(), fetcher));
         if (data?.player_id?.toLowerCase() !== id)
           throw new Error('profile_mismatch');
+        const calibrating = data.games?.cs2?.is_calibrating === true;
         const profile = sanitizeInfo({
           nickname: data.nickname,
           playerId: id,
           elo: data.games?.cs2?.faceit_elo,
-          level: data.games?.cs2?.skill_level,
+          level: calibrating ? undefined : data.games?.cs2?.skill_level,
           country: data.country,
+          calibrating,
         });
         if (!profile?.nickname) throw new Error('invalid_profile');
         profile.verifiedBadge =
@@ -372,12 +379,13 @@ export async function fillFromPlayerId(entries) {
         );
         const profile = await lookupPlayer(id, { freshStats });
         if (!profile?.nickname) continue;
-        if (profile.level === 10 && !Number.isInteger(profile.ranking)) {
+        if (!profile.calibrating && profile.level === 10 && !Number.isInteger(profile.ranking)) {
           const ranking = await lookupRanking(id, profile.region);
           if (ranking) profile.ranking = ranking;
         }
         for (const entry of rows) {
-          entry.info = {
+          const calibrating = profile.calibrating === true || entry.info.calibrating === true;
+          const next = {
             ...profile,
             ...entry.info,
             nickname: entry.info.nickname || profile.nickname,
@@ -391,6 +399,14 @@ export async function fillFromPlayerId(entries) {
             verifiedBadge: profile.verifiedBadge,
             ...(profile.avatar ? { avatar: profile.avatar } : {}),
           };
+          if (calibrating) {
+            next.calibrating = true;
+            delete next.level;
+            delete next.ranking;
+          } else {
+            delete next.calibrating;
+          }
+          entry.info = next;
         }
       }
     })

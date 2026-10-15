@@ -19,7 +19,7 @@ const banner = (values: Record<string, unknown>, part: 'radar' | 'camera') =>
   );
 
 describe('SplitBanner', () => {
-  test('two radar values are numbers and three draw the chart', () => {
+  test('two radar values are numbers and three draw the chart with the numbers beside it', () => {
     const { container, unmount } = banner({ splitAxes: 'kd,adr' }, 'radar');
     expect(screen.getByText('1.22')).toBeTruthy();
     expect(screen.getByText('ADR')).toBeTruthy();
@@ -27,7 +27,30 @@ describe('SplitBanner', () => {
     unmount();
     const chart = banner({ splitAxes: 'kd,adr,hs' }, 'radar');
     expect(chart.container.querySelector('svg')).toBeTruthy();
-    expect(chart.container.querySelectorAll('text').length).toBe(3);
+    expect(chart.container.querySelector('.split-chart-values')).toBeTruthy();
+    expect(screen.getByText('1.22')).toBeTruthy();
+    expect(screen.getByText('82')).toBeTruthy();
+    expect(chart.container.querySelectorAll('svg text').length).toBe(0);
+  });
+
+  test('values can sit on the chart axes', () => {
+    const { container } = banner({ splitAxes: 'kd,adr,hs', splitView: 'chart', splitChartLook: 'ring' }, 'radar');
+    expect(container.querySelectorAll('svg text').length).toBe(3);
+    expect(container.querySelector('.split-value')?.textContent).toBe('1.22');
+    expect(container.querySelector('.split-chart-values')).toBeNull();
+  });
+
+  test('data and motion layouts skip the chart', () => {
+    const data = banner({ splitAxes: 'kd,adr,hs', splitView: 'data', splitDataLook: 'tiles' }, 'radar');
+    expect(data.container.querySelector('svg')).toBeNull();
+    expect(data.container.querySelector('.split-tiles')).toBeTruthy();
+    data.unmount();
+    const list = banner({ splitAxes: 'kd,adr,hs', splitView: 'data', splitDataLook: 'list' }, 'radar');
+    expect(list.container.querySelector('.split-meter')).toBeTruthy();
+    list.unmount();
+    const motion = banner({ splitAxes: 'kd,adr,hs', splitView: 'motion', splitMotionLook: 'cycle' }, 'radar');
+    expect(motion.container.querySelector('.split-cycle')).toBeTruthy();
+    expect(motion.container.querySelector('svg')).toBeNull();
   });
 
   test('the camera bar can be only ELO and the session', () => {

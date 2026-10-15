@@ -7,8 +7,12 @@ import {
   RADAR_PRESETS,
   SPLIT_AXES,
   SPLIT_BITS,
+  SPLIT_CHART_LOOKS,
+  SPLIT_DATA_LOOKS,
+  SPLIT_MOTION_LOOKS,
   SPLIT_RANGES,
   SPLIT_THEMES,
+  SPLIT_VIEWS,
   readSplitOptions,
   sameChoice,
   writeChoice,
@@ -49,11 +53,41 @@ function Presets<T extends string>({
   );
 }
 
+function Choice({
+  chips,
+  value,
+  prefix,
+  onPick,
+  tl,
+}: {
+  chips: readonly string[];
+  value: string;
+  prefix: string;
+  onPick: (id: string) => void;
+  tl: (text: string) => string;
+}) {
+  return (
+    <div className="split-presets">
+      {chips.map((id) => (
+        <button key={id} type="button" aria-pressed={value === id} onClick={() => onPick(id)}>
+          {tl(`${prefix}${id}`)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** Split banner, Settings tab: anything can go on the radar, anything on the bar under the camera. */
 export function SplitOptionsPanel() {
   const fields = useSplit();
   if (!fields) return null;
   const { settings, tl, options } = fields;
+  const look =
+    options.view === 'data'
+      ? { chips: SPLIT_DATA_LOOKS, value: options.dataLook, prefix: 'split.data.', setting: 'splitDataLook' as const }
+      : options.view === 'motion'
+        ? { chips: SPLIT_MOTION_LOOKS, value: options.motionLook, prefix: 'split.motion.', setting: 'splitMotionLook' as const }
+        : { chips: SPLIT_CHART_LOOKS, value: options.chartLook, prefix: 'split.chart.', setting: 'splitChartLook' as const };
   return (
     <div className="settings popup-options split-options">
       <h3 className="card-heading">{tl('split.options.title')}</h3>
@@ -61,6 +95,23 @@ export function SplitOptionsPanel() {
 
       <section className="popup-group">
         <h4>{tl('split.options.radar')}</h4>
+        <Choice
+          chips={SPLIT_VIEWS}
+          value={options.view}
+          prefix="split.view."
+          tl={tl}
+          onPick={(id) => settings.set('splitView', id as never)}
+        />
+        <p className="split-kicker">{tl('split.view.look')}</p>
+        <Choice
+          chips={look.chips}
+          value={look.value}
+          prefix={look.prefix}
+          tl={tl}
+          onPick={(id) => settings.set(look.setting, id as never)}
+        />
+        <p className="subtext">{tl(`split.${options.view}.help`)}</p>
+        <p className="split-kicker">{tl('split.view.fields')}</p>
         <Presets
           chips={RADAR_CHIPS}
           current={options.axes}
@@ -78,7 +129,6 @@ export function SplitOptionsPanel() {
             />
           ))}
         </div>
-        <p className="subtext">{tl('split.few')}</p>
         <p className="subtext">{tl('split.radar.help')}</p>
       </section>
 

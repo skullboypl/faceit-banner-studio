@@ -78,6 +78,8 @@
   --orb-size: 84px;
   --orb-ring: 5px;
   border-radius: 17px;
+  container-type: inline-size;
+  container-name: versus;
 
   .widget {
     padding: 14px 18px;
@@ -114,7 +116,10 @@
     }
   }
   .vs-id {
+    flex: 1 1 auto;
     min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
     h2 {
       display: flex;
       align-items: center;
@@ -137,14 +142,20 @@
     }
     p {
       display: flex;
+      flex-wrap: wrap;
       align-items: baseline;
-      gap: 5px;
+      column-gap: 5px;
+      row-gap: 0;
+      max-width: 100%;
+      min-width: 0;
       b {
         font-family: 'Inter', 'DM Sans', sans-serif;
-        font-size: 30px;
+        font-size: clamp(15px, 34cqi, 30px);
         font-weight: 800;
         letter-spacing: -1px;
         line-height: 1.1;
+        min-width: 0;
+        max-width: 100%;
       }
       small {
         font-size: 10px;
@@ -156,9 +167,13 @@
 
   .vs-diff {
     display: flex;
+    flex: none;
+    position: relative;
+    z-index: 1;
     flex-direction: column;
     align-items: center;
     gap: 2px;
+    padding: 0 6px;
     .vs-badge {
       padding: 2px 9px;
       border-radius: 99px;
@@ -354,7 +369,12 @@
       padding: 6px 12px;
       border-radius: 10px;
       background: #ffffff0a;
+      min-width: 0;
       b {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         font-size: 16px;
         font-weight: 700;
         &:first-child {
@@ -372,6 +392,11 @@
         }
       }
       span {
+        min-width: 0;
+        max-width: 42%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         font-size: 10px;
         font-weight: 700;
         letter-spacing: 1px;
@@ -405,7 +430,7 @@
     .vs-diff {
       align-self: stretch;
       justify-content: center;
-      padding: 0 14px;
+      padding: 0 16px;
       background: #0b0e14cc;
       clip-path: polygon(14% 0, 100% 0, 86% 100%, 0 100%);
     }
@@ -582,10 +607,15 @@
     }
     .vs-bfrow {
       display: grid;
-      grid-template-columns: 44px minmax(0, 1fr) 48px minmax(0, 1fr) 44px;
+      grid-template-columns: minmax(0, 3.4em) minmax(0, 1fr) minmax(0, 5.2em) minmax(0, 1fr) minmax(0, 3.4em);
       align-items: center;
       gap: 8px;
+      min-width: 0;
       b {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         font-size: 14px;
         font-weight: 700;
         &:first-child {
@@ -603,6 +633,10 @@
         }
       }
       span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         font-size: 9px;
         font-weight: 700;
         letter-spacing: 0.8px;
@@ -697,17 +731,21 @@
 .wrapper.banner-design-2026:is([data-layout='scoreboard'], [data-layout='cycle']) {
   .vs-cell {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
       'label label'
       'a b';
-    justify-items: center;
-    gap: 2px 6px;
+    justify-items: stretch;
+    gap: 2px 8px;
+    min-width: 0;
+    overflow: hidden;
     padding: 6px 8px;
     border-radius: 10px;
     background: #ffffff0a;
     small {
       grid-area: label;
+      min-width: 0;
+      max-width: 100%;
       font-size: 9px;
       font-weight: 700;
       letter-spacing: 0.9px;
@@ -715,6 +753,12 @@
       color: var(--subtext);
     }
     b {
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: center;
       font-size: 15px;
       font-weight: 700;
       &:nth-of-type(1) {
@@ -739,10 +783,10 @@
   .versus-cycle {
     --orb-size: 66px;
     --orb-ring: 4px;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(6.5rem, 1.4fr) minmax(0, 1fr);
     gap: 16px;
     .vs-id p b {
-      font-size: 22px;
+      font-size: clamp(14px, 32cqi, 22px);
     }
     .vs-id h2 {
       font-size: 13px;
@@ -752,7 +796,9 @@
       flex-direction: column;
       align-items: center;
       gap: 8px;
+      width: 100%;
       min-width: 0;
+      overflow: hidden;
       animation: vs-fade-in 0.45s ease-out both;
     }
     .vs-cycle-title {
@@ -768,6 +814,28 @@
       grid-auto-columns: minmax(0, 1fr);
       gap: 8px;
       width: 100%;
+      min-width: 0;
+    }
+    .vs-cell {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        'label'
+        'a'
+        'b';
+      justify-items: stretch;
+      gap: 1px;
+      min-width: 0;
+      overflow: hidden;
+      padding: 6px 8px;
+      b {
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: center;
+        line-height: 1.15;
+      }
     }
     .vs-edge-diff {
       display: flex;
@@ -921,5 +989,51 @@ html.generator .settings .broadcast-presets .broadcast-preset {
     i:nth-child(n + 3) {
       display: none;
     }
+  }
+}
+
+.wrapper.banner-design-2026 .versus .vs-id p.is-known {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+.wrapper.banner-design-2026 .versus .vs-rival .vs-id p.is-known {
+  align-items: flex-end;
+}
+.wrapper.banner-design-2026 .versus .vs-id p.is-known .elo-known,
+.wrapper.banner-design-2026 .versus .vs-cell b .elo-known {
+  margin: 0;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: lowercase;
+  opacity: 0.62;
+}
+.wrapper.banner-design-2026[data-layout='scoreboard'] .versus-scoreboard .vs-id p {
+  display: none;
+}
+
+@container versus (max-width: 560px) {
+  .versus {
+    --orb-size: 68px;
+  }
+  .versus-duel .vs-id h2 {
+    font-size: 14px;
+  }
+}
+
+@container versus (max-width: 640px) {
+  .versus-scoreboard .vs-cell,
+  .versus-cycle .vs-cell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'label'
+      'a'
+      'b';
+  }
+  .tally-chips {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

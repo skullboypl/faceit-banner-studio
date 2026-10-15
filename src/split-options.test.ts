@@ -35,6 +35,14 @@ describe('readSplitOptions', () => {
     expect(options.axes).toEqual(RADAR_PRESETS.results);
   });
 
+  test('a radar layout falls back when the stored value is unknown', () => {
+    const options = readSplitOptions(get({ splitView: 'neon', splitChartLook: 'nope', splitDataLook: 'list', splitMotionLook: 'cycle' }));
+    expect(options.view).toBe('chart');
+    expect(options.chartLook).toBe('side');
+    expect(options.dataLook).toBe('list');
+    expect(options.motionLook).toBe('cycle');
+  });
+
   test('look values stay inside their ranges and a bad theme falls back to dark', () => {
     const options = readSplitOptions(get({ splitTheme: 'neon', splitRadius: 99, splitOpacity: 1, splitFont: 10, splitAccent: 'zz' }));
     expect(options.theme).toBe('dark');
