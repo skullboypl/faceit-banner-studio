@@ -353,7 +353,34 @@ export type RosterCard = {
   streak?: number;
   /** Newest match first. */
   form?: ('W' | 'L')[];
+  /** Counts from the banner session, the same start the header uses. */
+  session?: SessionCard;
   missing?: boolean;
+};
+
+export type SessionCard = {
+  wins: number;
+  losses: number;
+  matches: number;
+  kills: number;
+  hs: number;
+  /** Kills per match in the session. */
+  avg: number;
+  adr: number;
+  kr: number;
+  winRate: number;
+};
+
+export const EMPTY_SESSION: SessionCard = {
+  wins: 0,
+  losses: 0,
+  matches: 0,
+  kills: 0,
+  hs: 0,
+  avg: 0,
+  adr: 0,
+  kr: 0,
+  winRate: 0,
 };
 
 type MatchRow = { stats?: Record<string, string | number> };
@@ -444,8 +471,30 @@ export function summarizeRecentMatches(items: MatchRow[], limit: number) {
 
 const emptyRecent = { hs: 0, adr: 0, kr: 0, matches: 0, wins: 0, losses: 0, streak: 0, form: [] as ('W' | 'L')[] };
 
+/** Matches finished at or after the session start. Older rows stay out, even when they are inside the 20/30 window. */
+export function summarizeSessionMatches(items: MatchRow[], startMs: number): SessionCard {
+  if (!(startMs > 0)) return { ...EMPTY_SESSION };
+  const rows = items.filter((row) => {
+    const finished = asNumber(row.stats?.['Match Finished At']);
+    return finished > 0 && finished >= startMs;
+  });
+  const recent = summarizeRecentMatches(rows, rows.length);
+  const kills = rows.reduce((sum, row) => sum + asNumber(row.stats?.Kills), 0);
+  return {
+    wins: recent.wins,
+    losses: recent.losses,
+    matches: recent.matches,
+    kills,
+    hs: recent.hs,
+    avg: recent.matches > 0 ? kills / recent.matches : 0,
+    adr: recent.adr,
+    kr: recent.kr,
+    winRate: recent.winRate,
+  };
+}
+
 /** Profile plus K/D and win rate from the last 20 or 30 matches, for one row of the roster. */
-export async function lookupRosterCard(name: string, matchWindow = 20): Promise<RosterCard> {
+export async function lookupRosterCard(name: string, matchWindow = 20, sessionStart = 0): Promise<RosterCard> {
   const profile = await lookupPlayer(name);
   const game = profile?.games.cs2;
   if (!profile || !game) {
@@ -453,11 +502,14 @@ export async function lookupRosterCard(name: string, matchWindow = 20): Promise<
   }
   const limit = matchWindow === 30 ? 30 : 20;
   let recent = { kd: 0, winRate: 0, ...emptyRecent };
+  let session: SessionCard = { ...EMPTY_SESSION };
   try {
-    const response = await faceitGet(`/players/${profile.player_id}/games/cs2/stats?limit=${limit}`);
+    const response = await faceitGet(`/players/${profile.player_id}/games/cs2/stats?limit=100`);
     if (response.ok) {
       const body = (await response.json()) as { items?: MatchRow[] };
-      recent = summarizeRecentMatches(Array.isArray(body.items) ? body.items : [], limit);
+      const items = Array.isArray(body.items) ? body.items : [];
+      recent = summarizeRecentMatches(items, limit);
+      session = summarizeSessionMatches(items, sessionStart);
     }
   } catch {
     /* the row still shows ELO and level */
@@ -473,6 +525,7 @@ export async function lookupRosterCard(name: string, matchWindow = 20): Promise<
     level: game.skill_level,
     ranking,
     ...recent,
+    session,
   };
 }
 

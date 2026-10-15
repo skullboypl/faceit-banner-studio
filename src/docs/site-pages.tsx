@@ -391,9 +391,9 @@ export const sitePages: { path: string; element: ReactElement }[] = [
       >
         <h2 id="sklad">Skład</h2>
         <p>Na banerze mieści się do 10 nicków FACEIT. Po lewej w nagłówku jest tytuł i średnie ELO, po prawej właściciel banera z wygranymi, porażkami i podpisem „aktualna sesja”.</p>
-        <p>Ten bilans liczy się od startu sesji, tak jak na banerze solo. Kolumny K/D, WR, HS, ADR, K/R, mecze, wygrane i seria oraz kropki formy przy graczach biorą się z ostatnich 20 albo 30 meczów.</p>
+        <p>Ten bilans liczy się od startu sesji, tak jak na banerze solo. Kolumny K/D, WR, HS, ADR, K/R, mecze, wygrane i seria biorą się z ostatnich 20 albo 30 meczów. Osobno można włączyć statystyki tej samej sesji przy każdym graczu oraz zmienić albo ukryć napis „Skład”.</p>
         <h2 id="split">Split</h2>
-        <p>Split daje dwa linki. Radar to kwadrat 300 × 300: walka, celność albo wyniki. Pasek pod kamerkę ma 360 × 128 i pokazuje nick z ELO i levelem, samo ELO, wygrane i porażki sesji albo serię i skuteczność.</p>
+        <p>Split daje dwa linki. Radar to kwadrat 300 × 300, pasek pod kamerkę ma 360 × 128. Na każdym włączasz dowolny zestaw: statystyki, ELO, level, wygrane i porażki sesji, serię. Gotowy zestaw tylko wypełnia przełączniki.</p>
         <h2 id="popup">Popup meczu</h2>
         <p>Źródło obejmuje cały obraz. Karta pojawia się przed meczem, na starcie albo po meczu i pokazuje składy, mapę, wynik oraz statystyki. W generatorze podgląd ładuje ostatni mecz gracza, a przełącznik fazy zmienia tylko wygląd tej karty.</p>
         <h2 id="challenger">Ikona challengera</h2>

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { lookupRosterCard, summarizeRecentMatches } from '../widget/src/utils/faceit_util';
+import { lookupRosterCard, summarizeRecentMatches, summarizeSessionMatches } from '../widget/src/utils/faceit_util';
 
 const reply = (body: unknown, ok = true) => ({ ok, status: ok ? 200 : 500, json: async () => body }) as Response;
 
@@ -92,14 +92,26 @@ describe('lookupRosterCard', () => {
       ranking: 717,
     });
     const url = String(vi.mocked(fetch).mock.calls.find(([called]) => String(called).includes('/stats'))?.[0]);
-    expect(url).toContain('/games/cs2/stats?limit=20');
+    expect(url).toContain('/games/cs2/stats?limit=100');
   });
 
-  test('asks for 30 matches when that window is selected', async () => {
-    stub([match({ Result: '1', Kills: '10', Deaths: '10' })]);
-    await lookupRosterCard('skull', 30);
+  test('asks for 100 matches and keeps only the selected window for the recent columns', async () => {
+    stub(Array.from({ length: 40 }, () => match({ Result: '1', Kills: '10', Deaths: '10' })));
+    const card = await lookupRosterCard('skull', 30);
     const url = String(vi.mocked(fetch).mock.calls.find(([called]) => String(called).includes('/stats'))?.[0]);
-    expect(url).toContain('limit=30');
+    expect(url).toContain('limit=100');
+    expect(card.matches).toBe(30);
+  });
+
+  test('session stats ignore matches finished before the session started', () => {
+    const summary = summarizeSessionMatches(
+      [
+        match({ Result: '1', Kills: '20', Deaths: '10', Headshots: '10', ADR: '80', Rounds: '20', 'Match Finished At': '1500' }),
+        match({ Result: '0', Kills: '4', Deaths: '8', ADR: '40', 'Match Finished At': '500' }),
+      ],
+      1000
+    );
+    expect(summary).toMatchObject({ wins: 1, losses: 0, matches: 1, kills: 20, avg: 20, adr: 80 });
   });
 
   test('a match without numbers becomes a dash on the banner', async () => {

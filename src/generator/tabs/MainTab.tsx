@@ -18,6 +18,7 @@ import { StudioIcon } from '../../components/StudioIcon.tsx';
 import { PopupOptions } from '../../components/PopupOptions.tsx';
 import { OverrideNotice } from '../../components/ProfileImages.tsx';
 import { TeamOptionsPanel } from '../../components/ModeOptions.tsx';
+import { SplitOptionsPanel } from '../../components/SplitOptions.tsx';
 import { settingsFor } from '../appearance';
 import { LOGIN_URL } from '../../components/FaceitLoginButton.tsx';
 
@@ -258,40 +259,6 @@ export const MainTab = ({
         {mode === 'team' && (
           <TeamRosterEditor />
         )}
-        {mode === 'split' && (
-          <>
-            <div className="setting">
-              <label htmlFor="split-radar">{tl('split.radar')}</label>
-              <select
-                id="split-radar"
-                value={String(settings.get('splitRadar'))}
-                onChange={(event) => settings.set('splitRadar', event.target.value)}
-              >
-                {(['combat', 'aim', 'results'] as const).map((option) => (
-                  <option key={option} value={option}>
-                    {tl(`split.radar.${option}`)}
-                  </option>
-                ))}
-              </select>
-              <p className="subtext">{tl('split.radar.help')}</p>
-            </div>
-            <div className="setting">
-              <label htmlFor="split-camera">{tl('split.camera')}</label>
-              <select
-                id="split-camera"
-                value={String(settings.get('splitMini'))}
-                onChange={(event) => settings.set('splitMini', event.target.value)}
-              >
-                {(['identity', 'elo', 'session', 'form'] as const).map((option) => (
-                  <option key={option} value={option}>
-                    {tl(`split.mini.${option}`)}
-                  </option>
-                ))}
-              </select>
-              <p className="subtext">{tl('split.camera.help')}</p>
-            </div>
-          </>
-        )}
         <div className="look-cta">
           <div className="look-cta-text">
             <small>{tl(mode === 'solo' ? 'cta.layout' : `cta.${mode}_layout`)}</small>
@@ -431,6 +398,7 @@ export const MainTab = ({
       </div>
       {mode === 'popup' && <PopupOptions />}
       {mode === 'team' && <TeamOptionsPanel />}
+      {mode === 'split' && <SplitOptionsPanel />}
       {ui.elements && (
       <div className={'settings'}>
         <h3 className="card-heading">

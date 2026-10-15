@@ -13,6 +13,7 @@ import { PresetSettings } from '../../components/PresetSettings';
 import { appearanceFor } from '../appearance';
 import { PopupLayoutPicker, PopupLookOptions } from '../../components/PopupOptions.tsx';
 import { TeamLookOptions } from '../../components/ModeOptions.tsx';
+import { SplitLookOptions } from '../../components/SplitOptions.tsx';
 import { PresetCards } from '../../components/PresetCards';
 import {
   BannerRadiusControl,
@@ -402,7 +403,13 @@ export const StyleTab = ({
         )}
       </div>
 
-      {settings.get('widgetMode') === 'popup' ? <PopupLookOptions /> : <PresetSettings />}
+      {settings.get('widgetMode') === 'popup' ? (
+        <PopupLookOptions />
+      ) : settings.get('widgetMode') === 'split' ? (
+        <SplitLookOptions />
+      ) : (
+        <PresetSettings />
+      )}
       {settings.get('widgetMode') === 'team' && <TeamLookOptions />}
       <div className={'settings'}>
         <Checkbox

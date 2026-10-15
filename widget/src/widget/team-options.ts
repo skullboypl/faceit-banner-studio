@@ -29,8 +29,20 @@ export type TeamOptions = {
   matches: boolean;
   wins: boolean;
   streak: boolean;
+  /** The "Roster" kicker in the header. The title text still replaces it when set. */
+  kicker: boolean;
   /** Win/loss form of the person whose banner this is, in the header. */
   form: boolean;
+  /** Per-player counts from the banner session, separate from the 20/30 window. */
+  sessionWins: boolean;
+  sessionLosses: boolean;
+  sessionMatches: boolean;
+  sessionKills: boolean;
+  sessionHs: boolean;
+  sessionAvg: boolean;
+  sessionAdr: boolean;
+  sessionKr: boolean;
+  sessionWinRate: boolean;
   /** The same recent form on every roster row. */
   playerForm: boolean;
   /** Recent matches the stats and the form are counted from. */
@@ -86,7 +98,17 @@ export const TEAM_DEFAULTS: TeamOptions = {
   matches: false,
   wins: false,
   streak: false,
+  kicker: true,
   form: true,
+  sessionWins: false,
+  sessionLosses: false,
+  sessionMatches: false,
+  sessionKills: false,
+  sessionHs: false,
+  sessionAvg: false,
+  sessionAdr: false,
+  sessionKr: false,
+  sessionWinRate: false,
   playerForm: false,
   matchWindow: 20,
   labels: true,
@@ -137,7 +159,17 @@ export function readTeamOptions(get: (key: string) => unknown): TeamOptions {
     matches: flag(get('teamShowMatches'), d.matches),
     wins: flag(get('teamShowWins'), d.wins),
     streak: flag(get('teamShowStreak'), d.streak),
+    kicker: flag(get('teamShowKicker'), d.kicker),
     form: flag(get('teamShowForm'), d.form),
+    sessionWins: flag(get('teamSessionWins'), d.sessionWins),
+    sessionLosses: flag(get('teamSessionLosses'), d.sessionLosses),
+    sessionMatches: flag(get('teamSessionMatches'), d.sessionMatches),
+    sessionKills: flag(get('teamSessionKills'), d.sessionKills),
+    sessionHs: flag(get('teamSessionHs'), d.sessionHs),
+    sessionAvg: flag(get('teamSessionAvg'), d.sessionAvg),
+    sessionAdr: flag(get('teamSessionAdr'), d.sessionAdr),
+    sessionKr: flag(get('teamSessionKr'), d.sessionKr),
+    sessionWinRate: flag(get('teamSessionWr'), d.sessionWinRate),
     playerForm: flag(get('teamShowPlayerForm'), d.playerForm),
     matchWindow: get('teamMatchWindow') === 30 || get('teamMatchWindow') === '30' ? 30 : 20,
     labels: flag(get('teamLabels'), d.labels),
@@ -163,7 +195,10 @@ export function readTeamOptions(get: (key: string) => unknown): TeamOptions {
 }
 
 /** Width of one stat cell, matching the stylesheet. */
-const STAT_WIDTH = { elo: 58, kd: 46, wr: 42, hs: 42, adr: 42, kr: 42, matches: 52, wins: 52, streak: 42, form: 58 } as const;
+const STAT_WIDTH = {
+  elo: 58, kd: 46, wr: 42, hs: 42, adr: 42, kr: 42, matches: 52, wins: 52, streak: 42, form: 58,
+  sWins: 42, sLosses: 42, sMatches: 46, sKills: 52, sHs: 42, sAvg: 42, sAdr: 42, sKr: 42, sWr: 42,
+} as const;
 /** Narrowest nickname that still reads well. */
 const NAME_MIN = 130;
 const PANEL_PADDING = 36;
@@ -194,6 +229,15 @@ export function teamRecommendedWidth(options: TeamOptions, layout: 'lineup' | 's
     ...(options.wins ? [STAT_WIDTH.wins] : []),
     ...(options.streak ? [STAT_WIDTH.streak] : []),
     ...(options.playerForm ? [STAT_WIDTH.form] : []),
+    ...(options.sessionWins ? [STAT_WIDTH.sWins] : []),
+    ...(options.sessionLosses ? [STAT_WIDTH.sLosses] : []),
+    ...(options.sessionMatches ? [STAT_WIDTH.sMatches] : []),
+    ...(options.sessionKills ? [STAT_WIDTH.sKills] : []),
+    ...(options.sessionHs ? [STAT_WIDTH.sHs] : []),
+    ...(options.sessionAvg ? [STAT_WIDTH.sAvg] : []),
+    ...(options.sessionAdr ? [STAT_WIDTH.sAdr] : []),
+    ...(options.sessionKr ? [STAT_WIDTH.sKr] : []),
+    ...(options.sessionWinRate ? [STAT_WIDTH.sWr] : []),
   ].filter((width) => width > 0);
   const row = sides + items.reduce((sum, width) => sum + width, 0) + gap * (items.length - 1);
   const panel = sheet ? PANEL_PADDING + 2 * row + SHEET_COLUMN_GAP : PANEL_PADDING + row;

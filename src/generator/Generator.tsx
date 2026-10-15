@@ -61,7 +61,7 @@ import { LanguageSelect } from '../components/LanguageSelect.tsx';
 import { MobileMenu } from '../components/MobileMenu.tsx';
 import { FeedbackBoard } from '../feedback/FeedbackBoard.tsx';
 import { pickLanguage } from '../translations/detect.ts';
-import { useCloudSync } from '../cloud/useCloudSync.ts';
+import { useCloudSync, WORKSPACE_RESET_KEY } from '../cloud/useCloudSync.ts';
 import { logout as apiLogout } from '../cloud/api.ts';
 import { useSession } from '../cloud/useSession.ts';
 import {
@@ -537,6 +537,9 @@ export const Generator = () => {
       'fcw_session_starting-elo',
     ];
 
+    // The account copy holds every mode. Mark the reset first so a pending save cannot
+    // put the old workspace back, then let the next load write defaults. Saved banners stay.
+    localStorage.setItem(WORKSPACE_RESET_KEY, '1');
     keysToRemove.forEach((key) => localStorage.removeItem(key));
     window.location.reload();
   }, [tl]);

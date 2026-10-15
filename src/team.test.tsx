@@ -20,6 +20,17 @@ vi.mock('../widget/src/utils/faceit_util', () => ({
     losses: { alpha: 8, bravo: 2, charlie: 11 }[name] ?? 10,
     streak: { alpha: 0, bravo: 5, charlie: 2 }[name] ?? 0,
     form: (name === 'bravo' ? ['W', 'W', 'L', 'W', 'W', 'L'] : ['L', 'W', 'W', 'L', 'W']) as ('W' | 'L')[],
+    session: {
+      wins: name === 'bravo' ? 3 : 1,
+      losses: 1,
+      matches: 4,
+      kills: 40,
+      hs: 48,
+      avg: 10,
+      adr: 80,
+      kr: 0.8,
+      winRate: 75,
+    },
   })),
 }));
 
@@ -38,6 +49,7 @@ const translate = (text: string) =>
     'widget.losses': 'porażki',
     'team.window_short': 'ostatnie 20',
     'team.session_caption': 'aktualna sesja',
+    'team.stat.session_wins': 'W',
   })[text] ?? text;
 
 const draw = async (
@@ -248,6 +260,25 @@ describe('TeamBanner look', () => {
     expect(rows.querySelector('.team-owner-form')?.textContent).toContain('missing-owner');
     expect(rows.querySelector('.team-owner-form')?.textContent).toContain('0');
     expect(vi.mocked(lookupRosterCard).mock.calls.some(([name]) => name === 'missing-owner')).toBe(false);
+  });
+
+  test('the header label can be renamed or hidden, and the owner session stays on by default', async () => {
+    const renamed = await draw({ title: 'Ekipa' });
+    expect(renamed.querySelector('.team-head-lead span')?.textContent).toBe('Ekipa');
+    const hidden = await draw({ kicker: false, title: 'Ekipa' });
+    expect(hidden.querySelector('.team-head-lead span')).toBeNull();
+    expect(hidden.querySelector('.team-owner-form')).toBeNull();
+    const owner = await draw({ kicker: false }, 'alpha', 'lineup', 'alpha');
+    expect(owner.querySelector('.team-owner-form')?.textContent).toContain('alpha');
+  });
+
+  test('session columns use the session tally, not the last 20 matches', async () => {
+    const root = await draw({ sessionWins: true, wins: true });
+    const recent = root.querySelector('li .team-stat-wins b')?.textContent;
+    const live = root.querySelector('li .team-stat-s-wins b')?.textContent;
+    expect(recent).toBe('600');
+    expect(live).toBe('1');
+    expect(root.querySelector('.team-stat-s-wins')?.className).toContain('is-session-start');
   });
 
   test('a 30-match window is what the roster asks FACEIT for', async () => {

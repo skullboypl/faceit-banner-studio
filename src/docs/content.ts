@@ -386,16 +386,16 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
         {
           type: 'p',
           text: t(
-            'Kolumny K/D, WR, HS, ADR, K/R, mecze, wygrane i seria biorą się z ostatnich 20 albo 30 meczów. To samo okno zasila kropki formy przy każdym graczu. Świeży podgląd sesji pokazuje 0 wygranych i 0 porażek, dopóki mecz nie skończy się po jej starcie.',
-            'The K/D, WR, HS, ADR, K/R, matches, wins and streak columns come from the last 20 or 30 matches. The same window feeds the form dots next to each player. A fresh session preview shows 0 wins and 0 losses until a match finishes after the session started.'
+            'Kolumny K/D, WR, HS, ADR, K/R, mecze, wygrane i seria biorą się z ostatnich 20 albo 30 meczów. Osobno, w sekcji sesji, włączasz wygrane i porażki gracza banera w nagłówku oraz przy każdym graczu: wygrane, porażki, mecze, kille, HS%, średnie kille, ADR, K/R i win rate z tej samej sesji. Napis „Skład” można zmienić albo wyłączyć. Świeża sesja pokazuje 0, dopóki mecz nie skończy się po jej starcie.',
+            'The K/D, WR, HS, ADR, K/R, matches, wins and streak columns come from the last 20 or 30 matches. Separately, in the session section, you can show the banner player’s wins and losses in the header and, on every player, wins, losses, matches, kills, HS%, average kills, ADR, K/R and win rate from that same session. The “Roster” label can be renamed or hidden. A fresh session shows 0 until a match finishes after it started.'
           ),
         },
         { type: 'h2', id: 'split', text: t('Split', 'Split') },
         {
           type: 'p',
           text: t(
-            'Split to dwa źródła przeglądarki. Radar jest kwadratem 300 × 300 i pokazuje walkę (K/D, ADR, HS), celność (HS, KR, ADR) albo wyniki (wygrane i seria). Pasek pod kamerkę ma 360 × 128 i pokazuje nick z ELO i levelem, samo ELO, wygrane i porażki sesji albo serię i skuteczność.',
-            'Split is two browser sources. The radar is a 300 × 300 square and shows combat (K/D, ADR, HS), aim (HS, KR, ADR) or results (wins and streak). The bar under the camera is 360 × 128 and shows the nickname with ELO and level, ELO alone, the session wins and losses, or the streak and win rate.'
+            'Split to dwa źródła przeglądarki. Radar jest kwadratem 300 × 300, pasek pod kamerkę ma 360 × 128. Na radarze i na pasku włączasz dowolny zestaw: statystyki, ELO, level, wygrane i porażki sesji, serię. Gotowe zestawy, na przykład rozbudowany radar albo samo ELO z sesją, tylko wypełniają przełączniki.',
+            'Split is two browser sources. The radar is a 300 × 300 square and the bar under the camera is 360 × 128. You turn on any mix for each: statistics, ELO, level, session wins and losses, streak. Ready sets, such as an expanded radar or ELO with the session, only fill the switches.'
           ),
         },
         { type: 'h2', id: 'popup', text: t('Popup meczu', 'Match popup') },

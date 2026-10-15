@@ -121,7 +121,8 @@ import {
 } from '../styles/styles';
 import { BroadcastDeck, BroadcastSlide } from '../components/BroadcastDeck';
 import { TeamBanner } from './TeamBanner';
-import { SPLIT_PARTS, SplitBanner, type SplitCamera, type SplitRadar } from './SplitBanner';
+import { SPLIT_PARTS, SplitBanner } from './SplitBanner';
+import { readSplitOptions } from './split-options';
 import { MatchPopup } from './MatchPopup';
 import { readPopupOptions } from './popup-options';
 import { readTeamOptions, teamRecommendedWidth } from './team-options';
@@ -315,6 +316,7 @@ export const Widget = ({
   const [startingElo, setStartingElo] = useState<number>(0);
   const [elo, setElo] = useState(0);
   const [wins, setWins] = useState(0);
+  const [sessionStart, setSessionStart] = useState(0);
   const [losses, setLosses] = useState(0);
   const [sessionForm, setSessionForm] = useState<('W' | 'L')[]>([]);
   const [previewLive, setPreviewLive] = useState(false);
@@ -469,22 +471,23 @@ export const Widget = ({
   const renderSplitPart = (part: 'radar' | 'camera') => (
     <SplitBanner
       part={part}
-      radar={(SETTINGS.get('splitRadar') as SplitRadar) || 'combat'}
-      camera={(SETTINGS.get('splitMini') as SplitCamera) || 'identity'}
+      options={readSplitOptions((key) => SETTINGS.get(key as SettingKey))}
+      stats={{
+        kd: sample ? 1.22 : avgMatches ? kdRatio / avgMatches : 0,
+        adr: sample ? 82 : avgMatches ? adr / avgMatches : 0,
+        hs: sample ? 48 : avgMatches ? hsPercent / avgMatches : 0,
+        wr: sample ? 56 : winsPercent,
+        kills: sample ? 18 : avgMatches ? kills / avgMatches : 0,
+        kr: sample ? 0.9 : avgMatches ? krRatio / avgMatches : 0,
+        wins: sample ? 18 : wins,
+        losses: sample ? 12 : losses,
+        streak: sample ? 4 : winStreak,
+      }}
       username={username || previewUsername || 'Player'}
       avatar={avatar || previewAvatar}
       elo={elo}
       level={level}
       ranking={ranking}
-      wins={sample ? 18 : wins}
-      losses={sample ? 12 : losses}
-      winStreak={sample ? 4 : winStreak}
-      winRate={sample ? 56 : winsPercent}
-      kd={sample ? 1.22 : avgMatches ? kdRatio / avgMatches : 0}
-      adr={sample ? 82 : avgMatches ? adr / avgMatches : 0}
-      hs={sample ? 48 : avgMatches ? hsPercent / avgMatches : 0}
-      kills={sample ? 18 : avgMatches ? kills / avgMatches : 0}
-      kr={sample ? 72 : krRatio}
     />
   );
 
@@ -599,6 +602,7 @@ export const Widget = ({
      * widget was last open. After that, or for another player, it starts from zero.
      */
     const { startDate, expired: sessionExpired } = readSessionStart(playerId, Boolean(saveSession));
+    setSessionStart(startDate.getTime());
     const extendSession = () => {
       if (!saveSession) return;
       localStorage.setItem(
@@ -2293,6 +2297,7 @@ export const Widget = ({
               layout={resolvedStyle === 'sheet' ? 'sheet' : 'lineup'}
               owner={username || previewUsername || ''}
               session={{ wins, losses, form: sessionForm }}
+              sessionStart={sessionStart}
               options={readTeamOptions((key) => SETTINGS.get(key as SettingKey))}
               translate={translate}
             />

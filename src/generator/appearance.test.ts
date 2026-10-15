@@ -31,11 +31,15 @@ describe('appearanceFor: which Look controls apply to a mode', () => {
     });
   });
 
-  test('split uses its own markup, so per-element sizes and icon scales are hidden but the card controls stay', () => {
-    const ui = appearanceFor('split');
-    expect(ui.fontSizes).toBe(false);
-    expect(ui.iconScale).toBe(false);
-    expect(ui.radius && ui.scheme && ui.font && ui.surface).toBe(true);
+  test('split draws its own plates, so the generic card controls stay hidden and the font family remains', () => {
+    expect(appearanceFor('split')).toEqual({
+      radius: false,
+      scheme: false,
+      font: true,
+      fontSizes: false,
+      iconScale: false,
+      surface: false,
+    });
   });
 
   test('team draws its own panel with its own theme, radius and opacity, so only the font family is left in the Look tab', () => {

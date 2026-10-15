@@ -12,6 +12,19 @@ describe('TeamOptionsPanel (Settings tab): data and list', () => {
     for (const name of names) expect(screen.getByRole('switch', { name }), name).toBeTruthy();
   });
 
+  test('the header label and the banner player session default to on, and a session column is its own switch', () => {
+    const { set } = renderWithApp(<TeamOptionsPanel />, withSettings({}));
+    expect(screen.getByRole('switch', { name: 'Napis w nagłówku' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('switch', { name: 'Wygrane i porażki gracza banera w nagłówku' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('switch', { name: 'Wygrane sesji' }).getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(screen.getByRole('switch', { name: 'Napis w nagłówku' }));
+    expect(set).toHaveBeenCalledWith('teamShowKicker', false);
+    fireEvent.click(screen.getByRole('switch', { name: 'Wygrane i porażki gracza banera w nagłówku' }));
+    expect(set).toHaveBeenCalledWith('teamShowForm', false);
+    fireEvent.click(screen.getByRole('switch', { name: 'Kille łącznie' }));
+    expect(set).toHaveBeenCalledWith('teamSessionKills', true);
+  });
+
   test('the stat switches flip their settings', () => {
     const { set } = renderWithApp(<TeamOptionsPanel />, withSettings({}));
     fireEvent.click(screen.getByRole('switch', { name: 'K/D' }));

@@ -121,6 +121,10 @@
     "default": "",
     "regex": "^[^<>\u0000-\u001f]{0,24}$"
   },
+  "teamShowKicker": {
+    "type": "boolean",
+    "default": true
+  },
   "teamTheme": {
     "type": "string",
     "default": "dark",
@@ -219,6 +223,42 @@
     "type": "boolean",
     "default": false
   },
+  "teamSessionWins": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamSessionLosses": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamSessionMatches": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamSessionKills": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamSessionHs": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamSessionAvg": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamSessionAdr": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamSessionKr": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamSessionWr": {
+    "type": "boolean",
+    "default": false
+  },
   "teamMatchWindow": {
     "type": "string",
     "default": "20",
@@ -295,6 +335,49 @@
       "session",
       "form"
     ]
+  },
+  "splitAxes": {
+    "type": "string",
+    "default": "",
+    "regex": "^(?:|none|[a-z]+(?:,[a-z]+)*)$"
+  },
+  "splitCamera": {
+    "type": "string",
+    "default": "",
+    "regex": "^(?:|none|[a-z]+(?:,[a-z]+)*)$"
+  },
+  "splitTheme": {
+    "type": "string",
+    "default": "dark",
+    "options": [
+      "dark",
+      "glass",
+      "light",
+      "clear"
+    ]
+  },
+  "splitAccent": {
+    "type": "string",
+    "default": "",
+    "regex": "^(?:[0-9a-fA-F]{6})?$"
+  },
+  "splitRadius": {
+    "type": "number",
+    "default": 32,
+    "min": 8,
+    "max": 48
+  },
+  "splitOpacity": {
+    "type": "number",
+    "default": 96,
+    "min": 40,
+    "max": 100
+  },
+  "splitFont": {
+    "type": "number",
+    "default": 100,
+    "min": 70,
+    "max": 150
   },
   "popupPre": {
     "type": "boolean",

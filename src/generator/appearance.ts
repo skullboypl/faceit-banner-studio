@@ -17,18 +17,18 @@ const ALL: AppearanceControls = { radius: true, scheme: true, font: true, fontSi
 
 /**
  * Which Look-tab controls change something in a given widget mode. Only the solo banner uses the classic
- * element markup; versus, team and split render their own components, and the popup is a transparent full-frame card
- * with its own theme, so hiding what does nothing keeps the tab honest.
+ * element markup; versus, team and split render their own components, and the popup and the split plates
+ * carry their own theme, so hiding what does nothing keeps the tab honest.
  */
 export function appearanceFor(mode: string): AppearanceControls {
   if (mode === 'popup') {
     return { radius: false, scheme: false, font: true, fontSizes: false, iconScale: false, surface: false };
   }
-  if (mode === 'team') {
-    /* The roster draws its own panel: theme, radius and opacity are options of its own */
+  if (mode === 'team' || mode === 'split') {
+    /* The roster and the split plates draw their own panel: theme, radius and opacity live in their look options */
     return { radius: false, scheme: false, font: true, fontSizes: false, iconScale: false, surface: false };
   }
-  if (mode === 'split' || mode === 'versus') {
+  if (mode === 'versus') {
     return { ...ALL, fontSizes: false, iconScale: false };
   }
   return ALL;

@@ -2471,6 +2471,36 @@ a.donate-link:hover { background: #271a12; border-color: #ff6b18; }
 .popup-options .setting select { width: 100%; }
 .popup-options .design-switch.popup-phase { margin-top: 12px; }
 .popup-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 12px; margin-top: 6px; }
+.settings .split-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  button {
+    width: auto;
+    margin: 0;
+    padding: 7px 12px;
+    border: 1px solid #2c2c2c;
+    border-radius: 999px;
+    background: #141414;
+    color: #d7d2ce;
+    font-size: 12px;
+    line-height: 1.2;
+    cursor: pointer;
+    &:hover { border-color: #ff6b18; }
+    &[aria-pressed='true'] {
+      border-color: #ff6b18;
+      background: linear-gradient(135deg, #2a1a10, #1d1511);
+      color: #fff;
+    }
+  }
+}
+.split-options .team-color-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #b7b0aa;
+  em { font-style: normal; }
+}
 
 /* Popup option cards: one rhythm for every control */
 .settings.popup-options {

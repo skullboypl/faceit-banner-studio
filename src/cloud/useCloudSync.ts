@@ -10,6 +10,8 @@ const RATE_LIMIT_RETRY_MS = 5000;
 const VERSION_KEY = 'fcw_cloud_version';
 const VERSION_OWNER_KEY = 'fcw_cloud_guid';
 const DEVICE_KEY = 'fcw_device_id';
+/** Set before a full settings reset. The next sync writes defaults for every mode and leaves saved banners alone. */
+export const WORKSPACE_RESET_KEY = 'fcw_workspace_reset';
 
 export type SyncState = 'idle' | 'saving' | 'saved' | 'offline' | 'error' | 'unauthorized';
 export type SyncConflict = {
@@ -112,8 +114,49 @@ export function useCloudSync(settings: Settings, apply: (settings: Partial<Setti
     [guid]
   );
 
+  const pushEmpty = useCallback(
+    async (baseVersion: number, allowRetry = true): Promise<boolean> => {
+      if (!guid) return false;
+      try {
+        const { version } = await putWorkspace({
+          settings: {},
+          deviceId: getDeviceId(),
+          baseVersion,
+        });
+        knownVersion.current = version;
+        setKnownVersion(guid, version);
+        syncedCanon.current = canonical({});
+        try {
+          localStorage.removeItem(WORKSPACE_RESET_KEY);
+        } catch {
+          // the next load retries the empty write
+        }
+        if (!unmounted.current) {
+          setState('saved');
+          setLastSavedAt(Date.now());
+        }
+        return true;
+      } catch (error) {
+        if (allowRetry && error instanceof ApiError && error.status === 409) {
+          const current = error.details.current as CloudWorkspace | undefined;
+          if (current && typeof current.version === 'number') {
+            return pushEmpty(current.version, false);
+          }
+        }
+        return false;
+      }
+    },
+    [guid]
+  );
+
   const send = useCallback(async () => {
     if (!guid || conflictOpen.current) return;
+    if (read(WORKSPACE_RESET_KEY) === '1') {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      debounceTimer.current = null;
+      await pushEmpty(knownVersion.current ?? 0);
+      return;
+    }
     if (inflight.current) {
       queued.current = true;
       return;
@@ -164,7 +207,7 @@ export function useCloudSync(settings: Settings, apply: (settings: Partial<Setti
         if (!unmounted.current) void send();
       }
     }
-  }, [guid, openConflict]);
+  }, [guid, openConflict, pushEmpty]);
 
   // First load after login (or account switch): decide between upload, silent apply and asking.
   useEffect(() => {
@@ -183,6 +226,15 @@ export function useCloudSync(settings: Settings, apply: (settings: Partial<Setti
       try {
         const { workspace } = await getWorkspace();
         if (cancelled) return;
+
+        if (read(WORKSPACE_RESET_KEY) === '1') {
+          knownVersion.current = workspace?.version ?? getKnownVersion(guid) ?? 0;
+          loaded.current = true;
+          const ok = await pushEmpty(knownVersion.current ?? 0);
+          if (!cancelled && !ok) setState('offline');
+          return;
+        }
+
         const local = toDelta(latest.current);
         const localCanon = canonical(local);
         knownVersion.current = getKnownVersion(guid);
@@ -230,7 +282,7 @@ export function useCloudSync(settings: Settings, apply: (settings: Partial<Setti
       cancelled = true;
       clearTimers();
     };
-  }, [guid]);
+  }, [guid, pushEmpty]);
 
   // Debounced write of every later change. It keys off the delta's content, not the settings object:
   // the generator re-creates that object with identical values every ~700 ms, which must not postpone the save.
@@ -247,6 +299,7 @@ export function useCloudSync(settings: Settings, apply: (settings: Partial<Setti
   useEffect(() => {
     if (!guid) return;
     const onHide = () => {
+      if (read(WORKSPACE_RESET_KEY) === '1') return;
       if (!debounceTimer.current || conflictOpen.current) return;
       clearTimeout(debounceTimer.current);
       debounceTimer.current = null;

@@ -62,21 +62,7 @@ export function TeamOptionsPanel() {
 
       <section className="popup-group">
         <h4>{tl('team.group.data')}</h4>
-        {select('team-window', 'teamMatchWindow', 'team.match_window', String(options.matchWindow), TEAM_WINDOWS.map(String), 'team.window')}
-        <Checkbox text={tl('team.show_form')} setting="teamShowForm" />
-        <Checkbox text={tl('team.show_player_form')} setting="teamShowPlayerForm" />
-        <Checkbox text={tl('team.show_avatars')} setting="teamShowAvatars" />
-        <Checkbox text={tl('team.show_levels')} setting="teamShowLevels" />
-        <Checkbox text={tl('team.show_elo')} setting="teamShowElo" />
-        <Checkbox text={tl('team.show_kd')} setting="teamShowKd" />
-        <Checkbox text={tl('team.show_wr')} setting="teamShowWinRate" />
-        <Checkbox text={tl('team.show_hs')} setting="teamShowHs" />
-        <Checkbox text={tl('team.show_adr')} setting="teamShowAdr" />
-        <Checkbox text={tl('team.show_kr')} setting="teamShowKr" />
-        <Checkbox text={tl('team.show_matches')} setting="teamShowMatches" />
-        <Checkbox text={tl('team.show_wins')} setting="teamShowWins" />
-        <Checkbox text={tl('team.show_streak')} setting="teamShowStreak" />
-        <Checkbox text={tl('team.show_avg')} setting="teamShowAvg" />
+        <Checkbox text={tl('team.show_kicker')} setting="teamShowKicker" />
         <div className="popup-field">
           <label htmlFor="team-title">{tl('team.title_label')}</label>
           <input
@@ -86,6 +72,43 @@ export function TeamOptionsPanel() {
             placeholder={tl('team.kicker')}
             onChange={(event) => settings.set('teamTitle', event.target.value as never)}
           />
+        </div>
+        <Checkbox text={tl('team.show_avatars')} setting="teamShowAvatars" />
+        <Checkbox text={tl('team.show_levels')} setting="teamShowLevels" />
+        <Checkbox text={tl('team.show_elo')} setting="teamShowElo" />
+        <Checkbox text={tl('team.show_avg')} setting="teamShowAvg" />
+      </section>
+
+      <section className="popup-group">
+        <h4>{tl('team.group.recent')}</h4>
+        {select('team-window', 'teamMatchWindow', 'team.match_window', String(options.matchWindow), TEAM_WINDOWS.map(String), 'team.window')}
+        <div className="popup-stat-grid">
+          <Checkbox text={tl('team.show_kd')} setting="teamShowKd" />
+          <Checkbox text={tl('team.show_wr')} setting="teamShowWinRate" />
+          <Checkbox text={tl('team.show_hs')} setting="teamShowHs" />
+          <Checkbox text={tl('team.show_adr')} setting="teamShowAdr" />
+          <Checkbox text={tl('team.show_kr')} setting="teamShowKr" />
+          <Checkbox text={tl('team.show_matches')} setting="teamShowMatches" />
+          <Checkbox text={tl('team.show_wins')} setting="teamShowWins" />
+          <Checkbox text={tl('team.show_streak')} setting="teamShowStreak" />
+          <Checkbox text={tl('team.show_player_form')} setting="teamShowPlayerForm" />
+        </div>
+      </section>
+
+      <section className="popup-group">
+        <h4>{tl('team.group.session')}</h4>
+        <p className="subtext">{tl('team.session.help')}</p>
+        <Checkbox text={tl('team.show_form')} setting="teamShowForm" />
+        <div className="popup-stat-grid">
+          <Checkbox text={tl('team.session.wins')} setting="teamSessionWins" />
+          <Checkbox text={tl('team.session.losses')} setting="teamSessionLosses" />
+          <Checkbox text={tl('team.session.matches')} setting="teamSessionMatches" />
+          <Checkbox text={tl('team.session.kills')} setting="teamSessionKills" />
+          <Checkbox text={tl('team.session.hs')} setting="teamSessionHs" />
+          <Checkbox text={tl('team.session.avg')} setting="teamSessionAvg" />
+          <Checkbox text={tl('team.session.adr')} setting="teamSessionAdr" />
+          <Checkbox text={tl('team.session.kr')} setting="teamSessionKr" />
+          <Checkbox text={tl('team.session.wr')} setting="teamSessionWr" />
         </div>
       </section>
 

@@ -10,7 +10,7 @@ vi.mock('./api', async (importOriginal) => ({
 }));
 
 import * as api from './api';
-import { useCloudSync } from './useCloudSync';
+import { useCloudSync, WORKSPACE_RESET_KEY } from './useCloudSync';
 
 const getWorkspace = vi.mocked(api.getWorkspace);
 const putWorkspace = vi.mocked(api.putWorkspace);
@@ -144,6 +144,52 @@ describe('first load after login', () => {
     await flush();
     expect(result.current.conflict).not.toBeNull();
     expect(apply).not.toHaveBeenCalled();
+    expect(putWorkspace).not.toHaveBeenCalled();
+  });
+
+  test('a full reset writes defaults for every mode and does not restore the cloud workspace', async () => {
+    localStorage.setItem(WORKSPACE_RESET_KEY, '1');
+    getWorkspace.mockResolvedValue(
+      cloud({ widgetMode: 'team', teamSessionWins: true, splitAxes: 'kd,adr' }, 4)
+    );
+    const { apply } = setup(defaults());
+    await flush();
+    expect(apply).not.toHaveBeenCalled();
+    expect(putWorkspace).toHaveBeenCalledTimes(1);
+    expect(putWorkspace.mock.calls[0][0]).toMatchObject({ settings: {}, baseVersion: 4 });
+    expect(localStorage.getItem(WORKSPACE_RESET_KEY)).toBeNull();
+    expect(localStorage.getItem('fcw_cloud_version')).toBe('99');
+  });
+
+  test('a full reset overwrites a workspace that changed on another device', async () => {
+    localStorage.setItem(WORKSPACE_RESET_KEY, '1');
+    getWorkspace.mockResolvedValue(cloud({ widgetMode: 'split' }, 2));
+    putWorkspace
+      .mockRejectedValueOnce(
+        new api.ApiError(409, 'conflict', 'newer', {
+          current: { settings: { widgetMode: 'team' }, version: 5, deviceId: 'other' },
+        })
+      )
+      .mockResolvedValueOnce({ version: 6 });
+    const { apply } = setup(defaults());
+    await flush();
+    expect(apply).not.toHaveBeenCalled();
+    expect(putWorkspace).toHaveBeenCalledTimes(2);
+    expect(putWorkspace.mock.calls[1][0]).toMatchObject({ settings: {}, baseVersion: 5 });
+    expect(localStorage.getItem(WORKSPACE_RESET_KEY)).toBeNull();
+    expect(localStorage.getItem('fcw_cloud_version')).toBe('6');
+  });
+
+  test('pagehide during a reset does not upload the old working settings', async () => {
+    getWorkspace.mockResolvedValue(cloud({}, 1));
+    const { rerender } = setup(defaults());
+    await flush();
+    rerender({ settings: withRadius(10), who: user });
+    await flush(200);
+    localStorage.setItem(WORKSPACE_RESET_KEY, '1');
+    act(() => {
+      window.dispatchEvent(new Event('pagehide'));
+    });
     expect(putWorkspace).not.toHaveBeenCalled();
   });
 
