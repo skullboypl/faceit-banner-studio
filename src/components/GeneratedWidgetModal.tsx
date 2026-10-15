@@ -139,8 +139,9 @@ export const GeneratedWidgetModal = ({
           const rect = wrapper.getBoundingClientRect();
           if (rect.width > 20 && rect.height > 20) {
             setMeasured({
-              width: Math.ceil(rect.width),
-              height: Math.ceil(rect.height),
+              /* the far edge, not the size: the page starts a few pixels in, and OBS crops what lies beyond the source */
+              width: Math.ceil(rect.right + 2),
+              height: Math.ceil(rect.bottom + 2),
             });
           }
         }
