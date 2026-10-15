@@ -23,18 +23,20 @@ const isMode = (value: unknown): value is BannerMode =>
 
 const same = (left: unknown, right: unknown) => left === right || (left == null && right == null);
 
-function snapshot(settings: Settings): Partial<Settings> {
-  const saved: Partial<Settings> = {};
+type ModeBag = { [key: string]: SettingValue };
+
+function snapshot(settings: Settings): ModeBag {
+  const saved: ModeBag = {};
   for (const key of scopedKeys()) {
     const value = settings[key];
     if (!same(value, SETTINGS_DEFINITIONS[key].defaultValue)) {
-      saved[key] = value;
+      saved[key] = value as SettingValue;
     }
   }
   return saved;
 }
 
-export function readModeMemory(raw: unknown): Partial<Record<BannerMode, Partial<Settings>>> {
+export function readModeMemory(raw: unknown): Partial<Record<BannerMode, ModeBag>> {
   if (typeof raw !== 'string' || raw === '') return {};
   let parsed: unknown;
   try {
@@ -43,21 +45,21 @@ export function readModeMemory(raw: unknown): Partial<Record<BannerMode, Partial
     return {};
   }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
-  const memory: Partial<Record<BannerMode, Partial<Settings>>> = {};
+  const memory: Partial<Record<BannerMode, ModeBag>> = {};
   for (const mode of BANNER_MODES) {
     const snap = (parsed as Record<string, unknown>)[mode];
     if (!snap || typeof snap !== 'object' || Array.isArray(snap)) continue;
-    const clean: Partial<Settings> = {};
+    const clean: ModeBag = {};
     for (const key of scopedKeys()) {
       if (!Object.prototype.hasOwnProperty.call(snap, key)) continue;
-      clean[key] = (snap as Partial<Settings>)[key];
+      clean[key] = (snap as ModeBag)[key];
     }
     memory[mode] = clean;
   }
   return memory;
 }
 
-function encode(memory: Partial<Record<BannerMode, Partial<Settings>>>): string {
+function encode(memory: Partial<Record<BannerMode, ModeBag>>): string {
   const kept = Object.fromEntries(
     BANNER_MODES.filter((mode) => memory[mode] && Object.keys(memory[mode] as object).length > 0).map(
       (mode) => [mode, memory[mode]]
@@ -76,7 +78,7 @@ export function switchBannerMode(settings: Settings, next: BannerMode): Partial<
 
   const memory = readModeMemory(settings.modeMemory);
   memory[current] = snapshot(settings);
-  const patch: Partial<Settings> = {
+  const patch: ModeBag = {
     widgetMode: next,
     modeMemory: encode(memory),
   };
@@ -89,5 +91,5 @@ export function switchBannerMode(settings: Settings, next: BannerMode): Partial<
     patch.style = FALLBACK_STYLE[next];
     if (next !== 'solo') patch.bannerDesign = '2026';
   }
-  return patch;
+  return patch as Partial<Settings>;
 }
