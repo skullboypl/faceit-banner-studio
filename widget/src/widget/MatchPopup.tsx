@@ -51,7 +51,7 @@ function sample(username: string, phase: Phase): LiveMatch {
     id: `sample-${phase}`,
     phase,
     map: 'mirage',
-    score: phase === 'post' ? [13, 9] : phase === 'live' ? [7, 6] : undefined,
+    score: phase === 'post' ? [13, 9] : undefined,
     winner: phase === 'post' ? 'a' : undefined,
     sides: [
       { name: 'A', players: left, avg: averageElo(left) },
@@ -343,7 +343,7 @@ export function MatchPopup({ preview, playerId, username, phase, options, transl
 
   const scoreNode =
     view.showScore &&
-    (match.score ? (
+    (match.score && current === 'post' ? (
       <p className="popup-score" data-winner={match.winner || 'none'}>
         <b>{match.score[0]}</b>
         <i />

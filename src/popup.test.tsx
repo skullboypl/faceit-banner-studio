@@ -64,6 +64,16 @@ describe('MatchPopup layout options', () => {
   });
 });
 
+describe('MatchPopup before and during the match', () => {
+  test.each(['pre', 'live'] as const)('%s shows only the rosters and ELO: no score, no player stats', (phase) => {
+    const root = draw({ scoreboard: true }, phase);
+    expect(root.querySelector('.popup-score')).toBeNull();
+    expect(root.querySelector('.popup-vs')).toBeTruthy();
+    expect(root.querySelector('.popup-table')).toBeNull();
+    expect(root.querySelectorAll('.popup-sides li').length).toBe(10);
+  });
+});
+
 describe('MatchPopup content options', () => {
   test('map, score, averages, team names, ELO and levels can each be hidden', () => {
     expect(draw({ showMap: false }).querySelector('.popup-kicker em')).toBeNull();
