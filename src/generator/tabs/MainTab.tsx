@@ -10,9 +10,9 @@ import {
 } from '../../../widget/src/utils/faceit_util.ts';
 import { ShowRanking } from '../../../widget/src/widget/Widget.tsx';
 import type { VersusPlayer } from '../../../widget/src/widget/Widget.tsx';
-import { presetMode, BannerMode } from '../../../widget/src/styles/styles.ts';
 import { parseRoster } from '../../../shared/banner-modes.mjs';
 import { BANNER_MODES, type BannerCatalog } from '../../../shared/banner-catalog.mjs';
+import { switchBannerMode, type BannerMode } from '../../settings/mode-memory.ts';
 import { UserIcon } from '../../assets/icons/tabler/UserIcon.tsx';
 import { StudioIcon } from '../../components/StudioIcon.tsx';
 import { PopupOptions } from '../../components/PopupOptions.tsx';
@@ -129,19 +129,14 @@ export const MainTab = ({
 
   const switchMode = (next: BannerMode) => {
     if (!settings) return;
-    settings.set('widgetMode', next);
-    if (next !== 'solo') settings.set('bannerDesign', '2026');
-    if (presetMode(String(settings.get('style'))) !== next) {
-      const fallback: Record<BannerMode, string> = {
-        solo: 'prime',
-        versus: 'duel',
-        team: 'lineup',
-        split: 'splitset',
-        popup: 'livecard',
-      };
-      settings.set('style', fallback[next]);
-    }
-    if (next === 'team' && !parseRoster(String(settings.get('teamRoster') || '')).length && username.trim()) {
+    const patch = switchBannerMode(settings.settings, next);
+    (Object.entries(patch) as [keyof typeof patch, (typeof patch)[keyof typeof patch]][]).forEach(
+      ([key, value]) => {
+        settings.set(key, value as never);
+      }
+    );
+    const roster = patch.teamRoster !== undefined ? patch.teamRoster : settings.get('teamRoster');
+    if (next === 'team' && !parseRoster(String(roster || '')).length && username.trim()) {
       settings.set('teamRoster', username.trim());
     }
   };

@@ -84,6 +84,10 @@
       "popup"
     ]
   },
+  "modeMemory": {
+    "type": "string",
+    "default": ""
+  },
   "teamShowAvatars": {
     "type": "boolean",
     "default": true
