@@ -202,9 +202,21 @@ export function MatchPopup({ preview, playerId, username, phase, options, transl
 
   useEffect(() => {
     if (preview) {
-      setMatch(sample(username, phase));
-      setVisible(true);
-      return;
+      if (!playerId) {
+        setMatch(sample(username, phase));
+        setVisible(true);
+        return;
+      }
+      let cancel = false;
+      fetchLatestMatch(playerId).then((next) => {
+        if (cancel) return;
+        const real = next && next.sides.some((side) => side.players.length > 0) ? next : undefined;
+        setMatch(real ? { ...real, phase } : sample(username, phase));
+        setVisible(true);
+      });
+      return () => {
+        cancel = true;
+      };
     }
     let cancel = false;
     const load = () => {

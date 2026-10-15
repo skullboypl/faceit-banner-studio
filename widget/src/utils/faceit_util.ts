@@ -68,6 +68,8 @@ interface FaceitPlayer {
   level?: number;
   elo?: number;
   wins: number;
+  /** Session results, newest first. The same window as `wins` and `losses`. */
+  form?: ('W' | 'L')[];
   ranking: number;
   countryRanking: number;
   region: string;
@@ -166,6 +168,7 @@ export function getPlayerStats(
       let countryRanking: number | undefined = undefined;
       let wins: number = 0;
       let losses: number = 0;
+      const sessionForm: ('W' | 'L')[] = [];
       let adr: number = 0;
       let assists: number = 0;
       let mvps: number = 0;
@@ -202,8 +205,10 @@ export function getPlayerStats(
               return;
             if (match.stats['Result'] === '1') {
               wins++;
+              sessionForm.push('W');
             } else if (match.stats['Result'] === '0') {
               losses++;
+              sessionForm.push('L');
             }
           };
 
@@ -269,6 +274,7 @@ export function getPlayerStats(
         country,
         wins,
         losses,
+        form: sessionForm,
         avg: {
           adr,
           assists,
@@ -330,47 +336,121 @@ export type RosterCard = {
   level: number;
   kd: number;
   winRate: number;
-  /** Lifetime averages and totals; 0 when FACEIT does not send them. */
+  /** Averages and counts from the recent-match window; 0 when FACEIT sends nothing. */
   hs?: number;
   adr?: number;
   kr?: number;
   matches?: number;
   wins?: number;
+  losses?: number;
   streak?: number;
+  /** Newest match first. */
+  form?: ('W' | 'L')[];
   missing?: boolean;
 };
 
-/** Profile plus lifetime K/D and win rate, for one row of the roster. */
-export async function lookupRosterCard(name: string): Promise<RosterCard> {
+type MatchRow = { stats?: Record<string, string | number> };
+
+const asNumber = (value: unknown) => {
+  const number = typeof value === 'number' ? value : Number.parseFloat(String(value ?? ''));
+  return Number.isFinite(number) ? number : 0;
+};
+
+const markOf = (stats: Record<string, string | number>): 'W' | 'L' | null => {
+  const raw = stats.Result ?? stats.result;
+  if (raw === 1 || raw === '1') return 'W';
+  if (raw === 0 || raw === '0') return 'L';
+  return null;
+};
+
+/**
+ * K/D, win rate, HS%, ADR, K/R, the win streak and the W/L form from the newest matches FACEIT returned.
+ * Lifetime totals are not used: a missing match stat stays 0.
+ */
+export function summarizeRecentMatches(items: MatchRow[], limit: number) {
+  const rows = items.slice(0, Math.max(0, limit));
+  let kills = 0;
+  let deaths = 0;
+  let headshots = 0;
+  let headshotsKnown = false;
+  let headshotSamples = 0;
+  let headshotPercent = 0;
+  let adr = 0;
+  let adrSamples = 0;
+  let kr = 0;
+  let krSamples = 0;
+  let rounds = 0;
+  let wins = 0;
+  let losses = 0;
+  const form: ('W' | 'L')[] = [];
+  for (const row of rows) {
+    const stats = row.stats ?? {};
+    const matchKills = asNumber(stats.Kills);
+    const matchDeaths = asNumber(stats.Deaths);
+    kills += matchKills;
+    deaths += matchDeaths;
+    const hs = asNumber(stats.Headshots);
+    if ('Headshots' in stats) {
+      headshots += hs;
+      headshotsKnown = true;
+    }
+    const hsPercent = asNumber(stats['Headshots %']);
+    if (hsPercent > 0) {
+      headshotPercent += hsPercent;
+      headshotSamples += 1;
+    }
+    const damage = asNumber(stats.ADR ?? stats['Average Damage per Round']);
+    if (damage > 0) {
+      adr += damage;
+      adrSamples += 1;
+    }
+    const ratio = asNumber(stats['K/R Ratio']);
+    if (ratio > 0) {
+      kr += ratio;
+      krSamples += 1;
+    }
+    rounds += asNumber(stats.Rounds);
+    const mark = markOf(stats);
+    if (mark === 'W') wins += 1;
+    if (mark === 'L') losses += 1;
+    if (mark) form.push(mark);
+  }
+  let streak = 0;
+  for (const mark of form) {
+    if (mark !== 'W') break;
+    streak += 1;
+  }
+  const played = wins + losses;
+  return {
+    kd: deaths > 0 ? kills / deaths : kills > 0 ? kills : 0,
+    winRate: played > 0 ? (wins / played) * 100 : 0,
+    hs: headshotsKnown && kills > 0 ? (headshots / kills) * 100 : headshotSamples > 0 ? headshotPercent / headshotSamples : 0,
+    adr: adrSamples > 0 ? adr / adrSamples : 0,
+    kr: rounds > 0 && kills > 0 ? kills / rounds : krSamples > 0 ? kr / krSamples : 0,
+    matches: rows.length,
+    wins,
+    losses,
+    streak,
+    form,
+  };
+}
+
+const emptyRecent = { hs: 0, adr: 0, kr: 0, matches: 0, wins: 0, losses: 0, streak: 0, form: [] as ('W' | 'L')[] };
+
+/** Profile plus K/D and win rate from the last 20 or 30 matches, for one row of the roster. */
+export async function lookupRosterCard(name: string, matchWindow = 20): Promise<RosterCard> {
   const profile = await lookupPlayer(name);
   const game = profile?.games.cs2;
   if (!profile || !game) {
-    return { username: name.trim(), elo: 0, level: 1, kd: 0, winRate: 0, hs: 0, adr: 0, kr: 0, matches: 0, wins: 0, streak: 0, missing: true };
+    return { username: name.trim(), elo: 0, level: 1, kd: 0, winRate: 0, ...emptyRecent, missing: true };
   }
-  let kd = 0;
-  let winRate = 0;
-  let more = { hs: 0, adr: 0, kr: 0, matches: 0, wins: 0, streak: 0 };
+  const limit = matchWindow === 30 ? 30 : 20;
+  let recent = { kd: 0, winRate: 0, ...emptyRecent };
   try {
-    const response = await faceitGet(`/players/${profile.player_id}/stats/cs2`);
+    const response = await faceitGet(`/players/${profile.player_id}/games/cs2/stats?limit=${limit}`);
     if (response.ok) {
-      const body = (await response.json()) as { lifetime?: Record<string, string | number> };
-      const stat = (...names: string[]) => {
-        for (const name of names) {
-          const value = Number(body.lifetime?.[name]);
-          if (Number.isFinite(value) && value > 0) return value;
-        }
-        return 0;
-      };
-      kd = stat('Average K/D Ratio');
-      winRate = stat('Win Rate %');
-      more = {
-        hs: stat('Average Headshots %'),
-        adr: stat('ADR', 'Average Damage per Round'),
-        kr: stat('Average K/R Ratio'),
-        matches: stat('Matches'),
-        wins: stat('Wins'),
-        streak: stat('Current Win Streak'),
-      };
+      const body = (await response.json()) as { items?: MatchRow[] };
+      recent = summarizeRecentMatches(Array.isArray(body.items) ? body.items : [], limit);
     }
   } catch {
     /* the row still shows ELO and level */
@@ -380,9 +460,7 @@ export async function lookupRosterCard(name: string): Promise<RosterCard> {
     avatar: profile.avatar,
     elo: game.faceit_elo,
     level: game.skill_level,
-    kd,
-    winRate,
-    ...more,
+    ...recent,
   };
 }
 

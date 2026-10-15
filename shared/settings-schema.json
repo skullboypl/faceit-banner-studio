@@ -211,6 +211,22 @@
     "type": "boolean",
     "default": false
   },
+  "teamShowForm": {
+    "type": "boolean",
+    "default": true
+  },
+  "teamShowPlayerForm": {
+    "type": "boolean",
+    "default": false
+  },
+  "teamMatchWindow": {
+    "type": "string",
+    "default": "20",
+    "options": [
+      "20",
+      "30"
+    ]
+  },
   "teamLabels": {
     "type": "boolean",
     "default": true

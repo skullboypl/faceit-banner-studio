@@ -55,9 +55,15 @@
 
   .team-head {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    gap: 8px 14px;
     span {
       font-size: 11px;
       letter-spacing: 0.16em;
@@ -72,6 +78,70 @@
         color: #fff;
         font-size: 15px;
       }
+    }
+  }
+
+  .team-head-lead {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    margin-right: auto;
+  }
+
+  .team-owner-form {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    margin-left: auto;
+    font-size: 12px;
+    color: #f6f3f1;
+    b {
+      max-width: 14ch;
+      overflow: hidden;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    small {
+      color: #9c958f;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: none;
+      white-space: nowrap;
+    }
+  }
+
+  .team-pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    color: #c8c2bc;
+    b {
+      font-size: 15px;
+      font-weight: 800;
+    }
+    &.win b { color: #3ddc84; }
+    &.loss b { color: #ff5d4a; }
+  }
+
+  .team-form {
+    display: inline-flex;
+    flex: none;
+    gap: 3px;
+    i {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #6a635e;
+      &[data-result='win'] { background: #3ddc84; }
+      &[data-result='loss'] { background: #ff5d4a; }
     }
   }
 
@@ -1047,6 +1117,12 @@ html.livecard-theme:not(.generator) .wrapper[data-layout='livecard'] {
     0 18px 50px rgba(0, 0, 0, 0.4),
     inset 0 2px 0 var(--preset-accent, #ff5900);
 
+  .team-head .team-pill {
+    letter-spacing: 0;
+    text-transform: none;
+    font-weight: 600;
+    &::before { content: none; }
+  }
   .team-head span {
     display: inline-flex;
     align-items: center;

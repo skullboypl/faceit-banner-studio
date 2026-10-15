@@ -102,10 +102,10 @@ export const MainTab = ({
             country: res.country,
             elo: res.games.cs2.faceit_elo,
             level: res.games.cs2.skill_level,
-            kd: 1.05,
-            adr: 78.4,
-            winRate: 52,
-            hs: 44,
+            kd: 0,
+            adr: 0,
+            winRate: 0,
+            hs: 0,
           });
           setOpponentStatus('found');
         } else {

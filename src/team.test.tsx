@@ -16,7 +16,9 @@ vi.mock('../widget/src/utils/faceit_util', () => ({
     kr: { alpha: 0.7, bravo: 0.85, charlie: 0.77 }[name] ?? 0.7,
     matches: { alpha: 1200, bravo: 3400, charlie: 800 }[name] ?? 500,
     wins: { alpha: 600, bravo: 1900, charlie: 410 }[name] ?? 250,
+    losses: { alpha: 8, bravo: 2, charlie: 11 }[name] ?? 10,
     streak: { alpha: 0, bravo: 5, charlie: 2 }[name] ?? 0,
+    form: (name === 'bravo' ? ['W', 'W', 'L', 'W', 'W', 'L'] : ['L', 'W', 'W', 'L', 'W']) as ('W' | 'L')[],
   })),
 }));
 
@@ -31,11 +33,30 @@ const translate = (text: string) =>
     'team.stat.matches': 'MECZE',
     'team.stat.wins': 'WYGR.',
     'team.stat.streak': 'SERIA',
+    'widget.wins': 'wygrane',
+    'widget.losses': 'porażki',
+    'team.window_short': 'ostatnie 20',
+    'team.session_caption': 'aktualna sesja',
   })[text] ?? text;
 
-const draw = async (options: Partial<TeamOptions> = {}, roster = 'alpha,bravo,charlie', layout: 'lineup' | 'sheet' = 'lineup') => {
+const draw = async (
+  options: Partial<TeamOptions> = {},
+  roster = 'alpha,bravo,charlie',
+  layout: 'lineup' | 'sheet' = 'lineup',
+  owner = '',
+  session = { wins: 0, losses: 0, form: [] as ('W' | 'L')[] }
+) => {
   const asked = vi.mocked(lookupRosterCard).mock.calls.length;
-  const view = render(<TeamBanner roster={roster} layout={layout} options={{ ...TEAM_DEFAULTS, ...options }} translate={translate} />);
+  const view = render(
+    <TeamBanner
+      roster={roster}
+      layout={layout}
+      owner={owner}
+      session={session}
+      options={{ ...TEAM_DEFAULTS, ...options }}
+      translate={translate}
+    />
+  );
   /* wait until every lookup was asked for and its answer was applied */
   await waitFor(() => expect(vi.mocked(lookupRosterCard).mock.calls.length - asked).toBeGreaterThanOrEqual(roster.split(',').length));
   await act(async () => undefined);
@@ -57,6 +78,16 @@ describe('readTeamOptions', () => {
     const options = readTeamOptions((key) => ({ teamShowKd: false, teamDensity: 'compact', teamSort: 'elo' })[key as string]);
     expect(options).toMatchObject({ kd: false, density: 'compact', sort: 'elo' });
     expect(readTeamOptions((key) => (key === 'teamDensity' ? 'huge' : undefined)).density).toBe('comfortable');
+  });
+
+  test('the recent window is 20 or 30, and the owner form is on unless turned off', () => {
+    expect(readTeamOptions(() => undefined)).toMatchObject({ matchWindow: 20, form: true, playerForm: false });
+    expect(readTeamOptions((key) => (key === 'teamMatchWindow' ? '30' : key === 'teamShowForm' ? false : key === 'teamShowPlayerForm' ? true : undefined))).toMatchObject({
+      matchWindow: 30,
+      form: false,
+      playerForm: true,
+    });
+    expect(readTeamOptions((key) => (key === 'teamMatchWindow' ? 'lifetime' : undefined)).matchWindow).toBe(20);
   });
 
   test('the title is trimmed and capped at 24 characters', () => {
@@ -183,6 +214,35 @@ describe('TeamBanner look', () => {
     const top = [...(await draw({ highlightTop: true })).querySelectorAll('li.is-top .team-name')].map((node) => node.textContent);
     expect(top).toEqual(['bravo']);
     expect((await draw()).querySelector('li.is-top')).toBeNull();
+  });
+
+  test('the owner form is the session tally, and each row can show its own recent form', async () => {
+    const header = await draw({}, 'alpha,bravo', 'lineup', 'bravo', { wins: 2, losses: 1, form: ['W', 'L', 'W'] });
+    const owner = header.querySelector('.team-owner-form');
+    expect(owner?.textContent).toContain('bravo');
+    expect(owner?.textContent).toContain('2');
+    expect(owner?.textContent).not.toContain('1900');
+    expect(owner?.textContent).toContain('wygrane');
+    expect(owner?.textContent).toContain('porażki');
+    expect(owner?.textContent).toContain('aktualna sesja');
+    expect(owner?.textContent).not.toContain('ostatnie');
+    const head = header.querySelector('.team-head');
+    expect(head?.firstElementChild?.className).toBe('team-head-lead');
+    expect(head?.querySelector('.team-head-lead em')?.textContent).toContain('śr.');
+    expect(head?.lastElementChild?.className).toBe('team-owner-form');
+    expect(owner?.querySelectorAll('.team-form i')).toHaveLength(3);
+    expect(header.querySelector('li .team-form')).toBeNull();
+
+    const rows = await draw({ playerForm: true }, 'alpha,bravo', 'lineup', 'missing-owner', { wins: 0, losses: 0, form: [] });
+    expect(rows.querySelectorAll('li .team-form')).toHaveLength(2);
+    expect(rows.querySelector('.team-owner-form')?.textContent).toContain('missing-owner');
+    expect(rows.querySelector('.team-owner-form')?.textContent).toContain('0');
+    expect(vi.mocked(lookupRosterCard).mock.calls.some(([name]) => name === 'missing-owner')).toBe(false);
+  });
+
+  test('a 30-match window is what the roster asks FACEIT for', async () => {
+    await draw({ matchWindow: 30 }, 'alpha');
+    expect(vi.mocked(lookupRosterCard).mock.calls.some(([, window]) => window === 30)).toBe(true);
   });
 
   test('each row knows its place for the staggered entrance', async () => {

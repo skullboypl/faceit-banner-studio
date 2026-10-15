@@ -241,6 +241,22 @@ const hexToRgba = (hexColor: string, opacity: number) => {
 /** How long the session survives after the widget was last open. */
 const SESSION_KEEP_MS = 1000 * 60 * 60 * 2;
 
+/** The same session the solo banner counts wins and losses from. */
+function readSessionStart(playerId: string, saveSession: boolean) {
+  const now = Date.now();
+  if (!saveSession) return { startDate: new Date(now), expired: true };
+  const savedStart = Date.parse(localStorage.getItem('fcw_session_start') ?? '');
+  const savedEnd = Date.parse(localStorage.getItem('fcw_session_end') ?? '');
+  const samePlayer = localStorage.getItem('fcw_session_player-id') === playerId;
+  if (samePlayer && !Number.isNaN(savedStart) && !Number.isNaN(savedEnd) && now <= savedEnd) {
+    return { startDate: new Date(savedStart), expired: false };
+  }
+  localStorage.setItem('fcw_session_start', new Date(now).toISOString());
+  localStorage.setItem('fcw_session_player-id', playerId);
+  localStorage.removeItem('fcw_session_starting-elo');
+  return { startDate: new Date(now), expired: true };
+}
+
 const percentToFontScale = (value: number) => {
   const clamped = Math.max(0, Math.min(100, value));
   return 0.5 + clamped / 100;
@@ -297,6 +313,8 @@ export const Widget = ({
   const [elo, setElo] = useState(0);
   const [wins, setWins] = useState(0);
   const [losses, setLosses] = useState(0);
+  const [sessionForm, setSessionForm] = useState<('W' | 'L')[]>([]);
+  const [previewLive, setPreviewLive] = useState(false);
   const [ranking, setRanking] = useState(0);
   const [countryRanking, setCountryRanking] = useState(0);
   const [country, setCountry] = useState<string | undefined>();
@@ -451,19 +469,19 @@ export const Widget = ({
       radar={(SETTINGS.get('splitRadar') as SplitRadar) || 'combat'}
       camera={(SETTINGS.get('splitMini') as SplitCamera) || 'identity'}
       username={username || previewUsername || 'Player'}
-      avatar={preview ? previewAvatar : avatar}
+      avatar={avatar || previewAvatar}
       elo={elo}
       level={level}
       ranking={ranking}
-      wins={preview ? 18 : wins}
-      losses={preview ? 12 : losses}
-      winStreak={preview ? 4 : winStreak}
-      winRate={preview ? 56 : winsPercent}
-      kd={preview ? 1.22 : avgMatches ? kdRatio / avgMatches : 0}
-      adr={preview ? 82 : avgMatches ? adr / avgMatches : 0}
-      hs={preview ? 48 : avgMatches ? hsPercent / avgMatches : 0}
-      kills={preview ? 18 : avgMatches ? kills / avgMatches : 0}
-      kr={preview ? 72 : krRatio}
+      wins={sample ? 18 : wins}
+      losses={sample ? 12 : losses}
+      winStreak={sample ? 4 : winStreak}
+      winRate={sample ? 56 : winsPercent}
+      kd={sample ? 1.22 : avgMatches ? kdRatio / avgMatches : 0}
+      adr={sample ? 82 : avgMatches ? adr / avgMatches : 0}
+      hs={sample ? 48 : avgMatches ? hsPercent / avgMatches : 0}
+      kills={sample ? 18 : avgMatches ? kills / avgMatches : 0}
+      kr={sample ? 72 : krRatio}
     />
   );
 
@@ -504,11 +522,11 @@ export const Widget = ({
   }, [SETTINGS]);
 
   useEffect(() => {
-    if (!previewElo || !previewLevel) return;
+    if (!previewElo || !previewLevel || previewLive) return;
     setElo(previewElo);
     setLevel(previewLevel);
     setCurrentEloDistribution(getEloDistribution(previewLevel, 1337));
-  }, [previewElo, previewLevel]);
+  }, [previewElo, previewLevel, previewLive]);
 
   useEffect(() => {
     if (!overrides || !preview) return;
@@ -536,16 +554,19 @@ export const Widget = ({
     );
   }, [SETTINGS, previewLanguage]);
 
+  /** Sample numbers only until the looked-up player has loaded. */
+  const sample = preview && !previewLive;
+
   /** Returns a path to a level icon */
   const getIcon = useCallback(() => {
-    if (level === 10 && ranking <= 1000 && !preview) {
+    if (level === 10 && ranking <= 1000 && !sample) {
       if (ranking === 1) return levelIcons[11];
       else if (ranking === 2) return levelIcons[12];
       else if (ranking === 3) return levelIcons[13];
       return levelIcons[10]; /* Challenger */
     }
     return levelIcons[level - 1];
-  }, [level, ranking, preview]);
+  }, [level, ranking, sample]);
 
   /** Returns a color, min ELO and max ELO of a level */
   const getEloDistribution = useCallback(
@@ -561,9 +582,8 @@ export const Widget = ({
     [preview]
   );
 
-  /* Update player stats */
+  /* Update player stats. The studio preview uses the same FACEIT read as OBS. */
   useEffect(() => {
-    if (preview) return;
     const saveSession = SETTINGS.get('saveSession');
     const playerId = SETTINGS.get('playerId');
     if (!playerId) {
@@ -575,22 +595,7 @@ export const Widget = ({
      * a restarted OBS keeps wins, losses and the ELO change for 2 hours after the
      * widget was last open. After that, or for another player, it starts from zero.
      */
-    const now = Date.now();
-    let startDate = new Date(now);
-    let sessionExpired = true;
-    if (saveSession) {
-      const savedStart = Date.parse(localStorage.getItem('fcw_session_start') ?? '');
-      const savedEnd = Date.parse(localStorage.getItem('fcw_session_end') ?? '');
-      const samePlayer = localStorage.getItem('fcw_session_player-id') === playerId;
-      if (samePlayer && !Number.isNaN(savedStart) && !Number.isNaN(savedEnd) && now <= savedEnd) {
-        startDate = new Date(savedStart);
-        sessionExpired = false;
-      } else {
-        localStorage.setItem('fcw_session_start', new Date(now).toISOString());
-        localStorage.setItem('fcw_session_player-id', playerId);
-        localStorage.removeItem('fcw_session_starting-elo');
-      }
-    }
+    const { startDate, expired: sessionExpired } = readSessionStart(playerId, Boolean(saveSession));
     const extendSession = () => {
       if (!saveSession) return;
       localStorage.setItem(
@@ -635,6 +640,7 @@ export const Widget = ({
 
         setWins(player.wins);
         setLosses(player.losses);
+        setSessionForm(player.form ?? []);
 
         setAdr(player.avg.adr);
         setAssists(player.avg.assists);
@@ -660,6 +666,7 @@ export const Widget = ({
         setCurrentEloDistribution(
           getEloDistribution(player.level, player.ranking)
         );
+        if (preview) setPreviewLive(true);
       });
     };
     getStats(true);
@@ -686,15 +693,17 @@ export const Widget = ({
       refreshDelay = 10;
     }
 
-    /* Set widget style and color scheme */
-    document
-      .getElementsByTagName('html')[0]
-      .classList.add(`${resolvedStyle}-theme`);
-    document
-      .getElementsByTagName('html')[0]
-      .classList.add(`${SETTINGS.get('colorScheme')}-scheme`);
-    if (SETTINGS.get('autoWidth'))
-      document.getElementsByTagName('html')[0].classList.add(`auto-width`);
+    /* The studio page has its own document classes. Only the OBS page wears the theme. */
+    if (!preview) {
+      document
+        .getElementsByTagName('html')[0]
+        .classList.add(`${resolvedStyle}-theme`);
+      document
+        .getElementsByTagName('html')[0]
+        .classList.add(`${SETTINGS.get('colorScheme')}-scheme`);
+      if (SETTINGS.get('autoWidth'))
+        document.getElementsByTagName('html')[0].classList.add(`auto-width`);
+    }
 
     const interval = setInterval(
       getStats,
@@ -703,14 +712,16 @@ export const Widget = ({
     return () => {
       clearInterval(interval);
       window.removeEventListener('pagehide', extendSession);
-      document
-        .getElementsByTagName('html')[0]
-        .classList.remove(`${resolvedStyle}-theme`);
-      document
-        .getElementsByTagName('html')[0]
-        .classList.remove(`${SETTINGS.get('colorScheme')}-scheme`);
-      if (SETTINGS.get('autoWidth'))
-        document.getElementsByTagName('html')[0].classList.remove(`auto-width`);
+      if (!preview) {
+        document
+          .getElementsByTagName('html')[0]
+          .classList.remove(`${resolvedStyle}-theme`);
+        document
+          .getElementsByTagName('html')[0]
+          .classList.remove(`${SETTINGS.get('colorScheme')}-scheme`);
+        if (SETTINGS.get('autoWidth'))
+          document.getElementsByTagName('html')[0].classList.remove(`auto-width`);
+      }
     };
   }, [SETTINGS]);
 
@@ -736,43 +747,43 @@ export const Widget = ({
     (stat: StatisticType) => {
       switch (stat) {
         case StatisticType.ADR:
-          if (!preview && (!adr || !avgMatches)) return null;
-          return `${preview ? '82.5' : Math.round((adr / avgMatches) * 10) / 10}`;
+          if (!sample && (!adr || !avgMatches)) return null;
+          return `${sample ? '82.5' : Math.round((adr / avgMatches) * 10) / 10}`;
         case StatisticType.ASSISTS:
-          if (!preview && (!assists || !avgMatches)) return null;
-          return `${preview ? 4 : Math.round(assists / avgMatches)}`;
+          if (!sample && (!assists || !avgMatches)) return null;
+          return `${sample ? 4 : Math.round(assists / avgMatches)}`;
         case StatisticType.MVPS:
-          if (!preview && (!mvps || !avgMatches)) return null;
-          return `${preview ? 3 : Math.round(mvps / avgMatches)}`;
+          if (!sample && (!mvps || !avgMatches)) return null;
+          return `${sample ? 3 : Math.round(mvps / avgMatches)}`;
         case StatisticType.KR:
-          if (!preview && (!krRatio || !avgMatches)) return null;
-          return `${preview ? '0.9' : Math.round((krRatio / avgMatches) * 100) / 100}`;
+          if (!sample && (!krRatio || !avgMatches)) return null;
+          return `${sample ? '0.9' : Math.round((krRatio / avgMatches) * 100) / 100}`;
         case StatisticType.KILLS:
-          if (!preview && (!kills || !avgMatches)) return null;
-          return `${preview ? 20 : Math.round(kills / avgMatches)}`;
+          if (!sample && (!kills || !avgMatches)) return null;
+          return `${sample ? 20 : Math.round(kills / avgMatches)}`;
         case StatisticType.DEATHS:
-          if (!preview && (!deaths || !avgMatches)) return null;
-          return `${preview ? 10 : Math.round(deaths / avgMatches)}`;
+          if (!sample && (!deaths || !avgMatches)) return null;
+          return `${sample ? 10 : Math.round(deaths / avgMatches)}`;
         case StatisticType.HSPERCENT:
-          if (!preview && (!hsPercent || !avgMatches)) return null;
-          return `${preview ? '50' : Math.round(hsPercent / avgMatches)}%`;
+          if (!sample && (!hsPercent || !avgMatches)) return null;
+          return `${sample ? '50' : Math.round(hsPercent / avgMatches)}%`;
         case StatisticType.KD:
-          if (!preview && (!kdRatio || !avgMatches)) return null;
-          return `${preview ? '2' : Math.round((kdRatio / avgMatches) * 100) / 100}`;
+          if (!sample && (!kdRatio || !avgMatches)) return null;
+          return `${sample ? '2' : Math.round((kdRatio / avgMatches) * 100) / 100}`;
         case StatisticType.WINRATIO:
-          if (!preview && !winsPercent) return null;
-          return `${preview ? '50' : winsPercent}%`;
+          if (!sample && !winsPercent) return null;
+          return `${sample ? '50' : winsPercent}%`;
         case StatisticType.RANKING:
-          if (!preview && !ranking) return null;
-          return `#${preview ? 999 : ranking}`;
+          if (!sample && !ranking) return null;
+          return `#${sample ? 999 : ranking}`;
         case StatisticType.WINSTREAK:
-          return `${preview ? 5 : winStreak}`;
+          return `${sample ? 5 : winStreak}`;
         case StatisticType.ENTRYRATE:
-          return `${preview ? 67 : Math.round(entryRate)}%`;
+          return `${sample ? 67 : Math.round(entryRate)}%`;
         case StatisticType.UTILITY:
-          return `${preview ? '3.0' : utilityDamagePerRound}`;
+          return `${sample ? '3.0' : utilityDamagePerRound}`;
         case StatisticType.FLASHRATE:
-          return `${preview ? 51 : Math.round(flashSuccessRate)}%`;
+          return `${sample ? 51 : Math.round(flashSuccessRate)}%`;
         default:
           return `???`;
       }
@@ -793,6 +804,7 @@ export const Widget = ({
       entryRate,
       utilityDamagePerRound,
       flashSuccessRate,
+      sample,
     ]
   );
 
@@ -800,8 +812,8 @@ export const Widget = ({
   const getEloDiff = useCallback(() => {
     let diff = 0;
 
-    /* The preview shows a sample gain so the arrow is part of what you tune */
-    diff = preview ? 24 : elo - startingElo;
+    /* A fresh studio with nobody looked up still shows the arrow. A loaded player shows their real change. */
+    diff = sample ? 24 : elo - startingElo;
 
     let diffArrow: ReactElement | null = null;
     let diffStyle: string = '';
@@ -820,14 +832,14 @@ export const Widget = ({
         {diff >= 0 ? `+${diff}` : String(diff)})
       </span>
     );
-  }, [language, elo, startingElo, SETTINGS]);
+  }, [language, elo, startingElo, SETTINGS, sample]);
 
   const showStats = Boolean(SETTINGS.get('showStatistics'));
   const showMatches = SETTINGS.get('showWinsLosses') !== false;
   const showBannerHeader = !SETTINGS.get('hideBannerHeader');
   const hasStatsToShow =
-    preview || stats.some((stat) => getStat(stat) !== null);
-  const hasMatchesToShow = preview || wins > 0 || losses > 0;
+    sample || stats.some((stat) => getStat(stat) !== null);
+  const hasMatchesToShow = sample || wins > 0 || losses > 0;
   const isAnimatedStyle = SETTINGS.get('style') === 'animated';
 
   const animatedCardOrder = [
@@ -923,7 +935,7 @@ export const Widget = ({
   /* Versus: loads the opponent and keeps them up to date */
   const opponentId = SETTINGS.get('opponentId');
   useEffect(() => {
-    if (preview || !isVersus || !opponentId) return;
+    if (!isVersus || !opponentId) return;
     const load = () =>
       getPlayerStats(
         opponentId,
@@ -1011,7 +1023,7 @@ export const Widget = ({
     orbElo: number,
     icon: ReactElement | undefined
   ) => {
-    const [, range] = getEloDistribution(orbLevel, 1337);
+    const [, range] = getEloDistribution(orbLevel, sample ? 1337 : ranking);
     const min = Number(range[1]);
     const max = Number(range[2]);
     const progress =
@@ -1053,7 +1065,7 @@ export const Widget = ({
 
   const renderAvatarOrb = () =>
     renderOrb(
-      preview ? previewAvatar : avatar,
+      avatar || previewAvatar,
       username || previewUsername || 'Player',
       level,
       elo,
@@ -1072,11 +1084,10 @@ export const Widget = ({
             <h2 className={elo === 0 ? 'skeleton' : ''}>
               {username || previewUsername || 'Player'}{' '}
               {SETTINGS.get('showVerifiedBadge') &&
-                (preview
-                  ? previewVerifiedBadge && previewVerifiedBadge !== 'none'
-                  : verifiedBadge !== 'none') && (
+                (verifiedBadge !== 'none' ||
+                  (previewVerifiedBadge && previewVerifiedBadge !== 'none')) && (
                   <span className={'verified-badge'}>
-                    {(preview ? previewVerifiedBadge : verifiedBadge) ===
+                    {(verifiedBadge !== 'none' ? verifiedBadge : previewVerifiedBadge) ===
                     'gold' ? (
                       <VerifiedGoldBadgeIcon />
                     ) : (
@@ -1103,27 +1114,21 @@ export const Widget = ({
                 (SETTINGS.get('showRanking') ===
                   ShowRanking.ONLY_WHEN_CHALLENGER &&
                   ranking <= 1000 &&
-                  !preview)) && (
+                  !sample)) && (
                 <span
-                  className={`region-ranking ${!preview && ranking === 0 ? 'skeleton' : ''}`}
+                  className={`region-ranking ${!sample && ranking === 0 ? 'skeleton' : ''}`}
                 >
                   {REGION_FLAG_MAP[
-                    (preview
-                      ? previewRegion || 'EU'
-                      : region || 'EU'
-                    ).toUpperCase()
+                    (region || previewRegion || 'EU').toUpperCase()
                   ] ? (
                     <img
                       className={'flag'}
-                      src={`https://flagcdn.com/${REGION_FLAG_MAP[(preview ? previewRegion || 'EU' : region || 'EU').toUpperCase()]}.svg`}
-                      alt={preview ? previewRegion || 'EU' : region || 'EU'}
+                      src={`https://flagcdn.com/${REGION_FLAG_MAP[(region || previewRegion || 'EU').toUpperCase()]}.svg`}
+                      alt={region || previewRegion || 'EU'}
                     />
                   ) : (
                     <span className={'no-icon'}>
-                      {(preview
-                        ? previewRegion || 'EU'
-                        : region || 'EU'
-                      ).toUpperCase()}
+                      {(region || previewRegion || 'EU').toUpperCase()}
                     </span>
                   )}
                   {`#${ranking || 1337}`}
@@ -1132,23 +1137,20 @@ export const Widget = ({
               {(SETTINGS.get('showRanking') === ShowRanking.COUNTRY ||
                 SETTINGS.get('showRanking') === ShowRanking.BOTH) && (
                 <span
-                  className={`country-ranking ${!preview && countryRanking === 0 ? 'skeleton' : ''}`}
+                  className={`country-ranking ${!sample && countryRanking === 0 ? 'skeleton' : ''}`}
                 >
-                  {(preview ? previewCountry : country) ? (
+                  {(country || previewCountry) ? (
                     <img
                       className={'flag'}
-                      src={`https://flagcdn.com/${preview ? previewCountry : country}.svg`}
-                      alt={preview ? previewCountry : country}
+                      src={`https://flagcdn.com/${country || previewCountry}.svg`}
+                      alt={country || previewCountry}
                     />
                   ) : (
                     <span className={'no-icon'}>
-                      {(preview
-                        ? previewCountry || '?'
-                        : country || '?'
-                      ).toUpperCase()}
+                      {(country || previewCountry || '?').toUpperCase()}
                     </span>
                   )}
-                  {`#${preview ? 1337 : countryRanking || 1337}`}
+                  {`#${sample ? 1337 : countryRanking || 1337}`}
                 </span>
               )}
             </p>
@@ -1203,9 +1205,9 @@ export const Widget = ({
 
   const renderTicker = () => {
     const headStat = SETTINGS.get('tickerHeadStat') as StatisticType;
-    const showRank = preview || (ranking > 0 && ranking <= 1000);
-    const flagCode = (preview ? previewCountry : country) || 'pl';
-    const countryPlace = preview ? 2 : countryRanking;
+    const showRank = sample || (ranking > 0 && ranking <= 1000);
+    const flagCode = (country || previewCountry) || 'pl';
+    const countryPlace = sample ? 2 : countryRanking;
     const cell = (value: ReactElement | string | null, label: string, tone = '') => (
       <div className={`ticker-cell ${tone}`} key={label}>
         <b>{value ?? <span className={'skeleton'}>??</span>}</b>
@@ -1257,16 +1259,16 @@ export const Widget = ({
           <div className={'ticker-left'}>
             {showRank ? (
               <span className={'ticker-rank'}>
-                <b>#{preview ? 17 : ranking}</b>
+                <b>#{sample ? 17 : ranking}</b>
                 <span
                   className={'ticker-challenger'}
                   style={
-                    preview
+                    sample
                       ? ({ '--faceit-level': 'var(--faceit-level-11)' } as CSSProperties)
                       : undefined
                   }
                 >
-                  {preview ? levelIcons[10] : getIcon()}
+                  {sample ? levelIcons[10] : getIcon()}
                 </span>
               </span>
             ) : (
@@ -1311,25 +1313,25 @@ export const Widget = ({
       winRate: 52,
       hs: 44,
     };
-    const rival = (preview ? previewOpponent : opponent) ?? mocked;
+    const rival = opponent ?? previewOpponent ?? mocked;
     const me: VersusPlayer = {
       username: meName,
-      avatar: preview ? previewAvatar : avatar,
-      country: (preview ? previewCountry : country) || 'pl',
+      avatar: avatar || previewAvatar,
+      country: (country || previewCountry) || 'pl',
       elo,
       level,
-      kd: preview
+      kd: sample
         ? 1.22
         : avgMatches
           ? Math.round((kdRatio / avgMatches) * 100) / 100
           : 0,
-      adr: preview
+      adr: sample
         ? 82.5
         : avgMatches
           ? Math.round((adr / avgMatches) * 10) / 10
           : 0,
-      winRate: preview ? 56 : winsPercent,
-      hs: preview ? 48 : avgMatches ? Math.round(hsPercent / avgMatches) : 0,
+      winRate: sample ? 56 : winsPercent,
+      hs: sample ? 48 : avgMatches ? Math.round(hsPercent / avgMatches) : 0,
     };
     const diff = me.elo - rival.elo;
     const lead = diff === 0 ? 'even' : diff > 0 ? 'me' : 'rival';
@@ -1768,8 +1770,8 @@ export const Widget = ({
 
   const renderSoloExtra = () => {
     const name = username || previewUsername || 'Player';
-    const avatarSrc = preview ? previewAvatar : avatar;
-    const coverSrc = (preview ? previewBanner : banner) || avatarSrc;
+    const avatarSrc = avatar || previewAvatar;
+    const coverSrc = (banner || previewBanner) || avatarSrc;
     const levelBadge = SETTINGS.get('showLevelIcon') ? getIcon() : null;
     const statCell = (stat: StatisticType) => (
       <div className={'solo-stat'} key={`solo-${stat}`}>
@@ -1785,9 +1787,9 @@ export const Widget = ({
       </p>
     );
 
-    const kdNumber = preview ? 1.22 : avgMatches ? kdRatio / avgMatches : 0;
-    const hsNumber = preview ? 48 : avgMatches ? hsPercent / avgMatches : 0;
-    const winNumber = preview ? 56 : winsPercent;
+    const kdNumber = sample ? 1.22 : avgMatches ? kdRatio / avgMatches : 0;
+    const hsNumber = sample ? 48 : avgMatches ? hsPercent / avgMatches : 0;
+    const winNumber = sample ? 56 : winsPercent;
     const dial = (label: string, text: string, fraction: number) => (
       <div className={'dial'} key={label}>
         <svg viewBox="0 0 100 100" aria-hidden="true">
@@ -2090,7 +2092,7 @@ export const Widget = ({
         SETTINGS.get('useAvatarAsBackground')) && (
         <style>{`
                 .wrapper {
-                    --banner-url: url("${SETTINGS.get('useAvatarAsBackground') ? (preview ? previewAvatar : avatar) : preview ? previewBanner : banner}") !important;
+                    --banner-url: url("${SETTINGS.get('useAvatarAsBackground') ? (avatar || previewAvatar || '') : (banner || previewBanner || '')}") !important;
                     ${SETTINGS.get('adjustBackgroundOpacity') ? `--banner-opacity: ${SETTINGS.get('backgroundOpacity')} !important;` : ''}
               ${SETTINGS.get('adjustBackgroundBlur') ? `--banner-blur: ${SETTINGS.get('backgroundBlur')}px !important;` : ''}
             --banner-radius: ${BANNER_RADIUS_MAP[SETTINGS.get('style')] ?? 12}px !important;
@@ -2282,6 +2284,8 @@ export const Widget = ({
             <TeamBanner
               roster={String(SETTINGS.get('teamRoster') || '')}
               layout={resolvedStyle === 'sheet' ? 'sheet' : 'lineup'}
+              owner={username || previewUsername || ''}
+              session={{ wins, losses, form: sessionForm }}
               options={readTeamOptions((key) => SETTINGS.get(key as SettingKey))}
               translate={translate}
             />

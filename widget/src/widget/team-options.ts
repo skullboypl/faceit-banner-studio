@@ -5,6 +5,8 @@ export const TEAM_AVATAR_SHAPES = ['circle', 'rounded', 'square'] as const;
 export const TEAM_ANIMATIONS = ['none', 'fade', 'stagger'] as const;
 /** What the list can be ordered by; "order" keeps the names as they were typed. */
 export const TEAM_SORTS = ['order', 'elo', 'kd', 'wr', 'hs', 'adr', 'matches'] as const;
+/** How many recent matches the roster stats and the win/loss form are counted from. */
+export const TEAM_WINDOWS = [20, 30] as const;
 
 export type TeamDensity = (typeof TEAM_DENSITIES)[number];
 export type TeamTheme = (typeof TEAM_THEMES)[number];
@@ -12,6 +14,7 @@ export type TeamRows = (typeof TEAM_ROWS)[number];
 export type TeamAvatarShape = (typeof TEAM_AVATAR_SHAPES)[number];
 export type TeamAnimation = (typeof TEAM_ANIMATIONS)[number];
 export type TeamSort = (typeof TEAM_SORTS)[number];
+export type TeamWindow = (typeof TEAM_WINDOWS)[number];
 
 export type TeamOptions = {
   avatars: boolean;
@@ -26,6 +29,12 @@ export type TeamOptions = {
   matches: boolean;
   wins: boolean;
   streak: boolean;
+  /** Win/loss form of the person whose banner this is, in the header. */
+  form: boolean;
+  /** The same recent form on every roster row. */
+  playerForm: boolean;
+  /** Recent matches the stats and the form are counted from. */
+  matchWindow: TeamWindow;
   /** Small captions (ELO, K/D...) under the numbers. */
   labels: boolean;
   /** Average ELO of the roster in the header. */
@@ -77,6 +86,9 @@ export const TEAM_DEFAULTS: TeamOptions = {
   matches: false,
   wins: false,
   streak: false,
+  form: true,
+  playerForm: false,
+  matchWindow: 20,
   labels: true,
   average: true,
   sort: 'order',
@@ -125,6 +137,9 @@ export function readTeamOptions(get: (key: string) => unknown): TeamOptions {
     matches: flag(get('teamShowMatches'), d.matches),
     wins: flag(get('teamShowWins'), d.wins),
     streak: flag(get('teamShowStreak'), d.streak),
+    form: flag(get('teamShowForm'), d.form),
+    playerForm: flag(get('teamShowPlayerForm'), d.playerForm),
+    matchWindow: get('teamMatchWindow') === 30 || get('teamMatchWindow') === '30' ? 30 : 20,
     labels: flag(get('teamLabels'), d.labels),
     average: flag(get('teamShowAvg'), d.average),
     sort: pick(get('teamSort'), TEAM_SORTS, d.sort),
@@ -148,7 +163,7 @@ export function readTeamOptions(get: (key: string) => unknown): TeamOptions {
 }
 
 /** Width of one stat cell, matching the stylesheet. */
-const STAT_WIDTH = { elo: 58, kd: 46, wr: 42, hs: 42, adr: 42, kr: 42, matches: 52, wins: 52, streak: 42 } as const;
+const STAT_WIDTH = { elo: 58, kd: 46, wr: 42, hs: 42, adr: 42, kr: 42, matches: 52, wins: 52, streak: 42, form: 58 } as const;
 /** Narrowest nickname that still reads well. */
 const NAME_MIN = 130;
 const PANEL_PADDING = 36;
@@ -178,6 +193,7 @@ export function teamRecommendedWidth(options: TeamOptions, layout: 'lineup' | 's
     ...(options.matches ? [STAT_WIDTH.matches] : []),
     ...(options.wins ? [STAT_WIDTH.wins] : []),
     ...(options.streak ? [STAT_WIDTH.streak] : []),
+    ...(options.playerForm ? [STAT_WIDTH.form] : []),
   ].filter((width) => width > 0);
   const row = sides + items.reduce((sum, width) => sum + width, 0) + gap * (items.length - 1);
   const panel = sheet ? PANEL_PADDING + 2 * row + SHEET_COLUMN_GAP : PANEL_PADDING + row;

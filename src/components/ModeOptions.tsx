@@ -9,6 +9,7 @@ import {
   TEAM_ROWS,
   TEAM_SORTS,
   TEAM_THEMES,
+  TEAM_WINDOWS,
   TEAM_TITLE_MAX,
   readTeamOptions,
 } from '../../widget/src/widget/team-options';
@@ -61,6 +62,9 @@ export function TeamOptionsPanel() {
 
       <section className="popup-group">
         <h4>{tl('team.group.data')}</h4>
+        {select('team-window', 'teamMatchWindow', 'team.match_window', String(options.matchWindow), TEAM_WINDOWS.map(String), 'team.window')}
+        <Checkbox text={tl('team.show_form')} setting="teamShowForm" />
+        <Checkbox text={tl('team.show_player_form')} setting="teamShowPlayerForm" />
         <Checkbox text={tl('team.show_avatars')} setting="teamShowAvatars" />
         <Checkbox text={tl('team.show_levels')} setting="teamShowLevels" />
         <Checkbox text={tl('team.show_elo')} setting="teamShowElo" />

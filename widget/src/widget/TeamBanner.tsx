@@ -7,6 +7,10 @@ import { TEAM_DEFAULTS, hexToRgb, type TeamOptions, type TeamSort } from './team
 type Props = {
   roster: string;
   layout: 'lineup' | 'sheet';
+  /** Nickname of the person whose banner this is. Their session record is the one in the header. */
+  owner?: string;
+  /** Wins and losses since this streaming session started, the same tally the solo banner shows. */
+  session?: { wins: number; losses: number; form: ('W' | 'L')[] };
   options?: TeamOptions;
   translate: (text: string, args?: string[]) => string;
 };
@@ -17,6 +21,19 @@ function formatStat(value: number, digits = 0) {
   return digits ? value.toFixed(digits) : String(Math.round(value));
 }
 const percent = (value: number) => (value > 0 ? `${Math.round(value)}%` : '—');
+
+/** The five newest results, oldest of those on the left. */
+function FormPips({ form, label }: { form: ('W' | 'L')[]; label?: string }) {
+  const recent = form.slice(0, 5).reverse();
+  if (!recent.length) return null;
+  return (
+    <div className="team-form" aria-label={label} aria-hidden={label ? undefined : true}>
+      {recent.map((mark, index) => (
+        <i key={`${mark}-${index}`} data-result={mark === 'W' ? 'win' : 'loss'} />
+      ))}
+    </div>
+  );
+}
 
 type Column = {
   key: string;
@@ -47,9 +64,17 @@ const SORT_VALUE: Record<Exclude<TeamSort, 'order'>, (member: RosterCard) => num
   matches: (m) => m.matches ?? 0,
 };
 
-export function TeamBanner({ roster, layout, options = TEAM_DEFAULTS, translate }: Props) {
+export function TeamBanner({
+  roster,
+  layout,
+  owner = '',
+  session = { wins: 0, losses: 0, form: [] },
+  options = TEAM_DEFAULTS,
+  translate,
+}: Props) {
   const names = parseRoster(roster);
   const [members, setMembers] = useState<RosterCard[]>([]);
+  const ownerName = owner.trim();
 
   useEffect(() => {
     if (!names.length) {
@@ -57,13 +82,14 @@ export function TeamBanner({ roster, layout, options = TEAM_DEFAULTS, translate 
       return;
     }
     let cancel = false;
-    Promise.all(names.map((name) => lookupRosterCard(name))).then((rows) => {
-      if (!cancel) setMembers(rows);
+    Promise.all(names.map((name) => lookupRosterCard(name, options.matchWindow))).then((rows) => {
+      if (cancel) return;
+      setMembers(rows);
     });
     return () => {
       cancel = true;
     };
-  }, [names.join('|')]);
+  }, [names.join('|'), options.matchWindow]);
 
   const loaded: RosterCard[] = members.length
     ? members
@@ -74,6 +100,7 @@ export function TeamBanner({ roster, layout, options = TEAM_DEFAULTS, translate 
   const columns = COLUMNS.filter((column) => column.show(options));
   const best = shown.reduce((top, member) => Math.max(top, member.elo), 0);
   const topName = options.highlightTop && best > 0 ? shown.find((member) => member.elo === best)?.username : undefined;
+  const showOwnerForm = Boolean(options.form && ownerName);
 
   const style: Record<string, string> = {
     '--team-radius': `${options.radius}px`,
@@ -98,11 +125,29 @@ export function TeamBanner({ roster, layout, options = TEAM_DEFAULTS, translate 
       style={style as CSSProperties}
     >
       <header className="team-head">
-        <span>{options.title || translate('team.kicker')}</span>
-        {options.average && (
-          <em>
-            {translate('team.avg')} <strong>{avg || '—'}</strong>
-          </em>
+        <div className="team-head-lead">
+          <span>{options.title || translate('team.kicker')}</span>
+          {options.average && (
+            <em>
+              {translate('team.avg')} <strong>{avg || '—'}</strong>
+            </em>
+          )}
+        </div>
+        {showOwnerForm && (
+          <div
+            className="team-owner-form"
+            aria-label={translate('team.session_label', [ownerName, String(session.wins), String(session.losses)])}
+          >
+            <b>{ownerName}</b>
+            <FormPips form={session.form} />
+            <span className="team-pill win">
+              <b>{session.wins}</b> {translate('widget.wins')}
+            </span>
+            <span className="team-pill loss">
+              <b>{session.losses}</b> {translate('widget.losses')}
+            </span>
+            <small>{translate('team.session_caption')}</small>
+          </div>
         )}
       </header>
       {shown.length === 0 ? (
@@ -125,6 +170,12 @@ export function TeamBanner({ roster, layout, options = TEAM_DEFAULTS, translate 
                   <span className="team-bar" style={{ width: `${Math.round((member.elo / best) * 100)}%` }} />
                 )}
               </div>
+              {options.playerForm && (member.form?.length ?? 0) > 0 && (
+                <FormPips
+                  form={member.form ?? []}
+                  label={translate('team.form_short', [String(member.wins ?? 0), String(member.losses ?? 0)])}
+                />
+              )}
               {columns.map((column) => (
                 <p key={column.key} className={`team-stat team-stat-${column.key}`}>
                   <b>{column.value(member)}</b>

@@ -1,13 +1,15 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { lookupRosterCard } from '../widget/src/utils/faceit_util';
+import { lookupRosterCard, summarizeRecentMatches } from '../widget/src/utils/faceit_util';
 
 const reply = (body: unknown, ok = true) => ({ ok, status: ok ? 200 : 500, json: async () => body }) as Response;
 
-const stub = (lifetime: Record<string, string> | undefined, statsOk = true) =>
+const match = (stats: Record<string, string>) => ({ stats });
+
+const stub = (items: { stats: Record<string, string> }[] | undefined, statsOk = true) =>
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
-      if (String(url).includes('/stats/cs2')) return reply({ lifetime }, statsOk);
+      if (String(url).includes('/games/cs2/stats')) return reply({ items }, statsOk);
       return reply({
         player_id: '0a1b2c3d-1111-4222-8333-444455556666',
         nickname: 'skull',
@@ -21,41 +23,86 @@ const stub = (lifetime: Record<string, string> | undefined, statsOk = true) =>
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe('lookupRosterCard', () => {
-  test('reads K/D, win rate, headshots, ADR and the other lifetime stats', async () => {
-    stub({
-      'Average K/D Ratio': '1.31',
-      'Win Rate %': '56',
-      'Average Headshots %': '48',
-      ADR: '81.4',
-      'Average K/R Ratio': '0.82',
-      Matches: '3120',
-      Wins: '1750',
-      'Current Win Streak': '4',
+describe('summarizeRecentMatches', () => {
+  test('averages the newest matches and keeps the win streak from the latest one', () => {
+    const summary = summarizeRecentMatches(
+      [
+        match({ Result: '1', Kills: '20', Deaths: '10', Headshots: '10', ADR: '80', Rounds: '24' }),
+        match({ Result: '1', Kills: '10', Deaths: '10', Headshots: '5', ADR: '60', Rounds: '20' }),
+        match({ Result: '0', Kills: '15', Deaths: '15', Headshots: '6', ADR: '70', Rounds: '30' }),
+      ],
+      20
+    );
+    expect(summary).toMatchObject({
+      kd: 45 / 35,
+      winRate: (2 / 3) * 100,
+      hs: (21 / 45) * 100,
+      adr: 70,
+      kr: 45 / 74,
+      matches: 3,
+      wins: 2,
+      losses: 1,
+      streak: 2,
+      form: ['W', 'W', 'L'],
     });
-    expect(await lookupRosterCard('skull')).toMatchObject({
+  });
+
+  test('a shorter window drops the older matches', () => {
+    const summary = summarizeRecentMatches(
+      [
+        match({ Result: '0', Kills: '1', Deaths: '2', ADR: '10' }),
+        match({ Result: '1', Kills: '9', Deaths: '1', ADR: '90' }),
+      ],
+      1
+    );
+    expect(summary).toMatchObject({ matches: 1, wins: 0, losses: 1, streak: 0, kd: 0.5, adr: 10 });
+  });
+
+  test('falls back to the headshot percent and K/R when the raw counts are missing', () => {
+    const summary = summarizeRecentMatches(
+      [match({ Result: '1', 'Headshots %': '40', 'K/R Ratio': '0.8', 'Average Damage per Round': '77.5' })],
+      20
+    );
+    expect(summary).toMatchObject({ hs: 40, kr: 0.8, adr: 77.5, wins: 1, matches: 1 });
+  });
+});
+
+describe('lookupRosterCard', () => {
+  test('reads K/D and the win/loss form from the last 20 matches, not the lifetime totals', async () => {
+    stub([
+      match({ Result: '1', Kills: '20', Deaths: '10', Headshots: '8', ADR: '80', Rounds: '20' }),
+      match({ Result: '0', Kills: '10', Deaths: '10', Headshots: '2', ADR: '60', Rounds: '20' }),
+    ]);
+    const card = await lookupRosterCard('skull');
+    expect(card).toMatchObject({
       username: 'skull',
       elo: 2100,
       level: 10,
-      kd: 1.31,
-      winRate: 56,
-      hs: 48,
-      adr: 81.4,
-      kr: 0.82,
-      matches: 3120,
-      wins: 1750,
-      streak: 4,
+      kd: 1.5,
+      winRate: 50,
+      hs: (10 / 30) * 100,
+      adr: 70,
+      kr: 0.75,
+      matches: 2,
+      wins: 1,
+      losses: 1,
+      streak: 1,
+      form: ['W', 'L'],
     });
+    const url = String(vi.mocked(fetch).mock.calls.find(([called]) => String(called).includes('/stats'))?.[0]);
+    expect(url).toContain('/games/cs2/stats?limit=20');
   });
 
-  test('ADR also comes from "Average Damage per Round" when that is the name FACEIT uses', async () => {
-    stub({ 'Average Damage per Round': '77.5' });
-    expect((await lookupRosterCard('skull')).adr).toBe(77.5);
+  test('asks for 30 matches when that window is selected', async () => {
+    stub([match({ Result: '1', Kills: '10', Deaths: '10' })]);
+    await lookupRosterCard('skull', 30);
+    const url = String(vi.mocked(fetch).mock.calls.find(([called]) => String(called).includes('/stats'))?.[0]);
+    expect(url).toContain('limit=30');
   });
 
-  test('a stat that is missing or not a number becomes 0, so the banner shows a dash', async () => {
-    stub({ 'Average K/D Ratio': 'n/a', Matches: '' });
-    expect(await lookupRosterCard('skull')).toMatchObject({ kd: 0, hs: 0, adr: 0, kr: 0, matches: 0, wins: 0, streak: 0 });
+  test('a match without numbers becomes a dash on the banner', async () => {
+    stub([match({ Result: '1' })]);
+    expect(await lookupRosterCard('skull')).toMatchObject({ kd: 0, hs: 0, adr: 0, kr: 0, matches: 1, wins: 1, streak: 1 });
   });
 
   test('when the stats request fails the row still has ELO and level', async () => {
