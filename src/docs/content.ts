@@ -34,7 +34,7 @@ export type DocsPageData = {
 
 export const SITE_URL = 'https://faceitbanner.vxh.pl';
 /** Bump when the documentation changes; used for lastmod and dateModified. */
-export const DOCS_UPDATED = '2026-10-04';
+export const DOCS_UPDATED = '2026-10-15';
 
 const TRANSLATIONS: Record<DocsLang, Record<string, string>> = {
   pl: polish as Record<string, string>,
@@ -48,6 +48,7 @@ const SLUGS: Record<DocsLang, Record<string, string>> = {
     'quick-start': 'szybki-start',
     solo: 'banery-solo',
     versus: 'banery-versus',
+    modes: 'sklad-split-popup',
     size: 'rozmiar-banera',
     stream: 'elo-faceit-na-streamie',
     params: 'parametry-url',
@@ -67,6 +68,7 @@ const SLUGS: Record<DocsLang, Record<string, string>> = {
     'quick-start': 'quick-start',
     solo: 'solo-banners',
     versus: 'versus-banners',
+    modes: 'roster-split-popup',
     size: 'banner-size',
     stream: 'faceit-elo-on-stream',
     params: 'url-parameters',
@@ -82,7 +84,7 @@ const SLUGS: Record<DocsLang, Record<string, string>> = {
   },
 };
 
-export const USER_PAGE_IDS = ['index', 'obs', 'quick-start', 'solo', 'versus', 'size', 'stream', 'params', 'faq', 'about'] as const;
+export const USER_PAGE_IDS = ['index', 'obs', 'quick-start', 'solo', 'versus', 'modes', 'size', 'stream', 'params', 'faq', 'about'] as const;
 export const DEV_PAGE_IDS = ['dev', 'dev-setup', 'dev-settings', 'dev-layouts', 'dev-widget', 'dev-build', 'dev-contributing'] as const;
 export const PAGE_IDS = [...USER_PAGE_IDS, ...DEV_PAGE_IDS] as const;
 
@@ -94,7 +96,7 @@ export const CATEGORIES: {
   pages: readonly string[];
 }[] = [
   { audience: 'user', id: 'start', label: { pl: 'Start', en: 'Start' }, pages: ['index', 'obs', 'quick-start'] },
-  { audience: 'user', id: 'banners', label: { pl: 'Banery', en: 'Banners' }, pages: ['solo', 'versus', 'size'] },
+  { audience: 'user', id: 'banners', label: { pl: 'Banery', en: 'Banners' }, pages: ['solo', 'versus', 'modes', 'size'] },
   { audience: 'user', id: 'reference', label: { pl: 'Informacje', en: 'Reference' }, pages: ['stream', 'params', 'faq', 'about'] },
   { audience: 'dev', id: 'dev-intro', label: { pl: 'Wprowadzenie', en: 'Introduction' }, pages: ['dev', 'dev-setup'] },
   { audience: 'dev', id: 'dev-develop', label: { pl: 'Rozwój', en: 'Development' }, pages: ['dev-settings', 'dev-layouts', 'dev-widget'] },
@@ -204,8 +206,8 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
         'FACEIT Banner documentation – ELO and stats widget for OBS'
       ),
       description: t(
-        `Dokumentacja generatora banerów FACEIT do OBS: ${COUNTS.solo} układów solo, ${COUNTS.versus} układów VERSUS, rozmiar, parametry linku i FAQ.`,
-        `Documentation for the FACEIT banner generator for OBS: ${COUNTS.solo} solo layouts, ${COUNTS.versus} VERSUS layouts, size options, URL parameters and FAQ.`
+        `Dokumentacja generatora banerów FACEIT do OBS: ${COUNTS.solo} układów solo, ${COUNTS.versus} układów VERSUS, skład, split, popup meczu, znaczek challengera, rozmiar i FAQ.`,
+        `Documentation for the FACEIT banner generator for OBS: ${COUNTS.solo} solo layouts, ${COUNTS.versus} VERSUS layouts, roster, split, match popup, the challenger mark, size options and FAQ.`
       ),
       h1: t('Dokumentacja FACEIT Banner', 'FACEIT Banner documentation'),
       intro: t(
@@ -219,6 +221,8 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
           items: [
             t(`${COUNTS.solo} układów solo w wyglądzie FACEIT 2026 (${soloNames})`, `${COUNTS.solo} solo layouts in the FACEIT 2026 look (${soloNames})`),
             t(`tryb VERSUS: ty kontra rywal, ${COUNTS.versus} układów (${versusNames})`, `VERSUS mode: you against a rival, ${COUNTS.versus} layouts (${versusNames})`),
+            t('skład do 10 graczy, split (radar i pasek pod kamerkę) oraz popup na mecz', 'a roster of up to 10 players, a split banner (radar and a bar under the camera) and a match popup'),
+            t('znaczek challengera w miejscu ikony poziomu, gdy gracz jest w top 1000 regionu', 'the challenger mark in place of the level icon when the player is in the regional top 1000'),
             t('rozmiar banera AUTO, Zalecane lub Ręcznie z limitami per baner', 'banner size AUTO, Recommended or Manual with limits per banner'),
             t('animowane banery, poświata levelu, kolory akcentu i zaokrąglenie rogów', 'animated banners, level glow, accent colours and corner radius'),
             t('wygląd klasyczny dla starszych linków', 'the classic look for older links'),
@@ -239,6 +243,7 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
             { title: t('Szybki start', 'Quick start'), text: t('Link do OBS w kilku krokach.', 'An OBS link in a few steps.'), meta: docsPath(lang, 'quick-start') },
             { title: t('Banery solo', 'Solo banners'), text: t('Wszystkie układy z rozmiarami.', 'Every layout with its sizes.'), meta: docsPath(lang, 'solo') },
             { title: t('Banery VERSUS', 'VERSUS banners'), text: t('Rywal, różnica ELO i porównanie statystyk.', 'Rival, ELO gap and statistics comparison.'), meta: docsPath(lang, 'versus') },
+            { title: t('Skład, split i popup', 'Roster, split and popup'), text: t('Lista graczy, dwa źródła OBS i karta meczu.', 'A player list, two OBS sources and a match card.'), meta: docsPath(lang, 'modes') },
             { title: t('Rozmiar banera', 'Banner size'), text: t('AUTO, Zalecane, Ręcznie i limity.', 'AUTO, Recommended, Manual and limits.'), meta: docsPath(lang, 'size') },
             { title: t('Parametry linku', 'URL parameters'), text: t('Pełna lista ustawień w adresie.', 'The full list of settings in the address.'), meta: docsPath(lang, 'params') },
             { title: t('ELO na streamie', 'ELO on stream'), text: t('OBS, Streamlabs, Twitch, Kick.', 'OBS, Streamlabs, Twitch, Kick.'), meta: docsPath(lang, 'stream') },
@@ -336,12 +341,79 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
         {
           type: 'p',
           text: t(
-            'Tryb VERSUS działa tylko z wyglądem FACEIT 2026. Statystyki rywala (K/D, ADR, wygrane, HS) pochodzą z jego ostatnich meczów i odświeżają się razem z Twoimi.',
-            'VERSUS mode works only with the FACEIT 2026 look. The rival’s statistics (K/D, ADR, win rate, HS) come from his or her recent matches and refresh together with yours.'
+            'Tryb VERSUS działa tylko z wyglądem FACEIT 2026. Statystyki rywala (K/D, ADR, wygrane, HS) pochodzą z jego ostatnich meczów i odświeżają się razem z Twoimi. Gdy ktoś z tej pary ma poziom 10 i miejsce 1–1000 w regionie, ikona poziomu jest znaczkiem challengera.',
+            'VERSUS mode works only with the FACEIT 2026 look. The rival’s statistics (K/D, ADR, win rate, HS) come from his or her recent matches and refresh together with yours. When either player is level 10 and ranked 1–1000 in the region, the level icon is the challenger mark.'
           ),
         },
         { type: 'h2', id: 'layouts', text: t('Układy VERSUS', 'VERSUS layouts') },
         { type: 'cards', items: layoutCards(lang, true) },
+      ],
+    },
+    {
+      id: 'modes',
+      slug: SLUGS[lang].modes,
+      title: t(
+        'Skład, split i popup FACEIT do OBS',
+        'FACEIT roster, split and match popup for OBS'
+      ),
+      description: t(
+        'Skład do 10 graczy z sesją i statystykami z 20 lub 30 meczów, split na radar i pasek pod kamerkę oraz popup meczu. Ikona poziomu staje się znaczkiem challengera w top 1000.',
+        'A roster of up to 10 players with a session record and stats from 20 or 30 matches, a split into a radar and a camera bar, and a match popup. The level icon becomes the challenger mark in the top 1000.'
+      ),
+      h1: t('Skład, split i popup', 'Roster, split and popup'),
+      intro: t(
+        'Oprócz banera solo i VERSUS generator składa listę graczy, dwa osobne źródła OBS oraz kartę, która wskakuje na ekran przy meczu. Podgląd w studio pokazuje aktualne statystyki z FACEIT.',
+        'Besides the solo banner and VERSUS, the generator builds a player list, two separate OBS sources and a card that comes on screen for a match. The studio preview shows the current FACEIT statistics.'
+      ),
+      blocks: [
+        { type: 'h2', id: 'pick', text: t('Jak wybrać tryb', 'How to pick a mode') },
+        {
+          type: 'ol',
+          items: [
+            t('W zakładce Ustawienia, na samej górze, wybierz SKŁAD, SPLIT albo POPUP.', 'In the Settings tab, at the very top, pick ROSTER, SPLIT or POPUP.'),
+            t('Ustaw opcje tego trybu. W linku OBS lądują tylko wartości inne niż domyślne.', 'Set that mode’s options. Only values that differ from the defaults go into the OBS link.'),
+            t('Wygeneruj link. Split daje dwa adresy: radar i pasek pod kamerkę.', 'Generate the link. Split gives two addresses: the radar and the bar under the camera.'),
+          ],
+        },
+        { type: 'h2', id: 'roster', text: t('Skład', 'Roster') },
+        {
+          type: 'p',
+          text: t(
+            'Skład pokazuje do 10 graczy. W nagłówku po lewej jest tytuł „Skład” i średnie ELO, po prawej nick właściciela banera, jego wygrane i porażki oraz podpis „aktualna sesja”. Ten bilans liczy się tak jak na banerze solo: od startu sesji, a po restarcie OBS wraca, jeśli minęły mniej niż dwie godziny.',
+            'The roster shows up to 10 players. The header puts the title “Roster” and the average ELO on the left, and on the right the banner owner’s nickname, wins and losses, with the caption “current session”. That record works like the solo banner: from the start of the session, and it comes back after an OBS restart if less than two hours have passed.'
+          ),
+        },
+        {
+          type: 'p',
+          text: t(
+            'Kolumny K/D, WR, HS, ADR, K/R, mecze, wygrane i seria biorą się z ostatnich 20 albo 30 meczów. To samo okno zasila kropki formy przy każdym graczu. Świeży podgląd sesji pokazuje 0 wygranych i 0 porażek, dopóki mecz nie skończy się po jej starcie.',
+            'The K/D, WR, HS, ADR, K/R, matches, wins and streak columns come from the last 20 or 30 matches. The same window feeds the form dots next to each player. A fresh session preview shows 0 wins and 0 losses until a match finishes after the session started.'
+          ),
+        },
+        { type: 'h2', id: 'split', text: t('Split', 'Split') },
+        {
+          type: 'p',
+          text: t(
+            'Split to dwa źródła przeglądarki. Radar jest kwadratem 300 × 300 i pokazuje walkę (K/D, ADR, HS), celność (HS, KR, ADR) albo wyniki (wygrane i seria). Pasek pod kamerkę ma 360 × 128 i pokazuje nick z ELO i levelem, samo ELO, wygrane i porażki sesji albo serię i skuteczność.',
+            'Split is two browser sources. The radar is a 300 × 300 square and shows combat (K/D, ADR, HS), aim (HS, KR, ADR) or results (wins and streak). The bar under the camera is 360 × 128 and shows the nickname with ELO and level, ELO alone, the session wins and losses, or the streak and win rate.'
+          ),
+        },
+        { type: 'h2', id: 'popup', text: t('Popup meczu', 'Match popup') },
+        {
+          type: 'p',
+          text: t(
+            'Popup zajmuje cały obraz i pojawia się w wybranej fazie: przed meczem, na starcie albo po meczu. Karta pokazuje składy, mapę, wynik i statystyki. W studio podgląd bierze ostatni mecz gracza z FACEIT, a przełącznik fazy tylko zmienia układ tej samej karty.',
+            'The popup covers the whole picture and appears in the phase you choose: before the match, at the start or after it. The card shows the lineups, the map, the score and the statistics. In the studio the preview loads the player’s latest FACEIT match, and the phase switch only restyles that same card.'
+          ),
+        },
+        { type: 'h2', id: 'challenger', text: t('Znaczek challengera zamiast ikony poziomu', 'Challenger mark instead of the level icon') },
+        {
+          type: 'p',
+          text: t(
+            'Na VERSUS, składzie, splicie i popupie obok ikony poziomu nie ma osobnego znaczka. Gdy gracz ma poziom 10 i miejsce 1–1000 w rankingu regionu, sama ikona poziomu jest challengerem: miejsca 1, 2 i 3 dostają kolor podium, miejsca 4–1000 czerwony znaczek. Gracz, którego FACEIT zdjął z drabinki, zostaje przy zwykłej ikonie poziomu 10.',
+            'On VERSUS, the roster, the split and the popup there is no separate badge beside the level icon. When a player is level 10 and ranked 1–1000 in the region, the level icon itself is the challenger mark: places 1, 2 and 3 use the podium colours, places 4–1000 the red mark. A player FACEIT has dropped from the ladder keeps the plain level 10 icon.'
+          ),
+        },
       ],
     },
     {
@@ -444,11 +516,12 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
         {
           type: 'ul',
           items: [
-            t('level FACEIT 1–10 oraz pozycję w rankingu challengerów', 'FACEIT level 1–10 and the challenger ranking position'),
+            t('level FACEIT 1–10, a w top 1000 regionu znaczek challengera w miejscu tej ikony', 'FACEIT level 1–10, and in the regional top 1000 the challenger mark in place of that icon'),
             t('aktualne ELO i jego zmianę w bieżącej sesji', 'current ELO and its change in the current session'),
             t('wygrane i porażki z sesji streamu', 'wins and losses from the stream session'),
             t('K/D, ADR, HS %, wygrane % i inne statystyki z ostatnich meczów', 'K/D, ADR, HS %, win rate and other statistics from recent matches'),
             t('pojedynek z rywalem w trybie VERSUS', 'a duel with a rival in VERSUS mode'),
+            t('skład do 10 graczy, split pod kamerkę i popup na czas meczu', 'a roster of up to 10 players, a split under the camera and a popup for the match'),
           ],
         },
         { type: 'h2', id: 'why', text: t('Generator czy własny overlay', 'Generator or a custom overlay') },
@@ -535,8 +608,8 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
         {
           type: 'p',
           text: t(
-            'Gracze z pozycją 1–1000 w rankingu regionu mogą pokazać swoje miejsce obok ikony Challenger. Układy Ticker i Duel pokazują pozycję w regionie i w kraju.',
-            'Players ranked 1–1000 in their region can show their place next to the Challenger icon. The Ticker and Duel layouts show the regional and the national position.'
+            'Gracz z poziomem 10 i miejscem 1–1000 w rankingu regionu dostaje znaczek challengera. Na banerze solo miejsce może stać obok ikony. Na VERSUS, składzie, splicie i popupie sama ikona poziomu jest tym znaczkiem: złoto, srebro i brąz dla miejsc 1–3, czerwień dla miejsc 4–1000. Poza drabinką regionu zostaje ikona poziomu 10.',
+            'A level 10 player ranked 1–1000 in the region gets the challenger mark. On the solo banner the place can sit next to the icon. On VERSUS, the roster, the split and the popup the level icon itself is that mark: gold, silver and bronze for places 1–3, red for places 4–1000. Off the regional ladder the icon stays level 10.'
           ),
         },
       ],
@@ -630,6 +703,14 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
             {
               q: t('Jak pokazać pojedynek z innym graczem?', 'How do I show a duel with another player?'),
               a: t('Włącz tryb VERSUS w Ustawieniach, wpisz nick rywala i wybierz układ VERSUS w zakładce Wygląd.', 'Turn on VERSUS mode in Settings, enter the rival’s nickname and choose a VERSUS layout in the Appearance tab.'),
+            },
+            {
+              q: t('Czym się różni sesja składu od kolumn statystyk?', 'How is the roster session different from the stat columns?'),
+              a: t('Wygrane i porażki w nagłówku składu to bieżąca sesja, jak na banerze solo. Kolumny K/D, WR, HS i reszta oraz kropki przy graczach liczą się z ostatnich 20 albo 30 meczów.', 'The wins and losses in the roster header are the current session, like the solo banner. The K/D, WR, HS and other columns, and the dots next to players, come from the last 20 or 30 matches.'),
+            },
+            {
+              q: t('Kiedy ikona poziomu jest challengerem?', 'When is the level icon the challenger mark?'),
+              a: t('Gdy gracz ma poziom 10 i miejsce 1–1000 w rankingu regionu. Na VERSUS, składzie, splicie i popupie ta ikona zastępuje zwykłą dziesiątkę. Gracz zdjęty z drabinki FACEIT zostaje przy poziomie 10.', 'When the player is level 10 and ranked 1–1000 in the region. On VERSUS, the roster, the split and the popup that icon replaces the plain level 10. A player dropped from the FACEIT ladder stays on level 10.'),
             },
             {
               q: t('Dlaczego baner nie pokazuje danych?', 'Why does the banner show no data?'),

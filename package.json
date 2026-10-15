@@ -1,6 +1,6 @@
 {
   "name": "faceit-stats-widget",
-  "description": "FACEIT banner generator for OBS and Streamlabs: ELO, level and CS2 stats overlay with solo and VERSUS layouts, animated banners and custom size.",
+  "description": "FACEIT banner generator for OBS and Streamlabs: ELO, level, challenger mark and CS2 stats, with solo, VERSUS, roster, split and match-popup layouts.",
   "homepage": "https://faceitbanner.vxh.pl/",
   "repository": {
     "type": "git",
@@ -15,6 +15,7 @@
     "streamlabs",
     "cs2",
     "elo",
+    "challenger",
     "stream overlay"
   ],
   "private": true,

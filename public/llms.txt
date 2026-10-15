@@ -6,10 +6,11 @@ Home: https://faceitbanner.vxh.pl/
 
 ## Dokumentacja (PL)
 
-- [Dokumentacja FACEIT Banner](https://faceitbanner.vxh.pl/docs/): Dokumentacja generatora banerów FACEIT do OBS: 22 układów solo, 13 układów VERSUS, rozmiar, parametry linku i FAQ.
+- [Dokumentacja FACEIT Banner](https://faceitbanner.vxh.pl/docs/): Dokumentacja generatora banerów FACEIT do OBS: 22 układów solo, 13 układów VERSUS, skład, split, popup meczu, znaczek challengera, rozmiar i FAQ.
 - [Jak dodać baner FACEIT do OBS](https://faceitbanner.vxh.pl/docs/szybki-start/): Krok po kroku: wygeneruj link w generatorze FACEIT Banner i dodaj go do OBS jako Browser Source. Zajmuje około dwóch minut.
 - [Banery solo](https://faceitbanner.vxh.pl/docs/banery-solo/): Przegląd 22 układów banerów solo FACEIT 2026 z rozmiarami OBS: Prime, Showcase, Spotlight, Broadcast, Rail, Focus, Orbit, Halo, Pulse, Ticker, Slab, Gauge, Card, Reel, Ribbon, Tower, Dials, Marquee, Lineup, Sheet, Radar i pasek, Live card.
 - [Banery VERSUS](https://faceitbanner.vxh.pl/docs/banery-versus/): Tryb VERSUS: porównaj swoje ELO i statystyki z rywalem na streamie. 13 układów: Duel, Edge, Faceoff, Clash, Tug, Rivals, Tally, Overlay, Ladder, Matchup, Scoreboard, Cycle, Surge.
+- [Skład, split i popup](https://faceitbanner.vxh.pl/docs/sklad-split-popup/): Skład do 10 graczy z sesją i statystykami z 20 lub 30 meczów, split na radar i pasek pod kamerkę oraz popup meczu. Ikona poziomu staje się znaczkiem challengera w top 1000.
 - [Rozmiar i responsywność banera](https://faceitbanner.vxh.pl/docs/rozmiar-banera/): Tryby rozmiaru AUTO, Zalecane i Ręcznie, limity szerokości i wysokości dla każdego banera oraz zalecane rozmiary źródła w OBS.
 - [Parametry linku widżetu](https://faceitbanner.vxh.pl/docs/parametry-url/): Wszystkie parametry adresu widżetu FACEIT Banner: nazwy, dozwolone wartości i wartości domyślne. Przydatne do ręcznej edycji linku.
 - [Baner FACEIT do OBS](https://faceitbanner.vxh.pl/docs/baner-faceit-do-obs/): Jak zrobić baner FACEIT do OBS: darmowy generator pokazuje level, ELO, wygrane i statystyki CS2. Link do źródła Przeglądarka w dwie minuty, bez instalowania wtyczek.
@@ -26,10 +27,11 @@ Home: https://faceitbanner.vxh.pl/
 
 ## Documentation (EN)
 
-- [FACEIT Banner documentation](https://faceitbanner.vxh.pl/en/docs/): Documentation for the FACEIT banner generator for OBS: 22 solo layouts, 13 VERSUS layouts, size options, URL parameters and FAQ.
+- [FACEIT Banner documentation](https://faceitbanner.vxh.pl/en/docs/): Documentation for the FACEIT banner generator for OBS: 22 solo layouts, 13 VERSUS layouts, roster, split, match popup, the challenger mark, size options and FAQ.
 - [How to add a FACEIT banner to OBS](https://faceitbanner.vxh.pl/en/docs/quick-start/): Step by step: generate a link in the FACEIT Banner generator and add it to OBS as a Browser Source. Takes about two minutes.
 - [Solo banners](https://faceitbanner.vxh.pl/en/docs/solo-banners/): Overview of 22 FACEIT 2026 solo banner layouts with OBS sizes: Prime, Showcase, Spotlight, Broadcast, Rail, Focus, Orbit, Halo, Pulse, Ticker, Slab, Gauge, Card, Reel, Ribbon, Tower, Dials, Marquee, Lineup, Sheet, Radar and bar, Live card.
 - [VERSUS banners](https://faceitbanner.vxh.pl/en/docs/versus-banners/): VERSUS mode: compare your ELO and statistics with a rival on stream. 13 layouts: Duel, Edge, Faceoff, Clash, Tug, Rivals, Tally, Overlay, Ladder, Matchup, Scoreboard, Cycle, Surge.
+- [Roster, split and popup](https://faceitbanner.vxh.pl/en/docs/roster-split-popup/): A roster of up to 10 players with a session record and stats from 20 or 30 matches, a split into a radar and a camera bar, and a match popup. The level icon becomes the challenger mark in the top 1000.
 - [Banner size and responsiveness](https://faceitbanner.vxh.pl/en/docs/banner-size/): AUTO, Recommended and Manual size modes, width and height limits for every banner and the recommended OBS source sizes.
 - [Widget URL parameters](https://faceitbanner.vxh.pl/en/docs/url-parameters/): Every FACEIT Banner widget URL parameter: names, allowed values and defaults. Handy for editing a link by hand.
 - [FACEIT banner for OBS](https://faceitbanner.vxh.pl/en/docs/faceit-banner-for-obs/): How to make a FACEIT banner for OBS: a free generator shows level, ELO, wins and CS2 statistics. A Browser Source link in two minutes, no plugins to install.
@@ -47,5 +49,6 @@ Home: https://faceitbanner.vxh.pl/
 ## Wiki, regulamin, prywatność
 
 - [Wiki](https://faceitbanner.vxh.pl/wiki/)
+- [Skład, split i popup](https://faceitbanner.vxh.pl/wiki/sklad-split-popup/)
 - [Regulamin](https://faceitbanner.vxh.pl/terms/)
 - [Polityka prywatności](https://faceitbanner.vxh.pl/privacy/)

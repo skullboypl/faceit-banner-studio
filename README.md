@@ -30,6 +30,7 @@ Baza tego repozytorium to świetny [**faceit-stats-widget** autorstwa mxgic1337]
 |---|---|
 | Wygląd | nowy wygląd **FACEIT 2026** z **18 układami solo**; klasyczne style z bazy zostały jako wygląd **Klasyczny** |
 | Tryby | tryb **VERSUS**: Ty kontra rywal, **13 układów** (różnica ELO, porównanie statystyk, radar, drabinka leveli) |
+| Skład, split, popup | **skład** do 10 graczy (sesja w nagłówku, kolumny z 20 lub 30 meczów), **split** (radar i pasek pod kamerkę), **popup** meczu; w top 1000 ikona poziomu jest znaczkiem **challengera** |
 | Animacje | animowane układy: zakładki, rolka statystyk, taśma, tug of war, zmieniające się strony statystyk |
 | Rozmiar | **AUTO / Zalecane / Ręcznie**, limity per baner, responsywny układ, Pulse zawsze 1:1 |
 | Generator | przebudowane **Studio**: miniatury układów, podgląd na żywo, kolor akcentu, zaokrąglenie rogów |

@@ -17,6 +17,7 @@ const WIKI: LinkItem[] = [
   { href: '/wiki/bannerfaceit/', label: 'Banner do OBS' },
   { href: '/wiki/jak-dodac-faceit-do-obs/', label: 'Dodanie do OBS' },
   { href: '/wiki/konfiguracja-widzetu-faceit/', label: 'Konfiguracja' },
+  { href: '/wiki/sklad-split-popup/', label: 'Skład, split i popup' },
   { href: '/wiki/faq-faceit-widget/', label: 'FAQ' },
 ];
 
@@ -225,6 +226,22 @@ const faqJsonLd = JSON.stringify({
     },
     {
       '@type': 'Question',
+      name: 'Kiedy ikona poziomu FACEIT jest challengerem?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Gdy gracz ma poziom 10 i miejsce od 1 do 1000 w rankingu regionu. Na banerze VERSUS, składzie, splicie i popupie ta ikona zastępuje zwykłą dziesiątkę. Miejsca 1–3 mają kolor podium, miejsca 4–1000 czerwony znaczek. Gracz zdjęty z drabinki FACEIT zostaje przy ikonie poziomu 10.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Skąd biorą się wygrane i porażki na banerze składu?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'W nagłówku składu wygrane i porażki to aktualna sesja, tak jak na banerze solo. Kolumny K/D, WR, HS i kropki przy graczach liczą się z ostatnich 20 albo 30 meczów.',
+      },
+    },
+    {
+      '@type': 'Question',
       name: 'Czy strony wiki działają bez Node.js na hostingu?',
       acceptedAnswer: {
         '@type': 'Answer',
@@ -241,7 +258,7 @@ export const sitePages: { path: string; element: ReactElement }[] = [
       <SitePage
         path="/wiki/"
         title="Wiki FACEIT Banner"
-        description="Wiki FACEIT Banner: poradniki OBS, konfiguracja widżetu i odpowiedzi na najczęstsze pytania."
+        description="Wiki FACEIT Banner: poradniki OBS, skład, split, popup meczu, znaczek challengera i odpowiedzi na najczęstsze pytania."
         eyebrow="FACEIT BANNER / WIKI"
         h1="FACEIT Banner Wiki"
         lead="Centrum wiedzy o widżecie: od ustawienia generatora, przez dodanie do OBS, po konfigurację statystyk i rankingu."
@@ -252,6 +269,7 @@ export const sitePages: { path: string; element: ReactElement }[] = [
           <li><a href="/wiki/bannerfaceit/">Banner FACEIT do OBS</a> — co pokazuje widżet i po co jest na streamie.</li>
           <li><a href="/wiki/jak-dodac-faceit-do-obs/">Jak dodać banner do OBS</a> — Browser Source krok po kroku.</li>
           <li><a href="/wiki/konfiguracja-widzetu-faceit/">Konfiguracja widżetu</a> — statystyki, ranking i czytelność.</li>
+          <li><a href="/wiki/sklad-split-popup/">Skład, split i popup</a> — lista graczy, dwa źródła OBS i karta meczu.</li>
           <li><a href="/wiki/faq-faceit-widget/">FAQ</a> — gdy coś się nie wyświetla.</li>
         </ul>
         <h2 id="start">Szybki start</h2>
@@ -274,7 +292,7 @@ export const sitePages: { path: string; element: ReactElement }[] = [
         description="Banner FACEIT do OBS: co pokazuje generator, jakie dane pobiera i jak wdrożyć widżet na streamie."
         eyebrow="FACEIT BANNER / WIKI"
         h1="Banner FACEIT do OBS"
-        lead="Generator składa banner z publicznymi statystykami FACEIT: ELO, level, ranking regionu i kraju oraz średnie z wybranej liczby meczów."
+        lead="Generator składa banner z publicznymi statystykami FACEIT: ELO, level, znaczek challengera, ranking regionu i kraju oraz średnie z wybranej liczby meczów."
         crumbs={[{ href: '/wiki/', label: 'Wiki' }, { label: 'Banner do OBS' }]}
       >
         <h2 id="po-co">Po co banner na streamie</h2>
@@ -282,9 +300,10 @@ export const sitePages: { path: string; element: ReactElement }[] = [
         <p>Widżet działa jako Browser Source. Wystarczy raz wkleić link i ustawić odświeżanie.</p>
         <h2 id="co-pokazuje">Co można pokazać</h2>
         <ul>
-          <li>ELO oraz zmianę ELO po meczach.</li>
-          <li>Poziom konta i ikony statusu.</li>
+          <li>ELO oraz zmianę ELO w bieżącej sesji.</li>
+          <li>Poziom konta. W top 1000 regionu ikona poziomu jest znaczkiem challengera.</li>
           <li>Ranking regionalny i krajowy.</li>
+          <li>Skład do 10 graczy, split (radar i pasek pod kamerkę) oraz popup na mecz.</li>
           <li>Cztery sloty statystyk z wybranego zakresu meczów, na przykład K/D, ADR, K/R, MVP, asysty.</li>
           <li>Awatar albo banner gracza jako tło, z regulacją czytelności.</li>
         </ul>
@@ -330,7 +349,7 @@ export const sitePages: { path: string; element: ReactElement }[] = [
       <SitePage
         path="/wiki/konfiguracja-widzetu-faceit/"
         title="Konfiguracja widżetu FACEIT"
-        description="Konfiguracja widżetu FACEIT: sloty statystyk, ranking regionu i kraju, styl i czytelność banera."
+        description="Konfiguracja widżetu FACEIT: sloty statystyk, ranking, znaczek challengera, sesja wygranych i czytelność banera."
         eyebrow="FACEIT BANNER / WIKI"
         h1="Jak skonfigurować widżet FACEIT"
         lead="Dobra konfiguracja to balans czytelności i ilości danych. Poniżej ustawienia, od których warto zacząć."
@@ -345,6 +364,10 @@ export const sitePages: { path: string; element: ReactElement }[] = [
         </ul>
         <h2 id="ranking">Ranking regionu i kraju</h2>
         <p>Można pokazać ranking europejski i krajowy. Przy grze o miejsce w tabeli to zwykle najbardziej czytelny element overlayu.</p>
+        <h2 id="challenger">Znaczek challengera</h2>
+        <p>Gracz z poziomem 10 i miejscem 1–1000 w regionie dostaje znaczek challengera. Na VERSUS, składzie, splicie i popupie ta ikona stoi w miejscu zwykłego poziomu: kolor podium dla miejsc 1–3, czerwień dla reszty top 1000. Poza drabinką zostaje ikona poziomu 10.</p>
+        <h2 id="sesja">Sesja i ostatnie mecze</h2>
+        <p>Wygrane i porażki na banerze solo oraz w nagłówku składu liczą się od startu sesji. Po restarcie OBS wracają, jeśli od zamknięcia widżetu minęły mniej niż dwie godziny. Kolumny statystyk składu i kropki przy graczach biorą się z ostatnich 20 albo 30 meczów.</p>
         <h2 id="czytelnosc">Styl i czytelność</h2>
         <ul>
           <li>Nie schodź z kontrastem między tłem a tekstem.</li>
@@ -355,12 +378,37 @@ export const sitePages: { path: string; element: ReactElement }[] = [
     ),
   },
   {
+    path: '/wiki/sklad-split-popup/',
+    element: (
+      <SitePage
+        path="/wiki/sklad-split-popup/"
+        title="Skład FACEIT, split i popup meczu do OBS"
+        description="Skład FACEIT do 10 graczy, split na radar i pasek pod kamerkę oraz popup meczu w OBS. Sesja, statystyki z 20 lub 30 meczów i znaczek challengera."
+        eyebrow="FACEIT BANNER / WIKI"
+        h1="Skład, split i popup"
+        lead="Trzy tryby obok banera solo i VERSUS: lista graczy, dwa źródła pod overlay i karta, która wskakuje na czas meczu."
+        crumbs={[{ href: '/wiki/', label: 'Wiki' }, { label: 'Skład, split i popup' }]}
+      >
+        <h2 id="sklad">Skład</h2>
+        <p>Na banerze mieści się do 10 nicków FACEIT. Po lewej w nagłówku jest tytuł i średnie ELO, po prawej właściciel banera z wygranymi, porażkami i podpisem „aktualna sesja”.</p>
+        <p>Ten bilans liczy się od startu sesji, tak jak na banerze solo. Kolumny K/D, WR, HS, ADR, K/R, mecze, wygrane i seria oraz kropki formy przy graczach biorą się z ostatnich 20 albo 30 meczów.</p>
+        <h2 id="split">Split</h2>
+        <p>Split daje dwa linki. Radar to kwadrat 300 × 300: walka, celność albo wyniki. Pasek pod kamerkę ma 360 × 128 i pokazuje nick z ELO i levelem, samo ELO, wygrane i porażki sesji albo serię i skuteczność.</p>
+        <h2 id="popup">Popup meczu</h2>
+        <p>Źródło obejmuje cały obraz. Karta pojawia się przed meczem, na starcie albo po meczu i pokazuje składy, mapę, wynik oraz statystyki. W generatorze podgląd ładuje ostatni mecz gracza, a przełącznik fazy zmienia tylko wygląd tej karty.</p>
+        <h2 id="challenger">Ikona challengera</h2>
+        <p>Gdy gracz ma poziom 10 i miejsce 1–1000 w regionie, ikona poziomu na VERSUS, składzie, splicie i popupie jest znaczkiem challengera. Miejsca 1–3 mają kolor podium, miejsca 4–1000 czerwień. Gracz zdjęty z drabinki FACEIT zostaje przy poziomie 10.</p>
+        <p>Pełny opis jest w <a href="/docs/sklad-split-popup/">dokumentacji</a>.</p>
+      </SitePage>
+    ),
+  },
+  {
     path: '/wiki/faq-faceit-widget/',
     element: (
       <SitePage
         path="/wiki/faq-faceit-widget/"
         title="FAQ widżetu FACEIT"
-        description="Najczęstsze pytania o widżet FACEIT: brakujące statystyki, obciążenie streamu i szerokość źródła w OBS."
+        description="Najczęstsze pytania o widżet FACEIT: sesja składu, znaczek challengera, brakujące statystyki i szerokość źródła w OBS."
         eyebrow="FACEIT BANNER / WIKI"
         h1="Najczęstsze pytania"
         lead="Gdy banner milczy, statystyka jest pusta albo ranking nie wchodzi od razu."
@@ -370,7 +418,9 @@ export const sitePages: { path: string; element: ReactElement }[] = [
         <h2 id="statystyki">Dlaczego nie widać wszystkich statystyk?</h2>
         <p>Część liczb liczy się z ostatnich meczów. Gdy API nie zwróci wybranej metryki, pole zostaje puste. Zwiększ liczbę meczów do obliczeń i sprawdź ponownie.</p>
         <h2 id="ranking">Dlaczego ranking nie wyświetla się od razu?</h2>
-        <p>Ranking zależy od danych API. Sprawdź, czy gracz ma dostępną pozycję i czy ranking jest włączony w ustawieniach.</p>
+        <p>Ranking zależy od danych API. Sprawdź, czy gracz ma dostępną pozycję i czy ranking jest włączony w ustawieniach. Poziom 10 bez miejsca w top 1000 zostaje zwykłą ikoną, nawet przy wysokim ELO.</p>
+        <h2 id="sesja">Dlaczego skład pokazuje 0 wygranych?</h2>
+        <p>Nagłówek składu liczy aktualną sesję. Świeża sesja startuje od zera i rośnie, gdy mecz skończy się po jej rozpoczęciu. Kolumny obok biorą się z ostatnich 20 albo 30 meczów.</p>
         <h2 id="szerokosc">Jaką szerokość ustawić w OBS?</h2>
         <p>Najczęściej sprawdza się okolica 500 px. Docelowy rozmiar zależy od layoutu i rozdzielczości sceny. Generator podaje szerokość przy linku.</p>
         <h2 id="obciazenie">Czy widżet obciąża stream?</h2>

@@ -92,6 +92,7 @@ llmsLines.push(
   '## Wiki, regulamin, prywatność',
   '',
   `- [Wiki](${SITE_URL}/wiki/)`,
+  `- [Skład, split i popup](${SITE_URL}/wiki/sklad-split-popup/)`,
   `- [Regulamin](${SITE_URL}/terms/)`,
   `- [Polityka prywatności](${SITE_URL}/privacy/)`,
 );
