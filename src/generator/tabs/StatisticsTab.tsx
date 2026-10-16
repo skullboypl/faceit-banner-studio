@@ -3,6 +3,7 @@ import { useContext } from 'react';
 import { Statistic } from '../../components/Statistic.tsx';
 import { LanguageContext, SettingsContext } from '../Generator.tsx';
 import { Checkbox } from '../../components/Checkbox.tsx';
+import { resolveBannerStyle } from '../../../widget/src/styles/styles';
 
 export enum StatisticType {
   KILLS = 'KILLS',
@@ -27,31 +28,37 @@ export const StatisticsTab = () => {
   if (!settings || !tl) {
     return null;
   }
+  /* Only a solo banner fills the four slots; every other banner (and the ticker) has numbers of its own to choose */
+  const slots =
+    settings.get('widgetMode') === 'solo' &&
+    !(settings.get('bannerDesign') === '2026' && resolveBannerStyle(settings.get('style'), '2026') === 'ticker');
   return (
     <>
-      <div className={'settings'}>
-        <h3 className="card-heading">{tl('studio.stat_slots')}</h3>
-        {!settings.get('showStatistics') && (
-          <InfoBox
-            content={<p>{tl('generator.stats.disabled')}</p>}
-            style={'warn'}
-          />
-        )}
-        <div className={'setting stats'}>
-          <Statistic slot={'1'} setting={'statSlot1'} />
-          <Statistic slot={'2'} setting={'statSlot2'} />
-          <Statistic slot={'3'} setting={'statSlot3'} />
-          <Statistic slot={'4'} setting={'statSlot4'} />
+      {slots && (
+        <div className={'settings'}>
+          <h3 className="card-heading">{tl('studio.stat_slots')}</h3>
+          {!settings.get('showStatistics') && (
+            <InfoBox
+              content={<p>{tl('generator.stats.disabled')}</p>}
+              style={'warn'}
+            />
+          )}
+          <div className={'setting stats'}>
+            <Statistic slot={'1'} setting={'statSlot1'} />
+            <Statistic slot={'2'} setting={'statSlot2'} />
+            <Statistic slot={'3'} setting={'statSlot3'} />
+            <Statistic slot={'4'} setting={'statSlot4'} />
+          </div>
         </div>
+      )}
+      <div className={'settings'}>
+        <h3 className="card-heading">{tl('studio.data_settings')}</h3>
         <div className={'setting'}>
           <Checkbox
             text={tl('generator.settings.only_official_matches')}
             setting={'onlyOfficialMatchesCount'}
           />
         </div>
-      </div>
-      <div className={'settings'}>
-        <h3 className="card-heading">{tl('studio.data_settings')}</h3>
         <div className={'setting'}>
           <p>{tl('generator.stats.match_count')}</p>
           <select
