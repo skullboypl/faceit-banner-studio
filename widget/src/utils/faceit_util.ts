@@ -81,6 +81,8 @@ interface FaceitPlayer {
   region: string;
   country: string;
   losses: number;
+  /** Averages of only the matches since the session start: the "today" numbers. */
+  session?: SessionCard;
   avg: {
     adr: number;
     assists: number;
@@ -199,6 +201,7 @@ export function getPlayerStats(
       let flashSuccessRate = 0;
 
       let matchesLength: number = 0;
+      let session: SessionCard = { ...EMPTY_SESSION };
 
       const matchStats = await faceitGet(
         `/players/${playerId}/games/cs2/stats?limit=100`
@@ -210,6 +213,13 @@ export function getPlayerStats(
         const v4StatsResponse = (await matchStats.json()) as V4StatsResponse;
         matchesLength = v4StatsResponse.items.length;
         matchesLength = matchesLength > matchCount ? matchCount : matchesLength;
+        session = summarizeSessionMatches(
+          v4StatsResponse.items.filter(
+            (match) =>
+              !onlyOfficial || OFFICIAL_COMPETITION_IDS.includes(match.stats['Competition Id'] as string)
+          ) as MatchRow[],
+          startDate.getTime()
+        );
 
         let i = 0;
         for (const match of v4StatsResponse.items) {
@@ -293,6 +303,7 @@ export function getPlayerStats(
         wins,
         losses,
         form: sessionForm,
+        session,
         avg: {
           adr,
           assists,
@@ -384,6 +395,8 @@ export type SessionCard = {
   adr: number;
   kr: number;
   winRate: number;
+  /** Kills divided by deaths over the session. */
+  kd: number;
 };
 
 export const EMPTY_SESSION: SessionCard = {
@@ -396,6 +409,7 @@ export const EMPTY_SESSION: SessionCard = {
   adr: 0,
   kr: 0,
   winRate: 0,
+  kd: 0,
 };
 
 type MatchRow = { stats?: Record<string, string | number> };
@@ -505,6 +519,7 @@ export function summarizeSessionMatches(items: MatchRow[], startMs: number): Ses
     adr: recent.adr,
     kr: recent.kr,
     winRate: recent.winRate,
+    kd: recent.kd,
   };
 }
 

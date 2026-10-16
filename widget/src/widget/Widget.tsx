@@ -21,7 +21,9 @@ import {
   languages,
   tl,
 } from '../../../src/translations/translations.ts';
-import { getPlayerStats, UNKNOWN_PLACE, VerifiedBadgeType } from '../utils/faceit_util.ts';
+import { getPlayerStats, SessionCard, UNKNOWN_PLACE, VerifiedBadgeType } from '../utils/faceit_util.ts';
+import { sessionLine } from './session-line.ts';
+import { readTickerCells } from './ticker-options.ts';
 import {
   BannerSizeMode,
   getBannerSizeLimits,
@@ -328,6 +330,7 @@ export const Widget = ({
   const [previewLive, setPreviewLive] = useState(false);
   const [ranking, setRanking] = useState(0);
   const [countryRanking, setCountryRanking] = useState(0);
+  const [sessionCard, setSessionCard] = useState<SessionCard>();
   const [country, setCountry] = useState<string | undefined>();
   const [region, setRegion] = useState<string | undefined>();
   const [adr, setAdr] = useState(0);
@@ -676,6 +679,7 @@ export const Widget = ({
         setWins(player.wins);
         setLosses(player.losses);
         setSessionForm(player.form ?? []);
+        setSessionCard(player.session);
 
         setAdr(player.avg.adr);
         setAssists(player.avg.assists);
@@ -1277,40 +1281,35 @@ export const Widget = ({
       const second = getStat(b);
       return first && second ? `${first.replace('%', '')}/${second}` : null;
     };
+    const line = sessionLine(sessionCard);
+    /* Loaded but no match yet today: a dash, not the "loading" placeholder */
+    const idle = (value: string | null) => (value === null && sessionCard ? '—' : value);
+    const today = sample ? { killsAdr: '21/88.4', kd: '1.34' } : { killsAdr: idle(line.killsAdr), kd: idle(line.kd) };
+    const chosen = readTickerCells((key) => SETTINGS.get(key as never));
+    const todayCell: Record<string, ReactElement | null> = {
+      wins: showMatches ? cell(String(wins), translate('widget.wins'), 'win') : null,
+      losses: showMatches ? cell(String(losses), translate('widget.losses'), 'loss') : null,
+      killsAdr: showStats ? cell(today.killsAdr, translate('widget.ticker.kills_adr')) : null,
+      kd: showStats ? cell(today.kd, 'K/D') : null,
+      kr: showStats ? cell(sample ? '0.82' : idle(line.kr), 'K/R') : null,
+      hs: showStats ? cell(sample ? '52%' : idle(line.hs), 'HS %') : null,
+    };
+    const lastCell: Record<string, ReactElement> = {
+      winrate: cell(getStat(StatisticType.WINRATIO), translate('widget.ticker.winrate')),
+      killsAdr: cell(pair(StatisticType.KILLS, StatisticType.ADR), translate('widget.ticker.kills_adr')),
+      kd: cell(getStat(StatisticType.KD), 'K/D'),
+      kr: cell(getStat(StatisticType.KR), 'K/R'),
+      hs: cell(getStat(StatisticType.HSPERCENT), 'HS %'),
+    };
     const pages = [
       {
         id: 'today',
         title: translate('widget.ticker.today'),
-        cells: [
-          ...(showMatches
-            ? [
-                cell(String(wins), translate('widget.wins'), 'win'),
-                cell(String(losses), translate('widget.losses'), 'loss'),
-              ]
-            : []),
-          ...(showStats
-            ? [
-                cell(pair(StatisticType.KILLS, StatisticType.ADR), translate('widget.ticker.kills_adr')),
-                cell(getStat(StatisticType.KD), 'K/D'),
-              ]
-            : []),
-        ],
+        cells: chosen.today.map((id) => todayCell[id]).filter((node): node is ReactElement => node !== null),
       },
-      ...(showStats
-        ? [
-            {
-              id: 'last',
-              title: translate('widget.ticker.last'),
-              cells: [
-                cell(getStat(StatisticType.WINRATIO), translate('widget.ticker.winrate')),
-                cell(pair(StatisticType.KILLS, StatisticType.ADR), translate('widget.ticker.kills_adr')),
-                cell(pair(StatisticType.KD, StatisticType.KR), 'K/D / K/R'),
-              ],
-            },
-          ]
-        : []),
-    ];
-    const page = pages[tickerPage % pages.length];
+      ...(showStats ? [{ id: 'last', title: translate('widget.ticker.last'), cells: chosen.last.map((id) => lastCell[id]) }] : []),
+    ].filter((entry) => entry.cells.length > 0);
+    const page = pages[tickerPage % Math.max(1, pages.length)] ?? { id: 'none', title: '', cells: [] };
     return (
       <div className={'ticker'}>
         <div className={'ticker-head'}>
@@ -1352,7 +1351,7 @@ export const Widget = ({
         </div>
         <div className={'ticker-page'} key={page.id}>
           <p className={'ticker-title'}>{page.title}</p>
-          <div className={'ticker-cells'} data-count={page.cells.length}>
+          <div className={'ticker-cells'} data-count={page.cells.length} style={{ '--cells': page.cells.length } as CSSProperties}>
             {page.cells}
           </div>
         </div>

@@ -73,6 +73,50 @@
     "type": "statistic_type",
     "default": "KD"
   },
+  "tickerTodayWins": {
+    "type": "boolean",
+    "default": true
+  },
+  "tickerTodayLosses": {
+    "type": "boolean",
+    "default": true
+  },
+  "tickerTodayKillsAdr": {
+    "type": "boolean",
+    "default": true
+  },
+  "tickerTodayKd": {
+    "type": "boolean",
+    "default": true
+  },
+  "tickerTodayKr": {
+    "type": "boolean",
+    "default": false
+  },
+  "tickerTodayHs": {
+    "type": "boolean",
+    "default": false
+  },
+  "tickerLastWinrate": {
+    "type": "boolean",
+    "default": true
+  },
+  "tickerLastKillsAdr": {
+    "type": "boolean",
+    "default": true
+  },
+  "tickerLastKd": {
+    "type": "boolean",
+    "default": true
+  },
+  "tickerLastKr": {
+    "type": "boolean",
+    "default": true
+  },
+  "tickerLastHs": {
+    "type": "boolean",
+    "default": false
+  },
   "widgetMode": {
     "type": "string",
     "default": "solo",

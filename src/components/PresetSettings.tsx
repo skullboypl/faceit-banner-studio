@@ -5,6 +5,7 @@ import { isVersusStyle, resolveBannerStyle } from '../../widget/src/styles/style
 import { Checkbox } from './Checkbox';
 import { Statistic } from './Statistic';
 import { StatisticType } from '../generator/tabs/StatisticsTab';
+import { TICKER_LAST, TICKER_TODAY, tickerSettingKey } from '../../widget/src/widget/ticker-options';
 
 export function PresetSettings() {
   const settings = useContext(SettingsContext);
@@ -101,6 +102,11 @@ export function PresetSettings() {
             {Object.values(StatisticType).map((value) => <option key={value} value={value}>{tl(`stat.${value.toLowerCase()}`)}</option>)}
           </select>
         </div>
+        <h4>{tl('preset.ticker_today')}</h4>
+        {TICKER_TODAY.map((cell) => <Checkbox key={cell} text={tl(`preset.ticker_cell.${cell}`)} setting={tickerSettingKey('today', cell) as SettingKey} />)}
+        <h4>{tl('preset.ticker_last')}</h4>
+        {TICKER_LAST.map((cell) => <Checkbox key={cell} text={tl(`preset.ticker_cell.${cell}`)} setting={tickerSettingKey('last', cell) as SettingKey} />)}
+        <p className="subtext">{tl('preset.ticker_pages_help')}</p>
       </>}
       {animated && <>
         <Checkbox text={tl('preset.autoplay')} setting={key('Autoplay')} />
