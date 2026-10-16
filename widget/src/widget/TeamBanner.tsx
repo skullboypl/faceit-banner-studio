@@ -47,7 +47,7 @@ type Column = {
 
 const played = (member: RosterCard) => (member.session?.matches ?? 0) > 0;
 const sessionOf = (member: RosterCard): SessionCard =>
-  member.session ?? { wins: 0, losses: 0, matches: 0, kills: 0, hs: 0, avg: 0, adr: 0, kr: 0, winRate: 0 };
+  member.session ?? { wins: 0, losses: 0, matches: 0, kills: 0, hs: 0, avg: 0, adr: 0, kr: 0, winRate: 0, kd: 0 };
 const count = (value: number) => String(Math.max(0, Math.round(value) || 0));
 const rate = (member: RosterCard, value: number) => (played(member) && value > 0 ? `${Math.round(value)}%` : played(member) ? '0%' : '—');
 const average = (member: RosterCard, value: number, digits: number) =>
