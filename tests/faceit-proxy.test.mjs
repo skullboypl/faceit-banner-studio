@@ -78,3 +78,38 @@ test('a calibrating player is marked once and a failed site lookup keeps the Dat
   await cache.load(target);
   assert.equal(calls.length, 2);
 });
+
+test('the active-match path asks the public site, not the Data API, and takes no query', () => {
+  const target = faceitTarget(`/api/faceit/v4/players/${id}/active?userId=other`);
+  assert.equal(target.upstream, `https://www.faceit.com/api/match/v1/matches/groupByState?userId=${id}`);
+  assert.equal(target.site, true);
+  assert.equal(faceitTarget(`/api/faceit/v4/players/nope/active`), null);
+});
+
+test('activeMatchFrom prefers a running match, then a lobby, and says nothing when there is none', async () => {
+  const { activeMatchFrom } = await import('../server/faceit-proxy.mjs');
+  const body = (payload) => JSON.stringify({ payload });
+  assert.deepEqual(JSON.parse(activeMatchFrom(body({}))), {});
+  assert.deepEqual(JSON.parse(activeMatchFrom('not json')), {});
+  assert.deepEqual(JSON.parse(activeMatchFrom(body({ VOTING: [{ id: '1-lobby-match' }] }))), { match_id: '1-lobby-match', status: 'VOTING' });
+  assert.deepEqual(
+    JSON.parse(activeMatchFrom(body({ READY: [{ id: '1-ready-match' }], ONGOING: [{ id: '1-live-match' }, { id: '1-other-match' }] }))),
+    { match_id: '1-live-match', status: 'ONGOING' }
+  );
+  assert.deepEqual(JSON.parse(activeMatchFrom(body({ FINISHED: [{ id: '1-done-match' }] }))), {});
+});
+
+test('a site read goes out without the API key and comes back reduced to the match', async () => {
+  const calls = [];
+  const cache = createFaceitCache({
+    getKey: () => 'secret-key',
+    fetcher: async (url, init) => {
+      calls.push({ url, headers: init.headers });
+      return { status: 200, text: async () => JSON.stringify({ payload: { ONGOING: [{ id: '1-live-match' }] } }) };
+    },
+  });
+  const entry = await cache.load(faceitTarget(`/api/faceit/v4/players/${id}/active`));
+  assert.equal(calls[0].headers.Authorization, undefined);
+  assert.match(calls[0].headers['User-Agent'], /faceitbanner/);
+  assert.deepEqual(JSON.parse(entry.body), { match_id: '1-live-match', status: 'ONGOING' });
+});

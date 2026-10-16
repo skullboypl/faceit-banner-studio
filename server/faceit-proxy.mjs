@@ -14,10 +14,36 @@ const ALLOWED = [
   new RegExp(`^\\/players\\/${PLAYER}\\/games\\/cs2\\/stats$`, 'i'),
   new RegExp(`^\\/players\\/${PLAYER}\\/stats\\/cs2$`, 'i'),
   new RegExp(`^\\/players\\/${PLAYER}\\/history$`, 'i'),
+  new RegExp(`^\\/players\\/${PLAYER}\\/active$`, 'i'),
   new RegExp(`^\\/rankings\\/games\\/cs2\\/regions\\/[A-Za-z0-9_-]{2,8}\\/players\\/${PLAYER}$`, 'i'),
   new RegExp(`^\\/matches\\/${MATCH}$`, 'i'),
   new RegExp(`^\\/matches\\/${MATCH}\\/stats$`, 'i'),
 ];
+
+/** A running match comes first, then the lobby states, in the order a match moves through them. */
+const ACTIVE_STATES = ['ONGOING', 'READY', 'CONFIGURING', 'SUBSTITUTION', 'CAPTAIN_PICK', 'VOTING', 'SCHEDULED'];
+const SITE_HEADERS = {
+  Accept: 'application/json',
+  'User-Agent': 'faceitbanner/1.0 (faceitbanner.vxh.pl)',
+};
+
+/**
+ * The Data API lists only finished matches. The public site knows what a player is in right now:
+ * this reduces its answer to the one match worth showing, or to {} when the player is idle.
+ */
+export function activeMatchFrom(body) {
+  let payload;
+  try {
+    payload = JSON.parse(body)?.payload;
+  } catch {
+    return '{}';
+  }
+  for (const status of ACTIVE_STATES) {
+    const id = payload?.[status]?.[0]?.id;
+    if (typeof id === 'string' && /^[0-9a-zA-Z-]{8,80}$/.test(id)) return JSON.stringify({ match_id: id, status });
+  }
+  return '{}';
+}
 
 function faceitKey() {
   return process.env.FACEIT_API_KEY || process.env.VITE_FACEIT_API_KEY || '';
@@ -76,6 +102,14 @@ export function faceitTarget(rawUrl) {
       if (!/^[a-z]{2}$/i.test(country)) return null;
       params.set('country', country.toLowerCase());
     }
+  }
+  const active = path.match(new RegExp(`^\\/players\\/(${PLAYER})\\/active$`, 'i'));
+  if (active) {
+    return {
+      upstream: `https://www.faceit.com/api/match/v1/matches/groupByState?userId=${active[1].toLowerCase()}`,
+      key: `${path.toLowerCase()}?`,
+      site: true,
+    };
   }
   const query = params.toString();
   const player = path.toLowerCase() === '/players' || new RegExp(`^\\/players\\/${PLAYER}$`, 'i').test(path);
@@ -140,10 +174,11 @@ export function createFaceitCache({
     const task = (async () => {
       try {
         const response = await fetcher(target.upstream, {
-          headers: { Authorization: `Bearer ${getKey()}`, Accept: 'application/json' },
+          headers: target.site ? SITE_HEADERS : { Authorization: `Bearer ${getKey()}`, Accept: 'application/json' },
           signal: AbortSignal.timeout(8000),
         });
         let body = (await response.text()).slice(0, MAX_BODY);
+        if (response.status === 200 && target.site) body = activeMatchFrom(body);
         if (response.status === 200 && target.calibrate) body = await withCalibration(body, fetcher);
         const entry = { status: response.status, body, at: now() };
         remember(target.key, entry);

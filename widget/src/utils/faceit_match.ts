@@ -146,16 +146,34 @@ export function collectStats(stats: unknown): Map<string, PlayerStats> {
   return result;
 }
 
-/** Newest CS2 match for this player: lobby, live, or the result. */
-export async function fetchLatestMatch(playerId: string): Promise<LiveMatch | undefined> {
-  if (!playerId) return undefined;
-  const history = await faceitGet(
-    `/players/${playerId}/history?game=cs2&offset=0&limit=1`
-  );
+type MatchRef = Record<string, unknown> & { match_id: string };
+
+/** The lobby or running match the player is in right now, if any. */
+async function activeMatch(playerId: string): Promise<MatchRef | undefined> {
+  try {
+    const response = await faceitGet(`/players/${playerId}/active`);
+    if (!response.ok) return undefined;
+    const body = (await response.json()) as { match_id?: unknown; status?: unknown };
+    return typeof body.match_id === 'string' ? { match_id: body.match_id, status: body.status } : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function latestFinished(playerId: string): Promise<MatchRef | undefined> {
+  const history = await faceitGet(`/players/${playerId}/history?game=cs2&offset=0&limit=1`);
   if (!history.ok) return undefined;
   const body = (await history.json()) as { items?: Record<string, unknown>[] };
   const item = body.items?.[0];
-  if (!item || typeof item.match_id !== 'string') return undefined;
+  return item && typeof item.match_id === 'string' ? (item as MatchRef) : undefined;
+}
+
+/** Newest CS2 match for this player: lobby, live, or the result. */
+export async function fetchLatestMatch(playerId: string): Promise<LiveMatch | undefined> {
+  if (!playerId) return undefined;
+  /* The Data API history lists only finished matches, so a lobby or a running match comes from the active lookup. */
+  const item = (await activeMatch(playerId)) ?? (await latestFinished(playerId));
+  if (!item) return undefined;
 
   const detailsResponse = await faceitGet(`/matches/${item.match_id}`);
   const details = detailsResponse.ok ? ((await detailsResponse.json()) as Record<string, unknown>) : item;
