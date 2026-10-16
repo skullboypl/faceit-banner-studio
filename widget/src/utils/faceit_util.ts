@@ -120,6 +120,9 @@ export const getVerifiedBadgeType = (profile: {
   return 'verified';
 };
 
+/** Stands in for a place FACEIT did not give (calibrating, outside the list, or a failed lookup); never drawn. */
+export const UNKNOWN_PLACE = 999999;
+
 export async function getPlayerRankingPosition(
   id: string,
   region: string,
@@ -130,11 +133,13 @@ export async function getPlayerRankingPosition(
   );
   if (response.ok) {
     const data = (await response.json()) as V4RankingResponse;
-    if (Number.isInteger(data.position) && (data.position as number) >= 1 && (data.position as number) <= 1000) {
+    /* Only the regional top 1000 is a challenger place; a place in a country can be any number. */
+    const last = country ? Infinity : 1000;
+    if (Number.isInteger(data.position) && (data.position as number) >= 1 && (data.position as number) <= last) {
       return data.position;
     }
     const item = data.items?.find((i) => i.player_id === id);
-    return item && item.position >= 1 && item.position <= 1000 ? item.position : undefined;
+    return item && item.position >= 1 && item.position <= last ? item.position : undefined;
   } else {
     console.error(
       `Failed to fetch ranking: ${response.status} ${await response.text()}`
@@ -281,8 +286,8 @@ export function getPlayerStats(
         level,
         elo,
         calibrating,
-        ranking: ranking || 999999,
-        countryRanking: countryRanking || 999999,
+        ranking: ranking || UNKNOWN_PLACE,
+        countryRanking: countryRanking || UNKNOWN_PLACE,
         region,
         country,
         wins,

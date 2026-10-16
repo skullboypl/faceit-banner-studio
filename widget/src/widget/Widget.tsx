@@ -21,7 +21,7 @@ import {
   languages,
   tl,
 } from '../../../src/translations/translations.ts';
-import { getPlayerStats, VerifiedBadgeType } from '../utils/faceit_util.ts';
+import { getPlayerStats, UNKNOWN_PLACE, VerifiedBadgeType } from '../utils/faceit_util.ts';
 import {
   BannerSizeMode,
   getBannerSizeLimits,
@@ -694,8 +694,8 @@ export const Widget = ({
         setUtilityDamagePerRound(player.avg.utilityDamagePerRound);
         setFlashSuccessRate(player.avg.flashSuccessRate);
 
-        setRanking(player.calibrating ? 999999 : player.ranking);
-        setCountryRanking(player.calibrating ? 999999 : player.countryRanking);
+        setRanking(player.calibrating ? UNKNOWN_PLACE : player.ranking);
+        setCountryRanking(player.calibrating ? UNKNOWN_PLACE : player.countryRanking);
         setCountry(player.country);
         setRegion(player.region);
         if (!player.calibrating) {
@@ -1170,7 +1170,8 @@ export const Widget = ({
                 (SETTINGS.get('showRanking') ===
                   ShowRanking.ONLY_WHEN_CHALLENGER &&
                   ranking <= 1000 &&
-                  !sample)) && (
+                  !sample)) &&
+                (sample || ranking < UNKNOWN_PLACE) && (
                 <span
                   className={`region-ranking ${!sample && ranking === 0 ? 'skeleton' : ''}`}
                 >
@@ -1191,7 +1192,8 @@ export const Widget = ({
                 </span>
               )}
               {(SETTINGS.get('showRanking') === ShowRanking.COUNTRY ||
-                SETTINGS.get('showRanking') === ShowRanking.BOTH) && (
+                SETTINGS.get('showRanking') === ShowRanking.BOTH) &&
+                (sample || countryRanking < UNKNOWN_PLACE) && (
                 <span
                   className={`country-ranking ${!sample && countryRanking === 0 ? 'skeleton' : ''}`}
                 >
