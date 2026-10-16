@@ -2378,6 +2378,7 @@ export const Widget = ({
               owner={username || previewUsername || ''}
               session={{ wins, losses, form: sessionForm }}
               sessionStart={sessionStart}
+              refreshSeconds={Number(SETTINGS.get('refreshInterval')) || 60}
               options={readTeamOptions((key) => SETTINGS.get(key as SettingKey))}
               translate={translate}
             />

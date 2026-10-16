@@ -264,9 +264,9 @@ describe('TeamBanner look', () => {
 
   test('the header label can be renamed or hidden, and the owner session stays on by default', async () => {
     const renamed = await draw({ title: 'Ekipa' });
-    expect(renamed.querySelector('.team-head-lead span')?.textContent).toBe('Ekipa');
+    expect(renamed.querySelector('.team-head-lead > span')?.textContent).toBe('Ekipa');
     const hidden = await draw({ kicker: false, title: 'Ekipa' });
-    expect(hidden.querySelector('.team-head-lead span')).toBeNull();
+    expect(hidden.querySelector('.team-head-lead > span')).toBeNull();
     expect(hidden.querySelector('.team-owner-form')).toBeNull();
     const owner = await draw({ kicker: false }, 'alpha', 'lineup', 'alpha');
     expect(owner.querySelector('.team-owner-form')?.textContent).toContain('alpha');
@@ -401,5 +401,55 @@ describe('TeamBanner: colours', () => {
     const { readFileSync } = await import('node:fs');
     const css = readFileSync('widget/src/styles/modes-preset.less', 'utf8');
     for (const name of ['--team-panel-rgb', '--team-text', '--team-bar', '--team-top']) expect(css, name).toContain(`var(${name}`);
+  });
+});
+
+describe('the roster keeps its numbers up to date', () => {
+  test('every refresh interval it asks FACEIT again and shows the new session numbers', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      let wins = 1;
+      vi.mocked(lookupRosterCard).mockImplementation(async (name: string) => ({
+        username: name,
+        elo: 1500,
+        level: 7,
+        kd: 1.2,
+        winRate: 50,
+        session: { wins, losses: 0, matches: wins, kills: 10, hs: 40, avg: 10, adr: 80, kr: 0.8, winRate: 100, kd: 1.5 },
+      }));
+      const view = render(
+        <TeamBanner roster="alpha" layout="lineup" options={{ ...TEAM_DEFAULTS, sessionWins: true }} refreshSeconds={30} translate={translate} />
+      );
+      const sessionWins = () => view.container.querySelector('.team-stat-s-wins b')?.textContent;
+      await waitFor(() => expect(sessionWins()).toBe('1'));
+      wins = 3;
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(31_000);
+      });
+      await waitFor(() => expect(sessionWins()).toBe('3'));
+      expect(vi.mocked(lookupRosterCard).mock.calls.length).toBeGreaterThanOrEqual(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('a refresh that fails keeps the numbers that were already shown', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      let fail = false;
+      vi.mocked(lookupRosterCard).mockImplementation(async (name: string) => {
+        if (fail) throw new Error('offline');
+        return { username: name, elo: 1777, level: 7, kd: 1.2, winRate: 50 };
+      });
+      const view = render(<TeamBanner roster="alpha" layout="lineup" options={TEAM_DEFAULTS} refreshSeconds={30} translate={translate} />);
+      await waitFor(() => expect(view.container.querySelector('.team-stat-elo b')?.textContent).toBe('1777'));
+      fail = true;
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(31_000);
+      });
+      expect(view.container.querySelector('.team-stat-elo b')?.textContent).toBe('1777');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

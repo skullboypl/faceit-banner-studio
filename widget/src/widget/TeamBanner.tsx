@@ -13,6 +13,8 @@ type Props = {
   session?: { wins: number; losses: number; form: ('W' | 'L')[] };
   /** Epoch ms when that session started. Roster rows count their own session from here. */
   sessionStart?: number;
+  /** How often the rows are read again, in seconds; 0 reads them once. */
+  refreshSeconds?: number;
   options?: TeamOptions;
   translate: (text: string, args?: string[]) => string;
 };
@@ -90,6 +92,7 @@ export function TeamBanner({
   owner = '',
   session = { wins: 0, losses: 0, form: [] },
   sessionStart = 0,
+  refreshSeconds = 0,
   options = TEAM_DEFAULTS,
   translate,
 }: Props) {
@@ -103,14 +106,22 @@ export function TeamBanner({
       return;
     }
     let cancel = false;
-    Promise.all(names.map((name) => lookupRosterCard(name, options.matchWindow, sessionStart))).then((rows) => {
-      if (cancel) return;
-      setMembers(rows);
-    });
+    const load = () =>
+      Promise.all(names.map((name) => lookupRosterCard(name, options.matchWindow, sessionStart)))
+        .then((rows) => {
+          if (!cancel) setMembers(rows);
+        })
+        .catch(() => {
+          /* a failed read keeps the numbers already shown */
+        });
+    load();
+    /* The banner header refreshes on its own; the rows read their own stats, so they need their own timer */
+    const timer = refreshSeconds > 0 ? window.setInterval(load, Math.max(10, refreshSeconds) * 1000) : undefined;
     return () => {
       cancel = true;
+      if (timer !== undefined) window.clearInterval(timer);
     };
-  }, [names.join('|'), options.matchWindow, sessionStart]);
+  }, [names.join('|'), options.matchWindow, sessionStart, refreshSeconds]);
 
   const loaded: RosterCard[] = members.length
     ? members
