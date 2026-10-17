@@ -20,7 +20,7 @@ function embedUrl(channel: string) {
   const url = new URL('https://player.twitch.tv/');
   url.searchParams.set('channel', channel);
   url.searchParams.set('parent', window.location.hostname || 'localhost');
-  url.searchParams.set('autoplay', 'false');
+  url.searchParams.set('autoplay', 'true');
   url.searchParams.set('muted', 'true');
   return url.toString();
 }

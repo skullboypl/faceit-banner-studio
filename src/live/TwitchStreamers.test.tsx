@@ -39,6 +39,7 @@ describe('TwitchStreamers', () => {
     const frame = await screen.findByTitle('Transmisja Twitch: Streamer 12');
     expect(frame.getAttribute('src')).toContain('channel=streamer12');
     expect(frame.getAttribute('src')).toContain(`parent=${window.location.hostname}`);
+    expect(frame.getAttribute('src')).toContain('autoplay=true');
     expect(screen.getAllByTitle(/Transmisja Twitch:/)).toHaveLength(1);
     const cards = screen.getAllByRole('button', { name: /LIVE/ });
     expect(cards).toHaveLength(10);
