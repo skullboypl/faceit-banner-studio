@@ -224,7 +224,7 @@ const AVATAR_HOSTS = new Set([
   'cdn-frontend.faceit.com',
 ]);
 const AVATAR_TTL_SECONDS = 6 * 60 * 60;
-const AVATAR_MISS_MS = 10 * 60_000;
+const AVATAR_MISS_MS = 90_000;
 const RANK_TTL_SECONDS = 6 * 60 * 60;
 const avatarMemory = new Map();
 const rankMemory = new Map();
@@ -356,7 +356,7 @@ export async function fillFromPlayerId(entries) {
     if (!grouped.has(id)) grouped.set(id, []);
     grouped.get(id).push(entry);
   }
-  let budget = 12;
+  let budget = 40;
   const work = [...grouped.entries()].filter(([id, rows]) => {
     const freshStats = rows.some(
       ({ info }) =>

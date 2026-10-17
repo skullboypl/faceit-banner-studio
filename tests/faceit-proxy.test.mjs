@@ -113,3 +113,28 @@ test('a site read goes out without the API key and comes back reduced to the mat
   assert.match(calls[0].headers['User-Agent'], /faceitbanner/);
   assert.deepEqual(JSON.parse(entry.body), { match_id: '1-live-match', status: 'ONGOING' });
 });
+
+test('rankings change slowly and are kept for ten minutes, while profiles still refresh every 15 seconds', async () => {
+  let clock = 1_000;
+  const calls = [];
+  const cache = createFaceitCache({
+    now: () => clock,
+    getKey: () => 'test-key',
+    fetcher: async (url) => {
+      calls.push(url);
+      return { status: 200, text: async () => '{}' };
+    },
+  });
+  const ranking = faceitTarget(`/api/faceit/v4/rankings/games/cs2/regions/EU/players/${id}?country=pl`);
+  const profile = faceitTarget(`/api/faceit/v4/players/${id}`);
+  await cache.load(ranking);
+  await cache.load(profile);
+  clock += 60_000;
+  await cache.load(ranking);
+  await cache.load(profile);
+  assert.equal(calls.filter((url) => url.includes('/rankings/')).length, 1);
+  assert.equal(calls.filter((url) => url.endsWith(`/players/${id}`)).length, 2);
+  clock += 10 * 60_000;
+  await cache.load(ranking);
+  assert.equal(calls.filter((url) => url.includes('/rankings/')).length, 2);
+});

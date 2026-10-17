@@ -3,6 +3,8 @@ import { clientIp } from '../shared/client-ip.mjs';
 
 /** Repeated reads of the same player reuse this answer instead of calling FACEIT again. */
 export const FACEIT_TTL_MS = 15_000;
+/** A place in a ranking moves slowly, and two lookups per player add up: keep those longer. */
+export const FACEIT_RANKING_TTL_MS = 10 * 60_000;
 const PREFIX = '/api/faceit/v4';
 const CACHE_LIMIT = 400;
 const MAX_BODY = 1_500_000;
@@ -116,6 +118,7 @@ export function faceitTarget(rawUrl) {
   return {
     upstream: `https://open.faceit.com/data/v4${path}${query ? `?${query}` : ''}`,
     key: `${path.toLowerCase()}?${query}`,
+    ttl: path.includes('/rankings/') ? FACEIT_RANKING_TTL_MS : undefined,
     /** Player reads also ask the public site whether this season is still unranked. */
     calibrate: player,
   };
@@ -168,7 +171,7 @@ export function createFaceitCache({
   };
   const load = (target) => {
     const hit = cache.get(target.key);
-    if (hit && now() - hit.at < ttl) return Promise.resolve(hit);
+    if (hit && now() - hit.at < (target.ttl ?? ttl)) return Promise.resolve(hit);
     const waiting = pending.get(target.key);
     if (waiting) return waiting;
     const task = (async () => {

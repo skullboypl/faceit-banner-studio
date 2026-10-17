@@ -125,3 +125,30 @@ test('reading the counter is limited per IP too', async () => {
     await close();
   }
 });
+
+test('a live page of 100 avatars is not rate limited and does not lock the visitor out', async () => {
+  const { base, close } = await serve(createPresenceMiddleware());
+  try {
+    const statuses = [];
+    for (let i = 0; i < 100; i++) {
+      const id = `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`;
+      statuses.push((await hit(base, `/api/presence/avatar/${id}`, { ip: '198.51.100.30' })).status);
+    }
+    assert.equal(statuses.filter((s) => s === 429).length, 0);
+    /* the counter and the list still answer the same visitor */
+    assert.equal((await hit(base, '/api/presence/live', { ip: '198.51.100.30' })).status, 200);
+  } finally {
+    await close();
+  }
+});
+
+test('a missing avatar is remembered for a minute, not ten', async () => {
+  const { base, close } = await serve(createPresenceMiddleware({ unlimitedRate: true }));
+  try {
+    const response = await hit(base, '/api/presence/avatar/00000000-0000-4000-8000-0000000000aa', { ip: '198.51.100.31' });
+    assert.equal(response.status, 404);
+    assert.equal(response.headers.get('cache-control'), 'public, max-age=60');
+  } finally {
+    await close();
+  }
+});

@@ -264,6 +264,8 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
   const allow = () => true;
   const postLimit = unlimitedRate ? allow : createRateLimiter({ perMinute: 12, blockAfter: LOCKOUT });
   const getLimit = unlimitedRate ? allow : createRateLimiter({ perMinute: 60, blockAfter: LOCKOUT });
+  /* A live page loads up to 100 avatars at once, and the browser keeps each for hours: no lockout for pictures */
+  const avatarLimit = unlimitedRate ? allow : createRateLimiter({ perMinute: 600 });
 
   return async (req, res, next) => {
     if (await handleFaceitProxy(req, res, { unlimitedRate })) return;
@@ -280,11 +282,11 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
     await hydratePresence();
 
     if (req.method === 'GET' && avatarId) {
-      if (!getLimit(ip)) return sendJson(res, 429, { error: 'rate_limited' }, { 'Retry-After': '60' });
+      if (!avatarLimit(ip)) return sendJson(res, 429, { error: 'rate_limited' }, { 'Retry-After': '30' });
       const image = await loadAvatar(avatarId);
       if (!image) {
         res.statusCode = 404;
-        res.setHeader('Cache-Control', 'public, max-age=600');
+        res.setHeader('Cache-Control', 'public, max-age=60');
         return res.end();
       }
       res.statusCode = 200;
