@@ -1,10 +1,10 @@
 import { useCallback, useContext, useRef, useState } from 'react';
 import { LanguageContext } from '../generator/contexts';
 import type { Language } from '../translations/translations';
+import { languageFlagUrl as flagUrl } from './language-flag';
 import { StudioIcon } from './StudioIcon';
 import { useDismiss } from './useDismiss';
 
-const flagUrl = (id: string) => `https://flagcdn.com/${id === 'en' ? 'gb' : id}.svg`;
 
 /** Dropdown instead of one button per language, so adding languages does not grow the menu. */
 export const LanguageSelect = ({

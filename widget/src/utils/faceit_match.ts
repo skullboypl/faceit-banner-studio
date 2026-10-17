@@ -168,13 +168,72 @@ async function latestFinished(playerId: string): Promise<MatchRef | undefined> {
   return item && typeof item.match_id === 'string' ? (item as MatchRef) : undefined;
 }
 
-/** Newest CS2 match for this player: lobby, live, or the result. */
+/** How long an idle player's history is trusted before it is looked at again. */
+const IDLE_MS = 60_000;
+/** A result still without statistics is asked for again on every poll, but only for this long after the match. */
+const STATS_WAIT_MS = 5 * 60_000;
+
+type PlayerPolling = {
+  /** The last poll found a lobby or a running match, so the next "no match" means it just ended. */
+  wasActive: boolean;
+  idleAt: number;
+  idleItem?: MatchRef;
+};
+const polling = new Map<string, PlayerPolling>();
+/** Lobby and running matches by id and state: their roster does not change inside one state. */
+const stateCache = new Map<string, LiveMatch>();
+/** Finished matches by id. A result never changes, apart from statistics that FACEIT adds a little later. */
+const resultCache = new Map<string, { match: LiveMatch; at: number }>();
+
+function remember<K, V>(map: Map<K, V>, key: K, value: V, limit = 20) {
+  map.delete(key);
+  map.set(key, value);
+  while (map.size > limit) map.delete(map.keys().next().value as K);
+}
+
+/**
+ * Newest CS2 match for this player: lobby, live, or the result.
+ * A popup polls often, so it asks for the little that can have changed: whether a lobby or a match is running (one cheap
+ * request), and only when that changes, the match itself. An idle player's history is looked at about once a minute, a
+ * finished match is read once, and the moment a running match disappears its result is looked up without waiting.
+ */
 export async function fetchLatestMatch(playerId: string): Promise<LiveMatch | undefined> {
   if (!playerId) return undefined;
+  const memory = polling.get(playerId) ?? { wasActive: false, idleAt: 0 };
+  polling.set(playerId, memory);
+
   /* The Data API history lists only finished matches, so a lobby or a running match comes from the active lookup. */
-  const item = (await activeMatch(playerId)) ?? (await latestFinished(playerId));
+  const active = await activeMatch(playerId);
+  if (active) {
+    memory.wasActive = true;
+    const state = `${active.match_id}:${String(active.status)}`;
+    const known = stateCache.get(state);
+    if (known) return known;
+    const match = await buildMatch(playerId, active);
+    if (match) remember(stateCache, state, match);
+    return match;
+  }
+
+  const ended = memory.wasActive;
+  memory.wasActive = false;
+  let item = memory.idleItem;
+  if (ended || !item || Date.now() - memory.idleAt >= IDLE_MS) {
+    item = (await latestFinished(playerId)) ?? item;
+    memory.idleItem = item;
+    memory.idleAt = Date.now();
+  }
   if (!item) return undefined;
 
+  const cached = resultCache.get(item.match_id);
+  if (cached && (cached.match.me || Date.now() - (cached.match.finishedAt ? cached.match.finishedAt * 1000 : cached.at) > STATS_WAIT_MS)) {
+    return cached.match;
+  }
+  const match = await buildMatch(playerId, item);
+  if (match) remember(resultCache, item.match_id, { match, at: Date.now() });
+  return match;
+}
+
+async function buildMatch(playerId: string, item: MatchRef): Promise<LiveMatch | undefined> {
   const detailsResponse = await faceitGet(`/matches/${item.match_id}`);
   const details = detailsResponse.ok ? ((await detailsResponse.json()) as Record<string, unknown>) : item;
   const teams = (details.teams ?? item.teams) as Record<string, unknown> | undefined;

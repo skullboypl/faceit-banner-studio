@@ -167,7 +167,90 @@ export async function getPlayerRankingPosition(
   }
 }
 
+/**
+ * What a banner shows only changes when the player finishes a match: ELO, level, the averages and the session record.
+ * The avatar, the cover, the country and the badge change almost never. So a reading is kept (in memory and in
+ * localStorage, which OBS keeps between scene switches), and each refresh asks one small question first: what is the
+ * newest finished match? Only when the answer changed is the full set read again. A reading is never trusted for more
+ * than ten minutes, and for two minutes after a new match every refresh reads in full, because FACEIT updates ELO a little later.
+ */
+const REUSE_MS = 10 * 60_000;
+const SETTLE_MS = 2 * 60_000;
+const MEMORY_PREFIX = 'fcw_memo_';
+
+type Reading<T> = { value: T; playerId: string; head: string | null; fetchedAt: number; changedAt: number };
+const memory = new Map<string, Reading<unknown>>();
+
+function storedReading<T>(key: string): Reading<T> | undefined {
+  const held = memory.get(key) as Reading<T> | undefined;
+  if (held) return held;
+  try {
+    const raw = localStorage.getItem(MEMORY_PREFIX + key);
+    const parsed = raw ? (JSON.parse(raw) as Reading<T>) : undefined;
+    if (parsed && Date.now() - parsed.fetchedAt < REUSE_MS && typeof parsed.playerId === 'string') {
+      memory.set(key, parsed);
+      return parsed;
+    }
+  } catch {
+    /* no storage here: the reading just stays in memory */
+  }
+  return undefined;
+}
+
+function keepReading<T>(key: string, reading: Reading<T>) {
+  memory.set(key, reading);
+  try {
+    localStorage.setItem(MEMORY_PREFIX + key, JSON.stringify(reading));
+  } catch {
+    /* storage full or blocked */
+  }
+}
+
+/** The newest finished match of a player: one small request. */
+async function newestMatch(playerId: string): Promise<string | null> {
+  try {
+    const response = await faceitGet(`/players/${playerId}/history?game=cs2&offset=0&limit=1`);
+    if (!response.ok) return null;
+    const body = (await response.json()) as { items?: { match_id?: unknown }[] };
+    const id = body.items?.[0]?.match_id;
+    return typeof id === 'string' ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+async function remembered<T>(
+  key: string,
+  load: () => Promise<{ value: T; playerId: string } | undefined>
+): Promise<T | undefined> {
+  const stored = storedReading<T>(key);
+  let changedAt = stored?.changedAt ?? 0;
+  if (stored && stored.head && Date.now() - stored.fetchedAt < REUSE_MS) {
+    const head = await newestMatch(stored.playerId);
+    if (head && head === stored.head && Date.now() - changedAt > SETTLE_MS) return stored.value;
+    if (head && head !== stored.head) changedAt = Date.now();
+  }
+  const loaded = await load();
+  if (!loaded) return stored?.value;
+  const head = await newestMatch(loaded.playerId);
+  if (stored?.head && head && stored.head !== head) changedAt = Date.now();
+  keepReading(key, { value: loaded.value, playerId: loaded.playerId, head, fetchedAt: Date.now(), changedAt });
+  return loaded.value;
+}
+
 export function getPlayerStats(
+  id: string,
+  matchCount: number,
+  startDate: Date,
+  onlyOfficial: boolean
+): Promise<FaceitPlayer | undefined> {
+  return remembered(`stats|${id}|${matchCount}|${onlyOfficial}|${startDate.getTime()}`, async () => {
+    const value = await loadPlayerStats(id, matchCount, startDate, onlyOfficial);
+    return value ? { value, playerId: value.id } : undefined;
+  });
+}
+
+function loadPlayerStats(
   id: string,
   matchCount: number,
   startDate: Date,
@@ -542,10 +625,22 @@ export function summarizeSessionMatches(items: MatchRow[], startMs: number): Ses
 
 /** Profile plus K/D and win rate from the last 20 or 30 matches, for one row of the roster. */
 export async function lookupRosterCard(name: string, matchWindow = 20, sessionStart = 0): Promise<RosterCard> {
+  const card = await remembered(`row|${name.trim().toLowerCase()}|${matchWindow}|${sessionStart}`, async () => {
+    const loaded = await loadRosterCard(name, matchWindow, sessionStart);
+    return loaded.card.missing ? undefined : { value: loaded.card, playerId: loaded.playerId };
+  });
+  return card ?? (await loadRosterCard(name, matchWindow, sessionStart)).card;
+}
+
+async function loadRosterCard(
+  name: string,
+  matchWindow: number,
+  sessionStart: number
+): Promise<{ card: RosterCard; playerId: string }> {
   const profile = await lookupPlayer(name);
   const game = profile?.games.cs2;
   if (!profile || !game) {
-    return { username: name.trim(), elo: 0, level: 1, kd: 0, winRate: 0, ...emptyRecent, missing: true };
+    return { card: { username: name.trim(), elo: 0, level: 1, kd: 0, winRate: 0, ...emptyRecent, missing: true }, playerId: '' };
   }
   const limit = matchWindow === 30 ? 30 : 20;
   let recent = { kd: 0, winRate: 0, ...emptyRecent };
@@ -567,14 +662,17 @@ export async function lookupRosterCard(name: string, matchWindow = 20, sessionSt
     ranking = await getPlayerRankingPosition(profile.player_id, game.region || 'EU');
   }
   return {
-    username: profile.nickname,
-    avatar: profile.avatar,
-    elo: game.faceit_elo,
-    level: calibrating ? 0 : game.skill_level,
-    calibrating,
-    ranking,
-    ...recent,
-    session,
+    playerId: profile.player_id,
+    card: {
+      username: profile.nickname,
+      avatar: profile.avatar,
+      elo: game.faceit_elo,
+      level: calibrating ? 0 : game.skill_level,
+      calibrating,
+      ranking,
+      ...recent,
+      session,
+    },
   };
 }
 

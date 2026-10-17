@@ -5,11 +5,11 @@ import { LanguageContext } from '../generator/contexts';
 import type { Language } from '../translations/translations';
 import { DonateLink } from './DonateLink';
 import { FaceitLoginButton } from './FaceitLoginButton';
+import { languageFlagUrl as flagUrl } from './language-flag';
 import { StudioIcon, type IconName } from './StudioIcon';
 import { SyncChip } from './SyncChip';
 import { useDismiss } from './useDismiss';
 
-const flagUrl = (id: string) => `https://flagcdn.com/${id === 'en' ? 'gb' : id}.svg`;
 
 type Props = {
   open: boolean;
