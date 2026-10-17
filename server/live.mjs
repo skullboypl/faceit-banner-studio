@@ -1,4 +1,5 @@
 import { withCalibration } from './faceit-proxy.mjs';
+import { faceitFetch, faceitServerKey } from './faceit-gate.mjs';
 import { redisCall } from './store.mjs';
 
 const NICK_MAX = 32;
@@ -91,18 +92,55 @@ export function publicRanking(entries) {
 export const PROFILE_TTL_MS = 6 * 60 * 60_000;
 export const LEGACY_STATS_TTL_MS = 10 * 60_000;
 const RETRY_MS = 5 * 60_000;
+const RATE_LIMIT_PAUSE_MS = 60_000;
 const STALE_MS = 24 * 60 * 60_000;
 const CACHE_LIMIT = 2000;
 
 function faceitKey() {
-  return process.env.FACEIT_API_KEY || process.env.VITE_FACEIT_API_KEY || '';
+  return faceitServerKey();
 }
 
-/** Shared per-process cache, including negative results and in-flight requests. */
+const PROFILE_PREFIX = 'fb:profile:';
+
+/**
+ * Profiles are also kept in Redis, so a restart or a deploy does not empty the live list
+ * and send a burst of lookups to FACEIT. An entry is { profile, at }.
+ */
+export const redisProfileStore = {
+  async load(id) {
+    const raw = await redisCall((redis) => redis.get(`${PROFILE_PREFIX}${id}`));
+    try {
+      const entry = typeof raw === 'string' ? JSON.parse(raw) : null;
+      return entry?.profile && Number.isFinite(entry.at) ? entry : null;
+    } catch {
+      return null;
+    }
+  },
+  async loadMany(ids) {
+    const found = new Map();
+    if (!ids.length) return found;
+    const rows = await redisCall((redis) => redis.mget(ids.map((id) => `${PROFILE_PREFIX}${id}`)));
+    (rows ?? []).forEach((raw, index) => {
+      try {
+        const entry = typeof raw === 'string' ? JSON.parse(raw) : null;
+        if (entry?.profile && Number.isFinite(entry.at)) found.set(ids[index], entry);
+      } catch {
+        /* a broken row is read again from FACEIT */
+      }
+    });
+    return found;
+  },
+  async save(id, entry) {
+    await redisCall((redis) => redis.set(`${PROFILE_PREFIX}${id}`, JSON.stringify(entry), 'EX', 24 * 60 * 60));
+  },
+};
+
+/** Shared per-process cache (backed by `store`), including negative results and in-flight requests. */
 export function createPlayerLookup({
   now = Date.now,
-  fetcher = (...args) => fetch(...args),
+  fetcher = faceitFetch,
   getKey = faceitKey,
+  store = redisProfileStore,
 } = {}) {
   const cache = new Map();
   const pending = new Map();
@@ -136,6 +174,11 @@ export function createPlayerLookup({
     if (pending.has(id)) return pending.get(id);
     if (!needsRefresh(id, freshStats)) return usable(existing);
     const task = (async () => {
+      const stored = await store.load(id).catch(() => null);
+      if (stored && now() - stored.at < ttl(freshStats)) {
+        remember(id, { profile: stored.profile, at: stored.at, retryAt: 0 });
+        return stored.profile;
+      }
       try {
         const response = await fetcher(
           `https://open.faceit.com/data/v4/players/${id}`,
@@ -144,7 +187,8 @@ export function createPlayerLookup({
               Authorization: `Bearer ${getKey()}`,
               Accept: 'application/json',
             },
-            signal: AbortSignal.timeout(2500),
+            timeoutMs: 2500,
+            priority: 'low',
           }
         );
         if (!response.ok) {
@@ -155,13 +199,12 @@ export function createPlayerLookup({
               ? seconds * 1000
               : raw
                 ? Date.parse(raw) - now()
-                : RETRY_MS;
+                : NaN;
+            /* A rate limit is short-lived: honour Retry-After, else wait a minute. A bad key waits longer. */
+            const base = response.status === 429 ? RATE_LIMIT_PAUSE_MS : RETRY_MS;
             blockedUntil =
               now() +
-              Math.min(
-                60 * 60_000,
-                Math.max(RETRY_MS, Number.isFinite(delay) ? delay : RETRY_MS)
-              );
+              Math.min(60 * 60_000, Math.max(base, Number.isFinite(delay) ? delay : base));
           }
           if (response.status === 404) {
             remember(id, {
@@ -210,19 +253,39 @@ export function createPlayerLookup({
           avatarAllowed(data.avatar)
         )
           profile.avatar = data.avatar;
+        if (
+          typeof data.cover_image === 'string' &&
+          data.cover_image.startsWith('https://') &&
+          data.cover_image.length <= 2048 &&
+          avatarAllowed(data.cover_image)
+        )
+          profile.cover = data.cover_image;
         remember(id, { profile, at: now(), retryAt: 0 });
+        void store.save(id, { profile, at: now() }).catch(() => undefined);
         return profile;
       } catch {
+        const fallback = usable(existing) ?? (stored && now() - stored.at < STALE_MS ? stored.profile : null);
         remember(id, {
-          profile: usable(existing),
-          at: existing?.at ?? -Infinity,
+          profile: fallback,
+          at: existing?.at ?? stored?.at ?? -Infinity,
           retryAt: now() + RETRY_MS,
         });
-        return usable(existing);
+        return fallback;
       }
     })().finally(() => pending.delete(id));
     pending.set(id, task);
     return task;
+  };
+  /** Loads many stored profiles at once, so a restart does not wait on FACEIT for each of them. */
+  const warm = async (ids) => {
+    const wanted = [...new Set(ids.map((id) => String(id).toLowerCase()))].filter(
+      (id) => UUID.test(id) && !cache.has(id)
+    );
+    if (!wanted.length) return;
+    const found = await store.loadMany(wanted).catch(() => new Map());
+    for (const [id, entry] of found) {
+      if (now() - entry.at < STALE_MS && !cache.has(id)) remember(id, { profile: entry.profile, at: entry.at, retryAt: 0 });
+    }
   };
   /** Forgets every profile and lifts a rate-limit pause, so the next lookups go to FACEIT. */
   const clear = () => {
@@ -230,7 +293,9 @@ export function createPlayerLookup({
     pending.clear();
     blockedUntil = 0;
   };
-  return { lookup, needsRefresh, clear };
+  /** The profile as it is cached right now, without any request. */
+  const peek = (rawId) => usable(cache.get(String(rawId).toLowerCase())) ?? null;
+  return { lookup, needsRefresh, clear, warm, peek };
 }
 const playerLookup = createPlayerLookup();
 export const lookupPlayer = playerLookup.lookup;
@@ -244,7 +309,11 @@ const AVATAR_HOSTS = new Set([
 const AVATAR_TTL_SECONDS = 6 * 60 * 60;
 const AVATAR_MISS_MS = 90_000;
 const RANK_TTL_SECONDS = 6 * 60 * 60;
-const avatarMemory = new Map();
+const IMAGES = {
+  avatar: { field: 'avatar', maxBytes: 512_000, memoryLimit: 500 },
+  cover: { field: 'cover', maxBytes: 1_500_000, memoryLimit: 30 },
+};
+const imageMemory = { avatar: new Map(), cover: new Map() };
 const rankMemory = new Map();
 
 /** FACEIT-owned image hosts only, so the avatar route cannot fetch an arbitrary URL. */
@@ -266,43 +335,58 @@ export function avatarContentType(buf) {
   return null;
 }
 
-function rememberAvatar(id, image, ttl) {
-  avatarMemory.set(id, { image, at: Date.now(), ttl });
-  while (avatarMemory.size > 500) avatarMemory.delete(avatarMemory.keys().next().value);
+function rememberImage(kind, id, image, ttl) {
+  const memory = imageMemory[kind];
+  memory.set(id, { image, at: Date.now(), ttl });
+  while (memory.size > IMAGES[kind].memoryLimit) memory.delete(memory.keys().next().value);
 }
 
-/** Downloads a known player's FACEIT avatar once and keeps it for the browser to reuse. */
-export async function loadAvatar(playerId) {
+/** Downloads a known player's FACEIT picture once and keeps it here, so browsers and OBS never hit the FACEIT CDN for it. */
+export async function loadImage(playerId, kind) {
+  const spec = IMAGES[kind];
   const id = String(playerId || '').toLowerCase();
-  if (!UUID.test(id)) return null;
-  const local = avatarMemory.get(id);
+  if (!spec || !UUID.test(id)) return null;
+  const memory = imageMemory[kind];
+  const local = memory.get(id);
   if (local && Date.now() - local.at < local.ttl) return local.image;
-  const packed = await redisCall((redis) => redis.getBuffer(`fb:avatar:${id}`));
+  const packed = await redisCall((redis) => redis.getBuffer(`fb:${kind}:${id}`));
   const packedType = avatarContentType(packed);
   if (packedType) {
     const image = { body: packed, type: packedType };
-    rememberAvatar(id, image, AVATAR_TTL_SECONDS * 1000);
+    rememberImage(kind, id, image, AVATAR_TTL_SECONDS * 1000);
     return image;
   }
   const profile = await lookupPlayer(id);
-  if (!profile?.avatar || !avatarAllowed(profile.avatar)) {
-    rememberAvatar(id, null, AVATAR_MISS_MS);
+  const source = profile ? profile[spec.field] : undefined;
+  if (!source || !avatarAllowed(source)) {
+    rememberImage(kind, id, null, AVATAR_MISS_MS);
     return null;
   }
   try {
-    const response = await fetch(profile.avatar, { signal: AbortSignal.timeout(4000), redirect: 'follow' });
-    if (!response.ok || !avatarAllowed(response.url || profile.avatar)) throw new Error('avatar');
+    const response = await fetch(source, { signal: AbortSignal.timeout(4000), redirect: 'follow' });
+    if (!response.ok || !avatarAllowed(response.url || source)) throw new Error('image');
     const body = Buffer.from(await response.arrayBuffer());
     const type = avatarContentType(body);
-    if (!type || body.length > 512_000) throw new Error('avatar');
+    if (!type || body.length > spec.maxBytes) throw new Error('image');
     const image = { body, type };
-    rememberAvatar(id, image, AVATAR_TTL_SECONDS * 1000);
-    await redisCall((redis) => redis.set(`fb:avatar:${id}`, body, 'EX', AVATAR_TTL_SECONDS));
+    rememberImage(kind, id, image, AVATAR_TTL_SECONDS * 1000);
+    await redisCall((redis) => redis.set(`fb:${kind}:${id}`, body, 'EX', AVATAR_TTL_SECONDS));
     return image;
   } catch {
-    rememberAvatar(id, null, AVATAR_MISS_MS);
+    rememberImage(kind, id, null, AVATAR_MISS_MS);
     return null;
   }
+}
+
+export const loadAvatar = (playerId) => loadImage(playerId, 'avatar');
+export const loadCover = (playerId) => loadImage(playerId, 'cover');
+
+/** The FACEIT address of a picture, when the profile is cached: the fallback if our copy cannot be made. */
+export function knownImageUrl(playerId, kind) {
+  const spec = IMAGES[kind];
+  const profile = spec ? playerLookup.peek(String(playerId || '')) : null;
+  const source = profile ? profile[spec.field] : undefined;
+  return typeof source === 'string' && avatarAllowed(source) ? source : null;
 }
 
 /** Deletes every Redis key with this prefix, a page at a time. */
@@ -321,8 +405,10 @@ async function deleteByPrefix(prefix) {
 export async function clearLiveCache(kind) {
   if (kind === 'profiles') playerLookup.clear();
   else if (kind === 'avatars') {
-    avatarMemory.clear();
+    imageMemory.avatar.clear();
+    imageMemory.cover.clear();
     await deleteByPrefix('fb:avatar:');
+    await deleteByPrefix('fb:cover:');
   } else if (kind === 'rankings') {
     rankMemory.clear();
     await deleteByPrefix('fb:rank:');
@@ -355,11 +441,12 @@ export async function lookupRanking(id, region = 'EU') {
     return value;
   }
   try {
-    const response = await fetch(
+    const response = await faceitFetch(
       `https://open.faceit.com/data/v4/rankings/games/cs2/regions/${encodeURIComponent(area)}/players/${player}`,
       {
         headers: { Authorization: `Bearer ${faceitKey()}`, Accept: 'application/json' },
-        signal: AbortSignal.timeout(2500),
+        timeoutMs: 2500,
+        priority: 'low',
       }
     );
     const position = response.ok ? rankingPosition(await response.json(), player) : null;
@@ -398,6 +485,7 @@ export async function fillFromPlayerId(entries) {
     if (!grouped.has(id)) grouped.set(id, []);
     grouped.get(id).push(entry);
   }
+  await playerLookup.warm(grouped.keys());
   let budget = 40;
   const work = [...grouped.entries()].filter(([id, rows]) => {
     const freshStats = rows.some(

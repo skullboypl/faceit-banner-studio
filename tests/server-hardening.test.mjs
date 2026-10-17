@@ -152,3 +152,19 @@ test('a missing avatar is remembered for a minute, not ten', async () => {
     await close();
   }
 });
+
+test('a cover that cannot be found is a short-lived 404 and is not rate limited like the list', async () => {
+  const { base, close } = await serve(createPresenceMiddleware());
+  try {
+    const statuses = [];
+    for (let i = 0; i < 80; i++) {
+      const id = `00000000-0000-4000-8000-${String(i + 500).padStart(12, '0')}`;
+      const response = await hit(base, `/api/presence/cover/${id}`, { ip: '198.51.100.32' });
+      statuses.push(response.status);
+      if (i === 0) assert.equal(response.headers.get('cache-control'), 'public, max-age=60');
+    }
+    assert.equal(statuses.every((status) => status === 404), true);
+  } finally {
+    await close();
+  }
+});

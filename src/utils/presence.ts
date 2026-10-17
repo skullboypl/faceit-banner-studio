@@ -2,6 +2,8 @@ const PRESENCE_ID_KEY = 'fcw_presence_id';
 const HEARTBEAT_MS = 60_000;
 /** Matches the server snapshot TTL. The menu count and the live list both use it. */
 export const PRESENCE_REFRESH_MS = 30_000;
+/** The live list is a saved copy on the server, so asking more often than once a minute gains nothing. */
+export const LIVE_LIST_REFRESH_MS = 60_000;
 
 type OnlineListener = (count: number) => void;
 const onlineListeners = new Set<OnlineListener>();
@@ -107,6 +109,10 @@ export type LiveBoard = {
   online: number;
   ranked: number;
   windowSeconds: number;
+  /** How long the server keeps the list before building it again. */
+  cacheSeconds?: number;
+  /** When the server made this copy of the list, in epoch milliseconds. */
+  generatedAt?: number;
   players: LivePlayer[];
 };
 

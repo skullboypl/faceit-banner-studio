@@ -15,6 +15,9 @@ COPY . .
 # CapRover App Configs → VITE_FACEIT_API_KEY (dostępne przy docker build)
 ARG VITE_FACEIT_API_KEY=${VITE_FACEIT_API_KEY}
 ENV VITE_FACEIT_API_KEY=${VITE_FACEIT_API_KEY}
+# FACEIT "client side" key: public on purpose, built into the page, used only when our server is rate limited.
+ARG VITE_FACEIT_CLIENT_KEY=${VITE_FACEIT_CLIENT_KEY}
+ENV VITE_FACEIT_CLIENT_KEY=${VITE_FACEIT_CLIENT_KEY}
 
 RUN pnpm run build
 
@@ -26,6 +29,9 @@ FROM nginx:1.27-alpine
 # Same key the widget uses, so a banner that only reports player_id can still be named on the live board.
 ARG VITE_FACEIT_API_KEY
 ENV FACEIT_API_KEY=${VITE_FACEIT_API_KEY}
+# The FACEIT "server side" key. Wins over the two above when set; it stays on the server.
+ARG FACEIT_SERVER_KEY
+ENV FACEIT_SERVER_KEY=${FACEIT_SERVER_KEY}
 
 RUN apk add --no-cache nodejs npm
 

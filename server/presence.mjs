@@ -1,6 +1,6 @@
 import { clientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
-import { fillFromPlayerId, loadAvatar, playerIdFromReferer, publicRanking, sanitizeInfo } from './live.mjs';
+import { fillFromPlayerId, knownImageUrl, loadImage, playerIdFromReferer, publicRanking, sanitizeInfo } from './live.mjs';
 import { handleFaceitProxy } from './faceit-proxy.mjs';
 import { recordOnlineSample, verifiedAmong, withRedis } from './store.mjs';
 
@@ -198,22 +198,28 @@ export function startOnlineHistory() {
   timer.unref?.();
 }
 
-/** Public menu count and the live list share one snapshot so open studios do not each rebuild it. */
-const PUBLIC_TTL_MS = 30_000;
+/** The menu counter is kept for 30 seconds; the live list, a list of people, is kept longer. */
+const COUNT_TTL_MS = 30_000;
+const BOARD_TTL_MS = 15 * 60_000;
 
-function publicTtlMs() {
+/** LIVE_BOARD_TTL_MS, when set, applies to both. */
+function envTtl() {
   const raw = process.env.LIVE_BOARD_TTL_MS;
-  if (raw === undefined || raw === '') return PUBLIC_TTL_MS;
+  if (raw === undefined || raw === '') return null;
   const parsed = Number(raw);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : PUBLIC_TTL_MS;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 }
+
+export const countTtlMs = () => envTtl() ?? COUNT_TTL_MS;
+export const boardTtlMs = () => envTtl() ?? BOARD_TTL_MS;
+const publicTtlMs = countTtlMs;
 
 let countCache = null;
 let boardCache = null;
 let boardInflight = null;
 
-function fresh(entry) {
-  return Boolean(entry) && Date.now() - entry.at < publicTtlMs();
+function fresh(entry, ttl = publicTtlMs()) {
+  return Boolean(entry) && Date.now() - entry.at < ttl;
 }
 
 function rememberCount(online, at = Date.now()) {
@@ -247,6 +253,8 @@ async function buildLiveBoard() {
     ranked: players.length,
     windowSeconds: ACTIVE_WINDOW_MS / 1000,
     players: players.slice(0, 200),
+    generatedAt: at,
+    cacheSeconds: Math.round(boardTtlMs() / 1000),
   };
   boardCache = { at, body };
   rememberCount(body.online, at);
@@ -255,7 +263,7 @@ async function buildLiveBoard() {
 
 /** Public board: nick, ELO, level, country. No session id and no address. */
 export async function getLiveBoard() {
-  if (fresh(boardCache)) return boardCache.body;
+  if (fresh(boardCache, boardTtlMs())) return boardCache.body;
   if (!boardInflight) {
     boardInflight = buildLiveBoard().finally(() => {
       boardInflight = null;
@@ -276,8 +284,9 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
   return async (req, res, next) => {
     if (await handleFaceitProxy(req, res, { unlimitedRate })) return;
     const pathname = new URL(req.url || '/', 'http://localhost').pathname;
-    const avatarId = pathname.startsWith('/api/presence/avatar/')
-      ? pathname.slice('/api/presence/avatar/'.length)
+    const imageKind = pathname.startsWith('/api/presence/cover/') ? 'cover' : 'avatar';
+    const avatarId = pathname.startsWith(`/api/presence/${imageKind}/`)
+      ? pathname.slice(`/api/presence/${imageKind}/`.length)
       : '';
     if (pathname !== '/api/presence' && pathname !== '/api/presence/live' && !/^[0-9a-f-]{36}$/i.test(avatarId)) {
       return next();
@@ -289,8 +298,16 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
 
     if (req.method === 'GET' && avatarId) {
       if (!avatarLimit(ip)) return sendJson(res, 429, { error: 'rate_limited' }, { 'Retry-After': '30' });
-      const image = await loadAvatar(avatarId);
+      const image = await loadImage(avatarId, imageKind);
       if (!image) {
+        /* Our copy could not be made right now: send the browser to the FACEIT picture for a minute */
+        const original = knownImageUrl(avatarId, imageKind);
+        if (original) {
+          res.statusCode = 302;
+          res.setHeader('Location', original);
+          res.setHeader('Cache-Control', 'public, max-age=60');
+          return res.end();
+        }
         res.statusCode = 404;
         res.setHeader('Cache-Control', 'public, max-age=60');
         return res.end();
@@ -304,9 +321,10 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
 
     if (req.method === 'GET') {
       if (!getLimit(ip)) return sendJson(res, 429, { error: 'rate_limited' }, { 'Retry-After': '60' });
-      const cacheControl = { 'Cache-Control': `public, max-age=${Math.floor(publicTtlMs() / 1000)}` };
-      if (pathname === '/api/presence/live') return sendJson(res, 200, await getLiveBoard(), cacheControl);
-      return sendJson(res, 200, getPublicOnline(), cacheControl);
+      if (pathname === '/api/presence/live') {
+        return sendJson(res, 200, await getLiveBoard(), { 'Cache-Control': `public, max-age=${Math.min(60, Math.floor(boardTtlMs() / 1000))}` });
+      }
+      return sendJson(res, 200, getPublicOnline(), { 'Cache-Control': `public, max-age=${Math.floor(publicTtlMs() / 1000)}` });
     }
 
     prune(now);

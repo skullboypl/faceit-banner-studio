@@ -6,6 +6,7 @@ import { LiveRanking } from './LiveRanking';
 
 vi.mock('../utils/presence', () => ({
   PRESENCE_REFRESH_MS: 60_000,
+  LIVE_LIST_REFRESH_MS: 60_000,
   getLiveBoard: vi.fn(),
 }));
 
@@ -34,6 +35,23 @@ describe('LiveRanking', () => {
     expect(screen.getByRole('link', { name: 'player16' })).toBeTruthy();
     expect(screen.getByText('16')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'player1' })).toBeNull();
+  });
+
+  test('says that the player data is a saved copy, how often it is renewed, and when it was made', async () => {
+    vi.mocked(getLiveBoard).mockResolvedValue({
+      online: 2,
+      ranked: 1,
+      windowSeconds: 135,
+      cacheSeconds: 900,
+      generatedAt: new Date('2026-10-17T12:34:56').getTime(),
+      players: [players[0]],
+    });
+    renderWithApp(<LiveRanking />);
+    await screen.findByRole('link', { name: 'player1' });
+    const note = screen.getByRole('note');
+    expect(note.textContent).toContain('zapisana kopia');
+    expect(note.textContent).toContain('15 min');
+    expect(note.textContent).toContain('12:34');
   });
 
   test('shows the plan, ESEA, token and Twitch link next to the nickname, and nothing for a plain account', async () => {

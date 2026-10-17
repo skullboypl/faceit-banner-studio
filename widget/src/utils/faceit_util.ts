@@ -102,8 +102,25 @@ interface FaceitPlayer {
 }
 
 /** Same-origin read. The server holds the FACEIT key and reuses a player for 15 seconds. */
-export function faceitGet(path: string) {
-  return fetch(`/api/faceit/v4${path}`, { headers: { Accept: 'application/json' } });
+/**
+ * Reads FACEIT through our server, which caches and rate-limits for everyone. When the server cannot answer
+ * (rate limited, down, unreachable) and a browser key is configured (VITE_FACEIT_CLIENT_KEY), the browser asks FACEIT
+ * itself, so a busy server does not leave a banner empty. That key is meant to be public; it is separate from the server key.
+ */
+export async function faceitGet(path: string): Promise<Response> {
+  const clientKey = import.meta.env.VITE_FACEIT_CLIENT_KEY as string | undefined;
+  const direct = () =>
+    fetch(`https://open.faceit.com/data/v4${path}`, {
+      headers: { Accept: 'application/json', Authorization: `Bearer ${clientKey}` },
+    });
+  try {
+    const response = await fetch(`/api/faceit/v4${path}`, { headers: { Accept: 'application/json' } });
+    if (!clientKey || (response.status !== 429 && response.status < 500)) return response;
+    return await direct().catch(() => response);
+  } catch (error) {
+    if (!clientKey) throw error;
+    return direct();
+  }
 }
 
 export const getVerifiedBadgeType = (profile: {

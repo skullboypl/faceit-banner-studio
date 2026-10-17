@@ -21,6 +21,7 @@
   "live.twitch": "Twitch: {{0}}",
   "live.loading": "Ładowanie rankingu…",
   "live.stale": "Nie udało się odświeżyć rankingu. Wyświetlamy ostatnio pobrane dane.",
+  "live.copy": "Dane graczy to zapisana kopia na serwerze, odnawiana co ok. {{0}} min (stan z {{1}}). ELO i poziom mogą różnić się od banera o kilka minut.",
   "live.lead": "Gracze, których baner jest teraz otwarty. Kolejność według ELO.",
   "live.empty": "Nikt teraz nie nadaje z nickiem na banerze.",
   "live.error": "Nie udało się pobrać rankingu.",

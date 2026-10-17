@@ -1,4 +1,5 @@
 import { createRateLimiter } from '../shared/rate-limit.mjs';
+import { faceitFetch, faceitPressure, faceitServerKey } from './faceit-gate.mjs';
 import { clientIp } from '../shared/client-ip.mjs';
 
 /** Repeated reads of the same player reuse this answer instead of calling FACEIT again. */
@@ -7,6 +8,12 @@ export const FACEIT_TTL_MS = 15_000;
 export const FACEIT_RANKING_TTL_MS = 10 * 60_000;
 const PREFIX = '/api/faceit/v4';
 const CACHE_LIMIT = 400;
+const STALE_ANSWER_MS = 10 * 60_000;
+/** A profile or stat read is kept up to this long when the player has not finished a match since. */
+const SMART_MAX_MS = 10 * 60_000;
+/** After a new match, reads stay at the normal pace this long, so the ELO FACEIT updates a little later is picked up. */
+const HOT_MS = 2 * 60_000;
+const RETRY_SOON_MS = 5_000;
 const MAX_BODY = 1_500_000;
 const PLAYER = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const MATCH = '[0-9a-zA-Z-]{8,80}';
@@ -48,7 +55,7 @@ export function activeMatchFrom(body) {
 }
 
 function faceitKey() {
-  return process.env.FACEIT_API_KEY || process.env.VITE_FACEIT_API_KEY || '';
+  return faceitServerKey();
 }
 
 function cleanNick(value) {
@@ -113,12 +120,15 @@ export function faceitTarget(rawUrl) {
       site: true,
     };
   }
+  /* Reads that only change when the player finishes a match: their freshness can be checked with one cheap call */
+  const watched = path.match(new RegExp(`^\/players\/(${PLAYER})(?:\/games\/cs2\/stats|\/stats\/cs2)?$`, 'i'));
   const query = params.toString();
   const player = path.toLowerCase() === '/players' || new RegExp(`^\\/players\\/${PLAYER}$`, 'i').test(path);
   return {
     upstream: `https://open.faceit.com/data/v4${path}${query ? `?${query}` : ''}`,
     key: `${path.toLowerCase()}?${query}`,
     ttl: path.includes('/rankings/') ? FACEIT_RANKING_TTL_MS : undefined,
+    watch: watched ? watched[1].toLowerCase() : undefined,
     /** Player reads also ask the public site whether this season is still unranked. */
     calibrate: player,
   };
@@ -129,6 +139,36 @@ export function faceitTarget(rawUrl) {
  * The public site profile is the one that says the player is still calibrating.
  * A failed lookup leaves the Data API body unchanged.
  */
+/** Player reads point the avatar and the cover at the copies this server keeps, so the FACEIT CDN is asked once, not by every banner. */
+export function withLocalImages(body) {
+  let data;
+  try {
+    data = JSON.parse(body);
+  } catch {
+    return body;
+  }
+  const id = data?.player_id;
+  if (typeof id !== 'string' || !new RegExp(`^${PLAYER}$`, 'i').test(id)) return body;
+  const own = (value) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' && (url.hostname.endsWith('.faceit-cdn.net') || url.hostname.endsWith('.faceit.com'));
+    } catch {
+      return false;
+    }
+  };
+  let changed = false;
+  if (own(data.avatar)) {
+    data.avatar = `/api/presence/avatar/${id.toLowerCase()}`;
+    changed = true;
+  }
+  if (own(data.cover_image)) {
+    data.cover_image = `/api/presence/cover/${id.toLowerCase()}`;
+    changed = true;
+  }
+  return changed ? JSON.stringify(data) : body;
+}
+
 export async function withCalibration(body, fetcher) {
   let data;
   try {
@@ -166,35 +206,81 @@ export async function withCalibration(body, fetcher) {
 
 export function createFaceitCache({
   now = Date.now,
-  fetcher = (...args) => fetch(...args),
+  fetcher = faceitFetch,
   getKey = faceitKey,
   ttl = FACEIT_TTL_MS,
+  pressure = faceitPressure,
 } = {}) {
   const cache = new Map();
   const pending = new Map();
+  /** player id → the newest finished match seen, and when it changed */
+  const heads = new Map();
   const remember = (key, entry) => {
     cache.delete(key);
     cache.set(key, entry);
     while (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value);
   };
+  /** Newest finished match of a player: one small read, shared with every other read of the same history. */
+  const headOf = async (player) => {
+    const entry = await load(faceitTarget(`/api/faceit/v4/players/${player}/history?game=cs2&offset=0&limit=1`));
+    let head = null;
+    try {
+      head = entry.status === 200 ? (JSON.parse(entry.body)?.items?.[0]?.match_id ?? null) : null;
+    } catch {
+      head = null;
+    }
+    if (typeof head !== 'string') return null;
+    const seen = heads.get(player);
+    if (!seen) heads.set(player, { head, changedAt: -Infinity });
+    else if (seen.head !== head) heads.set(player, { head, changedAt: now() });
+    return head;
+  };
   const load = (target) => {
     const hit = cache.get(target.key);
-    if (hit && now() - hit.at < (target.ttl ?? ttl)) return Promise.resolve(hit);
+    /* Under load answers are kept longer, so a busy server asks FACEIT less instead of more */
+    const keep = (target.ttl ?? ttl) * (1 + 3 * Math.min(1, Math.max(0, pressure())));
+    if (hit && now() - hit.at < keep) return Promise.resolve(hit);
     const waiting = pending.get(target.key);
     if (waiting) return waiting;
+    /* The last good answer, kept up to ten minutes: better than an error when FACEIT refuses or is down */
+    const fallback = () => {
+      if (!hit || hit.status !== 200 || now() - hit.at > STALE_ANSWER_MS) return null;
+      const entry = { ...hit, at: now() - ttl + RETRY_SOON_MS };
+      remember(target.key, entry);
+      return entry;
+    };
     const task = (async () => {
+      let head = null;
+      if (target.watch) {
+        head = await headOf(target.watch).catch(() => null);
+        const seen = heads.get(target.watch);
+        const settled = seen && now() - seen.changedAt > HOT_MS;
+        /* Nothing new since this was read: keep it, and ask again in a minute or so */
+        if (hit && hit.status === 200 && head && hit.head === head && settled && now() - hit.fetchedAt < SMART_MAX_MS) {
+          const same = { ...hit, at: now() };
+          remember(target.key, same);
+          return same;
+        }
+      }
       try {
         const response = await fetcher(target.upstream, {
           headers: target.site ? SITE_HEADERS : { Authorization: `Bearer ${getKey()}`, Accept: 'application/json' },
-          signal: AbortSignal.timeout(8000),
+          timeoutMs: 8000,
         });
+        if (response.status === 429 || response.status >= 500) {
+          const stale = fallback();
+          if (stale) return stale;
+        }
         let body = (await response.text()).slice(0, MAX_BODY);
         if (response.status === 200 && target.site) body = activeMatchFrom(body);
         if (response.status === 200 && target.calibrate) body = await withCalibration(body, fetcher);
-        const entry = { status: response.status, body, at: now() };
+        if (response.status === 200 && target.calibrate) body = withLocalImages(body);
+        const entry = { status: response.status, body, at: now(), fetchedAt: now(), head };
         remember(target.key, entry);
         return entry;
       } catch {
+        const stale = fallback();
+        if (stale) return stale;
         const entry = { status: 502, body: JSON.stringify({ error: 'faceit_unavailable' }), at: now() };
         remember(target.key, entry);
         return entry;

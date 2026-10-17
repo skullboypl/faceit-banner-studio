@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from 'react';
 import { LanguageContext } from '../generator/contexts';
 import {
   getLiveBoard,
-  PRESENCE_REFRESH_MS,
+  LIVE_LIST_REFRESH_MS,
   type LivePlayer,
 } from '../utils/presence';
 import { VerifiedBadgeIcon } from '../assets/icons/faceit/VerifiedBadgeIcon';
@@ -29,6 +29,7 @@ export function LiveRanking() {
   const t = useContext(LanguageContext);
   const [players, setPlayers] = useState<LivePlayer[] | null>(null);
   const [online, setOnline] = useState(0);
+  const [copy, setCopy] = useState<{ seconds: number; at: number } | null>(null);
   const [error, setError] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
 
@@ -44,7 +45,7 @@ export function LiveRanking() {
       if (
         pending ||
         document.hidden ||
-        Date.now() - refreshedAt < PRESENCE_REFRESH_MS
+        Date.now() - refreshedAt < LIVE_LIST_REFRESH_MS
       )
         return;
       pending = true;
@@ -54,6 +55,11 @@ export function LiveRanking() {
         if (!active) return;
         setPlayers(board.players);
         setOnline(board.online);
+        setCopy(
+          typeof board.cacheSeconds === 'number' && typeof board.generatedAt === 'number'
+            ? { seconds: board.cacheSeconds, at: board.generatedAt }
+            : null
+        );
         setError(false);
       } catch {
         if (active) setError(true);
@@ -62,7 +68,7 @@ export function LiveRanking() {
       }
     };
     void refresh();
-    const interval = window.setInterval(refresh, PRESENCE_REFRESH_MS);
+    const interval = window.setInterval(refresh, LIVE_LIST_REFRESH_MS);
     const onVisibility = () => {
       if (document.visibilityState === 'visible') void refresh();
     };
@@ -93,6 +99,14 @@ export function LiveRanking() {
         </p>
         <span>{t('live.players', [String(players?.length ?? 0)])}</span>
       </div>
+      {copy && players !== null && (
+        <p role="note" className="live-copy-note">
+          {t('live.copy', [
+            String(Math.max(1, Math.round(copy.seconds / 60))),
+            new Date(copy.at).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
+          ])}
+        </p>
+      )}
       {error && players !== null && (
         <p role="status" className="live-warning">
           {t('live.stale')}

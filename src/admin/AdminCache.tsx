@@ -7,9 +7,9 @@ const SCOPES: { scope: CacheScope; label: string; text: string }[] = [
   { scope: 'all', label: 'Wszystko', text: 'Wszystkie poniższe naraz.' },
   { scope: 'faceit', label: 'Odpowiedzi FACEIT', text: 'Statystyki, profile i mecze, które banery pobierają przez nasz serwer (zwykle 15 s).' },
   { scope: 'profiles', label: 'Profile graczy', text: 'Nick, ELO, level, plan i Twitch na liście na żywo (6 godzin). Zdejmuje też pauzę po limicie FACEIT.' },
-  { scope: 'avatars', label: 'Avatary', text: 'Zdjęcia graczy z listy na żywo (6 godzin).' },
+  { scope: 'avatars', label: 'Avatary', text: 'Zdjęcia i okładki graczy trzymane na serwerze (6 godzin).' },
   { scope: 'rankings', label: 'Miejsca w rankingu', text: 'Znaczek Challengera na liście na żywo (6 godzin).' },
-  { scope: 'live', label: 'Lista na żywo', text: 'Gotowa lista i licznik banerów online (30 s).' },
+  { scope: 'live', label: 'Lista na żywo', text: 'Gotowa lista (15 min) i licznik banerów online (30 s).' },
 ];
 
 async function requestClear(scope: string): Promise<string[]> {

@@ -224,3 +224,28 @@ test('publicRanking keeps the token flag and a valid Twitch name, and drops the 
   assert.equal('token' in byName.Odd, false);
   assert.equal('twitch' in byName.Odd, false);
 });
+
+test('the live list is kept longer than the online counter, and the list says how long', async () => {
+  const { boardTtlMs, countTtlMs } = await import('../server/presence.mjs');
+  const previous = process.env.LIVE_BOARD_TTL_MS;
+  try {
+    delete process.env.LIVE_BOARD_TTL_MS;
+    assert.equal(countTtlMs(), 30_000);
+    assert.equal(boardTtlMs(), 15 * 60_000);
+    assert.ok(boardTtlMs() > countTtlMs());
+    process.env.LIVE_BOARD_TTL_MS = '250';
+    assert.equal(countTtlMs(), 250);
+    assert.equal(boardTtlMs(), 250);
+  } finally {
+    if (previous === undefined) delete process.env.LIVE_BOARD_TTL_MS;
+    else process.env.LIVE_BOARD_TTL_MS = previous;
+  }
+});
+
+test('the live list body carries when it was made and for how long it is kept', async () => {
+  const { getLiveBoard } = await import('../server/presence.mjs');
+  const body = await getLiveBoard();
+  assert.equal(typeof body.generatedAt, 'number');
+  assert.ok(Math.abs(Date.now() - body.generatedAt) < 5_000);
+  assert.equal(typeof body.cacheSeconds, 'number');
+});

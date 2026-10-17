@@ -21,6 +21,7 @@
   "live.twitch": "Twitch: {{0}}",
   "live.loading": "Rangliste wird geladen…",
   "live.stale": "Die Rangliste konnte nicht aktualisiert werden. Die zuletzt geladenen Daten werden angezeigt.",
+  "live.copy": "Die Spielerdaten sind eine gespeicherte Kopie auf dem Server, etwa alle {{0}} Min. erneuert (Stand {{1}}). ELO und Level können um einige Minuten vom Banner abweichen.",
   "live.lead": "Spieler, deren Banner gerade offen ist, sortiert nach ELO.",
   "live.empty": "Gerade sendet niemand mit einem Nick auf dem Banner.",
   "live.error": "Die Rangliste konnte nicht geladen werden.",

@@ -248,3 +248,115 @@ test('clearing the profile cache makes the next lookup ask FACEIT again, and lif
   assert.equal((await cache.lookup(id)).nickname, 'Player');
   assert.equal(calls, 2);
 });
+
+const memoryStore = () => {
+  const rows = new Map();
+  return { rows, load: async (key) => rows.get(key) ?? null, loadMany: async (keys) => new Map(keys.filter((key) => rows.has(key)).map((key) => [key, rows.get(key)])), save: async (key, entry) => void rows.set(key, entry) };
+};
+
+test('profiles survive a restart: a fresh copy in the shared store is used without asking FACEIT', async () => {
+  const store = memoryStore();
+  let calls = 0;
+  const make = (now) =>
+    createPlayerLookup({
+      now,
+      getKey: () => 'test',
+      store,
+      fetcher: quietUsers(async () => {
+        calls++;
+        return response(profile({ nickname: calls === 1 ? 'First' : 'Second' }));
+      }),
+    });
+  const before = make(() => 1_000);
+  assert.equal((await before.lookup(id)).nickname, 'First');
+  assert.equal(calls, 1);
+  /* a new process: empty memory, same store */
+  const after = make(() => 2_000);
+  assert.equal((await after.lookup(id)).nickname, 'First');
+  assert.equal(calls, 1);
+  /* once the stored copy is older than six hours it is read again */
+  const later = make(() => PROFILE_TTL_MS + 5_000);
+  assert.equal((await later.lookup(id)).nickname, 'Second');
+  assert.equal(calls, 2);
+});
+
+test('warm() loads many stored profiles in one go, so the list does not wait on FACEIT', async () => {
+  const store = memoryStore();
+  let calls = 0;
+  const fetcher = quietUsers(async () => {
+    calls++;
+    return response(profile());
+  });
+  await createPlayerLookup({ now: () => 0, getKey: () => 'test', store, fetcher }).lookup(id);
+  const fresh = createPlayerLookup({ now: () => 10, getKey: () => 'test', store, fetcher });
+  assert.equal(fresh.needsRefresh(id), true);
+  await fresh.warm([id, other]);
+  assert.equal(fresh.needsRefresh(id), false);
+  assert.equal(fresh.needsRefresh(other), true);
+  assert.equal(calls, 1);
+});
+
+test('a FACEIT outage answers from a stored profile that is past its six hours', async () => {
+  const store = memoryStore();
+  await createPlayerLookup({ now: () => 0, getKey: () => 'test', store, fetcher: quietUsers(async () => response(profile())) }).lookup(id);
+  const down = createPlayerLookup({
+    now: () => PROFILE_TTL_MS + 1_000,
+    getKey: () => 'test',
+    store,
+    fetcher: quietUsers(async () => {
+      throw new Error('offline');
+    }),
+  });
+  assert.equal((await down.lookup(id)).nickname, 'Player');
+});
+
+test('a 429 without Retry-After pauses lookups for a minute, not five', async () => {
+  let time = 0;
+  let calls = 0;
+  const cache = createPlayerLookup({
+    now: () => time,
+    getKey: () => 'test',
+    store: memoryStore(),
+    fetcher: quietUsers(async () => {
+      calls++;
+      return calls === 1 ? new Response('{}', { status: 429 }) : response(profile({ player_id: other }));
+    }),
+  });
+  assert.equal(await cache.lookup(id), null);
+  time = 30_000;
+  assert.equal(await cache.lookup(other), null);
+  assert.equal(calls, 1, 'still paused');
+  time = 61_000;
+  assert.equal((await cache.lookup(other)).nickname, 'Player');
+});
+
+test('the profile keeps the picture addresses, only from FACEIT hosts, and peek() answers without a request', async () => {
+  let calls = 0;
+  const cache = createPlayerLookup({
+    now: () => 0,
+    getKey: () => 'test',
+    store: memoryStore(),
+    fetcher: quietUsers(async () => {
+      calls++;
+      return response(
+        profile({
+          avatar: 'https://assets.faceit-cdn.net/avatars/a.jpg',
+          cover_image: 'https://distribution.faceit-cdn.net/images/cover.jpg',
+        })
+      );
+    }),
+  });
+  assert.equal(cache.peek(id), null);
+  const found = await cache.lookup(id);
+  assert.equal(found.avatar, 'https://assets.faceit-cdn.net/avatars/a.jpg');
+  assert.equal(found.cover, 'https://distribution.faceit-cdn.net/images/cover.jpg');
+  assert.equal(cache.peek(id).cover, found.cover);
+  assert.equal(calls, 1);
+  const foreign = createPlayerLookup({
+    now: () => 0,
+    getKey: () => 'test',
+    store: memoryStore(),
+    fetcher: quietUsers(async () => response(profile({ cover_image: 'https://evil.example/c.jpg' }))),
+  });
+  assert.equal((await foreign.lookup(id)).cover, undefined);
+});

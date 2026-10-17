@@ -21,6 +21,7 @@
   "live.twitch": "Twitch: {{0}}",
   "live.loading": "Loading ranking…",
   "live.stale": "Could not refresh the ranking. Showing the last available data.",
+  "live.copy": "Player data is a saved copy on the server, renewed about every {{0}} min (as of {{1}}). ELO and level can differ from a banner by a few minutes.",
   "live.lead": "Players whose banner is open right now, ordered by ELO.",
   "live.empty": "Nobody is on stream with a nickname on the banner.",
   "live.error": "The ranking could not be loaded.",

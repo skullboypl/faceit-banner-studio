@@ -22,7 +22,7 @@ test('the same player is fetched once inside 15 seconds, then again after', asyn
     now: () => clock,
     getKey: () => 'test-key',
     fetcher: async (url) => {
-      calls.push(url);
+      if (!String(url).includes('/history')) calls.push(url); /* the cheap freshness check is not a full read */
       return { status: 200, text: async () => `{"url":${JSON.stringify(url)}}` };
     },
   });
@@ -64,7 +64,7 @@ test('a calibrating player is marked once and a failed site lookup keeps the Dat
     now: () => clock,
     getKey: () => 'test-key',
     fetcher: async (url) => {
-      calls.push(url);
+      if (!String(url).includes('/history')) calls.push(url);
       if (String(url).includes('/api/users/')) {
         return { status: 200, text: async () => JSON.stringify(site) };
       }
@@ -155,8 +155,8 @@ test('clear() forgets every cached read, so the next one goes to FACEIT again', 
   const cache = createFaceitCache({
     now: () => 1_000,
     getKey: () => 'test-key',
-    fetcher: async () => {
-      calls++;
+    fetcher: async (url) => {
+      if (!String(url).includes('/history')) calls++;
       return { status: 200, text: async () => '{}' };
     },
   });
@@ -167,4 +167,160 @@ test('clear() forgets every cached read, so the next one goes to FACEIT again', 
   cache.clear();
   await cache.load(target);
   assert.equal(calls, 2);
+});
+
+test('player reads point the avatar and the cover at our cached copies, and leave other pictures alone', async () => {
+  const body = (extra) => JSON.stringify({ player_id: id, nickname: 'X', games: { cs2: {} }, ...extra });
+  const read = async (extra) => {
+    const cache = createFaceitCache({
+      getKey: () => 'k',
+      fetcher: async (url) => ({ status: 200, text: async () => (String(url).includes('/api/users/') ? '{}' : body(extra)) }),
+    });
+    return JSON.parse((await cache.load(faceitTarget(`/api/faceit/v4/players/${id}`))).body);
+  };
+  const mine = await read({ avatar: 'https://assets.faceit-cdn.net/a.jpg', cover_image: 'https://distribution.faceit-cdn.net/c.jpg' });
+  assert.equal(mine.avatar, `/api/presence/avatar/${id}`);
+  assert.equal(mine.cover_image, `/api/presence/cover/${id}`);
+  const odd = await read({ avatar: 'https://evil.example/a.jpg', cover_image: '' });
+  assert.equal(odd.avatar, 'https://evil.example/a.jpg');
+  assert.equal(odd.cover_image, '');
+  const none = await read({});
+  assert.equal(none.avatar, undefined);
+});
+
+test('when FACEIT refuses or fails, the last good answer is served instead of an error', async () => {
+  let clock = 1_000;
+  let mode = 'ok';
+  const cache = createFaceitCache({
+    now: () => clock,
+    getKey: () => 'k',
+    fetcher: async () => {
+      if (mode === 'down') throw new Error('offline');
+      if (mode === 'limited') return { status: 429, text: async () => '{"error":"rate"}' };
+      return { status: 200, text: async () => '{"nickname":"Good"}' };
+    },
+  });
+  const target = faceitTarget(`/api/faceit/v4/players/${id}/stats/cs2`);
+  assert.equal((await cache.load(target)).body, '{"nickname":"Good"}');
+  clock += 60_000;
+  mode = 'limited';
+  const limited = await cache.load(target);
+  assert.equal(limited.status, 200);
+  assert.equal(limited.body, '{"nickname":"Good"}');
+  clock += 20_000;
+  mode = 'down';
+  assert.equal((await cache.load(target)).body, '{"nickname":"Good"}');
+  /* with nothing to fall back on, the error still reaches the caller */
+  const fresh = faceitTarget(`/api/faceit/v4/players/${id}/history?game=cs2`);
+  assert.equal((await cache.load(fresh)).status, 502);
+});
+
+/** A fake FACEIT: counts calls per kind and lets a test finish a match. */
+function fakeFaceit() {
+  const state = { head: 'match-1', calls: { history: 0, profile: 0, stats: 0, lifetime: 0 } };
+  const fetcher = async (url) => {
+    const u = String(url);
+    if (u.includes('/history')) {
+      state.calls.history++;
+      return { status: 200, text: async () => JSON.stringify({ items: [{ match_id: state.head }] }) };
+    }
+    if (u.includes('/games/cs2/stats')) {
+      state.calls.stats++;
+      return { status: 200, text: async () => JSON.stringify({ items: [], head: state.head }) };
+    }
+    if (u.includes('/stats/cs2')) {
+      state.calls.lifetime++;
+      return { status: 200, text: async () => JSON.stringify({ lifetime: {} }) };
+    }
+    if (u.includes('/api/users/')) return { status: 200, text: async () => '{}' };
+    state.calls.profile++;
+    return { status: 200, text: async () => JSON.stringify({ player_id: id, nickname: 'X', games: { cs2: { faceit_elo: state.head === 'match-1' ? 1000 : 1020 } } }) };
+  };
+  return { state, fetcher };
+}
+
+test('a player who has not finished a match is not read again in full: one cheap check replaces three calls', async () => {
+  let clock = 1_000;
+  const { state, fetcher } = fakeFaceit();
+  const cache = createFaceitCache({ now: () => clock, getKey: () => 'k', fetcher });
+  const targets = [
+    faceitTarget(`/api/faceit/v4/players/${id}`),
+    faceitTarget(`/api/faceit/v4/players/${id}/games/cs2/stats?limit=100`),
+    faceitTarget(`/api/faceit/v4/players/${id}/stats/cs2`),
+  ];
+  for (const target of targets) await cache.load(target);
+  assert.deepEqual([state.calls.profile, state.calls.stats, state.calls.lifetime], [1, 1, 1]);
+  /* five minutes of one-minute refreshes with no new match */
+  for (let minute = 0; minute < 5; minute++) {
+    clock += 60_000;
+    for (const target of targets) await cache.load(target);
+  }
+  assert.deepEqual([state.calls.profile, state.calls.stats, state.calls.lifetime], [1, 1, 1]);
+  assert.ok(state.calls.history <= 6, `${state.calls.history} history checks`);
+});
+
+test('after a new match the three reads are refreshed at once, and kept fresh for two minutes while ELO settles', async () => {
+  let clock = 1_000;
+  const { state, fetcher } = fakeFaceit();
+  const cache = createFaceitCache({ now: () => clock, getKey: () => 'k', fetcher });
+  const profile = faceitTarget(`/api/faceit/v4/players/${id}`);
+  const stats = faceitTarget(`/api/faceit/v4/players/${id}/games/cs2/stats?limit=100`);
+  await cache.load(profile);
+  await cache.load(stats);
+  clock += 60_000;
+  state.head = 'match-2';
+  const after = JSON.parse((await cache.load(profile)).body);
+  assert.equal(after.games.cs2.faceit_elo, 1020);
+  await cache.load(stats);
+  assert.equal(state.calls.stats, 2);
+  /* inside the settling window every refresh reads again */
+  clock += 60_000;
+  await cache.load(profile);
+  assert.equal(state.calls.profile, 3);
+  /* after it, the check finds nothing new and the answer is kept */
+  clock += 3 * 60_000;
+  await cache.load(profile);
+  clock += 60_000;
+  await cache.load(profile);
+  assert.ok(state.calls.profile <= 4);
+});
+
+test('an answer is never kept for more than ten minutes just because no match was seen', async () => {
+  let clock = 1_000;
+  const { state, fetcher } = fakeFaceit();
+  const cache = createFaceitCache({ now: () => clock, getKey: () => 'k', fetcher });
+  const lifetime = faceitTarget(`/api/faceit/v4/players/${id}/stats/cs2`);
+  await cache.load(lifetime);
+  for (let i = 0; i < 12; i++) {
+    clock += 60_000;
+    await cache.load(lifetime);
+  }
+  assert.ok(state.calls.lifetime >= 2, 'read again at least once in twelve minutes');
+});
+
+test('under load the answers are kept longer instead of piling more requests on FACEIT', async () => {
+  let clock = 1_000;
+  let busy = 0;
+  let calls = 0;
+  const cache = createFaceitCache({
+    now: () => clock,
+    getKey: () => 'k',
+    pressure: () => busy,
+    fetcher: async () => {
+      calls++;
+      return { status: 200, text: async () => '{}' };
+    },
+  });
+  const target = faceitTarget(`/api/faceit/v4/players/${id}/history?game=cs2`);
+  await cache.load(target);
+  clock += 20_000;
+  await cache.load(target);
+  assert.equal(calls, 2, 'a quiet server reads again after 15 seconds');
+  busy = 1;
+  clock += 20_000;
+  await cache.load(target);
+  assert.equal(calls, 2, 'a busy one keeps the answer');
+  clock += 60_000;
+  await cache.load(target);
+  assert.equal(calls, 3);
 });
