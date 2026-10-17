@@ -83,6 +83,14 @@ export type LivePlayer = {
   nickname: string;
   avatar?: string;
   verifiedBadge?: 'none' | 'verified' | 'gold';
+  /** The paid FACEIT plan, taken from the profile on the server. Free accounts have none. */
+  membership?: 'plus' | 'premium';
+  /** Has an ESEA membership. */
+  esea?: boolean;
+  /** Holds a Super Match Token. */
+  token?: boolean;
+  /** Channel name of the Twitch account linked on FACEIT. */
+  twitch?: string;
   /** True when this FACEIT account has signed in to the studio. No date and no account id. */
   confirmed?: boolean;
   elo?: number;

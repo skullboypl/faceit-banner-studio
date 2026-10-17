@@ -138,3 +138,14 @@ test('rankings change slowly and are kept for ten minutes, while profiles still 
   await cache.load(ranking);
   assert.equal(calls.filter((url) => url.includes('/rankings/')).length, 2);
 });
+
+test('a Twitch account linked on FACEIT is added to the player, and only a valid name', async () => {
+  const player = { player_id: id, games: { cs2: { skill_level: 5, faceit_elo: 1500 } } };
+  const site = (streaming) => async () => ({ ok: true, text: async () => JSON.stringify({ payload: { games: { cs2: {} }, streaming } }) });
+  const linked = JSON.parse(await withCalibration(JSON.stringify(player), site({ twitch_id: 'SkullBoyPL' })));
+  assert.equal(linked.twitch_id, 'SkullBoyPL');
+  const odd = JSON.parse(await withCalibration(JSON.stringify(player), site({ twitch_id: '../evil?x=<b>' })));
+  assert.equal(odd.twitch_id, undefined);
+  const none = JSON.parse(await withCalibration(JSON.stringify(player), site({})));
+  assert.equal(none.twitch_id, undefined);
+});

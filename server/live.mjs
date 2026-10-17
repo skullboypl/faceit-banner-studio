@@ -3,6 +3,7 @@ import { redisCall } from './store.mjs';
 
 const NICK_MAX = 32;
 const STYLE_MAX = 24;
+const TWITCH_NAME = /^[A-Za-z0-9_]{3,25}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function cleanNick(value) {
@@ -78,6 +79,10 @@ export function publicRanking(entries) {
       else delete next.ranking;
       if (player.confirmed === true) next.confirmed = true;
       else delete next.confirmed;
+      if (player.membership !== 'plus' && player.membership !== 'premium') delete next.membership;
+      if (player.esea !== true) delete next.esea;
+      if (player.token !== true) delete next.token;
+      if (typeof player.twitch !== 'string' || !TWITCH_NAME.test(player.twitch)) delete next.twitch;
       return next;
     });
 }
@@ -188,6 +193,13 @@ export function createPlayerLookup({
               ? 'gold'
               : 'verified'
             : 'none';
+        /* The tier is the plan the account pays for; the match token alone is not one */
+        const plans = Array.isArray(data.memberships) ? data.memberships : [];
+        if (plans.includes('premium')) profile.membership = 'premium';
+        else if (plans.includes('plus')) profile.membership = 'plus';
+        if (plans.includes('esea')) profile.esea = true;
+        if (plans.includes('super_match_token')) profile.token = true;
+        if (typeof data.twitch_id === 'string' && TWITCH_NAME.test(data.twitch_id)) profile.twitch = data.twitch_id;
         const regionRaw = data.games?.cs2?.region;
         profile.region =
           typeof regionRaw === 'string' && /^[A-Za-z0-9_-]{2,8}$/.test(regionRaw) ? regionRaw : 'EU';
@@ -397,6 +409,10 @@ export async function fillFromPlayerId(entries) {
               : profile.level,
             country: entry.info.country || profile.country,
             verifiedBadge: profile.verifiedBadge,
+            ...(profile.membership ? { membership: profile.membership } : {}),
+            ...(profile.esea ? { esea: true } : {}),
+            ...(profile.token ? { token: true } : {}),
+            ...(profile.twitch ? { twitch: profile.twitch } : {}),
             ...(profile.avatar ? { avatar: profile.avatar } : {}),
           };
           if (calibrating) {

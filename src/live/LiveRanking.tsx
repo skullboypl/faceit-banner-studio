@@ -8,6 +8,7 @@ import {
 import { VerifiedBadgeIcon } from '../assets/icons/faceit/VerifiedBadgeIcon';
 import { VerifiedGoldBadgeIcon } from '../assets/icons/faceit/VerifiedGoldBadgeIcon';
 import { FaceitLevel } from './FaceitLevel';
+import { EseaIcon, PlusIcon, PremiumIcon, TokenIcon, TwitchIcon } from './MemberIcons';
 
 const PAGE_SIZE = 15;
 
@@ -152,6 +153,39 @@ export function LiveRanking() {
                         >
                           {player.nickname}
                         </a>
+                        {(player.membership === 'plus' || player.membership === 'premium') && (
+                          <span
+                            className="live-plan"
+                            data-plan={player.membership}
+                            role="img"
+                            aria-label={t(`live.plan.${player.membership}`)}
+                            title={t(`live.plan.${player.membership}`)}
+                          >
+                            {player.membership === 'premium' ? <PremiumIcon /> : <PlusIcon />}
+                          </span>
+                        )}
+                        {player.esea === true && (
+                          <span className="live-plan" data-plan="esea" role="img" aria-label={t('live.plan.esea')} title={t('live.plan.esea')}>
+                            <EseaIcon />
+                          </span>
+                        )}
+                        {player.token === true && (
+                          <span className="live-plan" data-plan="token" role="img" aria-label={t('live.plan.token')} title={t('live.plan.token')}>
+                            <TokenIcon />
+                          </span>
+                        )}
+                        {typeof player.twitch === 'string' && /^[A-Za-z0-9_]{3,25}$/.test(player.twitch) && (
+                          <a
+                            className="live-twitch"
+                            href={`https://www.twitch.tv/${player.twitch}`}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            aria-label={t('live.twitch', [player.twitch])}
+                            title={t('live.twitch', [player.twitch])}
+                          >
+                            <TwitchIcon />
+                          </a>
+                        )}
                         {player.confirmed === true && (
                           <span
                             className="live-confirmed"

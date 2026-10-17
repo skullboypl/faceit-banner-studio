@@ -181,3 +181,48 @@ test('avatar bytes are accepted only from a FACEIT host and a real image', () =>
   assert.equal(avatarContentType(jpeg), 'image/jpeg');
   assert.equal(avatarContentType(Buffer.from('hello')), null);
 });
+
+test('the membership tier comes from the FACEIT profile: premium over plus, free and the token alone show nothing', async () => {
+  const tier = async (memberships) => {
+    const cache = createPlayerLookup({
+      now: () => 0,
+      getKey: () => 'test',
+      fetcher: quietUsers(async () => response(profile({ memberships }))),
+    });
+    return cache.lookup(id);
+  };
+  assert.equal((await tier(['super_match_token', 'plus'])).membership, 'plus');
+  assert.equal((await tier(['esea', 'premium', 'super_match_token'])).membership, 'premium');
+  assert.equal((await tier(['plus', 'premium'])).membership, 'premium');
+  assert.equal((await tier(['free'])).membership, undefined);
+  assert.equal((await tier(['super_match_token'])).membership, undefined);
+  assert.equal((await tier(['esea', 'plus'])).esea, true);
+  assert.equal((await tier(['plus'])).esea, undefined);
+});
+
+test('a public heartbeat cannot claim a membership', () => {
+  const info = sanitizeInfo({ nickname: 'Player', playerId: id, membership: 'premium', esea: true });
+  assert.equal('membership' in info, false);
+  assert.equal('esea' in info, false);
+});
+
+test('the match token and a linked Twitch account come from the profile, never from a heartbeat', async () => {
+  const cache = createPlayerLookup({
+    now: () => 0,
+    getKey: () => 'test',
+    fetcher: async (url) =>
+      String(url).includes('/api/users/')
+        ? response({ payload: { games: { cs2: {} }, streaming: { twitch_id: 'SkullBoyPL' } } })
+        : response(profile({ memberships: ['super_match_token', 'plus'] })),
+  });
+  const found = await cache.lookup(id);
+  assert.equal(found.token, true);
+  assert.equal(found.twitch, 'SkullBoyPL');
+  const info = sanitizeInfo({ nickname: 'Player', playerId: id, token: true, twitch: 'x'.repeat(5) });
+  assert.equal('token' in info, false);
+  assert.equal('twitch' in info, false);
+  const plain = createPlayerLookup({ now: () => 0, getKey: () => 'test', fetcher: quietUsers(async () => response(profile({ memberships: ['plus'] }))) });
+  const none = await plain.lookup(id);
+  assert.equal(none.token, undefined);
+  assert.equal(none.twitch, undefined);
+});

@@ -146,10 +146,18 @@ export async function withCalibration(body, fetcher) {
     const ok = response?.ok === true || response?.status === 200;
     if (!ok) return body;
     const site = JSON.parse(await response.text());
+    let changed = false;
     if (site?.payload?.games?.cs2?.is_calibrating === true) {
       data.games.cs2.is_calibrating = true;
-      return JSON.stringify(data);
+      changed = true;
     }
+    /* The Twitch account the player linked on FACEIT; only a plain channel name is passed on */
+    const twitch = site?.payload?.streaming?.twitch_id;
+    if (typeof twitch === 'string' && /^[A-Za-z0-9_]{3,25}$/.test(twitch)) {
+      data.twitch_id = twitch;
+      changed = true;
+    }
+    if (changed) return JSON.stringify(data);
   } catch {
     /* the Data API answer still stands */
   }

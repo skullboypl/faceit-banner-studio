@@ -176,6 +176,29 @@ html.generator .settings.live-panel {
   width: 18px;
   height: 18px;
 }
+/* Plan, ESEA and token badges, and the Twitch link, sit in a row after the nickname */
+.live-plan,
+.live-twitch {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  line-height: 0;
+}
+.live-plan[data-plan='token'] {
+  opacity: 0.9;
+}
+.live-twitch {
+  color: #9146ff;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+.live-twitch:hover,
+.live-twitch:focus-visible {
+  color: #b794ff;
+  transform: translateY(-1px);
+}
+.live-badge-icon {
+  display: block;
+}
 .live-confirmed {
   display: inline-flex;
   flex: 0 0 16px;

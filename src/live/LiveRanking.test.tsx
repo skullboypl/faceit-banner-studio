@@ -36,6 +36,33 @@ describe('LiveRanking', () => {
     expect(screen.queryByRole('link', { name: 'player1' })).toBeNull();
   });
 
+  test('shows the plan, ESEA, token and Twitch link next to the nickname, and nothing for a plain account', async () => {
+    vi.mocked(getLiveBoard).mockResolvedValue({
+      online: 4,
+      ranked: 4,
+      windowSeconds: 135,
+      players: [
+        { ...players[0], membership: 'premium', esea: true, token: true, twitch: 'SkullBoyPL' },
+        { ...players[1], membership: 'plus' },
+        { ...players[2] },
+        { ...players[3], membership: 'gold' as never, twitch: 'a b/c' },
+      ],
+    });
+    renderWithApp(<LiveRanking />);
+    await screen.findByRole('link', { name: 'player1' });
+    const rows = screen.getAllByRole('listitem');
+    expect(within(rows[0]).getByRole('img', { name: 'Plan FACEIT Premium' })).toBeTruthy();
+    expect(within(rows[0]).getByRole('img', { name: 'Członek ESEA' })).toBeTruthy();
+    expect(within(rows[0]).getByRole('img', { name: 'Super Match Token' })).toBeTruthy();
+    const twitch = within(rows[0]).getByRole('link', { name: 'Twitch: SkullBoyPL' });
+    expect(twitch.getAttribute('href')).toBe('https://www.twitch.tv/SkullBoyPL');
+    expect(twitch.getAttribute('rel')).toContain('noreferrer');
+    expect(within(rows[1]).getByRole('img', { name: 'Plan FACEIT Plus' })).toBeTruthy();
+    expect(within(rows[2]).queryByRole('img', { name: /Plan|ESEA|Token/ })).toBeNull();
+    expect(within(rows[3]).queryByRole('img', { name: /Plan|ESEA|Token/ })).toBeNull();
+    expect(within(rows[3]).queryByRole('link', { name: /Twitch/ })).toBeNull();
+  });
+
   test('shows real level artwork and only the verification badge supplied by the server', async () => {
     vi.mocked(getLiveBoard).mockResolvedValue({
       online: 3,

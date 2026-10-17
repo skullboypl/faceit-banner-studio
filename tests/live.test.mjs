@@ -200,3 +200,27 @@ test('the live board is public, ordered, and hides the session id', async () => 
     await close();
   }
 });
+
+test('publicRanking passes a known membership tier on and drops anything else', () => {
+  const rows = publicRanking([
+    { info: { nickname: 'Pro', playerId: '11111111-1111-1111-1111-111111111111', membership: 'premium', esea: true }, lastSeen: 2 },
+    { info: { nickname: 'Odd', playerId: '22222222-2222-2222-2222-222222222222', membership: 'gold', esea: 'yes' }, lastSeen: 1 },
+  ]);
+  const byName = Object.fromEntries(rows.map((row) => [row.nickname, row]));
+  assert.equal(byName.Pro.membership, 'premium');
+  assert.equal(byName.Pro.esea, true);
+  assert.equal('membership' in byName.Odd, false);
+  assert.equal('esea' in byName.Odd, false);
+});
+
+test('publicRanking keeps the token flag and a valid Twitch name, and drops the rest', () => {
+  const rows = publicRanking([
+    { info: { nickname: 'Linked', playerId: '11111111-1111-1111-1111-111111111111', token: true, twitch: 'SkullBoyPL' }, lastSeen: 2 },
+    { info: { nickname: 'Odd', playerId: '22222222-2222-2222-2222-222222222222', token: 'yes', twitch: 'a b/c' }, lastSeen: 1 },
+  ]);
+  const byName = Object.fromEntries(rows.map((row) => [row.nickname, row]));
+  assert.equal(byName.Linked.token, true);
+  assert.equal(byName.Linked.twitch, 'SkullBoyPL');
+  assert.equal('token' in byName.Odd, false);
+  assert.equal('twitch' in byName.Odd, false);
+});
