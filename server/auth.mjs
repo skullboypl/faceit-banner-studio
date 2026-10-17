@@ -1,9 +1,10 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { clientIp as resolveClientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
-import { getPresenceCount, hydratePresence } from './presence.mjs';
+import { clearLiveBoard, getPresenceCount, hydratePresence } from './presence.mjs';
+import { clearFaceitCache } from './faceit-proxy.mjs';
 import { readBannerCatalog, writeBannerCatalog } from './catalog.mjs';
-import { lookupPlayer, lookupRanking } from './live.mjs';
+import { clearLiveCache, lookupPlayer, lookupRanking } from './live.mjs';
 import {
   consumeState,
   deleteSession,
@@ -230,6 +231,9 @@ function originAllowed(req) {
   }
 }
 
+/** What an admin can clear: FACEIT answers, player profiles, avatar pictures, ranking places and the live list. */
+const CACHE_KINDS = ['faceit', 'profiles', 'avatars', 'rankings', 'live'];
+
 export function createAuthMiddleware() {
   const limits = {
     login: createRateLimiter({ perMinute: 10, blockAfter: LOCKOUT }),
@@ -246,6 +250,7 @@ export function createAuthMiddleware() {
     if (
       !pathname.startsWith('/api/auth/') &&
       pathname !== '/api/admin/overview' &&
+      pathname !== '/api/admin/cache' &&
       pathname !== '/api/catalog' &&
       pathname !== '/api/admin/catalog'
     ) {
@@ -327,6 +332,21 @@ export function createAuthMiddleware() {
           return sendJson(res, 400, { error: 'invalid_body' });
         }
         return sendJson(res, 200, { modes: await writeBannerCatalog(patch) });
+      }
+      if (pathname === '/api/admin/cache' && req.method === 'POST') {
+        const user = await currentUser(req);
+        if (!user) return sendJson(res, 401, { error: 'unauthorized' });
+        if (!isAdmin(user)) return sendJson(res, 403, { error: 'forbidden' });
+        if (!originAllowed(req)) return sendJson(res, 403, { error: 'bad_origin' });
+        const scope = (await readJson(req))?.scope;
+        const kinds = scope === 'all' ? CACHE_KINDS : CACHE_KINDS.includes(scope) ? [scope] : null;
+        if (!kinds) return sendJson(res, 400, { error: 'invalid_scope' });
+        for (const kind of kinds) {
+          if (kind === 'faceit') clearFaceitCache();
+          else if (kind === 'live') clearLiveBoard();
+          else await clearLiveCache(kind);
+        }
+        return sendJson(res, 200, { cleared: kinds });
       }
       if (pathname === '/api/admin/overview' && req.method === 'GET') {
         const user = await currentUser(req);

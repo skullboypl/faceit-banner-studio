@@ -1,6 +1,6 @@
 import { ReactNode, useId } from 'react';
 
-/** The octagon frame FACEIT draws around its badges; `accent` is the light and main colour of the face, `inner` the dark core. */
+/** The octagon frame FACEIT draws (cropped to the octagon, so icons sit close together) around its badges; `accent` is the light and main colour of the face, `inner` the dark core. */
 function BadgeFrame({
   accent,
   inner,
@@ -18,7 +18,7 @@ function BadgeFrame({
     <svg
       width={size}
       height={size}
-      viewBox="0 0 64 64"
+      viewBox="12 12 40 40"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className="live-badge-icon"
@@ -68,7 +68,7 @@ function BadgeFrame({
 }
 
 /** FACEIT Plus: the lime badge with the double chevron. */
-export function PlusIcon({ size = 26 }: { size?: number }) {
+export function PlusIcon({ size = 22 }: { size?: number }) {
   return (
     <BadgeFrame accent={['#DCFF82', '#B4FF00']} inner="#1D2706" size={size}>
       {(glyph) => (
@@ -84,7 +84,7 @@ export function PlusIcon({ size = 26 }: { size?: number }) {
 }
 
 /** FACEIT Premium: the same frame in gold, with a star. */
-export function PremiumIcon({ size = 26 }: { size?: number }) {
+export function PremiumIcon({ size = 22 }: { size?: number }) {
   return (
     <BadgeFrame accent={['#FFE08A', '#F0A21B']} inner="#2A1C04" size={size}>
       {(glyph) => (
@@ -101,7 +101,7 @@ export function PremiumIcon({ size = 26 }: { size?: number }) {
 }
 
 /** ESEA membership: the frame in ESEA blue with a lettermark (not the official logo). */
-export function EseaIcon({ size = 26 }: { size?: number }) {
+export function EseaIcon({ size = 22 }: { size?: number }) {
   return (
     <BadgeFrame accent={['#8FA8FF', '#4B6BE8']} inner="#0E1530" size={size}>
       {(glyph) => (
@@ -115,12 +115,12 @@ export function EseaIcon({ size = 26 }: { size?: number }) {
 }
 
 /** Super Match Token: a small coin with a bolt; deliberately plainer than the plan badges. */
-export function TokenIcon({ size = 20 }: { size?: number }) {
+export function TokenIcon({ size = 18 }: { size?: number }) {
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 24 24"
+      viewBox="2.6 2.6 18.8 18.8"
       fill="none"
       className="live-badge-icon"
       aria-hidden="true"
@@ -138,7 +138,7 @@ export function TwitchIcon({ size = 18 }: { size?: number }) {
     <svg
       width={size}
       height={size}
-      viewBox="0 0 24 24"
+      viewBox="1.5 0 21 24"
       fill="currentColor"
       className="live-badge-icon"
       aria-hidden="true"

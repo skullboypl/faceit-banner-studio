@@ -15,6 +15,7 @@ import {
   type AdminTab as Tab,
 } from './AdminNavigation';
 import { AdminCatalog } from './AdminCatalog';
+import { AdminCache } from './AdminCache';
 
 type State =
   | { status: 'loading' | 'guest' | 'error' }
@@ -235,6 +236,7 @@ export const AdminPage = () => {
                 <>
                   <AdminCatalog />
                   <SystemStatus overview={state.overview} />
+                  <AdminCache />
                   <section className="admin-card admin-preferences">
                     <div>
                       <h2>Odświeżanie w tle</h2>

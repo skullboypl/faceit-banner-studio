@@ -158,6 +158,12 @@ function readJson(req) {
   });
 }
 
+/** Admin: the live list and the online counter are rebuilt on the next read. */
+export function clearLiveBoard() {
+  boardCache = null;
+  countCache = null;
+}
+
 /** Banners seen in the activity window (read in-process by the admin overview). */
 export const getPresenceCount = () => {
   prune();

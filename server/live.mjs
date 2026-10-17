@@ -224,7 +224,13 @@ export function createPlayerLookup({
     pending.set(id, task);
     return task;
   };
-  return { lookup, needsRefresh };
+  /** Forgets every profile and lifts a rate-limit pause, so the next lookups go to FACEIT. */
+  const clear = () => {
+    cache.clear();
+    pending.clear();
+    blockedUntil = 0;
+  };
+  return { lookup, needsRefresh, clear };
 }
 const playerLookup = createPlayerLookup();
 export const lookupPlayer = playerLookup.lookup;
@@ -296,6 +302,30 @@ export async function loadAvatar(playerId) {
   } catch {
     rememberAvatar(id, null, AVATAR_MISS_MS);
     return null;
+  }
+}
+
+/** Deletes every Redis key with this prefix, a page at a time. */
+async function deleteByPrefix(prefix) {
+  await redisCall(async (redis) => {
+    let cursor = '0';
+    do {
+      const [next, keys] = await redis.scan(cursor, 'MATCH', `${prefix}*`, 'COUNT', 200);
+      cursor = next;
+      if (keys.length) await redis.del(...keys);
+    } while (cursor !== '0');
+  });
+}
+
+/** Admin: forget cached player profiles, avatar pictures or ranking places, in memory and in Redis. */
+export async function clearLiveCache(kind) {
+  if (kind === 'profiles') playerLookup.clear();
+  else if (kind === 'avatars') {
+    avatarMemory.clear();
+    await deleteByPrefix('fb:avatar:');
+  } else if (kind === 'rankings') {
+    rankMemory.clear();
+    await deleteByPrefix('fb:rank:');
   }
 }
 

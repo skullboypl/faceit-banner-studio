@@ -149,3 +149,22 @@ test('a Twitch account linked on FACEIT is added to the player, and only a valid
   const none = JSON.parse(await withCalibration(JSON.stringify(player), site({})));
   assert.equal(none.twitch_id, undefined);
 });
+
+test('clear() forgets every cached read, so the next one goes to FACEIT again', async () => {
+  let calls = 0;
+  const cache = createFaceitCache({
+    now: () => 1_000,
+    getKey: () => 'test-key',
+    fetcher: async () => {
+      calls++;
+      return { status: 200, text: async () => '{}' };
+    },
+  });
+  const target = faceitTarget(`/api/faceit/v4/players/${id}`);
+  await cache.load(target);
+  await cache.load(target);
+  assert.equal(calls, 1);
+  cache.clear();
+  await cache.load(target);
+  assert.equal(calls, 2);
+});

@@ -226,3 +226,25 @@ test('the match token and a linked Twitch account come from the profile, never f
   assert.equal(none.token, undefined);
   assert.equal(none.twitch, undefined);
 });
+
+test('clearing the profile cache makes the next lookup ask FACEIT again, and lifts a rate-limit pause', async () => {
+  let calls = 0;
+  let limited = true;
+  const cache = createPlayerLookup({
+    now: () => 0,
+    getKey: () => 'test',
+    fetcher: quietUsers(async () => {
+      calls++;
+      if (limited) return new Response('{}', { status: 429 });
+      return response(profile());
+    }),
+  });
+  await cache.lookup(id);
+  assert.equal(calls, 1);
+  limited = false;
+  assert.equal(await cache.lookup(other), null, 'paused after the 429');
+  assert.equal(calls, 1);
+  cache.clear();
+  assert.equal((await cache.lookup(id)).nickname, 'Player');
+  assert.equal(calls, 2);
+});

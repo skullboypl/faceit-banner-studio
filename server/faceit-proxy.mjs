@@ -203,10 +203,18 @@ export function createFaceitCache({
     pending.set(target.key, task);
     return task;
   };
-  return { load };
+  /** Forgets every cached read, including the ones still in flight, so the next read goes to FACEIT. */
+  const clear = () => {
+    cache.clear();
+    pending.clear();
+  };
+  return { load, clear };
 }
 
 const shared = createFaceitCache();
+
+/** Admin: drop every cached FACEIT answer. */
+export const clearFaceitCache = () => shared.clear();
 const limit = createRateLimiter({ perMinute: 180, blockAfter: { strikes: 8, windowMs: 60_000, blockMs: 60_000 } });
 
 function send(res, status, body, extra = {}) {
