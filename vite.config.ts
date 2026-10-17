@@ -102,6 +102,9 @@ export default defineConfig({
     },
   },
   plugins: [react(), presenceDevPlugin(), wikiDevRewritePlugin(), ...(mode === 'https' ? [basicSsl()] : [])],
+  define: {
+    'import.meta.env.VITE_BUILD_ID': JSON.stringify(process.env.SOURCE_COMMIT || process.env.VITE_BUILD_ID || 'dev'),
+  },
   build: {
     rollupOptions: {
       input: {

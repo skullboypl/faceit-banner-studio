@@ -18,8 +18,11 @@ ENV VITE_FACEIT_API_KEY=${VITE_FACEIT_API_KEY}
 # FACEIT "client side" key: public on purpose, built into the page, used only when our server is rate limited.
 ARG VITE_FACEIT_CLIENT_KEY=${VITE_FACEIT_CLIENT_KEY}
 ENV VITE_FACEIT_CLIENT_KEY=${VITE_FACEIT_CLIENT_KEY}
+# Unique per image so a poisoned Cloudflare URL from a previous deploy cannot meet this HTML.
+ARG SOURCE_COMMIT
+ENV SOURCE_COMMIT=${SOURCE_COMMIT}
 
-RUN pnpm run build
+RUN SOURCE_COMMIT="${SOURCE_COMMIT:-$(date -u +%s)}" pnpm run build
 
 # Accounts, saved banners and the feedback board. Nginx in the runtime image proxies /api/me and /api/posts here.
 RUN cd /app/web && pnpm install --frozen-lockfile && pnpm run build
@@ -36,6 +39,8 @@ ENV FACEIT_SERVER_KEY=${FACEIT_SERVER_KEY}
 RUN apk add --no-cache nodejs npm
 
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+COPY deploy/start.sh deploy/check-site.sh /app/
+RUN sed -i 's/\r$//' /app/start.sh /app/check-site.sh && chmod +x /app/start.sh /app/check-site.sh
 COPY --from=build /app/dist /usr/share/nginx/html
 # presence.mjs and auth.mjs import ../shared; without this the process never listens and nginx returns 502 for both the counter and login
 COPY shared /app/shared
@@ -48,5 +53,7 @@ COPY --from=build /app/web/.next/static /app/next-standalone/web/.next/static
 
 EXPOSE 80
 
+HEALTHCHECK --interval=10s --timeout=5s --start-period=25s --retries=5 CMD ["/app/check-site.sh"]
+
 # Restart either API if it exits. Nginx stays up, but a dead process is a 502: 3001 is login and the counter, 3100 is saved banners.
-CMD ["sh", "-c", "while true; do node /app/server/presence-service.mjs; echo \"presence exited $?\"; sleep 2; done & while true; do PORT=3100 HOSTNAME=127.0.0.1 node /app/next-standalone/web/server.js; echo \"accounts exited $?\"; sleep 2; done & exec nginx -g 'daemon off;'"]
+CMD ["/app/start.sh"]

@@ -6,6 +6,7 @@ import ReactDOM from 'react-dom/client';
 import { createContext } from 'react';
 
 export const LanguageContext = createContext(null);
+document.documentElement.dataset.build = String(import.meta.env.VITE_BUILD_ID || '');
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <BrowserRouter>
     <Routes>
