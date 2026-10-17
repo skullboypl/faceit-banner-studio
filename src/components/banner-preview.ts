@@ -1,5 +1,6 @@
+import { parseRoster } from '../../shared/banner-modes.mjs';
 import { broadcastPresets, resolveBannerStyle } from '../../widget/src/styles/styles';
-import { readTeamOptions, teamRecommendedWidth } from '../../widget/src/widget/team-options';
+import { readTeamOptions, teamRecommendedHeight, teamRecommendedWidth } from '../../widget/src/widget/team-options';
 import type { SettingKey } from '../settings/manager';
 import { toQueryString, widgetQueryParams } from '../settings/widget-query';
 
@@ -16,7 +17,11 @@ export function previewFrame(get: Get): PreviewFrame {
   const preset = broadcastPresets.find((entry) => entry.id === style);
   if (mode === 'team') {
     const layout = style === 'sheet' ? 'sheet' : 'lineup';
-    return { width: teamRecommendedWidth(readTeamOptions((key) => get(key as SettingKey)), layout), height: preset?.height ?? 420 };
+    const options = readTeamOptions((key) => get(key as SettingKey));
+    return {
+      width: teamRecommendedWidth(options, layout),
+      height: teamRecommendedHeight(options, layout, parseRoster(String(get('teamRoster') || '')).length),
+    };
   }
   return { width: preset?.width ?? 500, height: preset?.height ?? 180 };
 }

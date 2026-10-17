@@ -65,6 +65,17 @@ describe('MyBannersPanel: a picture of each saved banner', () => {
     expect(popup.getAttribute('height')).toBe('1080');
   });
 
+  test('a roster preview is only as tall as its players, not the five-row OBS slot', async () => {
+    vi.mocked(listBanners).mockResolvedValue({
+      limit: 25,
+      banners: [banner('t', 'boty squad', { widgetMode: 'team', style: 'lineup', teamRoster: 'SkullBoy,SweetGrandpa' })],
+    });
+    renderWithApp(<MyBannersPanel user={user} />, defaultSettings());
+    const frame = (await screen.findByTitle('boty squad')) as HTMLIFrameElement;
+    expect(Number(frame.getAttribute('height'))).toBeLessThan(280);
+    expect(frame.style.transform).toMatch(/^scale\(/);
+  });
+
   test('a banner saved without a player is previewed with the player of the studio', async () => {
     vi.mocked(listBanners).mockResolvedValue({ limit: 25, banners: [banner('c', 'No player', { style: 'prime' })] });
     renderWithApp(<MyBannersPanel user={user} />, { ...defaultSettings(), playerId: '33333333-3333-4333-8333-333333333333' } as never);

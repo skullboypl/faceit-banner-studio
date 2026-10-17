@@ -243,3 +243,28 @@ export function teamRecommendedWidth(options: TeamOptions, layout: 'lineup' | 's
   const panel = sheet ? PANEL_PADDING + 2 * row + SHEET_COLUMN_GAP : PANEL_PADDING + row;
   return Math.ceil((panel * options.fontScale) / 100 / 10) * 10;
 }
+
+const TEAM_PLAYERS_MAX = 10;
+/** Padding of the wrapper and the inner widget around the roster panel. */
+const TEAM_CHROME_Y = 32;
+/** Header row with the kicker and the owner's session. */
+const TEAM_HEAD_Y = { comfortable: 34, compact: 26 } as const;
+/** One roster row: avatar plus labels, matching `.team-banner li`. */
+const TEAM_ROW_Y = { comfortable: 44, compact: 30 } as const;
+
+/**
+ * Height the roster banner needs for its players, in the pixels the OBS source should have: header, one row
+ * per player (two columns on the sheet), density and text size, rounded up to ten. An empty list still keeps
+ * one row so the empty state fits.
+ */
+export function teamRecommendedHeight(options: TeamOptions, layout: 'lineup' | 'sheet', players: number): number {
+  const count = Math.min(TEAM_PLAYERS_MAX, Math.max(1, Number.isFinite(players) ? Math.round(players) : 1));
+  const compact = options.density === 'compact';
+  const rows = layout === 'sheet' ? Math.ceil(count / 2) : count;
+  const density = compact ? 'compact' : 'comfortable';
+  const padY = compact ? 24 : 30;
+  const stackGap = compact ? 5 : 12;
+  const rowGap = layout === 'sheet' ? 6 : compact ? 2 : 4;
+  const raw = TEAM_CHROME_Y + padY + TEAM_HEAD_Y[density] + stackGap + rows * TEAM_ROW_Y[density] + Math.max(0, rows - 1) * rowGap;
+  return Math.ceil((raw * options.fontScale) / 100 / 10) * 10;
+}

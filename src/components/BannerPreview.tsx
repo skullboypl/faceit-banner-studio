@@ -24,7 +24,7 @@ function useNearScreen(ref: React.RefObject<HTMLElement>) {
 }
 
 /**
- * A small live picture of a saved banner: the real widget page in a frame, shrunk to the width of its card.
+ * A small live picture of a saved banner: the real widget page in a frame, scaled to the width of its card.
  * The frame is only created when the card is near the screen, so a long list does not load every widget at once.
  */
 export const BannerPreview = ({
@@ -53,7 +53,7 @@ export const BannerPreview = ({
     return () => observer.disconnect();
   }, []);
 
-  const scale = width ? Math.min(1, width / frame.width) : 0;
+  const scale = width && frame.width ? width / frame.width : 0;
   return (
     <div className="banner-preview" ref={box} style={{ height: Math.max(48, Math.round(frame.height * scale)) }}>
       {near && scale > 0 && (
@@ -64,6 +64,7 @@ export const BannerPreview = ({
           height={frame.height}
           loading="lazy"
           tabIndex={-1}
+          allowTransparency
           style={{ transform: `scale(${scale})` }}
         />
       )}

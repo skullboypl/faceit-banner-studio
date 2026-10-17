@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
-import { TEAM_DEFAULTS, readTeamOptions, teamRecommendedWidth, type TeamOptions } from '../widget/src/widget/team-options';
+import { TEAM_DEFAULTS, readTeamOptions, teamRecommendedHeight, teamRecommendedWidth, type TeamOptions } from '../widget/src/widget/team-options';
 import { BannerSizeControls } from './components/BannerSizeControls';
 import { GeneratedWidgetModal } from './components/GeneratedWidgetModal';
 import { defaultSettings, renderWithApp } from './components/test-utils';
@@ -65,6 +65,26 @@ describe('teamRecommendedWidth: the width the roster needs for what it shows', (
     const everything = width({ ...all, rank: true });
     const statCells = 58 + 46 + 42 + 42 + 42 + 42 + 52 + 52 + 42;
     expect(everything).toBeGreaterThanOrEqual(statCells + 130 + 32 + 22 + 18 + 36);
+  });
+});
+
+describe('teamRecommendedHeight: the roster is only as tall as its players', () => {
+  const height = (players: number, options: Partial<TeamOptions> = {}, layout: 'lineup' | 'sheet' = 'lineup') =>
+    teamRecommendedHeight({ ...TEAM_DEFAULTS, ...options }, layout, players);
+
+  test('two players fit in a short card, five need more room, and never the old 460 slot', () => {
+    expect(height(2)).toBeLessThan(280);
+    expect(height(5)).toBeGreaterThan(height(2));
+    expect(height(5)).toBeLessThan(460);
+  });
+
+  test('the sheet puts two names on a row, so five players are shorter than a lineup', () => {
+    expect(height(5, {}, 'sheet')).toBeLessThan(height(5, {}, 'lineup'));
+  });
+
+  test('compact rows are shorter than comfortable ones, and bigger text asks for more height', () => {
+    expect(height(5, { density: 'compact' })).toBeLessThan(height(5));
+    expect(height(3, { fontScale: 120 })).toBeGreaterThan(height(3));
   });
 });
 
