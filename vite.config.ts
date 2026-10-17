@@ -91,7 +91,7 @@ const buildStamp = String(process.env.SOURCE_COMMIT || process.env.VITE_BUILD_ID
   .slice(0, 16) || 'dev';
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
   // Accounts, saved banners and cloud sync live in the Next.js app (web/, port 3100).
   server: {
     proxy: {
@@ -115,16 +115,19 @@ export default defineConfig({
         main: './index.html',
         widget: './widget/index.html',
       },
-      output: {
-        // The shared React chunk keeps the same content hash across deploys. Cloudflare
-        // cached index.html under that URL, so every later build kept requesting it.
-        entryFileNames: `assets/[name]-${buildStamp}-[hash].js`,
-        chunkFileNames: `assets/[name]-${buildStamp}-[hash].js`,
-        assetFileNames: `assets/[name]-${buildStamp}-[hash][extname]`,
-      },
+      // Docs SSR must stay at .ssr/render.js. Stamped names are only for the public assets.
+      ...(isSsrBuild
+        ? {}
+        : {
+            output: {
+              entryFileNames: `assets/[name]-${buildStamp}-[hash].js`,
+              chunkFileNames: `assets/[name]-${buildStamp}-[hash].js`,
+              assetFileNames: `assets/[name]-${buildStamp}-[hash][extname]`,
+            },
+          }),
     },
   },
   esbuild: {
     drop: ['console', 'debugger'],
   },
-});
+}));
