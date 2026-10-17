@@ -1,6 +1,7 @@
 import { CHROME, categoryLabel, navLabel } from './chrome';
 import { DOCS_LANGS, LANGUAGE_NAMES, hasDevDocs } from './docs-i18n';
 import { LANGUAGE_MENU_SCRIPT, LanguageMenu } from './LanguageMenu';
+import { docsCssHref } from './docs-assets';
 import {
   CATEGORIES,
   DOCS_UPDATED,
@@ -280,7 +281,7 @@ export const DocsPage = ({
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={page.description} />
-        <link rel="stylesheet" href="/docs.css" />
+        <link rel="stylesheet" href={docsCssHref()} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: structuredData(lang, page, pages) }}

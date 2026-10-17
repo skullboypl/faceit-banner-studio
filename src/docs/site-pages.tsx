@@ -2,6 +2,7 @@ import { ReactElement, ReactNode } from 'react';
 import { SITE_URL, docsPath } from './content';
 import { DOCS_LANGS, LANGUAGE_NAMES } from './docs-i18n';
 import { LANGUAGE_MENU_SCRIPT, LanguageMenu, type MenuLanguage } from './LanguageMenu';
+import { docsCssHref } from './docs-assets';
 
 const LAYERS = 'm12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5';
 const BACK = 'M19 12H5m6-6-6 6 6 6';
@@ -111,7 +112,7 @@ const SitePage = ({
         <meta property="og:description" content={description} />
         <meta property="og:url" content={url} />
         <meta property="og:locale" content="pl_PL" />
-        <link rel="stylesheet" href="/docs.css" />
+        <link rel="stylesheet" href={docsCssHref()} />
         {jsonLd ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} /> : null}
       </head>
       <body>

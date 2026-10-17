@@ -3,7 +3,7 @@
  * Built with `vite build --ssr` and run with node; writes finished HTML pages
  * and the sitemap into `public/`, which Vite copies into `dist/`.
  */
-import { mkdirSync, readdirSync, existsSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { DocsPage } from './DocsPage';
@@ -15,10 +15,14 @@ import {
   pageIdsFor,
 } from './content';
 import { DOCS_LANGS, DocsLang } from './docs-i18n';
+import { useCssVersion } from './docs-assets';
 import { sitePages } from './site-pages';
 
 const PUBLIC_DIR = join(process.cwd(), 'public');
 const LANGS: readonly DocsLang[] = DOCS_LANGS;
+
+/* Pages and stylesheet are deployed together: the stylesheet address changes whenever its content does */
+useCssVersion(readFileSync(join(PUBLIC_DIR, 'docs.css'), 'utf8'));
 
 const writePage = (urlPath: string, html: string) => {
   const dir = join(PUBLIC_DIR, urlPath);

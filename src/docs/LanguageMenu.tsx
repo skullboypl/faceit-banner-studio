@@ -21,7 +21,7 @@ export const LanguageMenu = ({
       <summary className="lang-trigger" aria-label={`${label}: ${active.name}`} title={label}>
         <img className="flag" src={languageFlagUrl(active.code)} alt="" width="18" height="13" />
         <span className="lang-name">{active.name}</span>
-        <svg className="lang-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg className="lang-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="m9 5 7 7-7 7" />
         </svg>
       </summary>

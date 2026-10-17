@@ -4,6 +4,7 @@ import { CHROME, navLabel } from './chrome';
 import { USER_PAGE_IDS, buildDocsPages, docsPath, pageIdsFor } from './content';
 import { DocsPage } from './DocsPage';
 import { sitePages } from './site-pages';
+import { docsCssHref, useCssVersion } from './docs-assets';
 import { DOCS_LANGS, DocsLang, hasDevDocs, missingTranslations, startRecording, stopRecording } from './docs-i18n';
 
 const translated = DOCS_LANGS.filter((lang) => !hasDevDocs(lang)) as Exclude<DocsLang, 'pl' | 'en'>[];
@@ -128,5 +129,30 @@ describe('the language menu on the wiki and the legal pages', () => {
       expect(page).toContain('href="#en"');
       expect(page).not.toContain('href="/uk/docs/');
     }
+  });
+});
+
+describe('the stylesheet of the static pages', () => {
+  const page = () => {
+    const pages = buildDocsPages('pl');
+    return renderToStaticMarkup(<DocsPage lang="pl" page={pages[0]} pages={pages} />);
+  };
+
+  test('its address changes with its content, so a CDN or a browser never serves an old copy next to new pages', () => {
+    useCssVersion('.a { color: red }');
+    const first = docsCssHref();
+    expect(first).toMatch(/^\/docs\.css\?v=[0-9a-f]{10}$/);
+    expect(page()).toContain(`href="${first}"`);
+    expect(renderToStaticMarkup(sitePages[0].element)).toContain(`href="${first}"`);
+    useCssVersion('.a { color: red }');
+    expect(docsCssHref()).toBe(first);
+    useCssVersion('.a { color: blue }');
+    expect(docsCssHref()).not.toBe(first);
+    useCssVersion('');
+  });
+
+  test('without a version it is the plain address', () => {
+    useCssVersion('');
+    expect(docsCssHref()).toBe('/docs.css');
   });
 });
