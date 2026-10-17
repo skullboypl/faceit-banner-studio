@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { requestClear } from './AdminCache';
 import { downloadLogins, formatDate, type Login } from './data';
+
+const PLAYER_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function Player({ user }: { user: Pick<Login, 'nickname' | 'avatar'> }) {
   return (
@@ -15,7 +18,16 @@ export function Player({ user }: { user: Pick<Login, 'nickname' | 'avatar'> }) {
     </span>
   );
 }
-export function LoginRows({ rows }: { rows: Login[] }) {
+export function LoginRows({
+  rows,
+  pendingGuid,
+  onRefreshCache,
+}: {
+  rows: Login[];
+  pendingGuid?: string | null;
+  onRefreshCache?: (guid: string) => void;
+}) {
+  const canRefresh = Boolean(onRefreshCache);
   return (
     <div className="admin-table-wrap">
       <table>
@@ -25,6 +37,7 @@ export function LoginRows({ rows }: { rows: Login[] }) {
             <th scope="col">Adres IP</th>
             <th scope="col">Data logowania</th>
             <th scope="col">Profil</th>
+            {canRefresh && <th scope="col">Cache</th>}
           </tr>
         </thead>
         <tbody>
@@ -62,11 +75,24 @@ export function LoginRows({ rows }: { rows: Login[] }) {
                     FACEIT ↗
                   </a>
                 </td>
+                {canRefresh && (
+                  <td>
+                    <button
+                      type="button"
+                      className="admin-cache-row"
+                      disabled={!PLAYER_ID.test(login.guid) || pendingGuid != null}
+                      aria-label={`Odśwież cache: ${login.nickname}`}
+                      onClick={() => onRefreshCache?.(login.guid)}
+                    >
+                      {pendingGuid === login.guid ? 'Odświeżam…' : 'Odśwież'}
+                    </button>
+                  </td>
+                )}
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={4} className="admin-empty">
+              <td colSpan={canRefresh ? 5 : 4} className="admin-empty">
                 Brak wpisów.
               </td>
             </tr>
@@ -76,13 +102,22 @@ export function LoginRows({ rows }: { rows: Login[] }) {
     </div>
   );
 }
-export function AdminLogins({ logins }: { logins: Login[] }) {
+export function AdminLogins({
+  logins,
+  clearPlayer = (guid: string) => requestClear('player', guid),
+}: {
+  logins: Login[];
+  clearPlayer?: (guid: string) => Promise<string[]>;
+}) {
   const [query, setQuery] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [sort, setSort] = useState('new');
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
+  const [pendingGuid, setPendingGuid] = useState<string | null>(null);
+  const [cacheNote, setCacheNote] = useState('');
+  const [cacheError, setCacheError] = useState('');
   const needle = query.trim().toLowerCase();
   const invalidDates = Boolean(from && to && from > to);
   const rows = logins
@@ -195,7 +230,30 @@ export function AdminLogins({ logins }: { logins: Login[] }) {
           Data początkowa musi być wcześniejsza lub równa końcowej.
         </p>
       )}
-      <LoginRows rows={rows.slice((current - 1) * size, current * size)} />
+      {cacheError && (
+        <p className="admin-error" role="alert">
+          {cacheError}
+        </p>
+      )}
+      {cacheNote && (
+        <p role="status">
+          {cacheNote}
+        </p>
+      )}
+      <LoginRows
+        rows={rows.slice((current - 1) * size, current * size)}
+        pendingGuid={pendingGuid}
+        onRefreshCache={(guid) => {
+          if (pendingGuid) return;
+          setPendingGuid(guid);
+          setCacheNote('');
+          setCacheError('');
+          void clearPlayer(guid)
+            .then(() => setCacheNote(`Cache odświeżony: ${new Date().toLocaleTimeString('pl-PL')}`))
+            .catch(() => setCacheError('Nie udało się odświeżyć cache tego gracza.'))
+            .finally(() => setPendingGuid(null));
+        }}
+      />
       <div className="admin-pagination">
         <label>
           Wierszy na stronę{' '}

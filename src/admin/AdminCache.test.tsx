@@ -37,6 +37,26 @@ describe('AdminCache', () => {
     expect(screen.getByText(/limit zapytań/)).toBeTruthy();
   });
 
+  test('refreshes one player by FACEIT id', async () => {
+    const clear = vi.fn(async () => ['player']);
+    render(<AdminCache clear={clear} />);
+    fireEvent.change(screen.getByLabelText('FACEIT ID gracza'), {
+      target: { value: '11111111-1111-1111-1111-111111111111' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Odśwież cache' }));
+    await waitFor(() => expect(clear).toHaveBeenCalledWith('player', '11111111-1111-1111-1111-111111111111'));
+    expect(await screen.findByRole('status')).toBeTruthy();
+  });
+
+  test('rejects a value that is not a FACEIT id', async () => {
+    const clear = vi.fn(async () => ['player']);
+    render(<AdminCache clear={clear} />);
+    fireEvent.change(screen.getByLabelText('FACEIT ID gracza'), { target: { value: 'Jebaka4K' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Odśwież cache' }));
+    expect((await screen.findByRole('alert')).textContent).toMatch(/FACEIT ID/);
+    expect(clear).not.toHaveBeenCalled();
+  });
+
   test('CSS on the CDN is its own button, and a missing Cloudflare token is said plainly', async () => {
     const clear = vi.fn(async () => {
       throw new Error('cdn_not_configured');

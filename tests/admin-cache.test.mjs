@@ -60,6 +60,36 @@ test('an admin clears everything or one kind of cache; an unknown kind is refuse
       assert.equal(css.error, 'cdn_not_configured');
       assert.equal((await post(base, { scope: 'secrets' })).status, 400);
       assert.equal((await post(base, {})).status, 400);
+      const player = await post(base, { scope: 'player', playerId: '11111111-1111-1111-1111-111111111111' });
+      assert.equal(player.status, 200);
+      assert.deepEqual(await player.json(), { cleared: ['player'] });
+      assert.equal((await post(base, { scope: 'player', playerId: 'not-a-guid' })).status, 400);
+    } finally {
+      await close();
+    }
+  });
+});
+
+test('a signed-in player can clear their own profile cache, then wait before doing it again', async () => {
+  await withDevAdmin(async () => {
+    const { saveSession } = await import('../server/store.mjs');
+    const { base, close } = await serve();
+    try {
+      const sid = 'a'.repeat(48);
+      await saveSession(sid, {
+        guid: '11111111-1111-1111-1111-111111111111',
+        nickname: 'Jebaka4K',
+        avatar: null,
+      });
+      const call = () =>
+        fetch(`${base}/api/auth/profile/cache`, {
+          method: 'POST',
+          headers: { origin: 'http://localhost:5173', cookie: `fb_session=${sid}` },
+        });
+      const first = await call();
+      assert.equal(first.status, 200);
+      assert.deepEqual(await first.json(), { cleared: ['player'] });
+      assert.equal((await call()).status, 429);
     } finally {
       await close();
     }

@@ -5,6 +5,7 @@ import {
   avatarContentType,
   createPlayerLookup,
   PROFILE_TTL_MS,
+  MISSING_TWITCH_TTL_MS,
   LEGACY_STATS_TTL_MS,
   sanitizeInfo,
 } from '../server/live.mjs';
@@ -26,6 +27,12 @@ const quietUsers = (fetcher) => async (url, init) => {
   if (String(url).includes('/api/users/')) return response({ payload: { games: { cs2: {} } } });
   return fetcher(url, init);
 };
+const withTwitch = (fetcher) => async (url, init) => {
+  if (String(url).includes('/api/users/')) {
+    return response({ payload: { games: { cs2: {} }, streaming: { twitch_id: 'PlayerTwitch' } } });
+  }
+  return fetcher(url, init);
+};
 
 test('verification and avatars cannot be supplied by a public heartbeat', () => {
   const info = sanitizeInfo({
@@ -44,7 +51,7 @@ test('badge/profile metadata stays cached for six hours and simultaneous request
   const cache = createPlayerLookup({
     now: () => time,
     getKey: () => 'test',
-    fetcher: quietUsers(async () => {
+    fetcher: withTwitch(async () => {
       calls++;
       return response(profile());
     }),
@@ -87,7 +94,7 @@ test('an outage retains cached metadata and backs off for five minutes', async (
   const cache = createPlayerLookup({
     now: () => time,
     getKey: () => 'test',
-    fetcher: quietUsers(async () => {
+    fetcher: withTwitch(async () => {
       if (++calls > 1) throw new Error('offline');
       return response(profile());
     }),
@@ -251,7 +258,13 @@ test('clearing the profile cache makes the next lookup ask FACEIT again, and lif
 
 const memoryStore = () => {
   const rows = new Map();
-  return { rows, load: async (key) => rows.get(key) ?? null, loadMany: async (keys) => new Map(keys.filter((key) => rows.has(key)).map((key) => [key, rows.get(key)])), save: async (key, entry) => void rows.set(key, entry) };
+  return {
+    rows,
+    load: async (key) => rows.get(key) ?? null,
+    loadMany: async (keys) => new Map(keys.filter((key) => rows.has(key)).map((key) => [key, rows.get(key)])),
+    save: async (key, entry) => void rows.set(key, entry),
+    remove: async (key) => void rows.delete(key),
+  };
 };
 
 test('profiles survive a restart: a fresh copy in the shared store is used without asking FACEIT', async () => {
@@ -262,7 +275,7 @@ test('profiles survive a restart: a fresh copy in the shared store is used witho
       now,
       getKey: () => 'test',
       store,
-      fetcher: quietUsers(async () => {
+      fetcher: withTwitch(async () => {
         calls++;
         return response(profile({ nickname: calls === 1 ? 'First' : 'Second' }));
       }),
@@ -359,4 +372,46 @@ test('the profile keeps the picture addresses, only from FACEIT hosts, and peek(
     fetcher: quietUsers(async () => response(profile({ cover_image: 'https://evil.example/c.jpg' }))),
   });
   assert.equal((await foreign.lookup(id)).cover, undefined);
+});
+
+test('a profile without Twitch is read again after fifteen minutes, like the live list', async () => {
+  let time = 0;
+  let calls = 0;
+  const cache = createPlayerLookup({
+    now: () => time,
+    getKey: () => 'test',
+    store: memoryStore(),
+    fetcher: quietUsers(async () => {
+      calls++;
+      return response(profile());
+    }),
+  });
+  await cache.lookup(id);
+  assert.equal(calls, 1);
+  time = MISSING_TWITCH_TTL_MS - 1;
+  await cache.lookup(id);
+  assert.equal(calls, 1);
+  time++;
+  const later = await cache.lookup(id);
+  assert.equal(calls, 2);
+  assert.equal(later.twitch, undefined);
+});
+
+test('forgetting a player drops the stored profile so the next lookup asks FACEIT', async () => {
+  const store = memoryStore();
+  let calls = 0;
+  const cache = createPlayerLookup({
+    now: () => 0,
+    getKey: () => 'test',
+    store,
+    fetcher: quietUsers(async () => {
+      calls++;
+      return response(profile({ nickname: calls === 1 ? 'First' : 'Second' }));
+    }),
+  });
+  assert.equal((await cache.lookup(id)).nickname, 'First');
+  await cache.forget(id);
+  assert.equal(store.rows.size, 0);
+  assert.equal((await cache.lookup(id)).nickname, 'Second');
+  assert.equal(calls, 2);
 });

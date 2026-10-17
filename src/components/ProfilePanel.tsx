@@ -23,10 +23,56 @@ type Profile = {
   logins: { createdAt: string }[];
 };
 
-export function ProfilePanel() {
+async function clearOwnCache() {
+  const response = await fetch('/api/auth/profile/cache', { method: 'POST', cache: 'no-store', credentials: 'same-origin' });
+  const body = (await response.json().catch(() => ({}))) as { error?: string };
+  if (!response.ok) throw new Error(body.error || 'cache');
+}
+
+function ProfileCacheCard({
+  tl,
+  busy,
+  done,
+  error,
+  onClear,
+}: {
+  tl: (key: string, args?: string[]) => string;
+  busy: boolean;
+  done: boolean;
+  error: string;
+  onClear: () => void;
+}) {
+  return (
+    <section className="settings profile-cache">
+      <h3 className="card-heading">
+        <StudioIcon name="cloud" />
+        {tl('profile.cache.title')}
+      </h3>
+      <p>{tl('profile.cache.note')}</p>
+      {error && <p className="profile-empty" role="alert">{error}</p>}
+      {done && !error && (
+        <p className="profile-cache-done" role="status">
+          {tl('profile.cache.done')}
+        </p>
+      )}
+      <button type="button" disabled={busy} onClick={onClear}>
+        {busy ? tl('profile.cache.busy') : tl('profile.cache.clear')}
+      </button>
+    </section>
+  );
+}
+
+export function ProfilePanel({
+  clearCache = clearOwnCache,
+}: {
+  clearCache?: () => Promise<void>;
+}) {
   const tl = useContext(LanguageContext);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [error, setError] = useState(false);
+  const [cacheBusy, setCacheBusy] = useState(false);
+  const [cacheDone, setCacheDone] = useState(false);
+  const [cacheError, setCacheError] = useState('');
 
   useEffect(() => {
     let cancel = false;
@@ -47,7 +93,30 @@ export function ProfilePanel() {
   }, []);
 
   if (!tl) return null;
-  if (error) return <p className="profile-empty" role="alert">{tl('profile.unavailable')}</p>;
+
+  const runClear = () => {
+    setCacheBusy(true);
+    setCacheDone(false);
+    setCacheError('');
+    void clearCache()
+      .then(() => setCacheDone(true))
+      .catch((failure) => {
+        const code = failure instanceof Error ? failure.message : '';
+        setCacheError(tl(code === 'too_soon' ? 'profile.cache.soon' : 'profile.cache.error'));
+      })
+      .finally(() => setCacheBusy(false));
+  };
+  const cacheCard = (
+    <ProfileCacheCard tl={tl} busy={cacheBusy} done={cacheDone} error={cacheError} onClear={runClear} />
+  );
+  if (error) {
+    return (
+      <div className="profile-panel">
+        <p className="profile-empty" role="alert">{tl('profile.unavailable')}</p>
+        {cacheCard}
+      </div>
+    );
+  }
   if (!profile) return <p className="profile-empty" role="status">{tl('profile.loading')}</p>;
 
   const faceit = profile.faceit;
@@ -114,6 +183,7 @@ export function ProfilePanel() {
         </ul>
       </section>
       <ProfileImages />
+      {cacheCard}
       <section className="settings profile-logins">
         <h3 className="card-heading">
           <StudioIcon name="book" />

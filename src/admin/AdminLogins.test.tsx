@@ -86,6 +86,27 @@ describe('AdminLogins', () => {
     }
   });
 
+  test('refreshes cache for a player on the logins table', async () => {
+    const clearPlayer = vi.fn(async () => ['player']);
+    render(
+      <AdminLogins
+        logins={[
+          {
+            guid: '11111111-1111-1111-1111-111111111111',
+            nickname: 'Jebaka4K',
+            avatar: null,
+            ip: '203.0.113.9',
+            createdAt: '2026-10-18T12:00:00Z',
+          },
+        ]}
+        clearPlayer={clearPlayer}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Odśwież cache: Jebaka4K' }));
+    expect(await screen.findByRole('status')).toBeTruthy();
+    expect(clearPlayer).toHaveBeenCalledWith('11111111-1111-1111-1111-111111111111');
+  });
+
   test('keeps an address blurred until the cell is hovered or focused', () => {
     render(<AdminLogins logins={logins} />);
     const cell = screen.getByLabelText('Adres IP: 203.0.113.13');

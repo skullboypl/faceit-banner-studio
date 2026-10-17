@@ -3,7 +3,7 @@ import { averageElo } from '../../../shared/banner-modes.mjs';
 import { LevelMark } from '../components/LevelMark';
 import { fetchLatestMatch, LiveMatch, PlayerStats, RosterPlayer } from '../utils/faceit_match';
 import { mapArt } from './map-art';
-import { POPUP_ME_STATS, PopupMeStat, PopupOptions, fontKeysFor, lookFor, popupMinWidth } from './popup-options';
+import { POPUP_ME_STATS, PopupMeStat, PopupOptions, fontKeysFor, lookFor, popupMinWidth, timingFor } from './popup-options';
 
 type Phase = 'pre' | 'live' | 'post';
 
@@ -27,25 +27,32 @@ const statsLine = ([kills, deaths, assists, adr, hs, mvps]: [number, number, num
 });
 
 function sample(username: string, phase: Phase): LiveMatch {
-  const mine = (name: string, elo: number, level: number, line?: [number, number, number, number, number, number]): RosterPlayer => ({
+  const mine = (
+    name: string,
+    elo: number,
+    level: number,
+    country: string,
+    line?: [number, number, number, number, number, number]
+  ): RosterPlayer => ({
     nickname: name,
     elo,
     level,
+    country,
     stats: line && phase === 'post' ? statsLine(line) : undefined,
   });
   const left = [
-    mine(username || 'Player', 1874, 8, [22, 14, 6, 91, 54, 4]),
-    mine('ropz', 2010, 10, [25, 12, 2, 98, 61, 5]),
-    mine('broky', 1766, 7, [14, 16, 5, 70, 38, 1]),
-    mine('frozen', 1922, 9, [18, 15, 7, 80, 47, 2]),
-    mine('karrigan', 1688, 6, [11, 17, 4, 62, 29, 0]),
+    mine(username || 'Player', 1874, 8, 'pl', [22, 14, 6, 91, 54, 4]),
+    mine('ropz', 2010, 10, 'de', [25, 12, 2, 98, 61, 5]),
+    mine('broky', 1766, 7, 'lv', [14, 16, 5, 70, 38, 1]),
+    mine('frozen', 1922, 9, 'sk', [18, 15, 7, 80, 47, 2]),
+    mine('karrigan', 1688, 6, 'dk', [11, 17, 4, 62, 29, 0]),
   ];
   const right = [
-    mine('NiKo', 2144, 10, [20, 17, 2, 88, 58, 3]),
-    mine('m0NESY', 2088, 10, [17, 18, 3, 79, 44, 2]),
-    mine('huNter', 1890, 8, [15, 17, 6, 71, 40, 1]),
-    mine('nexa', 1712, 7, [12, 18, 8, 66, 33, 1]),
-    mine('Snax', 1640, 6, [9, 19, 3, 52, 27, 0]),
+    mine('NiKo', 2144, 10, 'ba', [20, 17, 2, 88, 58, 3]),
+    mine('m0NESY', 2088, 10, 'ru', [17, 18, 3, 79, 44, 2]),
+    mine('huNter', 1890, 8, 'ba', [15, 17, 6, 71, 40, 1]),
+    mine('nexa', 1712, 7, 'rs', [12, 18, 8, 66, 33, 1]),
+    mine('Snax', 1640, 6, 'pl', [9, 19, 3, 52, 27, 0]),
   ];
   return {
     id: `sample-${phase}`,
@@ -59,6 +66,12 @@ function sample(username: string, phase: Phase): LiveMatch {
     ],
     me: phase === 'post' ? statsLine([22, 14, 6, 91, 54, 4]) : undefined,
   };
+}
+
+function CountryFlag({ country }: { country?: string }) {
+  if (!country || !/^[a-z]{2}$/i.test(country)) return null;
+  const code = country.toLowerCase();
+  return <img className="popup-flag" src={`https://flagcdn.com/${code}.svg`} alt="" />;
 }
 
 const ME_LABEL: Record<PopupMeStat, { label: string; value: (me: PlayerStats) => string | number }> = {
@@ -133,6 +146,7 @@ function Table({
                   </span>
                 )}
                 {options.showLevels && <LevelMark level={player.level || 1} ranking={player.ranking} unranked={player.calibrating} />}
+                {options.showCountry && <CountryFlag country={player.country} />}
                 <span className="popup-nick">{player.nickname}</span>
               </span>
             </td>
@@ -162,6 +176,7 @@ function Side({
   username,
   options,
   table,
+  phase,
   translate,
 }: {
   side: LiveMatch['sides'][number];
@@ -169,9 +184,13 @@ function Side({
   username: string;
   options: PopupOptions;
   table: boolean;
+  phase: Phase;
   translate: Props['translate'];
 }) {
-  const players = options.sortElo ? [...side.players].sort((a, b) => b.elo - a.elo) : side.players;
+  const players =
+    options.sortElo && (phase === 'pre' || phase === 'live')
+      ? [...side.players].sort((a, b) => b.elo - a.elo)
+      : side.players;
   const mine = username.trim().toLowerCase();
   const showHeader = options.showTeams || options.showAvg;
   return (
@@ -200,6 +219,7 @@ function Side({
                 </span>
               )}
               {options.showLevels && <LevelMark level={player.level || 1} ranking={player.ranking} unranked={player.calibrating} />}
+              {options.showCountry && <CountryFlag country={player.country} />}
               <span className="popup-nick">{player.nickname}</span>
               {options.showElo && (
                 <b className={player.calibrating ? 'elo-stack' : undefined}>
@@ -281,11 +301,12 @@ export function MatchPopup({ preview, playerId, username, phase, options, transl
     shown.current = token;
     window.clearTimeout(showTimer.current);
     window.clearTimeout(hideTimer.current);
+    const timing = timingFor(options, match.phase as Phase);
     showTimer.current = window.setTimeout(() => {
       setVisible(true);
-      hideTimer.current = window.setTimeout(() => setVisible(false), Math.max(6, options.seconds) * 1000);
-    }, options.delay * 1000);
-  }, [preview, match, enabled, stale, options.seconds, options.delay]);
+      hideTimer.current = window.setTimeout(() => setVisible(false), Math.max(6, timing.seconds) * 1000);
+    }, timing.delay * 1000);
+  }, [preview, match, enabled, stale, options.seconds, options.delay, options.phaseTiming]);
 
   // The card measures itself, so a small OBS source or preview stacks the columns instead of clipping them.
   useLayoutEffect(() => {
@@ -378,8 +399,8 @@ export function MatchPopup({ preview, playerId, username, phase, options, transl
           <>
             {scoreNode}
             <div className={`popup-sides${table ? ' has-table' : ''}`}>
-              <Side side={left} lead={match.winner === 'a'} username={username} options={view} table={table} translate={translate} />
-              <Side side={right} lead={match.winner === 'b'} username={username} options={view} table={table} translate={translate} />
+              <Side side={left} lead={match.winner === 'a'} username={username} options={view} table={table} phase={current} translate={translate} />
+              <Side side={right} lead={match.winner === 'b'} username={username} options={view} table={table} phase={current} translate={translate} />
             </div>
           </>
         )}

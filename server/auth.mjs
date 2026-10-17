@@ -2,9 +2,9 @@ import { createHash, randomBytes } from 'node:crypto';
 import { clientIp as resolveClientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
 import { clearLiveBoard, getPresenceCount, hydratePresence } from './presence.mjs';
-import { clearFaceitCache } from './faceit-proxy.mjs';
+import { clearFaceitCache, clearFaceitCacheForPlayer } from './faceit-proxy.mjs';
 import { readBannerCatalog, writeBannerCatalog } from './catalog.mjs';
-import { clearLiveCache, lookupPlayer, lookupRanking } from './live.mjs';
+import { clearLiveCache, forgetPlayerCache, lookupPlayer, lookupRanking, PLAYER_ID } from './live.mjs';
 import { purgeFrontCache } from './cdn-cache.mjs';
 import {
   consumeState,
@@ -234,6 +234,8 @@ function originAllowed(req) {
 
 /** FACEIT answers and the live board. CSS on Cloudflare is a separate button: it talks to the CDN. */
 const CACHE_KINDS = ['faceit', 'profiles', 'avatars', 'rankings', 'live'];
+const OWN_CACHE_COOLDOWN_MS = 60_000;
+const lastOwnCacheClear = new Map();
 
 export function createAuthMiddleware() {
   const limits = {
@@ -263,7 +265,7 @@ export function createAuthMiddleware() {
       ? 'login'
       : pathname.endsWith('/callback')
         ? 'callback'
-        : pathname.endsWith('/me') || pathname.endsWith('/profile')
+        : pathname.endsWith('/me') || pathname.endsWith('/profile') || pathname.endsWith('/profile/cache')
           ? 'me'
         : pathname.endsWith('/logout')
           ? 'logout'
@@ -311,6 +313,20 @@ export function createAuthMiddleware() {
           logins: logins.map((entry) => ({ createdAt: entry.createdAt })),
         });
       }
+      if (pathname === '/api/auth/profile/cache' && req.method === 'POST') {
+        if (!originAllowed(req)) return sendJson(res, 403, { error: 'bad_origin' });
+        const user = await currentUser(req);
+        if (!user) return sendJson(res, 401, { error: 'unauthorized' });
+        const playerId = PLAYER_ID.test(user.guid) ? user.guid.toLowerCase() : '';
+        if (!playerId) return sendJson(res, 400, { error: 'invalid_player' });
+        const last = lastOwnCacheClear.get(playerId) || 0;
+        if (Date.now() - last < OWN_CACHE_COOLDOWN_MS) return sendJson(res, 429, { error: 'too_soon' });
+        await forgetPlayerCache(playerId);
+        clearFaceitCacheForPlayer(playerId);
+        clearLiveBoard();
+        lastOwnCacheClear.set(playerId, Date.now());
+        return sendJson(res, 200, { cleared: ['player'] });
+      }
       if (pathname === '/api/auth/logout' && req.method === 'POST') {
         if (!originAllowed(req)) return sendJson(res, 403, { error: 'bad_origin' });
         const id = parseCookies(req.headers.cookie)[SESSION_COOKIE];
@@ -339,7 +355,16 @@ export function createAuthMiddleware() {
         if (!user) return sendJson(res, 401, { error: 'unauthorized' });
         if (!isAdmin(user)) return sendJson(res, 403, { error: 'forbidden' });
         if (!originAllowed(req)) return sendJson(res, 403, { error: 'bad_origin' });
-        const scope = (await readJson(req))?.scope;
+        const body = await readJson(req);
+        const scope = body?.scope;
+        if (scope === 'player') {
+          const playerId = typeof body?.playerId === 'string' ? body.playerId.toLowerCase() : '';
+          if (!PLAYER_ID.test(playerId)) return sendJson(res, 400, { error: 'invalid_player' });
+          await forgetPlayerCache(playerId);
+          clearFaceitCacheForPlayer(playerId);
+          clearLiveBoard();
+          return sendJson(res, 200, { cleared: ['player'] });
+        }
         if (scope === 'css') {
           try {
             return sendJson(res, 200, { cleared: await purgeFrontCache() });

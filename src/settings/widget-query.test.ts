@@ -27,6 +27,13 @@ describe('widgetQueryParams', () => {
     expect(ticker.ticker_today_kd).toBe(true);
   });
 
+  test('a default popup URL keeps nationality flags off and has no per-phase timing yet', () => {
+    const params = widgetQueryParams(getter({ widgetMode: 'popup' }), 'pl');
+    expect(params.popup_country).toBe(false);
+    expect(params.popup_timing).toBe('');
+    expect(params.popup_sort_elo).toBe(false);
+  });
+
   test('writes custom CSS as base64 and omits it when empty', () => {
     expect(widgetQueryParams(getter({ customInlineCSS: '  ' }), 'pl').inline_css_b64).toBeUndefined();
     const params = widgetQueryParams(getter({ customInlineCSS: '.a { color: red }' }), 'pl');

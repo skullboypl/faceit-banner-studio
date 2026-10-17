@@ -3,7 +3,7 @@ import { describe, expect, test, vi } from 'vitest';
 import { MatchPopup } from '../widget/src/widget/MatchPopup';
 import { mapArt } from '../widget/src/widget/map-art';
 import { collectStats } from '../widget/src/utils/faceit_match';
-import { POPUP_DEFAULTS, POPUP_LAYOUTS, POPUP_THEMES, POPUP_MIN_TWO_COLUMNS, POPUP_FONT_KEYS, POPUP_RANGES, fontKeysFor, lookFor, popupCardWidth, popupCloseUp, popupMinWidth, readPopupOptions, type PopupOptions } from '../widget/src/widget/popup-options';
+import { POPUP_DEFAULTS, POPUP_LAYOUTS, POPUP_THEMES, POPUP_MIN_TWO_COLUMNS, POPUP_FONT_KEYS, POPUP_RANGES, fontKeysFor, lookFor, popupCardWidth, popupCloseUp, popupMinWidth, readPopupOptions, timingFor, type PopupOptions } from '../widget/src/widget/popup-options';
 import { SETTINGS_DEFINITIONS } from './settings/definition';
 
 const translate = (text: string) => text;
@@ -27,6 +27,7 @@ describe('readPopupOptions', () => {
     expect(options.widthPct).toBe(30);
     expect(options.position).toBe(POPUP_DEFAULTS.position);
     expect(options.showElo).toBe(true);
+    expect(options.showCountry).toBe(false);
   });
 
   test('every option is declared as a popup-only setting with a query name', () => {
@@ -96,12 +97,23 @@ describe('MatchPopup content options', () => {
     expect(draw({ highlightMe: false }).querySelector('.popup-sides li.is-me')).toBeNull();
   });
 
-  test('rosters can be sorted by ELO, highest first', () => {
+  test('rosters can be sorted by ELO before the match and live, not after', () => {
     const names = (root: HTMLElement) => [...root.querySelectorAll('.popup-sides section:last-child li .popup-nick')].map((node) => node.textContent);
-    expect(names(draw({ sortElo: false }))[0]).toBe('NiKo');
-    expect(names(draw({ sortElo: true }))).toEqual(['NiKo', 'm0NESY', 'huNter', 'nexa', 'Snax']);
-    const left = [...draw({ sortElo: true }).querySelectorAll('.popup-sides section:first-child li .popup-nick')].map((node) => node.textContent);
-    expect(left[0]).toBe('ropz');
+    const left = (phase: 'pre' | 'live' | 'post') =>
+      [...draw({ sortElo: true }, phase).querySelectorAll('.popup-sides section:first-child li .popup-nick')].map((node) => node.textContent);
+    expect(names(draw({ sortElo: false }, 'pre'))[0]).toBe('NiKo');
+    expect(names(draw({ sortElo: true }, 'pre'))).toEqual(['NiKo', 'm0NESY', 'huNter', 'nexa', 'Snax']);
+    expect(left('live')[0]).toBe('ropz');
+    expect(left('post')[0]).toBe('skullboy');
+  });
+
+  test('nationality flags are off by default and show beside the nick when asked', () => {
+    expect(POPUP_DEFAULTS.showCountry).toBe(false);
+    expect(draw().querySelector('.popup-flag')).toBeNull();
+    const flags = draw({ showCountry: true }).querySelectorAll('.popup-flag');
+    expect(flags.length).toBe(10);
+    expect((flags[0] as HTMLImageElement).src).toContain('flagcdn.com/pl.svg');
+    expect(draw({ showCountry: true, compact: true }).querySelector('.popup-flag')).toBeNull();
   });
 });
 
@@ -336,6 +348,12 @@ describe('popupMinWidth: the card width two columns need with the stats you pick
     expect(popupMinWidth({ ...base, layout: 'strip' }, 'live')).toBeGreaterThan(0);
   });
 
+  test('nationality flags add room in a stacked roster, not in the compact card', () => {
+    const stack = popupMinWidth({ ...base, layout: 'stack' }, 'live');
+    expect(popupMinWidth({ ...base, layout: 'stack', showCountry: true }, 'live')).toBeGreaterThan(stack);
+    expect(popupMinWidth({ ...base, compact: true, showCountry: true }, 'live')).toBe(popupMinWidth({ ...base, compact: true }, 'live'));
+  });
+
   test('the default width is at least that minimum on a 1920 px frame', () => {
     const frame = 1920;
     expect((frame * POPUP_DEFAULTS.widthPct) / 100).toBeGreaterThanOrEqual(popupMinWidth(POPUP_DEFAULTS, 'live'));
@@ -388,6 +406,40 @@ describe('MatchPopup adapts to a narrow frame', () => {
     const css = readFileSync('widget/src/styles/modes-preset.less', 'utf8');
     expect(css).toMatch(/min\(\s*calc\(100% \/ var\(--popup-scale\)\),\s*max\(/);
     expect(css).toMatch(/\.is-narrow[\s\S]*grid-template-columns:\s*1fr/);
+  });
+});
+
+describe('per-phase hold and delay', () => {
+  test('missing timing keeps the shared sliders, so old widgets stay the same', () => {
+    expect(POPUP_DEFAULTS.phaseTiming).toEqual({});
+    expect(timingFor(POPUP_DEFAULTS, 'live')).toEqual({ seconds: 12, delay: 0 });
+    const options = readPopupOptions((key) => ({ popupSeconds: 20, popupDelay: 4 })[key as string]);
+    expect(timingFor(options, 'pre')).toEqual({ seconds: 20, delay: 4 });
+    expect(timingFor(options, 'post')).toEqual({ seconds: 20, delay: 4 });
+  });
+
+  test('a phase can override only delay or only length', () => {
+    const options = readPopupOptions(
+      (key) =>
+        ({
+          popupSeconds: 12,
+          popupDelay: 0,
+          popupPhaseTiming: JSON.stringify({ live: { delay: 8 }, post: { seconds: 30 } }),
+        })[key as string]
+    );
+    expect(timingFor(options, 'pre')).toEqual({ seconds: 12, delay: 0 });
+    expect(timingFor(options, 'live')).toEqual({ seconds: 12, delay: 8 });
+    expect(timingFor(options, 'post')).toEqual({ seconds: 30, delay: 0 });
+  });
+
+  test('drops broken JSON and clamps out-of-range numbers', () => {
+    expect(readPopupOptions((key) => ({ popupPhaseTiming: 'not json' })[key as string]).phaseTiming).toEqual({});
+    expect(
+      timingFor(
+        readPopupOptions((key) => ({ popupPhaseTiming: '{"live":{"seconds":999,"delay":-4,"hack":1}}' })[key as string]),
+        'live'
+      )
+    ).toEqual({ seconds: 40, delay: 0 });
   });
 });
 

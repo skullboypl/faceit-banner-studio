@@ -40,6 +40,8 @@ export type PopupOptions = {
   post: boolean;
   seconds: number;
   delay: number;
+  /** Hold and delay stored per match phase; missing phases use `seconds` / `delay`. */
+  phaseTiming: Partial<Record<PopupPhase, { seconds?: number; delay?: number }>>;
   layout: PopupLayout;
   position: PopupPosition;
   scale: number;
@@ -60,6 +62,7 @@ export type PopupOptions = {
   showTeams: boolean;
   showElo: boolean;
   showLevels: boolean;
+  showCountry: boolean;
   highlightMe: boolean;
   sortElo: boolean;
   showMe: boolean;
@@ -76,6 +79,7 @@ export const POPUP_DEFAULTS: PopupOptions = {
   post: true,
   seconds: 12,
   delay: 0,
+  phaseTiming: {},
   layout: 'card',
   position: 'center',
   scale: 100,
@@ -95,6 +99,7 @@ export const POPUP_DEFAULTS: PopupOptions = {
   showTeams: true,
   showElo: true,
   showLevels: true,
+  showCountry: false,
   highlightMe: true,
   sortElo: false,
   showMe: true,
@@ -168,6 +173,41 @@ function parsePhaseLook(raw: unknown): PopupOptions['phaseLook'] {
   return result;
 }
 
+function parsePhaseTiming(raw: unknown): PopupOptions['phaseTiming'] {
+  if (typeof raw !== 'string' || raw === '') return {};
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return {};
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return {};
+  const result: PopupOptions['phaseTiming'] = {};
+  for (const phase of ['pre', 'live', 'post'] as const) {
+    const own = (parsed as Record<string, unknown>)[phase];
+    if (typeof own !== 'object' || own === null || Array.isArray(own)) continue;
+    const seconds =
+      typeof (own as { seconds?: unknown }).seconds === 'number'
+        ? clamp((own as { seconds: number }).seconds, POPUP_RANGES.seconds, POPUP_DEFAULTS.seconds)
+        : undefined;
+    const delay =
+      typeof (own as { delay?: unknown }).delay === 'number'
+        ? clamp((own as { delay: number }).delay, POPUP_RANGES.delay, POPUP_DEFAULTS.delay)
+        : undefined;
+    if (seconds !== undefined || delay !== undefined) result[phase] = { ...(seconds !== undefined ? { seconds } : {}), ...(delay !== undefined ? { delay } : {}) };
+  }
+  return result;
+}
+
+/** Hold and delay for one match phase. Phases without an override keep the shared sliders. */
+export function timingFor(options: PopupOptions, phase: PopupPhase): { seconds: number; delay: number } {
+  const own = options.phaseTiming[phase];
+  return {
+    seconds: own?.seconds ?? options.seconds,
+    delay: own?.delay ?? options.delay,
+  };
+}
+
 function parseFonts(raw: unknown): PopupOptions['fonts'] {
   if (typeof raw !== 'string' || raw === '') return {};
   let parsed: unknown;
@@ -207,6 +247,7 @@ export function readPopupOptions(get: (key: string) => unknown): PopupOptions {
     post: flag(get('popupPost'), d.post),
     seconds: clamp(get('popupSeconds'), POPUP_RANGES.seconds, d.seconds),
     delay: clamp(get('popupDelay'), POPUP_RANGES.delay, d.delay),
+    phaseTiming: parsePhaseTiming(get('popupPhaseTiming')),
     layout: pick(get('popupLayout'), POPUP_LAYOUTS, d.layout),
     position: pick(get('popupPosition'), POPUP_POSITIONS, d.position),
     scale: clamp(get('popupScale'), POPUP_RANGES.scale, d.scale),
@@ -226,6 +267,7 @@ export function readPopupOptions(get: (key: string) => unknown): PopupOptions {
     showTeams: flag(get('popupShowTeams'), d.showTeams),
     showElo: flag(get('popupShowElo'), d.showElo),
     showLevels: flag(get('popupShowLevels'), d.showLevels),
+    showCountry: flag(get('popupShowCountry'), d.showCountry),
     highlightMe: flag(get('popupHighlightMe'), d.highlightMe),
     sortElo: flag(get('popupSortElo'), d.sortElo),
     showMe: flag(get('popupShowMe'), d.showMe),
@@ -271,7 +313,7 @@ export function popupMinWidth(options: PopupOptions, phase: PopupPhase): number 
   }
   if (o.compact) return 2 * 140 + GAP + PAD;
   const table = o.scoreboard && phase === 'post';
-  const lead = (o.showAvatars ? 32 : 0) + (o.showLevels ? 30 : 0);
+  const lead = (o.showAvatars ? 32 : 0) + (o.showLevels ? 30 : 0) + (o.showCountry ? 20 : 0);
   let side: number;
   if (table) {
     const stats = Object.values(o.me).filter(Boolean).length;

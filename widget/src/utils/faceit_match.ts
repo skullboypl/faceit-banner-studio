@@ -13,6 +13,8 @@ export type RosterPlayer = {
   ranking?: number;
   /** Placements are unfinished, so `elo` is the last known value and there is no level. */
   calibrating?: boolean;
+  /** ISO 3166-1 alpha-2 from the FACEIT profile, when known. */
+  country?: string;
   missing?: boolean;
   /** Filled once the match is over. */
   stats?: PlayerStats;
@@ -35,7 +37,13 @@ export type LiveMatch = {
   me?: PlayerStats;
 };
 
-const cardCache = new Map<string, { elo: number; level?: number; ranking?: number; calibrating?: boolean; at: number }>();
+const COUNTRY = /^[a-z]{2}$/i;
+
+function countryCode(value: unknown): string | undefined {
+  return typeof value === 'string' && COUNTRY.test(value) ? value.toLowerCase() : undefined;
+}
+
+const cardCache = new Map<string, { elo: number; level?: number; ranking?: number; calibrating?: boolean; country?: string; at: number }>();
 
 async function cardFor(id: string) {
   const cached = cardCache.get(id);
@@ -49,7 +57,7 @@ async function cardFor(id: string) {
     profile && !calibrating && level === 10
       ? await getPlayerRankingPosition(profile.player_id, game?.region || 'EU')
       : undefined;
-  const card = { elo, level, ranking, calibrating, at: Date.now() };
+  const card = { elo, level, ranking, calibrating, country: countryCode(profile?.country), at: Date.now() };
   if (elo > 0) cardCache.set(id, card);
   return card;
 }
@@ -70,6 +78,7 @@ function sideFrom(raw: unknown, fallback: string): MatchSide {
       avatar?: string;
       skill_level?: number;
       game_skill_level?: number;
+      country?: string;
     };
     return {
       id: player.player_id,
@@ -77,6 +86,7 @@ function sideFrom(raw: unknown, fallback: string): MatchSide {
       avatar: player.avatar,
       level: Number(player.game_skill_level || player.skill_level || 1),
       elo: 0,
+      ...(countryCode(player.country) ? { country: countryCode(player.country) } : {}),
     };
   });
   const nick = team.nickname || team.name || fallback;
@@ -93,7 +103,7 @@ function numberAt(source: unknown, key: string) {
 async function enrich(match: LiveMatch) {
   const ids = match.sides.flatMap((side) => side.players.map((player) => player.id).filter(Boolean)) as string[];
   const unique = [...new Set(ids)];
-  const cards = new Map<string, { elo: number; level?: number; ranking?: number; calibrating?: boolean }>();
+  const cards = new Map<string, { elo: number; level?: number; ranking?: number; calibrating?: boolean; country?: string }>();
   for (let index = 0; index < unique.length; index += 4) {
     const slice = unique.slice(index, index + 4);
     const found = await Promise.all(slice.map(async (id) => [id, await cardFor(id)] as const));
@@ -110,6 +120,7 @@ async function enrich(match: LiveMatch) {
         player.ranking = undefined;
       } else if (card.level) player.level = card.level;
       if (!card.calibrating && card.ranking) player.ranking = card.ranking;
+      if (card.country) player.country = card.country;
     });
     side.avg = averageElo(side.players);
   });

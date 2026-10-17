@@ -650,6 +650,13 @@ export const SETTINGS_DEFINITIONS = {
     query: ['popup_delay'],
     requirements: [{ setting: 'widgetMode', value: 'popup' }],
   },
+  popupPhaseTiming: {
+    type: 'string',
+    defaultValue: '',
+    regex: /^[\x20-\x7E]{0,900}$/,
+    query: ['popup_timing'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
   popupLayout: {
     type: 'string',
     defaultValue: 'card',
@@ -778,6 +785,12 @@ export const SETTINGS_DEFINITIONS = {
     type: 'boolean',
     defaultValue: true,
     query: ['popup_levels'],
+    requirements: [{ setting: 'widgetMode', value: 'popup' }],
+  },
+  popupShowCountry: {
+    type: 'boolean',
+    defaultValue: false,
+    query: ['popup_country'],
     requirements: [{ setting: 'widgetMode', value: 'popup' }],
   },
   popupHighlightMe: {

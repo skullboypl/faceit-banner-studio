@@ -303,13 +303,26 @@ export function createFaceitCache({
     cache.clear();
     pending.clear();
   };
-  return { load, clear };
+  /** Drops reads that mention this player, so their next banner/list read goes to FACEIT. */
+  const dropPlayer = (id) => {
+    const needle = String(id || '').toLowerCase();
+    if (!needle) return;
+    for (const key of [...cache.keys()]) {
+      if (key.includes(needle)) cache.delete(key);
+    }
+    for (const key of [...pending.keys()]) {
+      if (key.includes(needle)) pending.delete(key);
+    }
+  };
+  return { load, clear, dropPlayer };
 }
 
 const shared = createFaceitCache();
 
 /** Admin: drop every cached FACEIT answer. */
 export const clearFaceitCache = () => shared.clear();
+/** One player: Twitch, stats and match reads for this FACEIT id. */
+export const clearFaceitCacheForPlayer = (id) => shared.dropPlayer(id);
 const limit = createRateLimiter({ perMinute: 180, blockAfter: { strikes: 8, windowMs: 60_000, blockMs: 60_000 } });
 
 function send(res, status, body, extra = {}) {

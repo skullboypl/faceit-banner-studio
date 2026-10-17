@@ -16,6 +16,7 @@ import {
   lookFor,
   popupMinWidth,
   readPopupOptions,
+  timingFor,
 } from '../../widget/src/widget/popup-options';
 import { Checkbox } from './Checkbox';
 
@@ -332,7 +333,15 @@ export function PopupLookOptions() {
 export function PopupOptions() {
   const controls = useControls();
   if (!controls) return null;
-  const { settings, tl, base, rosters, slider } = controls;
+  const { settings, tl, base, phase, rosters, slider } = controls;
+  const timing = timingFor(base, phase);
+  const setTiming = (key: 'seconds' | 'delay', value: number) => {
+    const next = {
+      ...base.phaseTiming,
+      [phase]: { ...base.phaseTiming[phase], seconds: timing.seconds, delay: timing.delay, [key]: value },
+    };
+    settings.set('popupPhaseTiming', JSON.stringify(next) as never);
+  };
   return (
     <>
       <div className="settings popup-options">
@@ -340,9 +349,10 @@ export function PopupOptions() {
         <Checkbox text={tl('popup.pre')} setting="popupPre" />
         <Checkbox text={tl('popup.live')} setting="popupLive" />
         <Checkbox text={tl('popup.post')} setting="popupPost" />
-        {slider('popupSeconds', 'popup.hold', base.seconds, POPUP_RANGES.seconds, 1, (value) => settings.set('popupSeconds', value))}
-        {slider('popupDelay', 'popup.delay', base.delay, POPUP_RANGES.delay, 1, (value) => settings.set('popupDelay', value))}
         <PopupPhaseSwitch />
+        <p className="subtext">{tl('popup.timing.help', [tl(`popup.phase.${phase}`)])}</p>
+        {slider('popupSeconds', 'popup.hold', timing.seconds, POPUP_RANGES.seconds, 1, (value) => setTiming('seconds', value))}
+        {slider('popupDelay', 'popup.delay', timing.delay, POPUP_RANGES.delay, 1, (value) => setTiming('delay', value))}
         <p className="subtext">{tl('popup.help')}</p>
       </div>
 
@@ -358,9 +368,11 @@ export function PopupOptions() {
           <>
             <Checkbox text={tl('popup.show_avatars')} setting="popupShowAvatars" />
             <Checkbox text={tl('popup.show_levels')} setting="popupShowLevels" />
+            <Checkbox text={tl('popup.show_country')} setting="popupShowCountry" />
             <Checkbox text={tl('popup.show_elo')} setting="popupShowElo" />
             <Checkbox text={tl('popup.highlight')} setting="popupHighlightMe" />
             <Checkbox text={tl('popup.sort_elo')} setting="popupSortElo" />
+            <p className="subtext">{tl('popup.sort_elo.help')}</p>
           </>
         )}
       </div>

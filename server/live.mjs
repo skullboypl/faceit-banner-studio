@@ -91,7 +91,10 @@ export function publicRanking(entries) {
 
 /** Profile metadata changes slowly; live ELO still comes from widget heartbeats. */
 export const PROFILE_TTL_MS = 6 * 60 * 60_000;
+/** A missing Twitch link is retried with the live list, not held for six hours. */
+export const MISSING_TWITCH_TTL_MS = 15 * 60_000;
 export const LEGACY_STATS_TTL_MS = 10 * 60_000;
+export const PLAYER_ID = UUID;
 const RETRY_MS = 5 * 60_000;
 const RATE_LIMIT_PAUSE_MS = 60_000;
 const STALE_MS = 24 * 60 * 60_000;
@@ -134,6 +137,9 @@ export const redisProfileStore = {
   async save(id, entry) {
     await redisCall((redis) => redis.set(`${PROFILE_PREFIX}${id}`, JSON.stringify(entry), 'EX', 24 * 60 * 60));
   },
+  async remove(id) {
+    await redisCall((redis) => redis.del(`${PROFILE_PREFIX}${id}`));
+  },
 };
 
 /** Shared per-process cache (backed by `store`), including negative results and in-flight requests. */
@@ -146,8 +152,11 @@ export function createPlayerLookup({
   const cache = new Map();
   const pending = new Map();
   let blockedUntil = 0;
-  const ttl = (freshStats) =>
-    freshStats ? LEGACY_STATS_TTL_MS : PROFILE_TTL_MS;
+  const ttlFor = (entry, freshStats = false) => {
+    if (freshStats) return LEGACY_STATS_TTL_MS;
+    if (entry?.profile && !entry.profile.twitch) return MISSING_TWITCH_TTL_MS;
+    return PROFILE_TTL_MS;
+  };
   const usable = (entry) =>
     entry?.profile && now() - entry.at < STALE_MS ? entry.profile : null;
   const needsRefresh = (id, freshStats = false) => {
@@ -158,7 +167,7 @@ export function createPlayerLookup({
       now() >= blockedUntil &&
       !pending.has(id) &&
       (!entry ||
-        (now() >= entry.retryAt && now() - entry.at >= ttl(freshStats)))
+        (now() >= entry.retryAt && now() - entry.at >= ttlFor(entry, freshStats)))
     );
   };
   const remember = (id, value) => {
@@ -170,13 +179,13 @@ export function createPlayerLookup({
     const id = String(rawId).toLowerCase();
     if (!getKey() || !UUID.test(id)) return null;
     const existing = cache.get(id);
-    if (existing && now() - existing.at < ttl(freshStats))
+    if (existing && now() - existing.at < ttlFor(existing, freshStats))
       return usable(existing);
     if (pending.has(id)) return pending.get(id);
     if (!needsRefresh(id, freshStats)) return usable(existing);
     const task = (async () => {
       const stored = await store.load(id).catch(() => null);
-      if (stored && now() - stored.at < ttl(freshStats)) {
+      if (stored && now() - stored.at < ttlFor(stored, freshStats)) {
         remember(id, { profile: stored.profile, at: stored.at, retryAt: 0 });
         return stored.profile;
       }
@@ -295,9 +304,16 @@ export function createPlayerLookup({
     pending.clear();
     blockedUntil = 0;
   };
+  /** Drops one player so the next lookup goes to FACEIT, including a copy in the shared store. */
+  const forget = async (rawId) => {
+    const id = String(rawId).toLowerCase();
+    cache.delete(id);
+    pending.delete(id);
+    if (typeof store.remove === 'function') await store.remove(id).catch(() => undefined);
+  };
   /** The profile as it is cached right now, without any request. */
   const peek = (rawId) => usable(cache.get(String(rawId).toLowerCase())) ?? null;
-  return { lookup, needsRefresh, clear, warm, peek };
+  return { lookup, needsRefresh, clear, warm, peek, forget };
 }
 const playerLookup = createPlayerLookup();
 export const lookupPlayer = playerLookup.lookup;
@@ -418,9 +434,24 @@ async function deleteByPrefix(prefix) {
   });
 }
 
+/** Admin or the player: drop one FACEIT profile so Twitch and badges are read again. */
+export async function forgetPlayerCache(id) {
+  const key = String(id || '').toLowerCase();
+  if (!UUID.test(key)) return false;
+  await playerLookup.forget(key);
+  for (const rankKey of [...rankMemory.keys()]) {
+    if (rankKey.startsWith(`${key}:`)) rankMemory.delete(rankKey);
+  }
+  await deleteByPrefix(`fb:rank:${key}:`);
+  return true;
+}
+
 /** Admin: forget cached player profiles, avatar pictures or ranking places, in memory and in Redis. */
 export async function clearLiveCache(kind) {
-  if (kind === 'profiles') playerLookup.clear();
+  if (kind === 'profiles') {
+    playerLookup.clear();
+    await deleteByPrefix(PROFILE_PREFIX);
+  }
   else if (kind === 'avatars') {
     imageMemory.avatar.clear();
     imageMemory.cover.clear();

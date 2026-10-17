@@ -485,6 +485,11 @@
     "min": 0,
     "max": 30
   },
+  "popupPhaseTiming": {
+    "type": "string",
+    "default": "",
+    "regex": "^[\\x20-\\x7E]{0,900}$"
+  },
   "popupLayout": {
     "type": "string",
     "default": "card",
@@ -605,6 +610,10 @@
   "popupShowLevels": {
     "type": "boolean",
     "default": true
+  },
+  "popupShowCountry": {
+    "type": "boolean",
+    "default": false
   },
   "popupHighlightMe": {
     "type": "boolean",

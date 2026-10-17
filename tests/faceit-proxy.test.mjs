@@ -169,6 +169,28 @@ test('clear() forgets every cached read, so the next one goes to FACEIT again', 
   assert.equal(calls, 2);
 });
 
+test('dropPlayer forgets only that player so the next read of theirs goes to FACEIT', async () => {
+  let calls = 0;
+  const cache = createFaceitCache({
+    now: () => 1_000,
+    getKey: () => 'test-key',
+    fetcher: async (url) => {
+      if (!String(url).includes('/history')) calls++;
+      return { status: 200, text: async () => '{}' };
+    },
+  });
+  const mine = faceitTarget(`/api/faceit/v4/players/${id}`);
+  const otherId = '22222222-2222-2222-2222-222222222222';
+  const theirs = faceitTarget(`/api/faceit/v4/players/${otherId}`);
+  await cache.load(mine);
+  await cache.load(theirs);
+  assert.equal(calls, 2);
+  cache.dropPlayer(id);
+  await cache.load(mine);
+  await cache.load(theirs);
+  assert.equal(calls, 3);
+});
+
 test('player reads point the avatar and the cover at our cached copies, and leave other pictures alone', async () => {
   const body = (extra) => JSON.stringify({ player_id: id, nickname: 'X', games: { cs2: {} }, ...extra });
   const read = async (extra) => {
