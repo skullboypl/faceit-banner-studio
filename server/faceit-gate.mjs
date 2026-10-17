@@ -4,6 +4,8 @@
  * exceed that and come back as 429. The gate spreads requests out instead of failing them, retries a 429 after the
  * pause FACEIT asks for, and refuses new work only when the queue is absurdly long.
  */
+import { count, once, peak, warn } from './log.mjs';
+
 const API_HOST = 'open.faceit.com';
 
 /**
@@ -13,6 +15,22 @@ const API_HOST = 'open.faceit.com';
  */
 export const faceitServerKey = () =>
   process.env.FACEIT_SERVER_KEY || process.env.FACEIT_API_KEY || process.env.VITE_FACEIT_API_KEY || '';
+
+/** Which variable the server key comes from, for the start-up line. Never the key itself. */
+export const faceitKeySource = () =>
+  ['FACEIT_SERVER_KEY', 'FACEIT_API_KEY', 'VITE_FACEIT_API_KEY'].find((name) => process.env[name]) ?? 'MISSING';
+
+/** Where a player's pictures live at FACEIT, learned from player reads, so a picture never needs its own lookup. */
+const imageSources = new Map();
+
+export function rememberImageSources(player, { avatar, cover }) {
+  const id = String(player).toLowerCase();
+  imageSources.delete(id);
+  imageSources.set(id, { avatar: avatar || undefined, cover: cover || undefined });
+  while (imageSources.size > 5000) imageSources.delete(imageSources.keys().next().value);
+}
+
+export const imageSource = (player, kind) => imageSources.get(String(player).toLowerCase())?.[kind] ?? null;
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -38,6 +56,8 @@ export function createFaceitGate({
   maxQueue = 400,
   /** Slots of each second that background work (`priority: 'low'`) leaves free for banners. */
   reserve = 4,
+  /** Background work that has waited this long is dropped: its caller has a fallback, and a stale queue helps nobody. */
+  lowMaxWaitMs = 4000,
   fetcher = (...args) => fetch(...args),
   now = Date.now,
   sleep = wait,
@@ -55,21 +75,36 @@ export function createFaceitGate({
       const lane = queue.length ? queue : background;
       const limit = lane === queue ? rps : Math.max(1, rps - reserve);
       const current = now();
+      if (lane === background && current - background[0].at > lowMaxWaitMs) {
+        count('faceit.dropped');
+        background.shift().expire();
+        continue;
+      }
       while (starts.length && current - starts[0] >= 1000) starts.shift();
       if (starts.length >= limit) {
         await sleep(starts[0] + 1000 - current);
         continue;
       }
       starts.push(now());
-      lane.shift()();
+      count('faceit.sent');
+      lane.shift().start();
     }
     pumping = false;
   };
 
   const schedule = (run, low) =>
     new Promise((resolve, reject) => {
-      if (queue.length + background.length >= maxQueue) return reject(new Error('faceit_queue_full'));
-      (low ? background : queue).push(() => run().then(resolve, reject));
+      if (queue.length + background.length >= maxQueue) {
+        count('faceit.full');
+        if (once('faceit-full', 30_000)) warn('faceit', `request queue is full (${maxQueue}): refusing new requests until it drains`);
+        return reject(new Error('faceit_queue_full'));
+      }
+      (low ? background : queue).push({
+        at: now(),
+        start: () => run().then(resolve, reject),
+        expire: () => reject(new Error('faceit_queue_timeout')),
+      });
+      peak('faceit.queue', queue.length + background.length);
       void pump();
     });
 
@@ -84,6 +119,9 @@ export function createFaceitGate({
     for (let attempt = 0; ; attempt++) {
       const response = await schedule(() => fetcher(url, options()), priority === 'low');
       if (response.status !== 429 || attempt >= retries) return response;
+      count('faceit.r429');
+      count('faceit.retried');
+      if (once('faceit-429', 60_000)) warn('faceit', `rate limited (429): waiting ${pauseFrom(response)} ms and retrying, queue ${queue.length + background.length}`);
       await sleep(pauseFrom(response) + Math.floor(Math.random() * 150));
     }
   }

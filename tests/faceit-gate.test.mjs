@@ -156,3 +156,31 @@ test('the server key is FACEIT_SERVER_KEY, then the older FACEIT_API_KEY, then V
     }
   }
 });
+
+test('background work that waited too long is dropped instead of piling up behind banners', async () => {
+  const c = clock();
+  const gate = createFaceitGate({
+    rps: 4,
+    reserve: 2,
+    lowMaxWaitMs: 3000,
+    now: c.now,
+    sleep: c.sleep,
+    fetcher: async () => new Response('{}', { status: 200 }),
+  });
+  /* banners keep the second full, so the background job never gets a turn */
+  const banners = Array.from({ length: 40 }, () => gate.fetch(API, { timeoutMs: 1000 }));
+  const low = gate.fetch(API, { timeoutMs: 1000, priority: 'low' });
+  const settled = await Promise.allSettled([...banners, low]);
+  assert.equal(settled[40].status, 'rejected');
+  assert.match(String(settled[40].reason?.message), /queue_timeout/);
+  assert.equal(settled.slice(0, 40).every((result) => result.status === 'fulfilled'), true);
+});
+
+test('picture sources seen on a player read are remembered, so no lookup is needed to fetch them', async () => {
+  const { rememberImageSources, imageSource } = await import('../server/faceit-gate.mjs');
+  const player = '33333333-3333-4333-8333-333333333333';
+  assert.equal(imageSource(player, 'avatar'), null);
+  rememberImageSources(player, { avatar: 'https://assets.faceit-cdn.net/a.jpg', cover: 'https://distribution.faceit-cdn.net/c.jpg' });
+  assert.equal(imageSource(player, 'avatar'), 'https://assets.faceit-cdn.net/a.jpg');
+  assert.equal(imageSource(player.toUpperCase(), 'cover'), 'https://distribution.faceit-cdn.net/c.jpg');
+});

@@ -1,5 +1,6 @@
 import { withCalibration } from './faceit-proxy.mjs';
-import { faceitFetch, faceitServerKey } from './faceit-gate.mjs';
+import { faceitFetch, faceitServerKey, imageSource } from './faceit-gate.mjs';
+import { once, warn } from './log.mjs';
 import { redisCall } from './store.mjs';
 
 const NICK_MAX = 32;
@@ -202,6 +203,7 @@ export function createPlayerLookup({
                 : NaN;
             /* A rate limit is short-lived: honour Retry-After, else wait a minute. A bad key waits longer. */
             const base = response.status === 429 ? RATE_LIMIT_PAUSE_MS : RETRY_MS;
+            if (once('lookup-pause', 60_000)) warn('live', `FACEIT answered ${response.status}: profile lookups paused for ${Math.round(base / 1000)}s`);
             blockedUntil =
               now() +
               Math.min(60 * 60_000, Math.max(base, Number.isFinite(delay) ? delay : base));
@@ -341,8 +343,19 @@ function rememberImage(kind, id, image, ttl) {
   while (memory.size > IMAGES[kind].memoryLimit) memory.delete(memory.keys().next().value);
 }
 
+const imageInflight = new Map();
+
 /** Downloads a known player's FACEIT picture once and keeps it here, so browsers and OBS never hit the FACEIT CDN for it. */
-export async function loadImage(playerId, kind) {
+export function loadImage(playerId, kind) {
+  const key = `${kind}:${String(playerId || '').toLowerCase()}`;
+  const running = imageInflight.get(key);
+  if (running) return running;
+  const task = fetchImage(playerId, kind).finally(() => imageInflight.delete(key));
+  imageInflight.set(key, task);
+  return task;
+}
+
+async function fetchImage(playerId, kind) {
   const spec = IMAGES[kind];
   const id = String(playerId || '').toLowerCase();
   if (!spec || !UUID.test(id)) return null;
@@ -356,8 +369,12 @@ export async function loadImage(playerId, kind) {
     rememberImage(kind, id, image, AVATAR_TTL_SECONDS * 1000);
     return image;
   }
-  const profile = await lookupPlayer(id);
-  const source = profile ? profile[spec.field] : undefined;
+  /* The address is usually known already, from the player read that pointed the banner here: no lookup needed */
+  let source = imageSource(id, kind);
+  if (!source) {
+    const profile = await lookupPlayer(id);
+    source = profile ? profile[spec.field] : undefined;
+  }
   if (!source || !avatarAllowed(source)) {
     rememberImage(kind, id, null, AVATAR_MISS_MS);
     return null;
@@ -385,7 +402,7 @@ export const loadCover = (playerId) => loadImage(playerId, 'cover');
 export function knownImageUrl(playerId, kind) {
   const spec = IMAGES[kind];
   const profile = spec ? playerLookup.peek(String(playerId || '')) : null;
-  const source = profile ? profile[spec.field] : undefined;
+  const source = (profile ? profile[spec.field] : undefined) ?? imageSource(String(playerId || ''), kind);
   return typeof source === 'string' && avatarAllowed(source) ? source : null;
 }
 

@@ -1,5 +1,6 @@
 import { createRateLimiter } from '../shared/rate-limit.mjs';
-import { faceitFetch, faceitPressure, faceitServerKey } from './faceit-gate.mjs';
+import { faceitFetch, faceitPressure, faceitServerKey, rememberImageSources } from './faceit-gate.mjs';
+import { count, once, warn } from './log.mjs';
 import { clientIp } from '../shared/client-ip.mjs';
 
 /** Repeated reads of the same player reuse this answer instead of calling FACEIT again. */
@@ -158,6 +159,7 @@ export function withLocalImages(body) {
     }
   };
   let changed = false;
+  rememberImageSources(id, { avatar: own(data.avatar) ? data.avatar : undefined, cover: own(data.cover_image) ? data.cover_image : undefined });
   if (own(data.avatar)) {
     data.avatar = `/api/presence/avatar/${id.toLowerCase()}`;
     changed = true;
@@ -239,12 +241,17 @@ export function createFaceitCache({
     const hit = cache.get(target.key);
     /* Under load answers are kept longer, so a busy server asks FACEIT less instead of more */
     const keep = (target.ttl ?? ttl) * (1 + 3 * Math.min(1, Math.max(0, pressure())));
-    if (hit && now() - hit.at < keep) return Promise.resolve(hit);
+    if (hit && now() - hit.at < keep) {
+      count('cache.hit');
+      return Promise.resolve(hit);
+    }
     const waiting = pending.get(target.key);
     if (waiting) return waiting;
     /* The last good answer, kept up to ten minutes: better than an error when FACEIT refuses or is down */
     const fallback = () => {
       if (!hit || hit.status !== 200 || now() - hit.at > STALE_ANSWER_MS) return null;
+      count('cache.stale');
+      if (once('cache-stale', 60_000)) warn('faceit', 'FACEIT refused or failed: serving the last good answers');
       const entry = { ...hit, at: now() - ttl + RETRY_SOON_MS };
       remember(target.key, entry);
       return entry;
@@ -258,10 +265,12 @@ export function createFaceitCache({
         /* Nothing new since this was read: keep it, and ask again in a minute or so */
         if (hit && hit.status === 200 && head && hit.head === head && settled && now() - hit.fetchedAt < SMART_MAX_MS) {
           const same = { ...hit, at: now() };
+          count('cache.kept');
           remember(target.key, same);
           return same;
         }
       }
+      count('cache.miss');
       try {
         const response = await fetcher(target.upstream, {
           headers: target.site ? SITE_HEADERS : { Authorization: `Bearer ${getKey()}`, Accept: 'application/json' },

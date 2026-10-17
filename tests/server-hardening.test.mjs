@@ -168,3 +168,71 @@ test('a cover that cannot be found is a short-lived 404 and is not rate limited 
     await close();
   }
 });
+
+test('past the picture limit a visitor is sent to the FACEIT picture itself, not refused', async () => {
+  const id = '00000000-0000-4000-8000-0000000000bb';
+  const original = 'https://assets.faceit-cdn.net/avatars/bb.jpg';
+  const realFetch = globalThis.fetch;
+  process.env.FACEIT_API_KEY = 'test-key';
+  globalThis.fetch = async (url, init) => {
+    const text = String(url);
+    if (text.startsWith('http://127.0.0.1')) return realFetch(url, init);
+    if (text.includes('/data/v4/players/')) {
+      return new Response(JSON.stringify({ player_id: id, nickname: 'Pic', country: 'pl', games: { cs2: { faceit_elo: 1000, skill_level: 5 } }, avatar: original }), { status: 200 });
+    }
+    if (text.includes('/api/users/')) return new Response('{}', { status: 200 });
+    return new Response('nope', { status: 500 });
+  };
+  const { base, close } = await serve(createPresenceMiddleware());
+  try {
+    const first = await realFetch(`${base}/api/presence/avatar/${id}`, { redirect: 'manual', headers: { 'x-forwarded-for': '198.51.100.40' } });
+    assert.equal(first.status, 302, 'our copy could not be made, so the FACEIT picture is used');
+    assert.equal(first.headers.get('location'), original);
+    let last;
+    for (let i = 0; i < 640; i++) last = await realFetch(`${base}/api/presence/avatar/${id}`, { redirect: 'manual', headers: { 'x-forwarded-for': '198.51.100.40' } });
+    assert.equal(last.status, 302);
+    assert.equal(last.headers.get('location'), original);
+  } finally {
+    globalThis.fetch = realFetch;
+    delete process.env.FACEIT_API_KEY;
+    await close();
+  }
+});
+
+test('the live list and the pictures answer inside the proxy time limit even when FACEIT never does', async () => {
+  const realFetch = globalThis.fetch;
+  const previous = { key: process.env.FACEIT_API_KEY, fill: process.env.LIVE_FILL_DEADLINE_MS, image: process.env.IMAGE_DEADLINE_MS };
+  process.env.FACEIT_API_KEY = 'test-key';
+  process.env.LIVE_FILL_DEADLINE_MS = '300';
+  process.env.IMAGE_DEADLINE_MS = '300';
+  globalThis.fetch = (url, init) => {
+    const text = String(url);
+    if (text.startsWith('http://127.0.0.1')) return realFetch(url, init);
+    return new Promise(() => undefined); /* FACEIT hangs */
+  };
+  const { base, close } = await serve(createPresenceMiddleware({ unlimitedRate: true }));
+  try {
+    const player = '55555555-5555-4555-8555-555555555555';
+    const beat = await realFetch(`${base}/api/presence`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': '198.51.100.50', referer: `https://faceitbanner.vxh.pl/widget/?player_id=${player}` },
+      body: JSON.stringify({ id: 'hangingfaceitbeat01' }),
+    });
+    assert.equal(beat.status, 200);
+    const started = Date.now();
+    const board = await realFetch(`${base}/api/presence/live`, { headers: { 'x-forwarded-for': '198.51.100.51' } });
+    assert.equal(board.status, 200);
+    assert.ok(Date.now() - started < 2000, `the list took ${Date.now() - started} ms`);
+    const picture = Date.now();
+    const avatar = await realFetch(`${base}/api/presence/avatar/${player}`, { redirect: 'manual', headers: { 'x-forwarded-for': '198.51.100.52' } });
+    assert.ok([404, 302].includes(avatar.status));
+    assert.ok(Date.now() - picture < 2000, `the picture took ${Date.now() - picture} ms`);
+  } finally {
+    globalThis.fetch = realFetch;
+    for (const [name, value] of [['FACEIT_API_KEY', previous.key], ['LIVE_FILL_DEADLINE_MS', previous.fill], ['IMAGE_DEADLINE_MS', previous.image]]) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+    await close();
+  }
+});

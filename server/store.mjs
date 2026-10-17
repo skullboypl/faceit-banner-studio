@@ -3,6 +3,8 @@
  * Both are optional: without REDIS_URL / DATABASE_URL the data lives in memory,
  * which is enough for local development but is lost on restart.
  */
+import { fail, once } from './log.mjs';
+
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 const memorySessions = new Map();
@@ -17,13 +19,13 @@ let redisDownUntil = 0;
 let postgresDownUntil = 0;
 
 function markRedisDown(error) {
-  console.error('redis unavailable, sessions stay in memory:', error?.message || error);
+  if (once('redis-down', 60_000)) fail('store', `redis unavailable, sessions stay in memory (${error?.message || error})`);
   redisDownUntil = Date.now() + 15_000;
   redisPromise = undefined;
 }
 
 function markPostgresDown(error) {
-  console.error('postgres unavailable, login history stays in memory:', error?.message || error);
+  if (once('postgres-down', 60_000)) fail('store', `postgres unavailable, login history stays in memory (${error?.message || error})`);
   postgresDownUntil = Date.now() + 15_000;
   postgresPromise = undefined;
 }

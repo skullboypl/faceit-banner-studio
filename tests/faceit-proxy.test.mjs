@@ -324,3 +324,21 @@ test('under load the answers are kept longer instead of piling more requests on 
   await cache.load(target);
   assert.equal(calls, 3);
 });
+
+test('a player read teaches the server where the pictures are, before they are asked for', async () => {
+  const { imageSource } = await import('../server/faceit-gate.mjs');
+  const player = '44444444-4444-4444-8444-444444444444';
+  const cache = createFaceitCache({
+    getKey: () => 'k',
+    fetcher: async (url) => ({
+      status: 200,
+      text: async () =>
+        String(url).includes('/api/users/')
+          ? '{}'
+          : JSON.stringify({ player_id: player, games: { cs2: {} }, avatar: 'https://assets.faceit-cdn.net/p.jpg', cover_image: 'https://distribution.faceit-cdn.net/p-cover.jpg' }),
+    }),
+  });
+  await cache.load(faceitTarget(`/api/faceit/v4/players/${player}`));
+  assert.equal(imageSource(player, 'avatar'), 'https://assets.faceit-cdn.net/p.jpg');
+  assert.equal(imageSource(player, 'cover'), 'https://distribution.faceit-cdn.net/p-cover.jpg');
+});

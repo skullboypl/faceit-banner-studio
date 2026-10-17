@@ -1,6 +1,7 @@
 import { clientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
 import { fillFromPlayerId, knownImageUrl, loadImage, playerIdFromReferer, publicRanking, sanitizeInfo } from './live.mjs';
+import { count, once, warn } from './log.mjs';
 import { handleFaceitProxy } from './faceit-proxy.mjs';
 import { recordOnlineSample, verifiedAmong, withRedis } from './store.mjs';
 
@@ -210,6 +211,11 @@ function envTtl() {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 }
 
+/** A list built while FACEIT was slow is kept only this long. */
+const PARTIAL_TTL_MS = 20_000;
+const fillDeadlineMs = () => Number(process.env.LIVE_FILL_DEADLINE_MS) || 1800;
+const imageDeadlineMs = () => Number(process.env.IMAGE_DEADLINE_MS) || 2200;
+
 export const countTtlMs = () => envTtl() ?? COUNT_TTL_MS;
 export const boardTtlMs = () => envTtl() ?? BOARD_TTL_MS;
 const publicTtlMs = countTtlMs;
@@ -241,7 +247,12 @@ async function buildLiveBoard() {
   for (const entry of sessions.values()) {
     if (entry.info) entries.push({ info: { ...entry.info }, lastSeen: entry.lastSeen });
   }
-  await fillFromPlayerId(entries);
+  /* The list must never wait on FACEIT: nginx gives up after a few seconds. Whatever is filled in by then is shown;
+     the rest keeps loading into the caches, and a partial list is rebuilt soon instead of being kept for 15 minutes. */
+  const filled = await Promise.race([
+    fillFromPlayerId(entries).then(() => true, () => true),
+    new Promise((resolve) => setTimeout(() => resolve(false), fillDeadlineMs())),
+  ]);
   const signedIn = await verifiedAmong(entries.map((entry) => entry.info?.playerId));
   for (const entry of entries) {
     if (entry.info?.playerId && signedIn.has(entry.info.playerId)) entry.info.confirmed = true;
@@ -256,14 +267,19 @@ async function buildLiveBoard() {
     generatedAt: at,
     cacheSeconds: Math.round(boardTtlMs() / 1000),
   };
-  boardCache = { at, body };
+  count('live.builds');
+  if (!filled) {
+    count('live.partial');
+    if (once('live-partial', 30_000)) warn('live', `list built from partial data: FACEIT did not answer within ${fillDeadlineMs()} ms, rebuilding in ${PARTIAL_TTL_MS / 1000}s`);
+  }
+  boardCache = { at, body, partial: !filled };
   rememberCount(body.online, at);
   return body;
 }
 
 /** Public board: nick, ELO, level, country. No session id and no address. */
 export async function getLiveBoard() {
-  if (fresh(boardCache, boardTtlMs())) return boardCache.body;
+  if (fresh(boardCache, boardCache?.partial ? Math.min(boardTtlMs(), PARTIAL_TTL_MS) : boardTtlMs())) return boardCache.body;
   if (!boardInflight) {
     boardInflight = buildLiveBoard().finally(() => {
       boardInflight = null;
@@ -297,11 +313,34 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
     await hydratePresence();
 
     if (req.method === 'GET' && avatarId) {
-      if (!avatarLimit(ip)) return sendJson(res, 429, { error: 'rate_limited' }, { 'Retry-After': '30' });
-      const image = await loadImage(avatarId, imageKind);
+      if (!avatarLimit(ip)) {
+        /* Past our limit the visitor loads the picture from FACEIT directly, from their own address */
+        const direct = knownImageUrl(avatarId, imageKind);
+        count('img.limited');
+        if (direct) {
+          res.statusCode = 302;
+          res.setHeader('Location', direct);
+          res.setHeader('Cache-Control', 'public, max-age=60');
+          return res.end();
+        }
+        return sendJson(res, 429, { error: 'rate_limited' }, { 'Retry-After': '30' });
+      }
+      /* A picture that is not ready in time is answered with the FACEIT address; our copy finishes in the background */
+      let late;
+      const image = await Promise.race([
+        loadImage(avatarId, imageKind).catch(() => null),
+        new Promise((resolve) => {
+          late = setTimeout(() => {
+            count('img.late');
+            resolve(null);
+          }, imageDeadlineMs());
+        }),
+      ]);
+      clearTimeout(late);
       if (!image) {
         /* Our copy could not be made right now: send the browser to the FACEIT picture for a minute */
         const original = knownImageUrl(avatarId, imageKind);
+        count(original ? 'img.redirect' : 'img.miss');
         if (original) {
           res.statusCode = 302;
           res.setHeader('Location', original);
@@ -312,6 +351,7 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
         res.setHeader('Cache-Control', 'public, max-age=60');
         return res.end();
       }
+      count('img.copy');
       res.statusCode = 200;
       res.setHeader('Content-Type', image.type);
       res.setHeader('Content-Length', String(image.body.length));
