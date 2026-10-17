@@ -72,6 +72,7 @@ import {
   type BannerCatalog,
 } from '../../shared/banner-catalog.mjs';
 import { getPlayerProfile } from '../../widget/src/utils/faceit_util.ts';
+import { formatMenuCount, getLiveBoard, LIVE_LIST_REFRESH_MS, subscribeLiveStreamerCount, subscribeOnlineCount } from '../utils/presence.ts';
 
 export { LanguageContext, SettingsContext } from './contexts.ts';
 
@@ -136,6 +137,8 @@ export const Generator = () => {
   const onLive = pathname === '/live';
   const onStreamers = pathname === '/streamers';
   const onPublicPage = onLive || onStreamers;
+  const [liveStreamerCount, setLiveStreamerCount] = useState<number | null>(null);
+  const [onlineBannerCount, setOnlineBannerCount] = useState<number | null>(null);
   const navigate = useNavigate();
   const [selectedTabIndex, setSelectedTabIndex] = useState(() => {
     const value = Number(new URLSearchParams(window.location.search).get('tab'));
@@ -155,6 +158,37 @@ export const Generator = () => {
     }
   });
   const sidebarExpanded = compactSidebar ? compactSidebarOpen : !sidebarCollapsed;
+  useEffect(() => subscribeOnlineCount(setOnlineBannerCount), []);
+  useEffect(() => {
+    let active = true;
+    let pending = false;
+    const controller = new AbortController();
+    const unsubscribe = subscribeLiveStreamerCount((count) => {
+      if (active) setLiveStreamerCount(count);
+    });
+    const refresh = async () => {
+      if (onPublicPage || document.hidden || pending) return;
+      pending = true;
+      try {
+        await getLiveBoard(controller.signal);
+      } catch {
+        /* The menu count is optional when the public list is unavailable. */
+      } finally {
+        pending = false;
+      }
+    };
+    void refresh();
+    const interval = window.setInterval(refresh, LIVE_LIST_REFRESH_MS);
+    const onVisibility = () => document.visibilityState === 'visible' && void refresh();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      active = false;
+      controller.abort();
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+      unsubscribe();
+    };
+  }, [onPublicPage]);
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return;
     const media = window.matchMedia('(min-width: 701px) and (max-width: 1280px)');
@@ -707,6 +741,8 @@ export const Generator = () => {
               .finally(session.refresh);
           }}
           onOpenProfile={openProfile}
+          liveStreamerCount={liveStreamerCount}
+          onlineBannerCount={onlineBannerCount}
         />
         <GeneratedWidgetModal
           language={language}
@@ -742,7 +778,8 @@ export const Generator = () => {
               <StudioIcon name="chevron" />
               <span>{sidebarExpanded ? tl('menu.close') : tl('menu.open')}</span>
             </button>
-            {tabs.map((tab, index) => {
+            <span className="nav-group-label">{tl('menu.banner_settings')}</span>
+            {tabs.slice(0, PINNED_TABS).map((tab, index) => {
               return (
                 <button
                   key={tab.name}
@@ -762,27 +799,28 @@ export const Generator = () => {
                 </button>
               );
             })}
-            <Link
-              className={`docs-tab streamers-tab${onStreamers ? ' active' : ''}`}
-              to="/streamers"
-              title={tl('streamers.title')}
-              aria-label={tl('streamers.title')}
-              aria-current={onStreamers ? 'page' : undefined}
-              onClick={() => setCompactSidebarOpen(false)}
-            >
-              <i className="stream-menu-dot" aria-hidden="true" />
-              <span>{tl('streamers.title')}</span>
-              <StudioIcon name="chevron" />
-            </Link>
-            <a
-              className="docs-tab hub-tab"
-              href="https://vxh.pl/"
-              title={tl('studio.hub')}
-              aria-label={tl('studio.hub')}
-            >
-              <StudioIcon name="home" />
-              <span>{tl('studio.hub')}</span>
-            </a>
+            <span className="nav-group-label">{tl('menu.additional')}</span>
+            {tabs.slice(PINNED_TABS).map((tab, offset) => {
+              const index = offset + PINNED_TABS;
+              return (
+                <button
+                  key={tab.name}
+                  aria-label={tab.name}
+                  title={tab.name}
+                  aria-current={!onPublicPage && !showProfile && index === selectedTabIndex ? 'page' : undefined}
+                  data-overflow="true"
+                  onClick={() => {
+                    selectTab(index);
+                    if (onPublicPage) navigate(`/?tab=${index}`);
+                  }}
+                  className={!onPublicPage && !showProfile && index === selectedTabIndex ? 'active' : ''}
+                >
+                  <StudioIcon name={TAB_ICONS[index]} />
+                  <span>{tab.name}</span>
+                  <StudioIcon name="chevron" />
+                </button>
+              );
+            })}
             <a
               className="docs-tab"
               href="/docs/"
@@ -793,6 +831,30 @@ export const Generator = () => {
               <span>{tl('studio.docs')}</span>
               <StudioIcon name="arrow" />
             </a>
+            <a className="sidebar-hub-link" href="https://vxh.pl/" title={tl('studio.hub')}>
+              <StudioIcon name="home" />
+              <span>{tl('studio.hub')}</span>
+              <StudioIcon name="arrow" />
+            </a>
+            <span className="nav-group-label nav-group-label--community">{tl('menu.community')}</span>
+            <Link
+              className={`docs-tab streamers-tab${onStreamers ? ' active' : ''}`}
+              to="/streamers"
+              title={tl('streamers.title')}
+              aria-label={tl('streamers.title')}
+              aria-current={onStreamers ? 'page' : undefined}
+              onClick={() => setCompactSidebarOpen(false)}
+            >
+              <div className="streamer-menu-signal" aria-hidden="true">
+                <i className="stream-menu-dot" />
+              </div>
+              <div className="streamer-menu-copy">
+                <strong>{formatMenuCount(liveStreamerCount)}</strong>
+                <span>{tl('streamers.title')}</span>
+              </div>
+              <small>{tl('streamers.online_short')}</small>
+            </Link>
+            <OnlineBannerCount />
             <button
               type="button"
               className="mobile-menu-toggle"
@@ -806,7 +868,6 @@ export const Generator = () => {
             </button>
           </nav>
           <div className="sidebar-foot">
-            <OnlineBannerCount />
             <DonateLink variant="header" />
             <LanguageSelect
               languages={languages}

@@ -33,7 +33,9 @@
   "live.prev": "Previous",
   "live.next": "Next",
   "live.page": "Page {{0}} of {{1}}",
+
   "streamers.title": "Our streamers",
+  "streamers.online_short": "online",
   "streamers.lead": "Twitch broadcasts from players using our FACEIT banner.",
   "streamers.section_lead": "Live channels ordered by their current viewer count.",
   "streamers.how.title": "How do I join the list?",
@@ -883,7 +885,11 @@
   "profile.logins_empty": "No sign-ins saved yet.",
   "account.logout": "Log out",
   "account.admin": "Admin panel",
+
   "menu.title": "Menu",
+  "menu.banner_settings": "Banner settings",
+  "menu.additional": "Extras",
+  "menu.community": "Community",
   "menu.close": "Close menu",
   "menu.open": "Open menu",
   "footer.terms": "Terms",

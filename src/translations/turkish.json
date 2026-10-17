@@ -33,7 +33,9 @@
   "live.prev": "Önceki",
   "live.next": "Sonraki",
   "live.page": "Sayfa {{0}} / {{1}}",
+
   "streamers.title": "Yayıncılarımız",
+  "streamers.online_short": "yayında",
   "streamers.lead": "FACEIT bannerımızı kullanan oyuncuların Twitch yayınları.",
   "streamers.section_lead": "Anlık izleyici sayısına göre canlı kanallar.",
   "streamers.how.title": "Listeye nasıl girerim?",
@@ -883,7 +885,11 @@
   "profile.logins_empty": "Henüz kayıtlı giriş yok.",
   "account.logout": "Çıkış yap",
   "account.admin": "Yönetici paneli",
+
   "menu.title": "Menü",
+  "menu.banner_settings": "Banner ayarları",
+  "menu.additional": "Ek seçenekler",
+  "menu.community": "Topluluk",
   "menu.close": "Menüyü kapat",
   "menu.open": "Menüyü aç",
   "footer.terms": "Şartlar",

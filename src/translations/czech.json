@@ -33,7 +33,9 @@
   "live.prev": "Předchozí",
   "live.next": "Další",
   "live.page": "Stránka {{0}} z {{1}}",
+
   "streamers.title": "Naši streameři",
+  "streamers.online_short": "online",
   "streamers.lead": "Twitch vysílání hráčů, kteří používají náš FACEIT banner.",
   "streamers.section_lead": "Živé kanály podle aktuálního počtu diváků.",
   "streamers.how.title": "Jak se dostat na seznam?",
@@ -883,7 +885,11 @@
   "profile.logins_empty": "Zatím nejsou uložena žádná přihlášení.",
   "account.logout": "Odhlásit se",
   "account.admin": "Panel administrátora",
+
   "menu.title": "Nabídka",
+  "menu.banner_settings": "Nastavení banneru",
+  "menu.additional": "Další",
+  "menu.community": "Komunita",
   "menu.close": "Zavřít nabídku",
   "menu.open": "Otevřít nabídku",
   "footer.terms": "Podmínky",

@@ -33,7 +33,9 @@
   "live.prev": "Précédent",
   "live.next": "Suivant",
   "live.page": "Page {{0}} sur {{1}}",
+
   "streamers.title": "Nos streamers",
+  "streamers.online_short": "en ligne",
   "streamers.lead": "Les streams Twitch des joueurs qui utilisent notre bannière FACEIT.",
   "streamers.section_lead": "Chaînes en direct selon leur audience actuelle.",
   "streamers.how.title": "Comment rejoindre la liste ?",
@@ -883,7 +885,11 @@
   "profile.logins_empty": "Aucune connexion enregistrée pour l'instant.",
   "account.logout": "Se déconnecter",
   "account.admin": "Panneau d'administration",
+
   "menu.title": "Menu",
+  "menu.banner_settings": "Paramètres de la bannière",
+  "menu.additional": "Suppléments",
+  "menu.community": "Communauté",
   "menu.close": "Fermer le menu",
   "menu.open": "Ouvrir le menu",
   "footer.terms": "Conditions",

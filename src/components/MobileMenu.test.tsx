@@ -32,6 +32,8 @@ const menu = (overrides: Partial<Parameters<typeof MobileMenu>[0]> = {}) => {
     lastSavedAt: null,
     onLogout: vi.fn(),
     onOpenProfile: vi.fn(),
+    liveStreamerCount: 2,
+    onlineBannerCount: 7,
     ...overrides,
   };
   return { props, ...renderWithApp(<MobileMenu {...props} />) };
@@ -49,6 +51,9 @@ describe('MobileMenu', () => {
     expect(within(dialog).getByRole('button', { name: 'Moje banery' })).toBeTruthy();
     expect(within(dialog).getByRole('link', { name: /Visual eXtras Hub/ }).getAttribute('href')).toBe('https://vxh.pl/');
     expect(within(dialog).getByRole('link', { name: /Dokumentacja/ }).getAttribute('href')).toBe('/docs/');
+    expect(within(dialog).getByRole('link', { name: /Nasi streamerzy/ }).textContent).toContain('2 online');
+    expect(within(dialog).getByRole('link', { name: /Ranking ELO na żywo/ }).getAttribute('href')).toBe('/live');
+    expect(within(dialog).getByRole('link', { name: /Ranking ELO na żywo/ }).textContent).toContain('7');
     expect(within(dialog).getByRole('link', { name: /Wesprzyj projekt/ }).getAttribute('href')).toBe(
       'https://donate.skullmedia.pl'
     );

@@ -5,9 +5,20 @@ export const PRESENCE_REFRESH_MS = 30_000;
 /** The live list is a saved copy on the server, so asking more often than once a minute gains nothing. */
 export const LIVE_LIST_REFRESH_MS = 60_000;
 
+/** Keeps navigation counters readable in the narrow rail without hiding the real scale. */
+export function formatMenuCount(count: number | null | undefined) {
+  if (count === null || count === undefined) return '—';
+  if (count < 1_000) return count.toLocaleString();
+  if (count < 10_000) return `${(count / 1_000).toFixed(1).replace('.0', '')}k`;
+  if (count < 1_000_000) return `${Math.floor(count / 1_000)}k`;
+  return `${(count / 1_000_000).toFixed(1).replace('.0', '')}m`;
+}
+
 type OnlineListener = (count: number) => void;
 const onlineListeners = new Set<OnlineListener>();
 let lastOnline: number | null = null;
+const streamerListeners = new Set<OnlineListener>();
+let lastStreamerOnline: number | null = null;
 
 function publishOnlineCount(count: number) {
   lastOnline = count;
@@ -21,6 +32,20 @@ export function subscribeOnlineCount(listener: OnlineListener) {
   return () => {
     onlineListeners.delete(listener);
   };
+}
+
+export function subscribeLiveStreamerCount(listener: OnlineListener) {
+  streamerListeners.add(listener);
+  if (lastStreamerOnline !== null) listener(lastStreamerOnline);
+  return () => {
+    streamerListeners.delete(listener);
+  };
+}
+
+function publishLiveStreamerCount(players: LivePlayer[]) {
+  const count = players.filter((player) => player.twitchStatus?.state === 'live').length;
+  lastStreamerOnline = count;
+  for (const listener of streamerListeners) listener(count);
 }
 
 export type PresenceInfo = {
@@ -131,6 +156,7 @@ export async function getLiveBoard(signal?: AbortSignal): Promise<LiveBoard> {
   const players = Array.isArray(data.players) ? data.players.filter((player) => player && typeof player.nickname === 'string') : [];
   const online = Math.max(0, Number(data.online) || 0);
   publishOnlineCount(online);
+  publishLiveStreamerCount(players);
   return {
     online,
     ranked: Math.max(0, Number(data.ranked) || players.length),

@@ -9,6 +9,7 @@ import { languageFlagUrl as flagUrl } from './language-flag';
 import { StudioIcon, type IconName } from './StudioIcon';
 import { SyncChip } from './SyncChip';
 import { useDismiss } from './useDismiss';
+import { formatMenuCount } from '../utils/presence';
 
 
 type Props = {
@@ -26,6 +27,8 @@ type Props = {
   lastSavedAt: number | null;
   onLogout: () => void;
   onOpenProfile: () => void;
+  liveStreamerCount?: number | null;
+  onlineBannerCount?: number | null;
 };
 
 /** Phone menu: a full-screen sheet opened from the fourth icon of the bottom bar. */
@@ -64,8 +67,8 @@ export const MobileMenu = (props: Props) => {
 
       <div className="mobile-menu-body">
         <section className="mobile-menu-section">
-          <h3>{tl('studio.workspace')}</h3>
-          {tabs.map((tab, index) => (
+          <h3>{tl('menu.banner_settings')}</h3>
+          {tabs.slice(0, 3).map((tab, index) => (
             <button
               key={tab.name}
               type="button"
@@ -77,14 +80,25 @@ export const MobileMenu = (props: Props) => {
               <span>{tab.name}</span>
             </button>
           ))}
-          <a className="mobile-menu-item" href="/streamers">
-            <i className="stream-menu-dot" aria-hidden="true" />
-            <span>{tl('streamers.title')}</span>
-          </a>
-          <a className="mobile-menu-item mobile-menu-item--hub" href="https://vxh.pl/">
-            <StudioIcon name="home" />
-            <span>{tl('studio.hub')}</span>
-          </a>
+        </section>
+
+        <section className="mobile-menu-section">
+          <h3>{tl('menu.additional')}</h3>
+          {tabs.slice(3).map((tab, offset) => {
+            const index = offset + 3;
+            return (
+              <button
+                key={tab.name}
+                type="button"
+                className="mobile-menu-item"
+                aria-current={index === selectedIndex ? 'page' : undefined}
+                onClick={done(() => onSelectTab(index))}
+              >
+                <StudioIcon name={tab.icon} />
+                <span>{tab.name}</span>
+              </button>
+            );
+          })}
           <a className="mobile-menu-item" href="/docs/">
             <StudioIcon name="book" />
             <span>{tl('studio.docs')}</span>
@@ -140,6 +154,23 @@ export const MobileMenu = (props: Props) => {
           )}
         </section>
 
+        <a className="mobile-menu-hub" href="https://vxh.pl/">
+          <StudioIcon name="home" />
+          <span>{tl('studio.hub')}</span>
+        </a>
+        <section className="mobile-menu-section mobile-menu-section--community">
+          <h3>{tl('menu.community')}</h3>
+          <a className="mobile-menu-item mobile-menu-item--streamers" href="/streamers">
+            <i className="stream-menu-dot" aria-hidden="true" />
+            <span>{tl('streamers.title')}</span>
+            <small className="nav-online-badge">{formatMenuCount(props.liveStreamerCount)} {tl('streamers.online_short')}</small>
+          </a>
+          <a className="mobile-menu-item" href="/live">
+            <span className="online-pulse" aria-hidden="true"><i /></span>
+            <span>{tl('live.open')}</span>
+            <small className="nav-online-badge nav-online-badge--banners">{formatMenuCount(props.onlineBannerCount)}</small>
+          </a>
+        </section>
         <DonateLink variant="footer" />
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useContext, useEffect, useState } from 'react';
 import { LanguageContext } from '../generator/contexts';
-import { getOnlineBannerCount, PRESENCE_REFRESH_MS, subscribeOnlineCount } from '../utils/presence';
+import { formatMenuCount, getOnlineBannerCount, PRESENCE_REFRESH_MS, subscribeOnlineCount } from '../utils/presence';
 
 export function OnlineBannerCount() {
   const tl = useContext(LanguageContext);
@@ -64,7 +64,7 @@ export function OnlineBannerCount() {
       </span>
       <span className="online-copy">
         <strong>
-          {available && count !== null ? count.toLocaleString() : '—'}
+          {available ? formatMenuCount(count) : '—'}
         </strong>
         <span>
           {available

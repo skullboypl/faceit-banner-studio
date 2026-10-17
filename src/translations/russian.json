@@ -33,7 +33,9 @@
   "live.prev": "Назад",
   "live.next": "Далее",
   "live.page": "Страница {{0}} из {{1}}",
+
   "streamers.title": "Наши стримеры",
+  "streamers.online_short": "в эфире",
   "streamers.lead": "Трансляции Twitch игроков, которые используют наш баннер FACEIT.",
   "streamers.section_lead": "Каналы в эфире по текущему числу зрителей.",
   "streamers.how.title": "Как попасть в список?",
@@ -883,7 +885,11 @@
   "profile.logins_empty": "Сохранённых входов пока нет.",
   "account.logout": "Выйти",
   "account.admin": "Панель администратора",
+
   "menu.title": "Меню",
+  "menu.banner_settings": "Настройки баннера",
+  "menu.additional": "Дополнительно",
+  "menu.community": "Сообщество",
   "menu.close": "Закрыть меню",
   "menu.open": "Открыть меню",
   "footer.terms": "Условия",
