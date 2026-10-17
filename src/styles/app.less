@@ -2373,12 +2373,20 @@ html.generator .settings.catalog-board {
 
 html.generator .settings.catalog-board,
 .admin-card {
-  .catalog-list { display: grid; gap: 12px; margin: 12px 0 0; padding: 0; list-style: none; }
+  .catalog-list {
+    display: grid;
+    gap: 12px;
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 540px), 1fr));
+  }
   .catalog-item {
     display: grid;
     grid-template-columns: 52px minmax(0, 1fr);
     gap: 12px;
     align-items: start;
+    min-width: 0;
     padding: 10px 12px 12px;
     overflow: hidden;
     background: #151515;
@@ -2576,11 +2584,11 @@ html.generator .feedback-form {
   img { max-width: min(960px, 100%); max-height: 86vh; width: auto; height: auto; }
 }
 
-/* Feedback tab: full width, no widget preview */
+/* Catalog and feedback: same 1420px rail as the other tabs, without the live preview column */
 html.generator .studio-main.studio-main--wide,
 html.generator .studio-main.studio-main--live {
   grid-template-columns: minmax(0, 1fr);
-  max-width: 1100px;
+  max-width: 1420px;
 }
 html.generator .studio-main.studio-main--live {
   max-width: 860px;
