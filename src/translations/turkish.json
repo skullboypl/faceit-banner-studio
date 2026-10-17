@@ -892,6 +892,8 @@
   "menu.community": "Topluluk",
   "menu.close": "Menüyü kapat",
   "menu.open": "Menüyü aç",
+  "menu.collapse": "Menüyü daralt",
+  "menu.expand": "Menüyü genişlet",
   "footer.terms": "Şartlar",
   "footer.privacy": "Gizlilik",
   "cookie.title": "Oturum çerezi",

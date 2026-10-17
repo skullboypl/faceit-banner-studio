@@ -892,6 +892,8 @@
   "menu.community": "Komunita",
   "menu.close": "Zavřít nabídku",
   "menu.open": "Otevřít nabídku",
+  "menu.collapse": "Sbalit nabídku",
+  "menu.expand": "Rozbalit nabídku",
   "footer.terms": "Podmínky",
   "footer.privacy": "Soukromí",
   "cookie.title": "Relační cookie",

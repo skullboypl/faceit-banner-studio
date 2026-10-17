@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { renderWithApp } from '../components/test-utils';
 import { getLiveBoard } from '../utils/presence';
-import { TwitchStreamers } from './TwitchStreamers';
+import { TwitchStreamers, twitchPlayerFrame } from './TwitchStreamers';
 
 vi.mock('../utils/presence', () => ({
   LIVE_LIST_REFRESH_MS: 60_000,
@@ -57,6 +57,19 @@ describe('TwitchStreamers', () => {
     expect(entries[2].textContent).toContain('Offline Player');
     expect(entries[2].textContent).toContain('OFFLINE');
     expect(screen.queryByText('Deleted Player')).toBeNull();
+  });
+
+  test('scales the Twitch player into the slot instead of widening the page', () => {
+    const wide = twitchPlayerFrame(800);
+    expect(wide?.scale).toBe(1);
+    expect(wide?.width).toBe(800);
+    expect(wide?.height).toBe(450);
+    const phone = twitchPlayerFrame(320);
+    expect(phone!.width).toBeGreaterThanOrEqual(400);
+    expect(phone!.height).toBeGreaterThanOrEqual(300);
+    expect(phone!.width * phone!.scale).toBeCloseTo(320);
+    expect(phone!.height * phone!.scale).toBeCloseTo(180);
+    expect(twitchPlayerFrame(0)).toBeNull();
   });
 
   test('explains that an open banner and a linked FACEIT Twitch account are required', async () => {

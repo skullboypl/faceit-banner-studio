@@ -892,6 +892,8 @@
   "menu.community": "Community",
   "menu.close": "Close menu",
   "menu.open": "Open menu",
+  "menu.collapse": "Collapse menu",
+  "menu.expand": "Expand menu",
   "footer.terms": "Terms",
   "footer.privacy": "Privacy",
   "cookie.title": "Session cookie",

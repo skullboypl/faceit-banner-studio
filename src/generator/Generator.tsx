@@ -796,13 +796,13 @@ export const Generator = () => {
             <button
               type="button"
               className="sidebar-collapse-toggle"
-              aria-label={sidebarExpanded ? tl('menu.close') : tl('menu.open')}
-              title={sidebarExpanded ? tl('menu.close') : tl('menu.open')}
+              aria-label={sidebarExpanded ? tl('menu.collapse') : tl('menu.expand')}
+              title={sidebarExpanded ? tl('menu.collapse') : tl('menu.expand')}
               aria-expanded={sidebarExpanded}
               onClick={toggleSidebar}
             >
               <StudioIcon name="chevron" />
-              <span>{sidebarExpanded ? tl('menu.close') : tl('menu.open')}</span>
+              <span>{sidebarExpanded ? tl('menu.collapse') : tl('menu.expand')}</span>
             </button>
             <span className="nav-group-label">{tl('menu.banner_settings')}</span>
             {tabs.slice(0, PINNED_TABS).map((tab, index) => {

@@ -892,6 +892,8 @@
   "menu.community": "Сообщество",
   "menu.close": "Закрыть меню",
   "menu.open": "Открыть меню",
+  "menu.collapse": "Свернуть меню",
+  "menu.expand": "Развернуть меню",
   "footer.terms": "Условия",
   "footer.privacy": "Конфиденциальность",
   "cookie.title": "Сессионный cookie",

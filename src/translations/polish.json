@@ -892,6 +892,8 @@
   "menu.community": "Społeczność",
   "menu.close": "Zamknij menu",
   "menu.open": "Otwórz menu",
+  "menu.collapse": "Zwiń menu",
+  "menu.expand": "Rozwiń menu",
   "footer.terms": "Regulamin",
   "footer.privacy": "Prywatność",
   "cookie.title": "Ciasteczko sesji",

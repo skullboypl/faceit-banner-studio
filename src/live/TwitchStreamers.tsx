@@ -25,6 +25,50 @@ function embedUrl(channel: string) {
   return url.toString();
 }
 
+const TWITCH_MIN_WIDTH = 400;
+const TWITCH_MIN_HEIGHT = 300;
+
+/** Twitch refuses a player under 400×300. Scale that frame into the slot so the page stays at the viewport width. */
+export function twitchPlayerFrame(containerWidth: number) {
+  if (containerWidth < 1) return null;
+  const displayHeight = (containerWidth * 9) / 16;
+  const scaleNeed = Math.max(TWITCH_MIN_WIDTH / containerWidth, TWITCH_MIN_HEIGHT / displayHeight, 1);
+  return {
+    width: containerWidth * scaleNeed,
+    height: displayHeight * scaleNeed,
+    scale: 1 / scaleNeed,
+  };
+}
+
+function FeaturedPlayer({ channel, title }: { channel: string; title: string }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [frame, setFrame] = useState<ReturnType<typeof twitchPlayerFrame>>(null);
+
+  useEffect(() => {
+    const node = box.current;
+    if (!node || typeof ResizeObserver === 'undefined') return;
+    const measure = () => setFrame(twitchPlayerFrame(node.clientWidth));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div className="streamers-player-slot" ref={box}>
+      <iframe
+        key={channel}
+        className="streamers-player"
+        src={embedUrl(channel)}
+        title={title}
+        style={frame ? { width: `${frame.width}px`, height: `${frame.height}px`, transform: `scale(${frame.scale})` } : undefined}
+        allow="autoplay; fullscreen; picture-in-picture"
+        allowFullScreen
+      />
+    </div>
+  );
+}
+
 function StreamerAvatar({ player }: { player: LivePlayer }) {
   return (
     <span className="streamer-avatar" aria-hidden="true">
@@ -137,18 +181,7 @@ export function TwitchStreamers() {
                 <span>{t('streamers.viewers')}</span>
               </div>
             </div>
-            <div className="streamers-player-scroll">
-              <iframe
-                key={selected.twitch}
-                className="streamers-player"
-                src={embedUrl(selected.twitch!)}
-                title={t('streamers.player_title', [selected.nickname])}
-                width="100%"
-                height="100%"
-                allow="autoplay; fullscreen; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
+            <FeaturedPlayer channel={selected.twitch!} title={t('streamers.player_title', [selected.nickname])} />
             <a className="streamers-open-twitch" href={channelUrl(selected)} target="_blank" rel="noreferrer noopener">
               <TwitchIcon size={16} /> {t('streamers.open_twitch')}
             </a>

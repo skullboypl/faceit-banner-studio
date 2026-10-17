@@ -2,6 +2,8 @@
 .streamers-page {
   display: grid;
   gap: 18px;
+  min-width: 0;
+  max-width: 100%;
   padding: 20px;
   border: 1px solid #2b2b2e;
   background: #111112;
@@ -23,6 +25,8 @@
 .streamers-rule strong { color: #fff; }
 .streamers-feature {
   position: relative;
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   border: 1px solid #3a3145;
   background: #09090b;
@@ -43,6 +47,7 @@
   gap: 16px;
 }
 .streamers-feature-head { padding: 18px 20px 16px; }
+.streamers-feature-head > div { min-width: 0; }
 .streamers-feature-head h3,
 .streamers-section-head h3 {
   margin: 4px 0 0;
@@ -52,7 +57,7 @@
   letter-spacing: -0.5px;
 }
 .streamers-feature-head p {
-  max-width: 680px;
+  max-width: 100%;
   margin: 7px 0 0;
   overflow: hidden;
   color: #a8a3af;
@@ -78,18 +83,28 @@
   background: #36e77c;
   box-shadow: 0 0 0 4px #36e77c1f;
 }
-.streamers-feature-meta { text-align: right; font-variant-numeric: tabular-nums; }
+.streamers-feature-meta { flex: 0 0 auto; text-align: right; font-variant-numeric: tabular-nums; }
 .streamers-feature-meta strong { display: block; color: #fff; font-size: 22px; line-height: 1; }
 .streamers-feature-meta span { color: #8d8794; font-size: 10px; text-transform: uppercase; }
-.streamers-player-scroll { width: 100%; overflow-x: auto; background: #000; }
+.streamers-player-slot {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #000;
+}
 .streamers-player {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: block;
   width: 100%;
-  min-width: 400px;
-  min-height: 300px;
-  aspect-ratio: 16 / 9;
+  height: 100%;
   border: 0;
   background: #000;
+  transform-origin: top left;
 }
 a.streamers-open-twitch,
 a.streamers-open-twitch:hover,
@@ -108,6 +123,8 @@ a.streamers-open-twitch:hover,
 a.streamers-open-twitch:focus { color: #fff; }
 .streamers-top,
 .streamers-rest {
+  min-width: 0;
+  max-width: 100%;
   padding: 18px;
   border: 1px solid #2b2b2e;
   background: #151516;
@@ -240,7 +257,8 @@ a.streamers-open-twitch:focus { color: #fff; }
 
 html.generator .studio-main.studio-main--streamers {
   grid-template-columns: minmax(0, 1fr);
-  max-width: 1120px;
+  min-width: 0;
+  max-width: min(1120px, 100%);
 }
 html.generator .studio-main.studio-main--streamers .section-heading {
   height: auto;
@@ -282,14 +300,13 @@ html.generator .studio-main.studio-main--streamers .section-heading {
   .streamers-rule { align-items: flex-start; }
   .streamers-feature-head { align-items: flex-start; padding: 15px; }
   .streamers-feature-head h3 { font-size: 19px; }
-  .streamers-feature-head p { max-width: 210px; }
   .streamers-feature-meta strong { font-size: 18px; }
   .streamers-top,
   .streamers-rest { padding: 13px; }
-  .streamers-rail { grid-auto-columns: minmax(205px, 78%); }
+  .streamers-rail { grid-auto-columns: minmax(180px, 78%); }
   .streamers-rest li { grid-template-columns: 36px minmax(0, 1fr) auto 30px; gap: 8px; padding-inline: 4px; }
   .streamer-avatar { width: 34px; height: 34px; }
-  .streamers-status { max-width: 72px; text-align: right; }
+  .streamers-status { max-width: 72px; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
 }
 
 @media (prefers-reduced-motion: reduce) {
