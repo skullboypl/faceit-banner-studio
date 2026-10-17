@@ -1,7 +1,7 @@
 import { act, render } from '@testing-library/react';
 import { describe, expect, test, vi } from 'vitest';
 import { MatchPopup } from '../widget/src/widget/MatchPopup';
-import { mapArt } from '../widget/src/widget/map-art';
+import { MAP_ART, MAP_PREVIEW_IDS, mapArt } from '../widget/src/widget/map-art';
 import { collectStats } from '../widget/src/utils/faceit_match';
 import { POPUP_DEFAULTS, POPUP_LAYOUTS, POPUP_THEMES, POPUP_MIN_TWO_COLUMNS, POPUP_FONT_KEYS, POPUP_RANGES, fontKeysFor, lookFor, popupCardWidth, popupCloseUp, popupMinWidth, readPopupOptions, timingFor, type PopupOptions } from '../widget/src/widget/popup-options';
 import { SETTINGS_DEFINITIONS } from './settings/definition';
@@ -157,8 +157,26 @@ describe('MatchPopup map background and avatars', () => {
     // sample() always uses mirage, so this guards the lookup itself
     expect(mapArt('mirage')).toBeTruthy();
     expect(mapArt('de_mirage')).toBeTruthy();
+    expect(mapArt('anubis')).toBeTruthy();
+    expect(mapArt('de_inferno')).toBeTruthy();
+    expect(mapArt('de_vertigo')).toBeTruthy();
+    expect(mapArt('cache')).toBeTruthy();
+    expect(mapArt('de_train')).toBeTruthy();
     expect(mapArt('unknown-map')).toBeUndefined();
     expect(mapArt(undefined)).toBeUndefined();
+    expect([...MAP_PREVIEW_IDS].sort()).toEqual(Object.keys(MAP_ART).sort());
+    expect(MAP_PREVIEW_IDS).toEqual([
+      'nuke',
+      'mirage',
+      'ancient',
+      'dust2',
+      'overpass',
+      'anubis',
+      'inferno',
+      'vertigo',
+      'cache',
+      'train',
+    ]);
   });
 
   test('player avatars show as pictures, or initials when FACEIT has none, and never in compact', () => {

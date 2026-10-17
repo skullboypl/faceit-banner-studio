@@ -1,24 +1,5 @@
 import { Language, tl } from '../translations/translations.ts';
-
-import nukePreview from '../assets/previews/nuke.png';
-import miragePreview from '../assets/previews/mirage.png';
-import ancientPreview from '../assets/previews/ancient.png';
-import dust2Preview from '../assets/previews/dust2.png';
-import overpassPreview from '../assets/previews/overpass.png';
-
-type PreviewOption = {
-  id: string;
-  label: string;
-  img: string;
-};
-
-const previews: PreviewOption[] = [
-  { id: 'nuke', label: 'Nuke', img: nukePreview },
-  { id: 'mirage', label: 'Mirage', img: miragePreview },
-  { id: 'ancient', label: 'Ancient', img: ancientPreview },
-  { id: 'dust2', label: 'Dust2', img: dust2Preview },
-  { id: 'overpass', label: 'Overpass', img: overpassPreview },
-];
+import { MAP_ART, MAP_PREVIEW_IDS } from '../../widget/src/widget/map-art';
 
 export const PreviewCarousel = ({
   language,
@@ -40,15 +21,15 @@ export const PreviewCarousel = ({
         <span>{tl(language, 'studio.preview_only')}</span>
       </div>
       <div className="map-options">
-        {previews.map((preview) => (
+        {MAP_PREVIEW_IDS.map((id) => (
           <button
             type="button"
-            key={preview.id}
-            aria-pressed={previewBackground === preview.id}
-            onClick={() => setPreviewBackground(preview.id)}
+            key={id}
+            aria-pressed={previewBackground === id}
+            onClick={() => setPreviewBackground(id)}
           >
-            <img src={preview.img} alt="" />
-            <span>{tl(language, `generator.preview.${preview.id}`)}</span>
+            <img src={MAP_ART[id]} alt="" />
+            <span>{tl(language, `generator.preview.${id}`)}</span>
           </button>
         ))}
       </div>

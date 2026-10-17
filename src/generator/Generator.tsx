@@ -35,11 +35,7 @@ import { BrandYoutubeIcon } from '../assets/icons/tabler/BrandYoutubeIcon.tsx';
 import { BrandXIcon } from '../assets/icons/tabler/BrandXIcon.tsx';
 import { BrandDiscordIcon } from '../assets/icons/tabler/BrandDiscordIcon.tsx';
 import { BrandTiktokIcon } from '../assets/icons/tabler/BrandTiktokIcon.tsx';
-import nukePreview from '../assets/previews/nuke.png';
-import miragePreview from '../assets/previews/mirage.png';
-import ancientPreview from '../assets/previews/ancient.png';
-import dust2Preview from '../assets/previews/dust2.png';
-import overpassPreview from '../assets/previews/overpass.png';
+import { MAP_ART } from '../../widget/src/widget/map-art';
 import { useSearchParams } from 'react-router-dom';
 import {
   SettingValue,
@@ -86,13 +82,7 @@ const PINNED_TABS = 3;
 /** Catalog and feedback need the whole width, so they hide the widget preview. */
 const WIDE_TAB_INDEXES = new Set([4, 5]);
 const TAB_ICONS = ['settings', 'palette', 'stats', 'cloud', 'layers', 'message'] as const;
-const PREVIEW_BACKGROUNDS: Record<string, string> = {
-  nuke: nukePreview,
-  mirage: miragePreview,
-  ancient: ancientPreview,
-  dust2: dust2Preview,
-  overpass: overpassPreview,
-};
+const PREVIEW_BACKGROUNDS = MAP_ART;
 
 export const Generator = () => {
   const [playerExists, setPlayerExists] = useState<boolean>(true);
