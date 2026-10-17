@@ -55,6 +55,9 @@ test('an admin clears everything or one kind of cache; an unknown kind is refuse
       assert.deepEqual((await all.json()).cleared.sort(), ['avatars', 'faceit', 'live', 'profiles', 'rankings']);
       const one = await post(base, { scope: 'avatars' });
       assert.deepEqual((await one.json()).cleared, ['avatars']);
+      assert.equal((await post(base, { scope: 'css' })).status, 503);
+      const css = await (await post(base, { scope: 'css' })).json();
+      assert.equal(css.error, 'cdn_not_configured');
       assert.equal((await post(base, { scope: 'secrets' })).status, 400);
       assert.equal((await post(base, {})).status, 400);
     } finally {

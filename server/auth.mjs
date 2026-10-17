@@ -5,6 +5,7 @@ import { clearLiveBoard, getPresenceCount, hydratePresence } from './presence.mj
 import { clearFaceitCache } from './faceit-proxy.mjs';
 import { readBannerCatalog, writeBannerCatalog } from './catalog.mjs';
 import { clearLiveCache, lookupPlayer, lookupRanking } from './live.mjs';
+import { purgeFrontCache } from './cdn-cache.mjs';
 import {
   consumeState,
   deleteSession,
@@ -231,7 +232,7 @@ function originAllowed(req) {
   }
 }
 
-/** What an admin can clear: FACEIT answers, player profiles, avatar pictures, ranking places and the live list. */
+/** FACEIT answers and the live board. CSS on Cloudflare is a separate button: it talks to the CDN. */
 const CACHE_KINDS = ['faceit', 'profiles', 'avatars', 'rankings', 'live'];
 
 export function createAuthMiddleware() {
@@ -339,6 +340,15 @@ export function createAuthMiddleware() {
         if (!isAdmin(user)) return sendJson(res, 403, { error: 'forbidden' });
         if (!originAllowed(req)) return sendJson(res, 403, { error: 'bad_origin' });
         const scope = (await readJson(req))?.scope;
+        if (scope === 'css') {
+          try {
+            return sendJson(res, 200, { cleared: await purgeFrontCache() });
+          } catch (failure) {
+            const code = failure?.code || failure?.message;
+            if (code === 'cdn_not_configured') return sendJson(res, 503, { error: 'cdn_not_configured' });
+            return sendJson(res, 502, { error: 'cdn_purge_failed' });
+          }
+        }
         const kinds = scope === 'all' ? CACHE_KINDS : CACHE_KINDS.includes(scope) ? [scope] : null;
         if (!kinds) return sendJson(res, 400, { error: 'invalid_scope' });
         for (const kind of kinds) {

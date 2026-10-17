@@ -6,6 +6,9 @@ import { BrandGithubIcon } from '../assets/icons/tabler/BrandGithubIcon.tsx';
 const GITHUB_REPO_URL =
   'https://github.com/skullboypl/faceit-banner-faceitbanner.vxh.pl';
 
+/** Author channel; the sidebar credit and the footer point here instead of a CS2 blurb in the rail. */
+export const SKULL_YOUTUBE_URL = 'https://www.youtube.com/@skullboypl';
+
 export const Footer = () => {
   const tl = useContext(LanguageContext);
 
@@ -16,6 +19,9 @@ export const Footer = () => {
   return (
     <footer className="app-footer">
       <div className="footer-left">
+        <small>
+          CS2 · {tl('studio.sidebar_note')}
+        </small>
         <small>
           Ten projekt nie jest powiązany z{' '}
           <a href="https://faceit.com" target="_blank" rel="noreferrer">
@@ -54,7 +60,7 @@ export const Footer = () => {
         </a>
         <small>
           Copyright ©{' '}
-          <a href="https://github.com/skullboypl" target="_blank" rel="noreferrer">
+          <a href={SKULL_YOUTUBE_URL} target="_blank" rel="noreferrer">
             Skull
           </a>{' '}
           {new Date().getFullYear()}

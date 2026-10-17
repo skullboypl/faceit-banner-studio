@@ -1288,8 +1288,7 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
     overflow-y: auto;
     scrollbar-width: thin;
   }
-  html.generator .studio-sidebar .sidebar-foot,
-  html.generator .studio-sidebar .sidebar-note {
+  html.generator .studio-sidebar .sidebar-foot {
     flex-shrink: 0;
   }
   html.generator .studio-sidebar .sidebar-foot {
@@ -1401,13 +1400,15 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
   }
   html.generator .studio-sidebar .online-banners,
   html.generator .studio-sidebar .donate-link--header,
-  html.generator .studio-sidebar .lang-trigger {
+  html.generator .studio-sidebar .lang-trigger,
+  html.generator .studio-sidebar .sidebar-credit {
     justify-content: center;
     padding: 8px 4px;
   }
   html.generator .studio-sidebar .donate-link--header > span,
   html.generator .studio-sidebar .lang-trigger .lang-name,
-  html.generator .studio-sidebar .lang-trigger .studio-icon {
+  html.generator .studio-sidebar .lang-trigger .studio-icon,
+  html.generator .studio-sidebar .sidebar-credit > span {
     display: none;
   }
   html.generator .studio-sidebar .lang-list {
@@ -1452,7 +1453,8 @@ html.generator .settings .broadcast-presets .broadcast-preset .preset-thumb {
     border-bottom: 1px solid #252527;
     overflow: visible;
   }
-  html.generator .studio-sidebar .sidebar-note {
+  html.generator .studio-sidebar .sidebar-note,
+  html.generator .studio-sidebar .sidebar-credit {
     display: none;
   }
   html.generator .studio-sidebar .online-banners {
@@ -1774,7 +1776,7 @@ dialog.generated .obs-frame {
       left: 0;
       border: 0;
       color-scheme: dark;
-      background: transparent;
+      background: transparent !important;
       transform-origin: 0 0;
       pointer-events: none;
     }
@@ -2123,6 +2125,26 @@ html.generator .studio-sidebar .tabs > .mobile-menu-toggle { display: none; }
   }
   .lang-select { margin-top: 0; }
   .lang-trigger { padding: 5px 10px; font-size: 11px; border-radius: 8px; .flag { width: 16px; height: 11px; } }
+  .sidebar-credit {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: auto;
+    min-height: 0;
+    margin: 2px 0 0;
+    padding: 4px 8px;
+    color: #9a9aa3;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    svg { width: 15px; height: 15px; flex: 0 0 auto; }
+    &:hover,
+    &:focus-visible { color: #ececf0; }
+  }
 }
 @media (max-width: 700px) {
   .studio-sidebar .sidebar-foot { display: contents; }
@@ -2139,13 +2161,6 @@ html.generator .studio-sidebar .tabs > .mobile-menu-toggle { display: none; }
 }
 @keyframes account-skeleton { to { background-position: -300% 0; } }
 @media (prefers-reduced-motion: reduce) { .account-skeleton { animation: none; } }
-
-/* The bottom group already has its own divider, so the note below it needs spacing instead of a second line */
-html.generator .studio-sidebar .sidebar-note {
-  margin-top: 16px;
-  padding-top: 0;
-  border-top: 0;
-}
 
 /* Feedback board: requests and bugs (prefixed so the global button styles do not win) */
 html.generator .settings.feedback-board {

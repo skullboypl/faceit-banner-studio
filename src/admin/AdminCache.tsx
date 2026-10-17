@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { StudioIcon } from '../components/StudioIcon';
 
-export type CacheScope = 'all' | 'faceit' | 'profiles' | 'avatars' | 'rankings' | 'live';
+export type CacheScope = 'all' | 'faceit' | 'profiles' | 'avatars' | 'rankings' | 'live' | 'css';
 
 const SCOPES: { scope: CacheScope; label: string; text: string }[] = [
-  { scope: 'all', label: 'Wszystko', text: 'Wszystkie poniższe naraz.' },
+  { scope: 'all', label: 'Wszystko', text: 'Wszystkie dane FACEIT i lista na żywo naraz. CSS na CDN czyścisz osobno.' },
   { scope: 'faceit', label: 'Odpowiedzi FACEIT', text: 'Statystyki, profile i mecze, które banery pobierają przez nasz serwer (zwykle 15 s).' },
   { scope: 'profiles', label: 'Profile graczy', text: 'Nick, ELO, level, plan i Twitch na liście na żywo (6 godzin). Zdejmuje też pauzę po limicie FACEIT.' },
   { scope: 'avatars', label: 'Avatary', text: 'Zdjęcia i okładki graczy trzymane na serwerze (6 godzin).' },
   { scope: 'rankings', label: 'Miejsca w rankingu', text: 'Znaczek Challengera na liście na żywo (6 godzin).' },
   { scope: 'live', label: 'Lista na żywo', text: 'Gotowa lista (15 min) i licznik banerów online (30 s).' },
+  { scope: 'css', label: 'CSS i HTML na CDN', text: 'Zrzuca kopię stylów i stron z Cloudflare, gdy po wgraniu dalej widać stary wygląd (białe tło, stary układ).' },
 ];
 
 async function requestClear(scope: string): Promise<string[]> {
@@ -19,8 +20,9 @@ async function requestClear(scope: string): Promise<string[]> {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ scope }),
   });
-  if (!response.ok) throw new Error('cache');
-  return ((await response.json()) as { cleared: string[] }).cleared;
+  const body = (await response.json().catch(() => ({}))) as { cleared?: string[]; error?: string };
+  if (!response.ok) throw new Error(body.error || 'cache');
+  return body.cleared ?? [scope];
 }
 
 export function AdminCache({ clear = requestClear }: { clear?: (scope: string) => Promise<string[]> }) {
@@ -36,8 +38,15 @@ export function AdminCache({ clear = requestClear }: { clear?: (scope: string) =
     try {
       const cleared = await clear(scope);
       setDone(`Wyczyszczono (${cleared.length}): ${new Date().toLocaleTimeString('pl-PL')}`);
-    } catch {
-      setError('Nie udało się wyczyścić. Spróbuj jeszcze raz.');
+    } catch (failure) {
+      const code = failure instanceof Error ? failure.message : '';
+      setError(
+        code === 'cdn_not_configured'
+          ? 'Brak CF_ZONE_ID i CF_API_TOKEN na serwerze — bez nich CDN się nie czyści.'
+          : code === 'cdn_purge_failed'
+            ? 'Cloudflare nie przyjął czyszczenia. Sprawdź token i strefę.'
+            : 'Nie udało się wyczyścić. Spróbuj jeszcze raz.'
+      );
     } finally {
       setPending(null);
     }

@@ -53,16 +53,19 @@ describe('MyBannersPanel: a picture of each saved banner', () => {
     expect(url.searchParams.get('presence')).toBe('off');
     expect(url.searchParams.get('intro')).toBe('false');
     expect(url.searchParams.get('save_session')).toBe('false');
+    expect(url.searchParams.get('thumb')).toBe('true');
   });
 
   test('the preview is laid out like the real banner and shrunk into the card', async () => {
     await open();
     const main = screen.getByTitle('Main look') as HTMLIFrameElement;
     expect(Number(main.getAttribute('width'))).toBeGreaterThan(200);
-    expect(main.style.transform).toMatch(/^scale\(/);
+    expect(main.style.transform).toMatch(/scale\(/);
     const popup = screen.getByTitle('Popup') as HTMLIFrameElement;
     expect(popup.getAttribute('width')).toBe('1920');
     expect(popup.getAttribute('height')).toBe('1080');
+    expect(new URL(popup.src).searchParams.get('popup_preview')).toBe('pre');
+    expect(new URL(popup.src).searchParams.get('thumb')).toBe('true');
   });
 
   test('a roster preview is only as tall as its players, not the five-row OBS slot', async () => {
@@ -72,8 +75,8 @@ describe('MyBannersPanel: a picture of each saved banner', () => {
     });
     renderWithApp(<MyBannersPanel user={user} />, defaultSettings());
     const frame = (await screen.findByTitle('boty squad')) as HTMLIFrameElement;
-    expect(Number(frame.getAttribute('height'))).toBeLessThan(280);
-    expect(frame.style.transform).toMatch(/^scale\(/);
+    expect(frame.style.transform).toMatch(/scale\(/);
+    expect(new URL(frame.src).searchParams.get('banner_height_mode')).toBe('recommended');
   });
 
   test('a banner saved without a player is previewed with the player of the studio', async () => {

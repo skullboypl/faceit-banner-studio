@@ -19,7 +19,7 @@ import { StyleTab } from './tabs/StyleTab.tsx';
 import { StatisticsTab } from './tabs/StatisticsTab.tsx';
 import { GeneratedWidgetModal } from '../components/GeneratedWidgetModal.tsx';
 import { InfoBox } from '../components/InfoBox.tsx';
-import { Footer } from '../components/Footer.tsx';
+import { Footer, SKULL_YOUTUBE_URL } from '../components/Footer.tsx';
 import { CookieNotice } from '../components/CookieNotice.tsx';
 import { PreviewCarousel } from '../components/PreviewCarousel.tsx';
 import { StudioIcon } from '../components/StudioIcon.tsx';
@@ -903,11 +903,16 @@ export const Generator = () => {
                 localStorage.setItem('fcw_lang', entry.id);
               }}
             />
-          </div>
-          <div className="sidebar-note">
-            <span className="game-label">CS2</span>
-            <p>{tl('studio.sidebar_note')}</p>
-            <small>by Skull</small>
+            <a
+              className="sidebar-credit"
+              href={SKULL_YOUTUBE_URL}
+              target="_blank"
+              rel="noreferrer"
+              title="YouTube"
+            >
+              <BrandYoutubeIcon />
+              <span>Skull</span>
+            </a>
           </div>
         </header>
         {compactSidebar && compactSidebarOpen && (

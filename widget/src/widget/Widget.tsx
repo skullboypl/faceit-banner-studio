@@ -373,6 +373,9 @@ export const Widget = ({
   const SETTINGS = useMemo(() => {
     return overrides || { settings, get: getSetting, set: setSetting };
   }, [overrides, settings]);
+  const [searchParams] = useSearchParams();
+  /* Saved-banner thumbnails: content-sized, and a popup always shows the before-match card. */
+  const isThumb = searchParams.get('thumb') === 'true';
   const resolvedStyle = resolveBannerStyle(SETTINGS.get('style'), SETTINGS.get('bannerDesign'));
   const isDeckPreset = resolvedStyle === 'showcase' || resolvedStyle === 'spotlight';
   const isTicker = resolvedStyle === 'ticker';
@@ -403,10 +406,11 @@ export const Widget = ({
     ? resolveBannerSize({
         style: resolvedStyle,
         /* The popup is a full-screen overlay: its frame is always the whole 1920 x 1080 source */
-        widthMode: splitLimits || isPopup ? 'recommended' : (SETTINGS.get('bannerWidthMode') as BannerSizeMode),
+        widthMode: splitLimits || isPopup || isThumb ? 'recommended' : (SETTINGS.get('bannerWidthMode') as BannerSizeMode),
         width: SETTINGS.get('bannerWidth'),
-        heightMode:
-          splitLimits || isPopup
+        heightMode: isThumb
+          ? 'recommended'
+          : splitLimits || isPopup
             ? 'manual'
             : (SETTINGS.get('bannerHeightMode') as BannerSizeMode),
         recommendedWidth: splitLimits
@@ -435,6 +439,8 @@ export const Widget = ({
 
   useEffect(() => {
     if (!bannerSize) return;
+    /* A saved-banner thumbnail must not clip to the OBS slot; the studio scales the painted widget. */
+    if (isThumb) return;
 
     if (!preview) {
       const update = () =>
@@ -463,7 +469,7 @@ export const Widget = ({
     const observer = new ResizeObserver(update);
     observer.observe(parent);
     return () => observer.disconnect();
-  }, [preview, !!bannerSize]);
+  }, [preview, isThumb, !!bannerSize]);
   const isAvatarPreset = resolvedStyle === 'orbit' || resolvedStyle === 'halo' || resolvedStyle === 'pulse' || resolvedStyle === 'prime';
   const isStaticPreset = resolvedStyle === 'broadcast' || resolvedStyle === 'rail' || resolvedStyle === 'focus' || isAvatarPreset;
   const isBroadcastPreset = broadcastPresets.some((preset) => preset.id === resolvedStyle);
@@ -503,7 +509,6 @@ export const Widget = ({
     />
   );
 
-  const [searchParams] = useSearchParams();
   const presenceInfo = useRef<(() => { nickname?: string; elo?: number; level?: number; country?: string; style?: string; playerId?: string; calibrating?: boolean } | undefined) | null>(null);
   presenceInfo.current = () => {
     const playerId = String(SETTINGS.get('playerId') || '');
@@ -2282,7 +2287,7 @@ export const Widget = ({
       )}
       <div
         ref={wrapperRef}
-        className={`wrapper banner-load-enter${compatibilityMode ? ' compatibility' : ''}${SETTINGS.get('bannerDesign') === '2026' && SETTINGS.get('style') !== 'custom' ? ' banner-design-2026' : ''}${bannerSize ? ' banner-fill' : ''}`}
+        className={`wrapper banner-load-enter${compatibilityMode ? ' compatibility' : ''}${SETTINGS.get('bannerDesign') === '2026' && SETTINGS.get('style') !== 'custom' ? ' banner-design-2026' : ''}${bannerSize && !isThumb ? ' banner-fill' : ''}`}
         data-layout={resolvedStyle}
         data-part={splitPart || undefined}
         data-density={
@@ -2336,14 +2341,16 @@ export const Widget = ({
         style={
           {
             ...(bannerSize && bannerZoom
-              ? {
-                  width: `${bannerSize.layoutWidth}px`,
-                  maxWidth: 'none',
-                  ...(bannerSize.layoutHeight
-                    ? { height: `${bannerSize.layoutHeight}px` }
-                    : {}),
-                  zoom: bannerZoom,
-                }
+              ? isThumb && !isPopup
+                ? { width: 'max-content', height: 'max-content', maxWidth: 'none', zoom: 1 }
+                : {
+                    width: `${bannerSize.layoutWidth}px`,
+                    maxWidth: 'none',
+                    ...(bannerSize.layoutHeight
+                      ? { height: `${bannerSize.layoutHeight}px` }
+                      : {}),
+                    zoom: bannerZoom,
+                  }
               : {}),
             '--faceit-level': `var(--faceit-level-${currentEloDistribution[0]})`,
             ...(presetAccent
@@ -2365,10 +2372,10 @@ export const Widget = ({
         >
           {isPopup ? (
             <MatchPopup
-              preview={preview}
+              preview={preview || isThumb}
               playerId={String(SETTINGS.get('playerId') || '')}
               username={username || previewUsername || 'Player'}
-              phase={(SETTINGS.get('popupPreview') as 'pre' | 'live' | 'post') || 'live'}
+              phase={isThumb ? 'pre' : (SETTINGS.get('popupPreview') as 'pre' | 'live' | 'post') || 'live'}
               options={readPopupOptions((key) => SETTINGS.get(key as SettingKey))}
               translate={translate}
             />

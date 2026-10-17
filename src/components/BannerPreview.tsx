@@ -1,6 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { SettingKey } from '../settings/manager';
-import { previewFrame, previewUrl } from './banner-preview';
+import {
+  measureBanner,
+  paintPreviewPage,
+  previewFrame,
+  previewStage,
+  previewUrl,
+  type PreviewFrame,
+} from './banner-preview';
 
 /** True once the element has come near the screen; without IntersectionObserver it is true at once. */
 function useNearScreen(ref: React.RefObject<HTMLElement>) {
@@ -25,6 +32,7 @@ function useNearScreen(ref: React.RefObject<HTMLElement>) {
 
 /**
  * A small live picture of a saved banner: the real widget page in a frame, scaled to the width of its card.
+ * After load the frame is cropped to the painted widget, so leftover page (white sheet, empty OBS slot) is gone.
  * The frame is only created when the card is near the screen, so a long list does not load every widget at once.
  */
 export const BannerPreview = ({
@@ -37,9 +45,14 @@ export const BannerPreview = ({
   title: string;
 }) => {
   const box = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const innerObserver = useRef<ResizeObserver | null>(null);
   const [width, setWidth] = useState(0);
+  const [crop, setCrop] = useState<PreviewFrame | null>(null);
   const near = useNearScreen(box);
   const frame = previewFrame(get);
+  const stage = previewStage(frame);
+  const used = crop ?? frame;
   const url = useMemo(() => previewUrl(get, languageId, window.location.origin), [get, languageId]);
 
   useLayoutEffect(() => {
@@ -53,19 +66,55 @@ export const BannerPreview = ({
     return () => observer.disconnect();
   }, []);
 
-  const scale = width && frame.width ? width / frame.width : 0;
+  useEffect(() => {
+    setCrop(null);
+    innerObserver.current?.disconnect();
+    innerObserver.current = null;
+  }, [url]);
+
+  useEffect(() => () => innerObserver.current?.disconnect(), []);
+
+  const scale = width && used.width ? width / used.width : 0;
+
+  const onLoad = () => {
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc) return;
+    paintPreviewPage(doc);
+    const apply = () => {
+      paintPreviewPage(doc);
+      const next = measureBanner(doc);
+      if (next) setCrop(next);
+    };
+    apply();
+    innerObserver.current?.disconnect();
+    const node =
+      doc.querySelector('.team-banner') ||
+      doc.querySelector('.match-popup > article') ||
+      doc.querySelector('.split-plate') ||
+      doc.querySelector('.wrapper') ||
+      doc.body;
+    if (!node || typeof ResizeObserver === 'undefined') return;
+    innerObserver.current = new ResizeObserver(apply);
+    innerObserver.current.observe(node);
+  };
+
   return (
-    <div className="banner-preview" ref={box} style={{ height: Math.max(48, Math.round(frame.height * scale)) }}>
+    <div className="banner-preview" ref={box} style={{ height: Math.max(48, Math.ceil(used.height * scale)) }}>
       {near && scale > 0 && (
         <iframe
+          ref={iframeRef}
           title={title}
           src={url}
-          width={frame.width}
-          height={frame.height}
+          width={stage.width}
+          height={stage.height}
           loading="lazy"
           tabIndex={-1}
           allowTransparency
-          style={{ transform: `scale(${scale})` }}
+          onLoad={onLoad}
+          style={{
+            transform: `translate(${-Math.round((used.left ?? 0) * scale)}px, ${-Math.round((used.top ?? 0) * scale)}px) scale(${scale})`,
+            visibility: crop ? 'visible' : 'hidden',
+          }}
         />
       )}
     </div>
