@@ -86,6 +86,10 @@ function loadServerEnv(mode: string) {
 const mode = process.argv.includes('--mode') ? process.argv[process.argv.indexOf('--mode') + 1] : 'development';
 loadServerEnv(mode);
 
+const buildStamp = String(process.env.SOURCE_COMMIT || process.env.VITE_BUILD_ID || 'dev')
+  .replace(/[^a-zA-Z0-9]/g, '')
+  .slice(0, 16) || 'dev';
+
 // https://vitejs.dev/config/
 export default defineConfig({
   // Accounts, saved banners and cloud sync live in the Next.js app (web/, port 3100).
@@ -110,6 +114,13 @@ export default defineConfig({
       input: {
         main: './index.html',
         widget: './widget/index.html',
+      },
+      output: {
+        // The shared React chunk keeps the same content hash across deploys. Cloudflare
+        // cached index.html under that URL, so every later build kept requesting it.
+        entryFileNames: `assets/[name]-${buildStamp}-[hash].js`,
+        chunkFileNames: `assets/[name]-${buildStamp}-[hash].js`,
+        assetFileNames: `assets/[name]-${buildStamp}-[hash][extname]`,
       },
     },
   },

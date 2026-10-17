@@ -23,6 +23,10 @@ ARG SOURCE_COMMIT
 ENV SOURCE_COMMIT=${SOURCE_COMMIT}
 
 RUN SOURCE_COMMIT="${SOURCE_COMMIT:-$(date -u +%s)}" pnpm run build
+# Keep the currently live HTML as the public pages so a rolling replica never asks for hashes the old container lacks.
+ARG PUBLIC_URL=https://faceitbanner.vxh.pl
+ENV PUBLIC_URL=${PUBLIC_URL}
+RUN node deploy/preserve-live-assets.mjs
 
 # Accounts, saved banners and the feedback board. Nginx in the runtime image proxies /api/me and /api/posts here.
 RUN cd /app/web && pnpm install --frozen-lockfile && pnpm run build
@@ -42,6 +46,7 @@ COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 COPY deploy/start.sh deploy/check-site.sh /app/
 RUN sed -i 's/\r$//' /app/start.sh /app/check-site.sh && chmod +x /app/start.sh /app/check-site.sh
 COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/pending /app/pending
 # presence.mjs and auth.mjs import ../shared; without this the process never listens and nginx returns 502 for both the counter and login
 COPY shared /app/shared
 COPY server /app/server
