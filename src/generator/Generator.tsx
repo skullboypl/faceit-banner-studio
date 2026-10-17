@@ -752,6 +752,32 @@ export const Generator = () => {
         />
         <header className={`studio-sidebar ${sidebarExpanded ? 'is-expanded' : 'is-collapsed'}${compactSidebar ? ' is-compact' : ''}`}>
           <StudioBrand />
+          <div className="mobile-header-live" aria-label={tl('menu.community')}>
+            <Link
+              className="mobile-header-live-item mobile-header-live-item--streamers"
+              to="/streamers"
+              aria-current={onStreamers ? 'page' : undefined}
+              onClick={() => setCompactSidebarOpen(false)}
+            >
+              <i className="stream-menu-dot" aria-hidden="true" />
+              <span>
+                <strong>{formatMenuCount(liveStreamerCount)}</strong>
+                <small>{tl('streamers.title')}</small>
+              </span>
+            </Link>
+            <Link
+              className="mobile-header-live-item mobile-header-live-item--banners"
+              to="/live"
+              aria-current={onLive ? 'page' : undefined}
+              onClick={() => setCompactSidebarOpen(false)}
+            >
+              <span className="online-pulse" aria-hidden="true"><i /></span>
+              <span>
+                <strong>{formatMenuCount(onlineBannerCount)}</strong>
+                <small>{tl('studio.online_banners')}</small>
+              </span>
+            </Link>
+          </div>
           <p className="nav-caption">{tl('studio.workspace')}</p>
           {import.meta.env.VITE_IS_TESTING && (
             <InfoBox
