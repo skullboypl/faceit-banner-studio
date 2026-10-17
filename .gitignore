@@ -18,6 +18,14 @@ SAMPLE/*
 .ssr
 public/docs/
 public/en/
+# documentation prerendered per language
+public/uk/
+public/ru/
+public/tr/
+public/pt/
+public/es/
+public/fr/
+public/cs/
 web/.next/
 
 # lokalne dane dostępowe (hasła) - nie commitować

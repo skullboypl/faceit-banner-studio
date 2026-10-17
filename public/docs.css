@@ -248,6 +248,15 @@ a:hover {
   align-items: center;
   gap: 18px;
 }
+.langs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.lang.is-current {
+  background: #26262b;
+  color: #fff !important;
+}
 .lang {
   padding: 3px 9px;
   border: 1px solid #3a3a3e;

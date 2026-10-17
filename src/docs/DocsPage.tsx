@@ -1,3 +1,5 @@
+import { CHROME, categoryLabel, navLabel } from './chrome';
+import { DOCS_LANGS, hasDevDocs } from './docs-i18n';
 import {
   CATEGORIES,
   DOCS_UPDATED,
@@ -6,57 +8,10 @@ import {
   DocsPageData,
   SITE_URL,
   docsPath,
+  pageIdsFor,
 } from './content';
 
 const SITE_NAME = 'FACEIT Banner';
-
-const NAV_LABELS: Record<DocsLang, Record<string, string>> = {
-  pl: {
-    dev: 'Przegląd dla developerów',
-    'dev-setup': 'Uruchomienie lokalne',
-    'dev-settings': 'System ustawień',
-    'dev-layouts': 'Nowy układ banera',
-    'dev-widget': 'Działanie widżetu',
-    'dev-build': 'Build i wdrożenie',
-    'dev-contributing': 'Współtworzenie',
-    index: 'Przegląd',
-    obs: 'Baner FACEIT do OBS',
-    'quick-start': 'Szybki start',
-    solo: 'Banery solo',
-    versus: 'Banery VERSUS',
-    modes: 'Skład, split i popup',
-    size: 'Rozmiar banera',
-    stream: 'ELO na streamie',
-    params: 'Parametry linku',
-    faq: 'FAQ',
-    about: 'O projekcie',
-  },
-  en: {
-    dev: 'Developer overview',
-    'dev-setup': 'Local setup',
-    'dev-settings': 'Settings system',
-    'dev-layouts': 'New banner layout',
-    'dev-widget': 'How the widget works',
-    'dev-build': 'Build and deployment',
-    'dev-contributing': 'Contributing',
-    index: 'Overview',
-    obs: 'FACEIT banner for OBS',
-    'quick-start': 'Quick start',
-    solo: 'Solo banners',
-    versus: 'VERSUS banners',
-    modes: 'Roster, split and popup',
-    size: 'Banner size',
-    stream: 'ELO on stream',
-    params: 'URL parameters',
-    faq: 'FAQ',
-    about: 'About',
-  },
-};
-
-const AUDIENCE_LABELS: Record<DocsLang, Record<'user' | 'dev', string>> = {
-  pl: { user: 'Użytkownik', dev: 'Developer' },
-  en: { user: 'User', dev: 'Developer' },
-};
 
 const ICONS = {
   layers: 'm12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5',
@@ -192,6 +147,9 @@ const Block = ({ block }: { block: DocsBlock }) => {
   }
 };
 
+/** The language of the developer pages for a visitor: those exist in Polish and English only. */
+const audienceLang = (lang: DocsLang, audience: 'user' | 'dev'): DocsLang => (audience === 'dev' && !hasDevDocs(lang) ? 'en' : lang);
+
 /** JSON-LD for the page: article, breadcrumbs and, on the FAQ page, the questions. */
 const structuredData = (lang: DocsLang, page: DocsPageData, pages: DocsPageData[]) => {
   const url = absolute(docsPath(lang, page.id));
@@ -211,7 +169,7 @@ const structuredData = (lang: DocsLang, page: DocsPageData, pages: DocsPageData[
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: SITE_NAME, item: `${SITE_URL}/` },
-        { '@type': 'ListItem', position: 2, name: AUDIENCE_LABELS[lang][page.audience], item: absolute(docsPath(lang, page.audience === 'dev' ? 'dev' : 'index')) },
+        { '@type': 'ListItem', position: 2, name: CHROME[lang][page.audience], item: absolute(docsPath(audienceLang(lang, page.audience), page.audience === 'dev' ? 'dev' : 'index')) },
         ...(page.id === 'index' || page.id === 'dev'
           ? []
           : [{ '@type': 'ListItem', position: 3, name: page.h1, item: url }]),
@@ -280,7 +238,9 @@ export const DocsPage = ({
   pages: DocsPageData[];
 }) => {
   const url = absolute(docsPath(lang, page.id));
-  const other: DocsLang = lang === 'pl' ? 'en' : 'pl';
+  const chrome = CHROME[lang];
+  /* every language the page exists in; developer pages exist in two */
+  const versions = DOCS_LANGS.filter((code) => pageIdsFor(code).includes(page.id));
   const headings = page.blocks.filter(
     (block): block is Extract<DocsBlock, { type: 'h2' }> => block.type === 'h2'
   );
@@ -301,15 +261,21 @@ export const DocsPage = ({
         <meta name="author" content="Skull" />
         <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt" />
         <link rel="canonical" href={url} />
-        <link rel="alternate" hrefLang={lang} href={url} />
-        <link rel="alternate" hrefLang={other} href={absolute(docsPath(other, page.id))} />
+        {versions.map((code) => (
+          <link key={code} rel="alternate" hrefLang={code} href={absolute(docsPath(code, page.id))} />
+        ))}
         <link rel="alternate" hrefLang="x-default" href={absolute(docsPath('pl', page.id))} />
         <meta property="og:type" content="article" />
         <meta property="og:site_name" content={SITE_NAME} />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={page.description} />
         <meta property="og:url" content={url} />
-        <meta property="og:locale" content={lang === 'pl' ? 'pl_PL' : 'en_US'} />
+        <meta property="og:locale" content={chrome.ogLocale} />
+        {versions
+          .filter((code) => code !== lang)
+          .map((code) => (
+            <meta key={code} property="og:locale:alternate" content={CHROME[code].ogLocale} />
+          ))}
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={page.description} />
@@ -332,28 +298,29 @@ export const DocsPage = ({
             </a>
             <a className="back" href="/">
               <Icon path={ICONS.back} />
-              <span>{lang === 'pl' ? 'Wróć do generatora' : 'Back to the generator'}</span>
+              <span>{chrome.back}</span>
             </a>
-            <p className="nav-caption">{lang === 'pl' ? 'Dokumentacja' : 'Documentation'}</p>
+            <p className="nav-caption">{chrome.docs}</p>
             <div className="audience" role="tablist" aria-label="Docs">
               {(['user', 'dev'] as const).map((audience) => (
                 <a
                   key={audience}
                   role="tab"
-                  href={docsPath(lang, audience === 'dev' ? 'dev' : 'index')}
+                  href={docsPath(audienceLang(lang, audience), audience === 'dev' ? 'dev' : 'index')}
+                  hrefLang={audienceLang(lang, audience)}
                   aria-selected={audience === page.audience}
                 >
-                  {AUDIENCE_LABELS[lang][audience]}
+                  {chrome[audience]}
                 </a>
               ))}
             </div>
-            <nav className="docs-nav" aria-label={lang === 'pl' ? 'Spis dokumentacji' : 'Documentation index'}>
+            <nav className="docs-nav" aria-label={chrome.index}>
               {CATEGORIES.filter((category) => category.audience === page.audience).map(
                 (category) => (
                   <div className="group" key={category.id}>
                     <p className="group-title">
                       <Icon path={CATEGORY_ICONS[category.id] ?? ICONS.book} />
-                      {category.label[lang]}
+                      {categoryLabel(lang, category.id)}
                     </p>
                     {category.pages.map((id) => (
                       <a
@@ -361,7 +328,7 @@ export const DocsPage = ({
                         href={docsPath(lang, id)}
                         aria-current={id === page.id ? 'page' : undefined}
                       >
-                        {NAV_LABELS[lang][id]}
+                        {navLabel(lang, id)}
                       </a>
                     ))}
                   </div>
@@ -370,17 +337,13 @@ export const DocsPage = ({
             </nav>
             <div className="sidebar-note">
               <span className="game-label">CS2</span>
-              <p>
-                {lang === 'pl'
-                  ? 'Widżet statystyk FACEIT dla Twojej transmisji.'
-                  : 'A FACEIT statistics widget for your stream.'}
-              </p>
+              <p>{chrome.sidebar}</p>
               <small>
                 <a href="/wiki/">Wiki</a>
                 {' · '}
-                <a href="/terms/">{lang === 'pl' ? 'Regulamin' : 'Terms'}</a>
+                <a href="/terms/">{chrome.terms}</a>
                 {' · '}
-                <a href="/privacy/">{lang === 'pl' ? 'Prywatność' : 'Privacy'}</a>
+                <a href="/privacy/">{chrome.privacy}</a>
               </small>
             </div>
           </header>
@@ -389,20 +352,30 @@ export const DocsPage = ({
               <span>
                 <a href={docsPath(lang, 'index')}>Docs</a>
                 <span className="divider">/</span>
-                <a href={docsPath(lang, page.audience === 'dev' ? 'dev' : 'index')}>
-                  {AUDIENCE_LABELS[lang][page.audience]}
+                <a href={docsPath(audienceLang(lang, page.audience), page.audience === 'dev' ? 'dev' : 'index')}>
+                  {chrome[page.audience]}
                 </a>
                 {page.id !== 'index' && page.id !== 'dev' && (
                   <>
                     <span className="divider">/</span>
-                    <strong>{NAV_LABELS[lang][page.id]}</strong>
+                    <strong>{navLabel(lang, page.id)}</strong>
                   </>
                 )}
               </span>
               <span className="topbar-actions">
-                <a href={docsPath(other, page.id)} hrefLang={other} lang={other} className="lang">
-                  {other.toUpperCase()}
-                </a>
+                <span className="langs">
+                  {versions.map((code) =>
+                    code === lang ? (
+                      <span key={code} className="lang is-current" aria-current="true">
+                        {code.toUpperCase()}
+                      </span>
+                    ) : (
+                      <a key={code} href={docsPath(code, page.id)} hrefLang={code} lang={code} className="lang">
+                        {code.toUpperCase()}
+                      </a>
+                    )
+                  )}
+                </span>
                 <a className="obs-tag" href="/">
                   OBS STUDIO
                 </a>
@@ -416,7 +389,7 @@ export const DocsPage = ({
                   <p className="lead">{page.intro}</p>
                 </header>
                 {headings.length > 2 && (
-                  <nav className="toc" aria-label={lang === 'pl' ? 'Spis treści' : 'Contents'}>
+                  <nav className="toc" aria-label={chrome.contents}>
                     {headings.map((heading) => (
                       <a key={heading.id} href={`#${heading.id}`}>
                         {heading.text}
@@ -431,20 +404,16 @@ export const DocsPage = ({
                 </div>
                 <p className="cta-row">
                   <a className="cta" href="/">
-                    {lang === 'pl' ? 'Otwórz generator' : 'Open the generator'}
+                    {chrome.open}
                   </a>
                 </p>
                 <p className="updated">
-                  {lang === 'pl' ? 'Zaktualizowano' : 'Updated'}: <time dateTime={DOCS_UPDATED}>{DOCS_UPDATED}</time>
+                  {chrome.updated}: <time dateTime={DOCS_UPDATED}>{DOCS_UPDATED}</time>
                 </p>
               </article>
             </main>
             <footer>
-              <small>
-                {lang === 'pl'
-                  ? 'FACEIT Banner nie jest powiązany z FACEIT. Kod źródłowy na licencji MIT.'
-                  : 'FACEIT Banner is not affiliated with FACEIT. Source code under the MIT licence.'}
-              </small>
+              <small>{chrome.footer}</small>
             </footer>
           </div>
         </div>

@@ -1,11 +1,19 @@
 import polish from '../translations/polish.json';
 import english from '../translations/english.json';
+import ukrainian from '../translations/ukrainian.json';
+import russian from '../translations/russian.json';
+import turkish from '../translations/turkish.json';
+import portuguese from '../translations/portuguese.json';
+import spanish from '../translations/spanish.json';
+import french from '../translations/french.json';
+import czech from '../translations/czech.json';
+import { DocsLang, hasDevDocs, makeT } from './docs-i18n';
 import { broadcastPresets } from '../../widget/src/styles/styles';
 import { getBannerSizeLimits } from '../../widget/src/utils/banner_size';
 import { SETTINGS_DEFINITIONS } from '../settings/definition';
 import { buildDevPages } from './dev-content';
 
-export type DocsLang = 'pl' | 'en';
+export type { DocsLang };
 
 export type DocsBlock =
   | { type: 'h2'; id: string; text: string }
@@ -39,9 +47,16 @@ export const DOCS_UPDATED = '2026-10-15';
 const TRANSLATIONS: Record<DocsLang, Record<string, string>> = {
   pl: polish as Record<string, string>,
   en: english as Record<string, string>,
+  uk: ukrainian as Record<string, string>,
+  ru: russian as Record<string, string>,
+  tr: turkish as Record<string, string>,
+  pt: portuguese as Record<string, string>,
+  es: spanish as Record<string, string>,
+  fr: french as Record<string, string>,
+  cs: czech as Record<string, string>,
 };
 
-const SLUGS: Record<DocsLang, Record<string, string>> = {
+const SLUGS: Record<'pl' | 'en', Record<string, string>> = {
   pl: {
     index: '',
     obs: 'baner-faceit-do-obs',
@@ -92,7 +107,7 @@ export const PAGE_IDS = [...USER_PAGE_IDS, ...DEV_PAGE_IDS] as const;
 export const CATEGORIES: {
   audience: DocsAudience;
   id: string;
-  label: Record<DocsLang, string>;
+  label: Record<'pl' | 'en', string>;
   pages: readonly string[];
 }[] = [
   { audience: 'user', id: 'start', label: { pl: 'Start', en: 'Start' }, pages: ['index', 'obs', 'quick-start'] },
@@ -106,10 +121,16 @@ export const CATEGORIES: {
 export const audienceOf = (id: string): DocsAudience =>
   (DEV_PAGE_IDS as readonly string[]).includes(id) ? 'dev' : 'user';
 
+/** Polish pages have Polish addresses; every other language uses the English ones under its own prefix. */
+export const slugOf = (lang: DocsLang, id: string) => SLUGS[lang === 'pl' ? 'pl' : 'en'][id];
+
+/** The pages a language has: every language the user pages, Polish and English also the developer pages. */
+export const pageIdsFor = (lang: DocsLang): readonly string[] => (hasDevDocs(lang) ? PAGE_IDS : USER_PAGE_IDS);
+
 /** Public URL path of a docs page, e.g. /docs/banery-solo/ or /en/docs/. */
 export const docsPath = (lang: DocsLang, id: string) => {
-  const base = lang === 'pl' ? '/docs/' : '/en/docs/';
-  const slug = SLUGS[lang][id];
+  const base = lang === 'pl' ? '/docs/' : `/${lang}/docs/`;
+  const slug = slugOf(lang, id);
   return slug ? `${base}${slug}/` : base;
 };
 
@@ -185,17 +206,17 @@ export function buildDocsPages(lang: DocsLang): DocsPageData[] {
       category: CATEGORIES.find((category) => category.pages.includes(page.id))?.id ?? 'start',
     }));
   const userPages = buildUserPages(lang);
+  if (!hasDevDocs(lang)) return withMeta(userPages);
   return [
     ...withMeta(userPages),
-    ...withMeta(buildDevPages(lang, docsPath, (id) => SLUGS[lang][id])),
+    ...withMeta(buildDevPages(lang as 'pl' | 'en', docsPath, (id) => slugOf(lang, id))),
   ];
 }
 
 function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'category'>[] {
-  const pl = lang === 'pl';
-  const t = (polishText: string, englishText: string) => (pl ? polishText : englishText);
   const soloNames = layoutCards(lang, false).map((card) => card.title).join(', ');
   const versusNames = layoutCards(lang, true).map((card) => card.title).join(', ');
+  const t = makeT(lang, { solo: COUNTS.solo, versus: COUNTS.versus, solo_names: soloNames, versus_names: versusNames });
 
   return [
     {
@@ -207,7 +228,7 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
       ),
       description: t(
         `Dokumentacja generatora banerów FACEIT do OBS: ${COUNTS.solo} układów solo, ${COUNTS.versus} układów VERSUS, skład, split, popup meczu, znaczek challengera, rozmiar i FAQ.`,
-        `Documentation for the FACEIT banner generator for OBS: ${COUNTS.solo} solo layouts, ${COUNTS.versus} VERSUS layouts, roster, split, match popup, the challenger mark, size options and FAQ.`
+        'Documentation for the FACEIT banner generator for OBS: {{solo}} solo layouts, {{versus}} VERSUS layouts, roster, split, match popup, the challenger mark, size options and FAQ.'
       ),
       h1: t('Dokumentacja FACEIT Banner', 'FACEIT Banner documentation'),
       intro: t(
@@ -219,8 +240,8 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
         {
           type: 'ul',
           items: [
-            t(`${COUNTS.solo} układów solo w wyglądzie FACEIT 2026 (${soloNames})`, `${COUNTS.solo} solo layouts in the FACEIT 2026 look (${soloNames})`),
-            t(`tryb VERSUS: ty kontra rywal, ${COUNTS.versus} układów (${versusNames})`, `VERSUS mode: you against a rival, ${COUNTS.versus} layouts (${versusNames})`),
+            t(`${COUNTS.solo} układów solo w wyglądzie FACEIT 2026 (${soloNames})`, '{{solo}} solo layouts in the FACEIT 2026 look ({{solo_names}})'),
+            t(`tryb VERSUS: ty kontra rywal, ${COUNTS.versus} układów (${versusNames})`, 'VERSUS mode: you against a rival, {{versus}} layouts ({{versus_names}})'),
             t('skład do 10 graczy, split (radar i pasek pod kamerkę) oraz popup na mecz', 'a roster of up to 10 players, a split banner (radar and a bar under the camera) and a match popup'),
             t('znaczek challengera w miejscu ikony poziomu, gdy gracz jest w top 1000 regionu', 'the challenger mark in place of the level icon when the player is in the regional top 1000'),
             t('rozmiar banera AUTO, Zalecane lub Ręcznie z limitami per baner', 'banner size AUTO, Recommended or Manual with limits per banner'),
@@ -255,7 +276,7 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
     },
     {
       id: 'quick-start',
-      slug: SLUGS[lang]['quick-start'],
+      slug: slugOf(lang, 'quick-start'),
       title: t('Jak dodać baner FACEIT do OBS – szybki start', 'How to add a FACEIT banner to OBS – quick start'),
       description: t(
         'Krok po kroku: wygeneruj link w generatorze FACEIT Banner i dodaj go do OBS jako Browser Source. Zajmuje około dwóch minut.',
@@ -291,11 +312,11 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
     },
     {
       id: 'solo',
-      slug: SLUGS[lang].solo,
+      slug: slugOf(lang, 'solo'),
       title: t('Banery solo FACEIT do OBS – wszystkie układy', 'FACEIT solo banners for OBS – every layout'),
       description: t(
         `Przegląd ${COUNTS.solo} układów banerów solo FACEIT 2026 z rozmiarami OBS: ${soloNames}.`,
-        `Overview of ${COUNTS.solo} FACEIT 2026 solo banner layouts with OBS sizes: ${soloNames}.`
+        'Overview of {{solo}} FACEIT 2026 solo banner layouts with OBS sizes: {{solo_names}}.'
       ),
       h1: t('Banery solo', 'Solo banners'),
       intro: t(
@@ -317,11 +338,11 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
     },
     {
       id: 'versus',
-      slug: SLUGS[lang].versus,
+      slug: slugOf(lang, 'versus'),
       title: t('Banery VERSUS FACEIT – ty kontra rywal w OBS', 'FACEIT VERSUS banners – you against a rival in OBS'),
       description: t(
         `Tryb VERSUS: porównaj swoje ELO i statystyki z rywalem na streamie. ${COUNTS.versus} układów: ${versusNames}.`,
-        `VERSUS mode: compare your ELO and statistics with a rival on stream. ${COUNTS.versus} layouts: ${versusNames}.`
+        'VERSUS mode: compare your ELO and statistics with a rival on stream. {{versus}} layouts: {{versus_names}}.'
       ),
       h1: t('Banery VERSUS', 'VERSUS banners'),
       intro: t(
@@ -351,7 +372,7 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
     },
     {
       id: 'modes',
-      slug: SLUGS[lang].modes,
+      slug: slugOf(lang, 'modes'),
       title: t(
         'Skład, split i popup FACEIT do OBS',
         'FACEIT roster, split and match popup for OBS'
@@ -418,7 +439,7 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
     },
     {
       id: 'size',
-      slug: SLUGS[lang].size,
+      slug: slugOf(lang, 'size'),
       title: t('Rozmiar i responsywność banera FACEIT', 'FACEIT banner size and responsiveness'),
       description: t(
         'Tryby rozmiaru AUTO, Zalecane i Ręcznie, limity szerokości i wysokości dla każdego banera oraz zalecane rozmiary źródła w OBS.',
@@ -456,7 +477,7 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
     },
     {
       id: 'params',
-      slug: SLUGS[lang].params,
+      slug: slugOf(lang, 'params'),
       title: t('Parametry linku widżetu FACEIT – pełna lista', 'FACEIT widget URL parameters – full list'),
       description: t(
         'Wszystkie parametry adresu widżetu FACEIT Banner: nazwy, dozwolone wartości i wartości domyślne. Przydatne do ręcznej edycji linku.',
@@ -478,7 +499,7 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
     },
     {
       id: 'obs',
-      slug: SLUGS[lang].obs,
+      slug: slugOf(lang, 'obs'),
       title: t(
         'Baner FACEIT do OBS – darmowy generator ELO i statystyk',
         'FACEIT banner for OBS – free ELO and stats generator'
@@ -564,7 +585,7 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
     },
     {
       id: 'stream',
-      slug: SLUGS[lang].stream,
+      slug: slugOf(lang, 'stream'),
       title: t(
         'ELO FACEIT na streamie – OBS, Streamlabs, Twitch, Kick',
         'FACEIT ELO on stream – OBS, Streamlabs, Twitch, Kick'
@@ -616,7 +637,7 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
     },
     {
       id: 'about',
-      slug: SLUGS[lang].about,
+      slug: slugOf(lang, 'about'),
       title: t('Czym jest FACEIT Banner – fakty o projekcie', 'What is FACEIT Banner – key facts'),
       description: t(
         'FACEIT Banner: darmowy, niezależny generator widżetów FACEIT dla streamerów CS2. Autor, licencja, obsługiwane programy, źródło danych i ograniczenia.',
@@ -649,8 +670,8 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
             [t('Gra', 'Game'), 'Counter-Strike 2 (FACEIT)'],
             [t('Programy', 'Software'), 'OBS Studio, Streamlabs Desktop'],
             [t('Źródło danych', 'Data source'), 'FACEIT Data API v4'],
-            [t('Języki interfejsu', 'Interface languages'), t('polski, angielski, niemiecki', 'Polish, English, German')],
-            [t('Liczba układów', 'Number of layouts'), t(`${COUNTS.solo} solo i ${COUNTS.versus} VERSUS`, `${COUNTS.solo} solo and ${COUNTS.versus} VERSUS`)],
+            [t('Języki interfejsu', 'Interface languages'), t('polski, angielski, niemiecki, ukraiński, rosyjski, turecki, portugalski, hiszpański, francuski, czeski', 'Polish, English, German, Ukrainian, Russian, Turkish, Portuguese, Spanish, French, Czech')],
+            [t('Liczba układów', 'Number of layouts'), t(`${COUNTS.solo} solo i ${COUNTS.versus} VERSUS`, '{{solo}} solo and {{versus}} VERSUS')],
             [t('Adres', 'Address'), SITE_URL],
             [t('Powiązanie z FACEIT', 'Affiliation with FACEIT'), t('brak, projekt niezależny', 'none, independent project')],
           ],
@@ -676,7 +697,7 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
     },
     {
       id: 'faq',
-      slug: SLUGS[lang].faq,
+      slug: slugOf(lang, 'faq'),
       title: t('FAQ – baner FACEIT do OBS', 'FAQ – FACEIT banner for OBS'),
       description: t(
         'Najczęstsze pytania o baner FACEIT do OBS: aktualizacja ELO, rozmiar źródła, tryb VERSUS, animacje i bezpieczeństwo.',

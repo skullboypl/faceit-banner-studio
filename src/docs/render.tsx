@@ -9,16 +9,16 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { DocsPage } from './DocsPage';
 import {
   DOCS_UPDATED,
-  DocsLang,
-  PAGE_IDS,
   SITE_URL,
   buildDocsPages,
   docsPath,
+  pageIdsFor,
 } from './content';
+import { DOCS_LANGS, DocsLang } from './docs-i18n';
 import { sitePages } from './site-pages';
 
 const PUBLIC_DIR = join(process.cwd(), 'public');
-const LANGS: DocsLang[] = ['pl', 'en'];
+const LANGS: readonly DocsLang[] = DOCS_LANGS;
 
 const writePage = (urlPath: string, html: string) => {
   const dir = join(PUBLIC_DIR, urlPath);
@@ -54,8 +54,9 @@ const url = (loc: string, priority: string, changefreq: string, alternates = '')
 
 const entries: string[] = [url('/', '1.0', 'weekly')];
 for (const lang of LANGS) {
-  for (const id of PAGE_IDS) {
-    const alternates = [...LANGS, 'x-default' as const]
+  for (const id of pageIdsFor(lang)) {
+    /* hreflang alternates only for the languages this page exists in: developer pages exist in two */
+    const alternates = [...LANGS.filter((code) => pageIdsFor(code).includes(id)), 'x-default' as const]
       .map((alt) => {
         const target: DocsLang = alt === 'x-default' ? 'pl' : alt;
         return `    <xhtml:link rel="alternate" hreflang="${alt}" href="${SITE_URL}${docsPath(target, id)}" />\n`;
@@ -81,8 +82,19 @@ const llmsLines: string[] = [
   '',
   `Home: ${SITE_URL}/`,
 ];
+const LLMS_HEADING: Record<DocsLang, string> = {
+  pl: '## Dokumentacja (PL)',
+  en: '## Documentation (EN)',
+  uk: '## Документація (UK)',
+  ru: '## Документация (RU)',
+  tr: '## Dokümantasyon (TR)',
+  pt: '## Documentação (PT)',
+  es: '## Documentación (ES)',
+  fr: '## Documentation (FR)',
+  cs: '## Dokumentace (CS)',
+};
 for (const lang of LANGS) {
-  llmsLines.push('', lang === 'pl' ? '## Dokumentacja (PL)' : '## Documentation (EN)', '');
+  llmsLines.push('', LLMS_HEADING[lang], '');
   for (const page of buildDocsPages(lang)) {
     llmsLines.push(`- [${page.h1}](${SITE_URL}${docsPath(lang, page.id)}): ${page.description}`);
   }
