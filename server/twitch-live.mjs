@@ -42,7 +42,17 @@ export function createTwitchLookup({ fetcher = fetch, now = Date.now, config = t
           if (row?.exists === false) status = { state: 'missing' };
           else if (row && !row.error && row.live === false) status = { state: 'offline' };
           else if (row && !row.error && row.live === true) {
-            status = { state: 'live', ...(Number.isInteger(row.viewers) && row.viewers >= 0 ? { viewers: row.viewers } : {}) };
+            const thumbnail = typeof row.thumbnail === 'string' && row.thumbnail.startsWith('https://')
+              ? row.thumbnail
+              : undefined;
+            status = {
+              state: 'live',
+              ...(Number.isInteger(row.viewers) && row.viewers >= 0 ? { viewers: row.viewers } : {}),
+              ...(typeof row.title === 'string' ? { title: row.title.slice(0, 160) } : {}),
+              ...(typeof row.game === 'string' ? { game: row.game.slice(0, 80) } : {}),
+              ...(thumbnail ? { thumbnail } : {}),
+              ...(typeof row.startedAt === 'string' ? { startedAt: row.startedAt } : {}),
+            };
           }
           cache.delete(login);
           cache.set(login, { at: now(), status });

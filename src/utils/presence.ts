@@ -93,7 +93,14 @@ export type LivePlayer = {
   token?: boolean;
   /** Channel name of the Twitch account linked on FACEIT. */
   twitch?: string;
-  twitchStatus?: { state: 'live' | 'offline' | 'missing' | 'unknown'; viewers?: number };
+  twitchStatus?: {
+    state: 'live' | 'offline' | 'missing' | 'unknown';
+    viewers?: number;
+    title?: string;
+    game?: string;
+    thumbnail?: string;
+    startedAt?: string;
+  };
   /** True when this FACEIT account has signed in to the studio. No date and no account id. */
   confirmed?: boolean;
   elo?: number;
@@ -128,6 +135,8 @@ export async function getLiveBoard(signal?: AbortSignal): Promise<LiveBoard> {
     online,
     ranked: Math.max(0, Number(data.ranked) || players.length),
     windowSeconds: Math.max(0, Number(data.windowSeconds) || 0),
+    cacheSeconds: typeof data.cacheSeconds === 'number' ? data.cacheSeconds : undefined,
+    generatedAt: typeof data.generatedAt === 'number' ? data.generatedAt : undefined,
     players,
   };
 }

@@ -1,0 +1,145 @@
+.sidebar-collapse-toggle {
+  position: absolute;
+  top: 34px;
+  right: 12px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #343438;
+  border-radius: 50%;
+  background: #19191b;
+  color: #9999a2;
+  cursor: pointer;
+}
+.sidebar-collapse-toggle:hover,
+.sidebar-collapse-toggle:focus-visible { border-color: #ff6b18; color: #fff; }
+.sidebar-collapse-toggle .studio-icon { width: 14px; height: 14px; transition: transform 0.2s ease; }
+.studio-sidebar.is-expanded .sidebar-collapse-toggle .studio-icon { transform: rotate(180deg); }
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #050507a8;
+  backdrop-filter: blur(2px);
+  cursor: default;
+}
+
+@media (min-width: 701px) {
+  html.generator .studio-sidebar,
+  html.generator .studio-workspace { transition: width 0.2s ease, margin-left 0.2s ease; }
+  html.generator .studio-sidebar.is-collapsed {
+    width: 76px;
+    box-sizing: border-box;
+    padding: 18px 8px 16px;
+    overflow: visible;
+  }
+  html.generator .studio-sidebar.is-collapsed .studio-brand { justify-content: center; }
+  html.generator .studio-sidebar.is-collapsed .studio-brand > span:last-child,
+  html.generator .studio-sidebar.is-collapsed .nav-caption,
+  html.generator .studio-sidebar.is-collapsed .sidebar-note,
+  html.generator .studio-sidebar.is-collapsed .tabs > button > span,
+  html.generator .studio-sidebar.is-collapsed .tabs > button > .studio-icon:last-child,
+  html.generator .studio-sidebar.is-collapsed .tabs > .docs-tab > span,
+  html.generator .studio-sidebar.is-collapsed .tabs > .docs-tab > .studio-icon:last-child,
+  html.generator .studio-sidebar.is-collapsed .donate-link--header > span,
+  html.generator .studio-sidebar.is-collapsed .lang-trigger .lang-name,
+  html.generator .studio-sidebar.is-collapsed .lang-trigger .studio-icon,
+  html.generator .studio-sidebar.is-collapsed .online-banners .online-copy > span,
+  html.generator .studio-sidebar.is-collapsed .online-banners > small { display: none; }
+  html.generator .studio-sidebar.is-collapsed .tabs { margin-top: 12px; }
+  html.generator .studio-sidebar.is-collapsed .tabs > button,
+  html.generator .studio-sidebar.is-collapsed .tabs > .docs-tab {
+    box-sizing: border-box;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    height: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0;
+  }
+  html.generator .studio-sidebar.is-collapsed .sidebar-foot,
+  html.generator .studio-sidebar.is-collapsed .sidebar-foot > *,
+  html.generator .studio-sidebar.is-collapsed .online-banners,
+  html.generator .studio-sidebar.is-collapsed .donate-link--header,
+  html.generator .studio-sidebar.is-collapsed .lang-select,
+  html.generator .studio-sidebar.is-collapsed .lang-trigger {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin-right: 0;
+    margin-left: 0;
+  }
+  html.generator .studio-sidebar.is-collapsed .online-banners,
+  html.generator .studio-sidebar.is-collapsed .donate-link--header,
+  html.generator .studio-sidebar.is-collapsed .lang-trigger { justify-content: center; padding: 8px 4px; }
+  html.generator .studio-sidebar.is-collapsed .lang-list { right: auto; bottom: 0; left: calc(100% + 8px); min-width: 168px; }
+  html.generator .studio-sidebar.is-collapsed ~ .studio-workspace { margin-left: 76px; }
+  html.generator .studio-sidebar.is-collapsed .sidebar-collapse-toggle { top: 66px; right: 23px; }
+}
+
+@media (min-width: 701px) and (max-width: 1280px) {
+  html.generator .studio-sidebar.is-compact.is-expanded {
+    z-index: 80;
+    width: 250px;
+    padding: 24px 18px 20px;
+    overflow: hidden;
+    box-shadow: 18px 0 48px #000a;
+  }
+  html.generator .studio-sidebar.is-compact.is-expanded .studio-brand { justify-content: flex-start; padding-right: 35px; }
+  html.generator .studio-sidebar.is-compact.is-expanded .studio-brand > span:last-child { display: block; }
+  html.generator .studio-sidebar.is-compact.is-expanded .nav-caption { display: block; margin: 32px 12px 12px; }
+  html.generator .studio-sidebar.is-compact.is-expanded .tabs { margin-top: 0; }
+  html.generator .studio-sidebar.is-compact.is-expanded .tabs > button,
+  html.generator .studio-sidebar.is-compact.is-expanded .tabs > .docs-tab {
+    justify-content: flex-start;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+  html.generator .studio-sidebar.is-compact.is-expanded .tabs > button > span,
+  html.generator .studio-sidebar.is-compact.is-expanded .tabs > .docs-tab > span { display: block; }
+  html.generator .studio-sidebar.is-compact.is-expanded .tabs > button > .studio-icon:last-child,
+  html.generator .studio-sidebar.is-compact.is-expanded .tabs > .docs-tab > .studio-icon:last-child { display: block; margin-left: auto; }
+  html.generator .studio-sidebar.is-compact.is-expanded .sidebar-foot,
+  html.generator .studio-sidebar.is-compact.is-expanded .sidebar-foot > *,
+  html.generator .studio-sidebar.is-compact.is-expanded .online-banners,
+  html.generator .studio-sidebar.is-compact.is-expanded .donate-link--header,
+  html.generator .studio-sidebar.is-compact.is-expanded .lang-select,
+  html.generator .studio-sidebar.is-compact.is-expanded .lang-trigger { width: 100%; max-width: 100%; }
+  html.generator .studio-sidebar.is-compact.is-expanded .online-banners { display: grid; justify-content: normal; padding: 10px 11px; }
+  html.generator .studio-sidebar.is-compact.is-expanded .online-banners .online-copy > span,
+  html.generator .studio-sidebar.is-compact.is-expanded .online-banners > small,
+  html.generator .studio-sidebar.is-compact.is-expanded .donate-link--header > span,
+  html.generator .studio-sidebar.is-compact.is-expanded .lang-trigger .lang-name,
+  html.generator .studio-sidebar.is-compact.is-expanded .lang-trigger .studio-icon { display: inline-flex; }
+  html.generator .studio-sidebar.is-compact.is-expanded .donate-link--header,
+  html.generator .studio-sidebar.is-compact.is-expanded .lang-trigger { justify-content: flex-start; padding: 8px 10px; }
+  html.generator .studio-sidebar.is-compact.is-expanded .lang-list { right: 0; left: auto; bottom: calc(100% + 6px); }
+  html.generator .studio-sidebar.is-compact.is-expanded .sidebar-collapse-toggle { top: 30px; right: 12px; }
+}
+
+@media (max-width: 700px) {
+  .sidebar-collapse-toggle,
+  .sidebar-overlay { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.generator .studio-sidebar,
+  html.generator .studio-workspace,
+  .sidebar-collapse-toggle .studio-icon { transition: none; }
+}

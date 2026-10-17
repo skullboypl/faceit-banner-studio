@@ -77,6 +77,10 @@ export const MobileMenu = (props: Props) => {
               <span>{tab.name}</span>
             </button>
           ))}
+          <a className="mobile-menu-item" href="/streamers">
+            <StudioIcon name="broadcast" />
+            <span>{tl('streamers.title')}</span>
+          </a>
           <a className="mobile-menu-item mobile-menu-item--hub" href="https://vxh.pl/">
             <StudioIcon name="home" />
             <span>{tl('studio.hub')}</span>

@@ -13,10 +13,10 @@ test('batches normalized logins, keeps zero viewers, and separates missing from 
     assert.equal(url.searchParams.get('logins'), 'live,offline,deleted,unknown');
     assert.equal(options.headers.Authorization, 'Bearer test-secret');
     assert.equal(url.toString().includes('test-secret'), false);
-    return Response.json({ ok: true, streams: { live: { live: true, viewers: 0 }, offline: { live: false }, deleted: { live: false, exists: false } } });
+    return Response.json({ ok: true, streams: { live: { live: true, viewers: 0, title: 'Title', game: 'CS2', thumbnail: 'https://static-cdn.jtvnw.net/preview.jpg', startedAt: '2026-10-17T18:00:00Z' }, offline: { live: false }, deleted: { live: false, exists: false } } });
   } });
   const [a, b] = await Promise.all([lookup(players), lookup(players)]);
-  assert.deepEqual(a.map((p) => p.twitchStatus), [{ state: 'live', viewers: 0 }, { state: 'offline' }, { state: 'missing' }, { state: 'unknown' }]);
+  assert.deepEqual(a.map((p) => p.twitchStatus), [{ state: 'live', viewers: 0, title: 'Title', game: 'CS2', thumbnail: 'https://static-cdn.jtvnw.net/preview.jpg', startedAt: '2026-10-17T18:00:00Z' }, { state: 'offline' }, { state: 'missing' }, { state: 'unknown' }]);
   assert.deepEqual(a, b);
   await lookup(players);
   assert.equal(calls, 1);

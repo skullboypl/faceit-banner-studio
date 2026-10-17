@@ -5,7 +5,9 @@ import { getOnlineBannerCount, PRESENCE_REFRESH_MS, subscribeOnlineCount } from 
 
 export function OnlineBannerCount() {
   const tl = useContext(LanguageContext);
-  const onLive = useLocation().pathname === '/live';
+  const pathname = useLocation().pathname;
+  const onLive = pathname === '/live';
+  const onPublicList = onLive || pathname === '/streamers';
   const [count, setCount] = useState<number | null>(null);
   const [available, setAvailable] = useState(true);
 
@@ -21,7 +23,7 @@ export function OnlineBannerCount() {
     let pending = false;
     let refreshedAt = -Infinity;
     const refresh = async () => {
-      if (onLive || document.hidden || pending || Date.now() - refreshedAt < PRESENCE_REFRESH_MS) return;
+      if (onPublicList || document.hidden || pending || Date.now() - refreshedAt < PRESENCE_REFRESH_MS) return;
       pending = true;
       refreshedAt = Date.now();
       try {
@@ -45,7 +47,7 @@ export function OnlineBannerCount() {
       document.removeEventListener('visibilitychange', onVisibility);
       unsubscribe();
     };
-  }, [onLive]);
+  }, [onLive, onPublicList]);
 
   if (!tl) return null;
   const label = tl('live.open');

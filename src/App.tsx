@@ -11,6 +11,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <Routes>
       <Route path="/" element={<Generator />} />
       <Route path="/live" element={<Generator />} />
+      <Route path="/streamers" element={<Generator />} />
       <Route path="/admin" element={<AdminPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

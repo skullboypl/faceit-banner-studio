@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LanguageContext, SettingsContext } from './contexts.ts';
 import { toQueryString, widgetQueryParams } from '../settings/widget-query';
 import { Widget } from '../../widget/src/widget/Widget.tsx';
@@ -25,6 +25,7 @@ import { PreviewCarousel } from '../components/PreviewCarousel.tsx';
 import { StudioIcon } from '../components/StudioIcon.tsx';
 import { StudioBrand } from '../components/StudioBrand.tsx';
 import { LiveRanking } from '../live/LiveRanking.tsx';
+import { TwitchStreamers } from '../live/TwitchStreamers.tsx';
 import { TimelineIcon } from '../assets/icons/tabler/TimelineIcon.tsx';
 import { ShareIcon } from '../assets/icons/tabler/ShareIcon.tsx';
 import { BrandTwitchIcon } from '../assets/icons/tabler/BrandTwitchIcon.tsx';
@@ -131,18 +132,74 @@ export const Generator = () => {
     null
   );
 
-  const onLive = useLocation().pathname === '/live';
+  const pathname = useLocation().pathname;
+  const onLive = pathname === '/live';
+  const onStreamers = pathname === '/streamers';
+  const onPublicPage = onLive || onStreamers;
   const navigate = useNavigate();
   const [selectedTabIndex, setSelectedTabIndex] = useState(() => {
     const value = Number(new URLSearchParams(window.location.search).get('tab'));
     return Number.isInteger(value) && value >= 0 && value <= 4 ? value : 0;
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [compactSidebar, setCompactSidebar] = useState(() =>
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(min-width: 701px) and (max-width: 1280px)').matches
+  );
+  const [compactSidebarOpen, setCompactSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('fcw_sidebar_collapsed') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const sidebarExpanded = compactSidebar ? compactSidebarOpen : !sidebarCollapsed;
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia('(min-width: 701px) and (max-width: 1280px)');
+    const update = () => {
+      setCompactSidebar(media.matches);
+      if (!media.matches) setCompactSidebarOpen(false);
+    };
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+  useEffect(() => {
+    if (!compactSidebarOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setCompactSidebarOpen(false);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', close);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', close);
+    };
+  }, [compactSidebarOpen]);
+  const toggleSidebar = useCallback(() => {
+    if (compactSidebar) {
+      setCompactSidebarOpen((open) => !open);
+      return;
+    }
+    setSidebarCollapsed((collapsed) => {
+      const next = !collapsed;
+      try {
+        localStorage.setItem('fcw_sidebar_collapsed', next ? '1' : '0');
+      } catch {
+        /* The preference is optional when storage is blocked. */
+      }
+      return next;
+    });
+  }, [compactSidebar]);
   const [introReplay, setIntroReplay] = useState(0);
   const selectTab = useCallback((index: number) => {
+    setCompactSidebarOpen(false);
     setSelectedTabIndex(index);
     const params = new URLSearchParams(window.location.search);
-    if (onLive || params.get('panel') || params.get('tab') !== String(index)) {
+    if (onPublicPage || params.get('panel') || params.get('tab') !== String(index)) {
       navigate(`/?tab=${index}`);
     }
     if (window.matchMedia('(max-width: 1000px)').matches) {
@@ -154,12 +211,13 @@ export const Generator = () => {
     } else {
       document.getElementById('root')?.scrollTo({ top: 0 });
     }
-  }, [navigate, onLive]);
+  }, [navigate, onPublicPage]);
   const openProfile = useCallback(() => {
+    setCompactSidebarOpen(false);
     navigate('/?panel=profile');
     document.getElementById('root')?.scrollTo({ top: 0 });
   }, [navigate]);
-  const showProfile = !onLive && searchParams.get('panel') === 'profile';
+  const showProfile = !onPublicPage && searchParams.get('panel') === 'profile';
 
   const tl = useCallback(
     (text: string, args?: string[]) => {
@@ -656,8 +714,18 @@ export const Generator = () => {
           mode={generatedURLMode}
           setURL={setGeneratedURL}
         />
-        <header className="studio-sidebar">
+        <header className={`studio-sidebar ${sidebarExpanded ? 'is-expanded' : 'is-collapsed'}${compactSidebar ? ' is-compact' : ''}`}>
           <StudioBrand />
+          <button
+            type="button"
+            className="sidebar-collapse-toggle"
+            aria-label={sidebarExpanded ? tl('menu.close') : tl('menu.open')}
+            title={sidebarExpanded ? tl('menu.close') : tl('menu.open')}
+            aria-expanded={sidebarExpanded}
+            onClick={toggleSidebar}
+          >
+            <StudioIcon name="chevron" />
+          </button>
           <p className="nav-caption">{tl('studio.workspace')}</p>
           {import.meta.env.VITE_IS_TESTING && (
             <InfoBox
@@ -679,13 +747,13 @@ export const Generator = () => {
                   key={tab.name}
                   aria-label={tab.name}
                   title={tab.name}
-                  aria-current={!onLive && !showProfile && index === selectedTabIndex ? 'page' : undefined}
+                  aria-current={!onPublicPage && !showProfile && index === selectedTabIndex ? 'page' : undefined}
                   data-overflow={index >= PINNED_TABS ? 'true' : undefined}
                   onClick={() => {
                     selectTab(index);
-                    if (onLive) navigate(`/?tab=${index}`);
+                    if (onPublicPage) navigate(`/?tab=${index}`);
                   }}
-                  className={!onLive && !showProfile && index === selectedTabIndex ? 'active' : ''}
+                  className={!onPublicPage && !showProfile && index === selectedTabIndex ? 'active' : ''}
                 >
                   <StudioIcon name={TAB_ICONS[index]} />
                   <span>{tab.name}</span>
@@ -693,6 +761,18 @@ export const Generator = () => {
                 </button>
               );
             })}
+            <Link
+              className={`docs-tab streamers-tab${onStreamers ? ' active' : ''}`}
+              to="/streamers"
+              title={tl('streamers.title')}
+              aria-label={tl('streamers.title')}
+              aria-current={onStreamers ? 'page' : undefined}
+              onClick={() => setCompactSidebarOpen(false)}
+            >
+              <StudioIcon name="broadcast" />
+              <span>{tl('streamers.title')}</span>
+              <StudioIcon name="chevron" />
+            </Link>
             <a
               className="docs-tab hub-tab"
               href="https://vxh.pl/"
@@ -742,12 +822,20 @@ export const Generator = () => {
             <small>by Skull</small>
           </div>
         </header>
+        {compactSidebar && compactSidebarOpen && (
+          <button
+            type="button"
+            className="sidebar-overlay"
+            aria-label={tl('menu.close')}
+            onClick={() => setCompactSidebarOpen(false)}
+          />
+        )}
         <div className="studio-workspace">
           <div className="studio-topbar">
             <span>
               {tl('studio.workspace')}{' '}
               <span className="breadcrumb-divider">/</span>{' '}
-              <strong>{onLive ? tl('live.title') : showProfile ? tl('account.profile') : tabs[selectedTabIndex].name}</strong>
+              <strong>{onStreamers ? tl('streamers.title') : onLive ? tl('live.title') : showProfile ? tl('account.profile') : tabs[selectedTabIndex].name}</strong>
             </span>
             <span className="topbar-right">
               <span className="obs-tag">
@@ -773,15 +861,15 @@ export const Generator = () => {
           <div className="studio-heading">
             <div>
               <p className="studio-eyebrow">FACEIT / COUNTER-STRIKE 2</p>
-              <h1>{tl('studio.title')}</h1>
-              <p>{tl('studio.description')}</p>
+              <h1>{onStreamers ? tl('streamers.title') : tl('studio.title')}</h1>
+              <p>{onStreamers ? tl('streamers.lead') : tl('studio.description')}</p>
             </div>
             <span className="studio-heading-symbol" aria-hidden="true">
               <StudioIcon name="layers" />
             </span>
           </div>
             <main
-            className={`studio-main${onLive ? ' studio-main--live' : selectedTabIndex === FEEDBACK_TAB_INDEX && !showProfile ? ' studio-main--wide' : ''}`}
+            className={`studio-main${onLive ? ' studio-main--live' : onStreamers ? ' studio-main--streamers' : selectedTabIndex === FEEDBACK_TAB_INDEX && !showProfile ? ' studio-main--wide' : ''}`}
           >
             <section
               className={'fixed-width'}
@@ -789,15 +877,15 @@ export const Generator = () => {
             >
               <div className="section-heading">
                 <h2 id="studio-settings-title">
-                  {onLive ? tl('live.title') : showProfile ? tl('account.profile') : tabs[selectedTabIndex].name}
+                  {onStreamers ? tl('streamers.title') : onLive ? tl('live.title') : showProfile ? tl('account.profile') : tabs[selectedTabIndex].name}
                 </h2>
-                <span>{onLive ? tl('live.lead') : tl('studio.settings_hint')}</span>
+                <span>{onStreamers ? tl('streamers.section_lead') : onLive ? tl('live.lead') : tl('studio.settings_hint')}</span>
               </div>
-              <div className="tab-content" key={onLive ? 'live' : showProfile ? 'profile' : selectedTabIndex}>
-                {onLive ? <LiveRanking /> : showProfile ? <ProfilePanel /> : tabs[selectedTabIndex].component}
+              <div className="tab-content" key={onStreamers ? 'streamers' : onLive ? 'live' : showProfile ? 'profile' : selectedTabIndex}>
+                {onStreamers ? <TwitchStreamers /> : onLive ? <LiveRanking /> : showProfile ? <ProfilePanel /> : tabs[selectedTabIndex].component}
               </div>
             </section>
-            {!onLive && (showProfile || selectedTabIndex !== FEEDBACK_TAB_INDEX) && (
+            {!onPublicPage && (showProfile || selectedTabIndex !== FEEDBACK_TAB_INDEX) && (
               <section className={'preview'}>
                 <div className={'settings preview-card'}>
                   <div className="preview-heading">
