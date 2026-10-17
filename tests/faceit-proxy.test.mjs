@@ -15,7 +15,7 @@ test('faceitTarget keeps a player read and drops anything else', () => {
   assert.equal(faceitTarget(`/api/faceit/v4/players/${id}/history?game=csgo&limit=1`), null);
 });
 
-test('the same player is fetched once inside 15 seconds, then again after', async () => {
+test('the same player is fetched once inside 30 seconds, then again after', async () => {
   let clock = 1_000;
   const calls = [];
   const cache = createFaceitCache({
@@ -31,10 +31,10 @@ test('the same player is fetched once inside 15 seconds, then again after', asyn
   const [first, second] = await Promise.all([cache.load(target), cache.load(target)]);
   assert.equal(calls.length, 1);
   assert.equal(first.body, second.body);
-  clock += 10_000;
+  clock += 20_000;
   await cache.load(target);
   assert.equal(calls.length, 1);
-  clock += 6_000;
+  clock += 11_000;
   await cache.load(target);
   assert.equal(calls.length, 2);
   await cache.load(other);
@@ -114,7 +114,7 @@ test('a site read goes out without the API key and comes back reduced to the mat
   assert.deepEqual(JSON.parse(entry.body), { match_id: '1-live-match', status: 'ONGOING' });
 });
 
-test('rankings change slowly and are kept for ten minutes, while profiles still refresh every 15 seconds', async () => {
+test('rankings change slowly and are kept for ten minutes, while profiles still refresh every 30 seconds', async () => {
   let clock = 1_000;
   const calls = [];
   const cache = createFaceitCache({
@@ -313,14 +313,14 @@ test('under load the answers are kept longer instead of piling more requests on 
   });
   const target = faceitTarget(`/api/faceit/v4/players/${id}/history?game=cs2`);
   await cache.load(target);
-  clock += 20_000;
+  clock += 31_000;
   await cache.load(target);
-  assert.equal(calls, 2, 'a quiet server reads again after 15 seconds');
+  assert.equal(calls, 2, 'a quiet server reads again after 30 seconds');
   busy = 1;
-  clock += 20_000;
+  clock += 31_000;
   await cache.load(target);
   assert.equal(calls, 2, 'a busy one keeps the answer');
-  clock += 60_000;
+  clock += 100_000;
   await cache.load(target);
   assert.equal(calls, 3);
 });

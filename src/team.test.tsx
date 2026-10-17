@@ -453,3 +453,24 @@ describe('the roster keeps its numbers up to date', () => {
     }
   });
 });
+
+describe('the roster never reads faster than every 30 seconds', () => {
+  test('a 10 second setting still waits 30 seconds between reads', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      render(<TeamBanner roster="alpha" layout="lineup" options={TEAM_DEFAULTS} refreshSeconds={10} translate={translate} />);
+      await waitFor(() => expect(vi.mocked(lookupRosterCard)).toHaveBeenCalled());
+      vi.mocked(lookupRosterCard).mockClear();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(20_000);
+      });
+      expect(vi.mocked(lookupRosterCard)).not.toHaveBeenCalled();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(11_000);
+      });
+      expect(vi.mocked(lookupRosterCard)).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

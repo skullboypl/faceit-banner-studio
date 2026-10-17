@@ -1,6 +1,7 @@
 import { CSSProperties, useEffect, useState } from 'react';
 import { averageElo, parseRoster } from '../../../shared/banner-modes.mjs';
 import { LevelMark } from '../components/LevelMark';
+import { MIN_REFRESH_SECONDS } from '../utils/refresh';
 import { lookupRosterCard, type RosterCard, type SessionCard } from '../utils/faceit_util';
 import { TEAM_DEFAULTS, hexToRgb, type TeamOptions, type TeamSort } from './team-options';
 
@@ -116,7 +117,7 @@ export function TeamBanner({
         });
     load();
     /* The banner header refreshes on its own; the rows read their own stats, so they need their own timer */
-    const timer = refreshSeconds > 0 ? window.setInterval(load, Math.max(10, refreshSeconds) * 1000) : undefined;
+    const timer = refreshSeconds > 0 ? window.setInterval(load, Math.max(MIN_REFRESH_SECONDS, refreshSeconds) * 1000) : undefined;
     return () => {
       cancel = true;
       if (timer !== undefined) window.clearInterval(timer);

@@ -4,7 +4,7 @@ import { count, once, warn } from './log.mjs';
 import { clientIp } from '../shared/client-ip.mjs';
 
 /** Repeated reads of the same player reuse this answer instead of calling FACEIT again. */
-export const FACEIT_TTL_MS = 15_000;
+export const FACEIT_TTL_MS = 30_000;
 /** A place in a ranking moves slowly, and two lookups per player add up: keep those longer. */
 export const FACEIT_RANKING_TTL_MS = 10 * 60_000;
 const PREFIX = '/api/faceit/v4';
@@ -315,7 +315,7 @@ const limit = createRateLimiter({ perMinute: 180, blockAfter: { strikes: 8, wind
 function send(res, status, body, extra = {}) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', 'private, max-age=15');
+  res.setHeader('Cache-Control', 'private, max-age=30');
   for (const [name, value] of Object.entries(extra)) res.setHeader(name, value);
   res.end(body);
 }

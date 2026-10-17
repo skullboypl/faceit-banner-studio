@@ -24,6 +24,7 @@ import {
 import { getPlayerStats, SessionCard, UNKNOWN_PLACE, VerifiedBadgeType } from '../utils/faceit_util.ts';
 import { sessionLine } from './session-line.ts';
 import { readTickerCells } from './ticker-options.ts';
+import { refreshSeconds } from '../utils/refresh.ts';
 import {
   BannerSizeMode,
   getBannerSizeLimits,
@@ -748,7 +749,7 @@ export const Widget = ({
 
     const interval = setInterval(
       getStats,
-      1000 * SETTINGS.get('refreshInterval') || 60000
+      1000 * refreshSeconds(SETTINGS.get('refreshInterval'))
     );
     return () => {
       cancelled = true;
@@ -1006,7 +1007,7 @@ export const Widget = ({
     load();
     const interval = setInterval(
       load,
-      1000 * (SETTINGS.get('refreshInterval') || 60)
+      1000 * refreshSeconds(SETTINGS.get('refreshInterval'))
     );
     return () => {
       cancelled = true;
@@ -2378,7 +2379,7 @@ export const Widget = ({
               owner={username || previewUsername || ''}
               session={{ wins, losses, form: sessionForm }}
               sessionStart={sessionStart}
-              refreshSeconds={Number(SETTINGS.get('refreshInterval')) || 60}
+              refreshSeconds={refreshSeconds(SETTINGS.get('refreshInterval'))}
               options={readTeamOptions((key) => SETTINGS.get(key as SettingKey))}
               translate={translate}
             />

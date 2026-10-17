@@ -1,5 +1,7 @@
 import { ReactElement, ReactNode } from 'react';
-import { SITE_URL } from './content';
+import { SITE_URL, docsPath } from './content';
+import { DOCS_LANGS, LANGUAGE_NAMES } from './docs-i18n';
+import { LANGUAGE_MENU_SCRIPT, LanguageMenu, type MenuLanguage } from './LanguageMenu';
 
 const LAYERS = 'm12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5';
 const BACK = 'M19 12H5m6-6-6 6 6 6';
@@ -26,6 +28,33 @@ const SERVICE: LinkItem[] = [
   { href: '/terms/', label: 'Regulamin' },
   { href: '/privacy/', label: 'Prywatność' },
 ];
+
+/** The wiki is Polish. Every other language leads to the documentation page that covers the same ground. */
+const WIKI_DOCS: Record<string, string> = {
+  '/wiki/': 'index',
+  '/wiki/bannerfaceit/': 'obs',
+  '/wiki/jak-dodac-faceit-do-obs/': 'quick-start',
+  '/wiki/konfiguracja-widzetu-faceit/': 'params',
+  '/wiki/sklad-split-popup/': 'modes',
+  '/wiki/faq-faceit-widget/': 'faq',
+};
+
+/** The language menu of a page: the wiki points at the documentation, the legal texts at their two languages. */
+const menuFor = (path: string, bilingual: boolean): MenuLanguage[] | null => {
+  if (bilingual) {
+    return [
+      { code: 'pl', name: LANGUAGE_NAMES.pl, href: '#pl' },
+      { code: 'en', name: LANGUAGE_NAMES.en, href: '#en' },
+    ];
+  }
+  const docs = WIKI_DOCS[path];
+  if (!docs) return null;
+  return DOCS_LANGS.map((code) => ({
+    code,
+    name: LANGUAGE_NAMES[code],
+    href: code === 'pl' ? path : docsPath(code, docs),
+  }));
+};
 
 const groupsFor = (current: string) => [
   { title: 'Wiki', links: WIKI },
@@ -62,6 +91,7 @@ const SitePage = ({
 }) => {
   const url = `${SITE_URL}${path}`;
   const groups = groupsFor(path);
+  const menu = menuFor(path, languages);
   return (
     <html lang="pl">
       <head>
@@ -127,12 +157,7 @@ const SitePage = ({
                 ))}
               </span>
               <span className="topbar-actions">
-                {languages ? (
-                  <>
-                    <a className="lang" href="#pl">PL</a>
-                    <a className="lang" href="#en">EN</a>
-                  </>
-                ) : null}
+                {menu ? <LanguageMenu label="Język" current="pl" items={menu} /> : null}
                 <a className="obs-tag" href="/">OBS STUDIO</a>
               </span>
             </div>
@@ -161,6 +186,7 @@ const SitePage = ({
             </footer>
           </div>
         </div>
+        <script dangerouslySetInnerHTML={{ __html: LANGUAGE_MENU_SCRIPT }} />
       </body>
     </html>
   );

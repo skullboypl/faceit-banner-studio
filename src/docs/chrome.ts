@@ -15,6 +15,8 @@ export type Chrome = {
   user: string;
   dev: string;
   ogLocale: string;
+  /** Label of the language menu. */
+  language: string;
   categories: Record<string, string>;
   nav: Record<string, string>;
 };
@@ -54,6 +56,7 @@ export const CHROME: Record<DocsLang, Chrome> = {
     user: 'Użytkownik',
     dev: 'Developer',
     ogLocale: 'pl_PL',
+    language: 'Język',
     categories: { start: 'Start', banners: 'Banery', reference: 'Informacje', 'dev-intro': 'Wprowadzenie', 'dev-develop': 'Rozwój', 'dev-ship': 'Wdrożenie i współpraca' },
     nav: {
       ...PL_DEV_NAV,
@@ -84,6 +87,7 @@ export const CHROME: Record<DocsLang, Chrome> = {
     user: 'User',
     dev: 'Developer',
     ogLocale: 'en_US',
+    language: 'Language',
     categories: { start: 'Start', banners: 'Banners', reference: 'Reference', 'dev-intro': 'Introduction', 'dev-develop': 'Development', 'dev-ship': 'Shipping and contributing' },
     nav: {
       ...EN_DEV_NAV,
@@ -100,6 +104,36 @@ export const CHROME: Record<DocsLang, Chrome> = {
       about: 'About',
     },
   },
+  de: {
+    back: 'Zurück zum Generator',
+    docs: 'Dokumentation',
+    index: 'Dokumentationsverzeichnis',
+    contents: 'Inhalt',
+    open: 'Generator öffnen',
+    updated: 'Aktualisiert',
+    footer: 'FACEIT Banner steht in keiner Verbindung zu FACEIT. Quellcode unter der MIT-Lizenz.',
+    sidebar: 'Ein FACEIT-Statistik-Widget für deinen Stream.',
+    terms: 'Nutzungsbedingungen',
+    privacy: 'Datenschutz',
+    user: 'Nutzer',
+    dev: 'Entwickler (EN)',
+    ogLocale: 'de_DE',
+    language: 'Sprache',
+    categories: { start: 'Start', banners: 'Banner', reference: 'Referenz' },
+    nav: {
+      index: 'Überblick',
+      obs: 'FACEIT-Banner für OBS',
+      'quick-start': 'Schnellstart',
+      solo: 'Solo-Banner',
+      versus: 'VERSUS-Banner',
+      modes: 'Kader, Split und Popup',
+      size: 'Bannergröße',
+      stream: 'ELO im Stream',
+      params: 'URL-Parameter',
+      faq: 'FAQ',
+      about: 'Über das Projekt',
+    },
+  },
   uk: {
     back: 'Повернутися до генератора',
     docs: 'Документація',
@@ -114,6 +148,7 @@ export const CHROME: Record<DocsLang, Chrome> = {
     user: 'Користувач',
     dev: 'Розробник (EN)',
     ogLocale: 'uk_UA',
+    language: 'Мова',
     categories: { start: 'Початок', banners: 'Банери', reference: 'Довідка' },
     nav: {
       index: 'Огляд',
@@ -143,6 +178,7 @@ export const CHROME: Record<DocsLang, Chrome> = {
     user: 'Пользователь',
     dev: 'Разработчик (EN)',
     ogLocale: 'ru_RU',
+    language: 'Язык',
     categories: { start: 'Начало', banners: 'Баннеры', reference: 'Справка' },
     nav: {
       index: 'Обзор',
@@ -172,6 +208,7 @@ export const CHROME: Record<DocsLang, Chrome> = {
     user: 'Kullanıcı',
     dev: 'Geliştirici (EN)',
     ogLocale: 'tr_TR',
+    language: 'Dil',
     categories: { start: 'Başlangıç', banners: 'Bannerlar', reference: 'Başvuru' },
     nav: {
       index: 'Genel bakış',
@@ -201,6 +238,7 @@ export const CHROME: Record<DocsLang, Chrome> = {
     user: 'Usuário',
     dev: 'Desenvolvedor (EN)',
     ogLocale: 'pt_BR',
+    language: 'Idioma',
     categories: { start: 'Início', banners: 'Banners', reference: 'Referência' },
     nav: {
       index: 'Visão geral',
@@ -230,6 +268,7 @@ export const CHROME: Record<DocsLang, Chrome> = {
     user: 'Usuario',
     dev: 'Desarrollador (EN)',
     ogLocale: 'es_ES',
+    language: 'Idioma',
     categories: { start: 'Inicio', banners: 'Banners', reference: 'Referencia' },
     nav: {
       index: 'Resumen',
@@ -259,6 +298,7 @@ export const CHROME: Record<DocsLang, Chrome> = {
     user: 'Utilisateur',
     dev: 'Développeur (EN)',
     ogLocale: 'fr_FR',
+    language: 'Langue',
     categories: { start: 'Démarrage', banners: 'Bannières', reference: 'Référence' },
     nav: {
       index: 'Vue d\'ensemble',
@@ -288,6 +328,7 @@ export const CHROME: Record<DocsLang, Chrome> = {
     user: 'Uživatel',
     dev: 'Vývojář (EN)',
     ogLocale: 'cs_CZ',
+    language: 'Jazyk',
     categories: { start: 'Začátek', banners: 'Bannery', reference: 'Reference' },
     nav: {
       index: 'Přehled',

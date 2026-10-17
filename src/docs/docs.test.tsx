@@ -3,13 +3,14 @@ import { describe, expect, test } from 'vitest';
 import { CHROME, navLabel } from './chrome';
 import { USER_PAGE_IDS, buildDocsPages, docsPath, pageIdsFor } from './content';
 import { DocsPage } from './DocsPage';
+import { sitePages } from './site-pages';
 import { DOCS_LANGS, DocsLang, hasDevDocs, missingTranslations, startRecording, stopRecording } from './docs-i18n';
 
 const translated = DOCS_LANGS.filter((lang) => !hasDevDocs(lang)) as Exclude<DocsLang, 'pl' | 'en'>[];
 
 describe('documentation languages', () => {
   test('the docs come in the studio languages, developer pages only in Polish and English', () => {
-    expect([...DOCS_LANGS]).toEqual(['pl', 'en', 'uk', 'ru', 'tr', 'pt', 'es', 'fr', 'cs']);
+    expect([...DOCS_LANGS]).toEqual(['pl', 'en', 'de', 'uk', 'ru', 'tr', 'pt', 'es', 'fr', 'cs']);
     expect(pageIdsFor('pl').length).toBeGreaterThan(USER_PAGE_IDS.length);
     expect(pageIdsFor('en').length).toBe(pageIdsFor('pl').length);
     for (const lang of translated) expect([...pageIdsFor(lang)]).toEqual([...USER_PAGE_IDS]);
@@ -77,10 +78,55 @@ describe('a docs page in the search results', () => {
     expect(user).toContain('href="/en/docs/dev/"');
   });
 
-  test('the language switcher lists the languages of the page, the current one is not a link', () => {
+  test('the language menu looks like the studio one: a flag and the language name, a list of every language of the page', () => {
     const page = html('tr', 'faq');
-    expect(page).toContain('class="lang is-current"');
-    expect(page).toContain('href="/uk/docs/faq/"');
-    expect(page).toContain('href="/docs/faq/"');
+    expect(page).toContain('<details class="lang-select">');
+    expect(page).toContain('class="lang-trigger"');
+    expect(page).toContain('Türkçe');
+    for (const [code, name] of [['pl', 'Polski'], ['uk', 'Українська'], ['de', 'Deutsch'], ['cs', 'Čeština']]) {
+      expect(page).toContain(`href="${docsPath(code as DocsLang, 'faq')}"`);
+      expect(page).toContain(name);
+    }
+    expect(page).toContain('https://flagcdn.com/ua.svg');
+    expect(page).toContain('https://flagcdn.com/br.svg');
+    expect(page).toContain('aria-current="true"');
+  });
+
+  test('a developer page offers only the two languages it exists in', () => {
+    const page = html('pl', 'dev-setup');
+    expect(page).toContain('href="/en/docs/dev/setup/"');
+    expect(page).not.toContain('href="/uk/docs/');
+  });
+});
+
+describe('the language menu on the wiki and the legal pages', () => {
+  const render = (path: string) => renderToStaticMarkup(sitePages.find((page) => page.path === path)!.element);
+
+  test('a wiki page is Polish, and every other language leads to the matching documentation page', () => {
+    const page = render('/wiki/bannerfaceit/');
+    expect(page).toContain('<details class="lang-select">');
+    expect(page).toContain('Polski');
+    expect(page).toContain(`href="${docsPath('uk', 'obs')}"`);
+    expect(page).toContain(`href="${docsPath('de', 'obs')}"`);
+    expect(page).toContain(`href="${docsPath('en', 'obs')}"`);
+    const faq = render('/wiki/faq-faceit-widget/');
+    expect(faq).toContain(`href="${docsPath('fr', 'faq')}"`);
+    const modes = render('/wiki/sklad-split-popup/');
+    expect(modes).toContain(`href="${docsPath('es', 'modes')}"`);
+  });
+
+  test('the wiki index leads to the documentation overview in each language', () => {
+    const page = render('/wiki/');
+    expect(page).toContain(`href="${docsPath('cs', 'index')}"`);
+  });
+
+  test('the terms and the privacy policy offer the two languages they are written in', () => {
+    for (const path of ['/terms/', '/privacy/']) {
+      const page = render(path);
+      expect(page).toContain('<details class="lang-select">');
+      expect(page).toContain('href="#pl"');
+      expect(page).toContain('href="#en"');
+      expect(page).not.toContain('href="/uk/docs/');
+    }
   });
 });

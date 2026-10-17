@@ -1,9 +1,10 @@
 import { InfoBox } from '../../components/InfoBox.tsx';
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { Statistic } from '../../components/Statistic.tsx';
 import { LanguageContext, SettingsContext } from '../Generator.tsx';
 import { Checkbox } from '../../components/Checkbox.tsx';
 import { resolveBannerStyle } from '../../../widget/src/styles/styles';
+import { refreshSeconds } from '../../../widget/src/utils/refresh';
 
 export enum StatisticType {
   KILLS = 'KILLS',
@@ -25,6 +26,13 @@ export enum StatisticType {
 export const StatisticsTab = () => {
   const tl = useContext(LanguageContext);
   const settings = useContext(SettingsContext);
+  const stored = settings?.get('refreshInterval');
+  /* A banner saved with a faster refresh is moved to the fastest one allowed now */
+  useEffect(() => {
+    if (settings && typeof stored === 'number' && stored < refreshSeconds(stored)) {
+      settings.set('refreshInterval', refreshSeconds(stored));
+    }
+  }, [stored]);
   if (!settings || !tl) {
     return null;
   }
@@ -83,7 +91,7 @@ export const StatisticsTab = () => {
           <p>{tl('generator.settings.refresh_delay')}</p>
           <select
             aria-label={tl('generator.settings.refresh_delay')}
-            value={settings.get('refreshInterval')}
+            value={refreshSeconds(settings.get('refreshInterval'))}
             onChange={(event) => {
               settings.set(
                 'refreshInterval',
@@ -91,9 +99,6 @@ export const StatisticsTab = () => {
               );
             }}
           >
-            <option value={10}>
-              {tl('generator.settings.refresh_delay.quick', ['10'])}
-            </option>
             <option value={30}>
               {tl('generator.settings.refresh_delay.normal', ['30'])}
             </option>

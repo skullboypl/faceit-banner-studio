@@ -19,6 +19,7 @@ SAMPLE/*
 public/docs/
 public/en/
 # documentation prerendered per language
+public/de/
 public/uk/
 public/ru/
 public/tr/

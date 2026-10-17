@@ -16,7 +16,13 @@ export type IconName =
   | 'message'
   | 'eye'
   | 'eye-off'
-  | 'user';
+  | 'user'
+  | 'download'
+  | 'edit'
+  | 'save'
+  | 'trash'
+  | 'plus'
+  | 'check';
 
 const paths: Record<IconName, string> = {
   settings: 'M4 7h9m4 0h3M4 17h3m4 0h9M13 4v6M7 14v6',
@@ -38,6 +44,12 @@ const paths: Record<IconName, string> = {
   eye: 'M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
   'eye-off': 'M3 3l18 18M10.5 10.7A3 3 0 0 0 13.3 13.5M9.9 5.2A10 10 0 0 1 12 5c6.5 0 10 7 10 7a18 18 0 0 1-3.2 4.2M6.1 6.1C3.5 8 2 12 2 12a18 18 0 0 0 6.2 6.4',
   user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 20a7 7 0 0 1 14 0',
+  download: 'M12 4v11m0 0-4-4m4 4 4-4M5 20h14',
+  edit: 'M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4',
+  save: 'M5 4h11l3 3v13H5V4Zm3 0v5h7V4M8 20v-6h8v6',
+  trash: 'M5 7h14M10 7V4h4v3m-7 0 1 13h8l1-13M10 11v6m4-6v6',
+  plus: 'M12 5v14M5 12h14',
+  check: 'm5 12.5 4.5 4.5L19 7.5',
 };
 
 export const StudioIcon = ({ name }: { name: IconName }) => (

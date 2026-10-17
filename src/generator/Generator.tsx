@@ -7,6 +7,7 @@ import {
 } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LanguageContext, SettingsContext } from './contexts.ts';
+import { toQueryString, widgetQueryParams } from '../settings/widget-query';
 import { Widget } from '../../widget/src/widget/Widget.tsx';
 import {
   Language,
@@ -241,65 +242,10 @@ export const Generator = () => {
     }
   }, [searchParams, loadSettingsFromQuery, setSetting]);
 
-  const buildSettingsQueryParams = useCallback(() => {
-    const encodeBase64Utf8 = (value: string): string => {
-      const bytes = new TextEncoder().encode(value);
-      let binary = '';
-      for (const byte of bytes) {
-        binary += String.fromCharCode(byte);
-      }
-      return btoa(binary);
-    };
-
-    const params: {
-      [key: string]:
-        | string
-        | (string | undefined)
-        | number
-        | boolean
-        | string[];
-    } = {};
-
-    Object.entries(SETTINGS_DEFINITIONS).forEach(
-      ([setting, definition]: [string, SettingDefinition]) => {
-        if (!definition.query || definition.query.length === 0) return;
-        if (definition.requirements && definition.requirements.length !== 0) {
-          for (const requirement of definition.requirements) {
-            if (
-              getSetting(requirement.setting as SettingKey) !==
-              requirement.value
-            )
-              return;
-          }
-        }
-        if (getSetting(setting) === undefined) return;
-
-        if (setting === 'customInlineCSS') {
-          const inlineCss = String(getSetting(setting) || '').trim();
-          if (!inlineCss) {
-            return;
-          }
-          params[definition.query[0]] = encodeBase64Utf8(inlineCss);
-          return;
-        }
-
-        params[definition.query[0]] = getSetting(setting);
-      }
-    );
-
-    if (!params.lang) {
-      params.lang = language.id;
-    }
-
-    params.stats = [
-      settings.statSlot1,
-      settings.statSlot2,
-      settings.statSlot3,
-      settings.statSlot4,
-    ].toString();
-
-    return params;
-  }, [settings, language]);
+  const buildSettingsQueryParams = useCallback(
+    () => widgetQueryParams((key) => getSetting(key), language.id),
+    [getSetting, language]
+  );
 
   const generateWidgetURL = useCallback(() => {
     const params = buildSettingsQueryParams();
@@ -309,24 +255,7 @@ export const Generator = () => {
     );
   }, [buildSettingsQueryParams]);
 
-  const jsonToQuery = useCallback(
-    (params: {
-      [key: string]:
-        | string
-        | (string | undefined)
-        | number
-        | boolean
-        | string[];
-    }) => {
-      const query = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        if (value === undefined) return;
-        query.set(key, String(value));
-      });
-      return `?${query.toString()}`;
-    },
-    []
-  );
+  const jsonToQuery = toQueryString;
 
   const copySettingsURLToClipboard = useCallback(async () => {
     const params = buildSettingsQueryParams();

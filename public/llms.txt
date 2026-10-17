@@ -46,6 +46,20 @@ Home: https://faceitbanner.vxh.pl/
 - [Build and deployment](https://faceitbanner.vxh.pl/en/docs/dev/build-and-deploy/): How FACEIT Banner is built and deployed: the Dockerfile, CapRover, nginx, rendering the documentation to HTML, the sitemap and llms.txt.
 - [Contributing](https://faceitbanner.vxh.pl/en/docs/dev/contributing/): How to contribute to FACEIT Banner: adding translations, code style, commit convention, versioning and the licence.
 
+## Dokumentation (DE)
+
+- [FACEIT-Banner-Dokumentation](https://faceitbanner.vxh.pl/de/docs/): Dokumentation des FACEIT-Banner-Generators für OBS: 22 Solo-Layouts, 13 VERSUS-Layouts, Kader, Split, Match-Popup, die Challenger-Markierung, Größenoptionen und FAQ.
+- [So fügst du ein FACEIT-Banner zu OBS hinzu](https://faceitbanner.vxh.pl/de/docs/quick-start/): Schritt für Schritt: Erzeuge im FACEIT-Banner-Generator einen Link und füge ihn in OBS als Browserquelle hinzu. Dauert etwa zwei Minuten.
+- [Solo-Banner](https://faceitbanner.vxh.pl/de/docs/solo-banners/): Überblick über 22 FACEIT-2026-Solo-Banner-Layouts mit OBS-Größen: Prime, Showcase, Spotlight, Broadcast, Rail, Focus, Orbit, Halo, Pulse, Ticker, Slab, Gauge, Card, Reel, Ribbon, Tower, Dials, Marquee, Lineup, Sheet, Radar und Leiste, Live card.
+- [VERSUS-Banner](https://faceitbanner.vxh.pl/de/docs/versus-banners/): VERSUS-Modus: Vergleiche dein ELO und deine Statistiken im Stream mit einem Rivalen. 13 Layouts: Duel, Edge, Faceoff, Clash, Tug, Rivals, Tally, Overlay, Ladder, Matchup, Scoreboard, Cycle, Surge.
+- [Kader, Split und Popup](https://faceitbanner.vxh.pl/de/docs/roster-split-popup/): Ein Kader mit bis zu 10 Spielern mit Sitzungsbilanz und Statistiken aus 20 oder 30 Matches, ein Split in Radar und Kameraleiste und ein Match-Popup. In der Top 1000 wird das Level-Symbol zur Challenger-Markierung.
+- [Bannergröße und Anpassungsfähigkeit](https://faceitbanner.vxh.pl/de/docs/banner-size/): Größenmodi AUTO, Empfohlen und Manuell, Breiten- und Höhengrenzen für jedes Banner und empfohlene OBS-Quellengrößen.
+- [URL-Parameter des Widgets](https://faceitbanner.vxh.pl/de/docs/url-parameters/): Jeder URL-Parameter des FACEIT-Banner-Widgets: Namen, erlaubte Werte und Standardwerte. Praktisch, um einen Link von Hand zu bearbeiten.
+- [FACEIT-Banner für OBS](https://faceitbanner.vxh.pl/de/docs/faceit-banner-for-obs/): So machst du ein FACEIT-Banner für OBS: Ein kostenloser Generator zeigt Level, ELO, Siege und CS2-Statistiken. Ein Browserquellen-Link in zwei Minuten, keine Plugins nötig.
+- [FACEIT-ELO im Stream](https://faceitbanner.vxh.pl/de/docs/faceit-elo-on-stream/): So zeigst du das FACEIT-ELO in einem Twitch-, YouTube- oder Kick-Stream: ein Widget in einer OBS- oder Streamlabs-Browserquelle, eine Sitzung mit Siegen und Niederlagen, Challenger-Ranking.
+- [Was ist FACEIT Banner](https://faceitbanner.vxh.pl/de/docs/about/): FACEIT Banner: ein kostenloser, unabhängiger FACEIT-Widget-Generator für CS2-Streamer. Autor, Lizenz, unterstützte Software, Datenquelle und Einschränkungen.
+- [FAQ](https://faceitbanner.vxh.pl/de/docs/faq/): Die häufigsten Fragen zum FACEIT-Banner für OBS: ELO-Aktualisierung, Quellengröße, VERSUS-Modus, Animationen und Sicherheit.
+
 ## Документація (UK)
 
 - [Документація FACEIT Banner](https://faceitbanner.vxh.pl/uk/docs/): Документація генератора банерів FACEIT для OBS: 22 solo-макетів, 13 макетів VERSUS, склад, split, попап матчу, знак challenger, параметри розміру та FAQ.

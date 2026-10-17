@@ -7,6 +7,7 @@ import portuguese from '../translations/portuguese.json';
 import spanish from '../translations/spanish.json';
 import french from '../translations/french.json';
 import czech from '../translations/czech.json';
+import german from '../translations/german.json';
 import { DocsLang, hasDevDocs, makeT } from './docs-i18n';
 import { broadcastPresets } from '../../widget/src/styles/styles';
 import { getBannerSizeLimits } from '../../widget/src/utils/banner_size';
@@ -54,6 +55,7 @@ const TRANSLATIONS: Record<DocsLang, Record<string, string>> = {
   es: spanish as Record<string, string>,
   fr: french as Record<string, string>,
   cs: czech as Record<string, string>,
+  de: german as Record<string, string>,
 };
 
 const SLUGS: Record<'pl' | 'en', Record<string, string>> = {

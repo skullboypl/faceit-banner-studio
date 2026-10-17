@@ -92,6 +92,7 @@ const LLMS_HEADING: Record<DocsLang, string> = {
   es: '## Documentación (ES)',
   fr: '## Documentation (FR)',
   cs: '## Dokumentace (CS)',
+  de: '## Dokumentation (DE)',
 };
 for (const lang of LANGS) {
   llmsLines.push('', LLMS_HEADING[lang], '');

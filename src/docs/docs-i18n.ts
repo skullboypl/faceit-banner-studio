@@ -1,4 +1,5 @@
 import cs from './text/cs.json';
+import de from './text/de.json';
 import es from './text/es.json';
 import fr from './text/fr.json';
 import pt from './text/pt.json';
@@ -6,7 +7,7 @@ import ru from './text/ru.json';
 import tr from './text/tr.json';
 import uk from './text/uk.json';
 
-export const DOCS_LANGS = ['pl', 'en', 'uk', 'ru', 'tr', 'pt', 'es', 'fr', 'cs'] as const;
+export const DOCS_LANGS = ['pl', 'en', 'de', 'uk', 'ru', 'tr', 'pt', 'es', 'fr', 'cs'] as const;
 export type DocsLang = (typeof DOCS_LANGS)[number];
 
 /** Pages for developers exist in these two languages only; the other languages document how to use the studio. */
@@ -14,7 +15,7 @@ export const DEV_DOCS_LANGS: readonly DocsLang[] = ['pl', 'en'];
 export const hasDevDocs = (lang: DocsLang) => DEV_DOCS_LANGS.includes(lang);
 
 /** The English text of a docs sentence is its key; a language that lacks it shows the English text. */
-const TEXT: Record<Exclude<DocsLang, 'pl' | 'en'>, Record<string, string>> = { uk, ru, tr, pt, es, fr, cs };
+const TEXT: Record<Exclude<DocsLang, 'pl' | 'en'>, Record<string, string>> = { de, uk, ru, tr, pt, es, fr, cs };
 
 /** Tests and the extraction script collect the English texts the docs ask for. */
 let recorder: string[] | null = null;
@@ -26,6 +27,20 @@ export const stopRecording = () => {
   const result = recorder ?? [];
   recorder = null;
   return result;
+};
+
+/** Each language in its own words, as the studio's language menu writes them. */
+export const LANGUAGE_NAMES: Record<DocsLang, string> = {
+  pl: 'Polski',
+  en: 'English',
+  de: 'Deutsch',
+  uk: 'Українська',
+  ru: 'Русский',
+  tr: 'Türkçe',
+  pt: 'Português',
+  es: 'Español',
+  fr: 'Français',
+  cs: 'Čeština',
 };
 
 export const missingTranslations = (lang: Exclude<DocsLang, 'pl' | 'en'>, keys: string[]) => keys.filter((key) => !(key in TEXT[lang]));

@@ -1758,6 +1758,50 @@ dialog.generated .obs-frame {
   .my-banners-actions { display: flex; flex-wrap: wrap; gap: 6px; button { width: auto; margin: 0; padding: 4px 10px; font-size: 11px; } .danger { color: #ff8a8a; } }
 }
 
+/* Saved banners: a live picture on top, the name below, coloured buttons with icons */
+.my-banners {
+  .my-banners-item { padding: 0; overflow: hidden; }
+  .banner-preview {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: #0e0e10 repeating-conic-gradient(#18181b 0% 25%, #0e0e10 0% 50%) 50% / 16px 16px;
+    border-bottom: 1px solid #26262a;
+    iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      border: 0;
+      background: transparent;
+      transform-origin: 0 0;
+      pointer-events: none;
+    }
+  }
+  .my-banners-meta { margin: 0; padding: 10px 12px 0; strong { font-size: 14px; } }
+  .my-banners-rename { margin: 0; padding: 10px 12px 0; }
+  .my-banners-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 10px 12px 12px;
+    button { width: 100%; }
+  }
+  button.has-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 32px;
+    font-weight: 600;
+    .studio-icon { width: 15px; height: 15px; flex: 0 0 auto; }
+  }
+  button.is-load { color: #fff; background: #ff5900; border-color: #ff5900; &:hover:not(:disabled) { background: #ff7226; border-color: #ff7226; } }
+  button.is-rename { color: #8ab4ff; background: #101826; border-color: #2b4170; &:hover:not(:disabled) { background: #16233a; border-color: #4a70c4; } }
+  button.is-overwrite { color: #7dffa8; background: #0f1d15; border-color: #2f6b45; &:hover:not(:disabled) { background: #14291d; border-color: #47a468; } }
+  button.is-delete { color: #ff8a8a; background: #1f1111; border-color: #6b2f2f; &:hover:not(:disabled) { background: #2d1717; border-color: #b04848; } }
+  .my-banners-save button.primary-action { display: inline-flex; align-items: center; gap: 6px; .studio-icon { width: 15px; height: 15px; } }
+}
+
 /* Top bar: account area and language dropdown */
 .studio-topbar .topbar-right { display: inline-flex; align-items: center; gap: 18px; }
 .account-menu { position: relative; }

@@ -1,5 +1,6 @@
 import { CHROME, categoryLabel, navLabel } from './chrome';
-import { DOCS_LANGS, hasDevDocs } from './docs-i18n';
+import { DOCS_LANGS, LANGUAGE_NAMES, hasDevDocs } from './docs-i18n';
+import { LANGUAGE_MENU_SCRIPT, LanguageMenu } from './LanguageMenu';
 import {
   CATEGORIES,
   DOCS_UPDATED,
@@ -363,19 +364,11 @@ export const DocsPage = ({
                 )}
               </span>
               <span className="topbar-actions">
-                <span className="langs">
-                  {versions.map((code) =>
-                    code === lang ? (
-                      <span key={code} className="lang is-current" aria-current="true">
-                        {code.toUpperCase()}
-                      </span>
-                    ) : (
-                      <a key={code} href={docsPath(code, page.id)} hrefLang={code} lang={code} className="lang">
-                        {code.toUpperCase()}
-                      </a>
-                    )
-                  )}
-                </span>
+                <LanguageMenu
+                  label={chrome.language}
+                  current={lang}
+                  items={versions.map((code) => ({ code, name: LANGUAGE_NAMES[code], href: docsPath(code, page.id) }))}
+                />
                 <a className="obs-tag" href="/">
                   OBS STUDIO
                 </a>
@@ -417,6 +410,7 @@ export const DocsPage = ({
             </footer>
           </div>
         </div>
+        <script dangerouslySetInnerHTML={{ __html: LANGUAGE_MENU_SCRIPT }} />
       </body>
     </html>
   );
