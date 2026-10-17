@@ -22,8 +22,7 @@ export type IconName =
   | 'save'
   | 'trash'
   | 'plus'
-  | 'check'
-  | 'broadcast';
+  | 'check';
 
 const paths: Record<IconName, string> = {
   settings: 'M4 7h9m4 0h3M4 17h3m4 0h9M13 4v6M7 14v6',
@@ -51,7 +50,6 @@ const paths: Record<IconName, string> = {
   trash: 'M5 7h14M10 7V4h4v3m-7 0 1 13h8l1-13M10 11v6m4-6v6',
   plus: 'M12 5v14M5 12h14',
   check: 'm5 12.5 4.5 4.5L19 7.5',
-  broadcast: 'M8.5 8.5a5 5 0 0 0 0 7M5.5 5.5a9 9 0 0 0 0 13M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z',
 };
 
 export const StudioIcon = ({ name }: { name: IconName }) => (

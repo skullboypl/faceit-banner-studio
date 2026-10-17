@@ -78,7 +78,7 @@ export const MobileMenu = (props: Props) => {
             </button>
           ))}
           <a className="mobile-menu-item" href="/streamers">
-            <StudioIcon name="broadcast" />
+            <i className="stream-menu-dot" aria-hidden="true" />
             <span>{tl('streamers.title')}</span>
           </a>
           <a className="mobile-menu-item mobile-menu-item--hub" href="https://vxh.pl/">

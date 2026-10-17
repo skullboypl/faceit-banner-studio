@@ -716,16 +716,6 @@ export const Generator = () => {
         />
         <header className={`studio-sidebar ${sidebarExpanded ? 'is-expanded' : 'is-collapsed'}${compactSidebar ? ' is-compact' : ''}`}>
           <StudioBrand />
-          <button
-            type="button"
-            className="sidebar-collapse-toggle"
-            aria-label={sidebarExpanded ? tl('menu.close') : tl('menu.open')}
-            title={sidebarExpanded ? tl('menu.close') : tl('menu.open')}
-            aria-expanded={sidebarExpanded}
-            onClick={toggleSidebar}
-          >
-            <StudioIcon name="chevron" />
-          </button>
           <p className="nav-caption">{tl('studio.workspace')}</p>
           {import.meta.env.VITE_IS_TESTING && (
             <InfoBox
@@ -741,6 +731,17 @@ export const Generator = () => {
             />
           )}
           <nav className={'tabs'} aria-label={tl('studio.workspace')}>
+            <button
+              type="button"
+              className="sidebar-collapse-toggle"
+              aria-label={sidebarExpanded ? tl('menu.close') : tl('menu.open')}
+              title={sidebarExpanded ? tl('menu.close') : tl('menu.open')}
+              aria-expanded={sidebarExpanded}
+              onClick={toggleSidebar}
+            >
+              <StudioIcon name="chevron" />
+              <span>{sidebarExpanded ? tl('menu.close') : tl('menu.open')}</span>
+            </button>
             {tabs.map((tab, index) => {
               return (
                 <button
@@ -769,7 +770,7 @@ export const Generator = () => {
               aria-current={onStreamers ? 'page' : undefined}
               onClick={() => setCompactSidebarOpen(false)}
             >
-              <StudioIcon name="broadcast" />
+              <i className="stream-menu-dot" aria-hidden="true" />
               <span>{tl('streamers.title')}</span>
               <StudioIcon name="chevron" />
             </Link>
