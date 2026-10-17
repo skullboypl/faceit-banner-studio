@@ -188,16 +188,21 @@ export function LiveRanking() {
                             <TokenIcon />
                           </span>
                         )}
-                        {typeof player.twitch === 'string' && /^[A-Za-z0-9_]{3,25}$/.test(player.twitch) && (
+                        {player.twitchStatus?.state !== 'missing' && typeof player.twitch === 'string' && /^[A-Za-z0-9_]{3,25}$/.test(player.twitch) && (
                           <a
                             className="live-twitch"
+                            data-state={player.twitchStatus?.state}
                             href={`https://www.twitch.tv/${player.twitch}`}
                             target="_blank"
                             rel="noreferrer noopener"
-                            aria-label={t('live.twitch', [player.twitch])}
-                            title={t('live.twitch', [player.twitch])}
+                            aria-label={t(player.twitchStatus?.state === 'live' ? 'live.twitch_live' : player.twitchStatus?.state === 'offline' ? 'live.twitch_offline' : 'live.twitch', [player.twitch, String(player.twitchStatus?.viewers ?? '—')])}
+                            title={t(player.twitchStatus?.state === 'live' ? 'live.twitch_live' : player.twitchStatus?.state === 'offline' ? 'live.twitch_offline' : 'live.twitch', [player.twitch, String(player.twitchStatus?.viewers ?? '—')])}
                           >
                             <TwitchIcon />
+                            {player.twitchStatus?.state === 'live' && (
+                              <><i className="live-twitch-dot" aria-hidden="true" /><span>{player.twitchStatus.viewers?.toLocaleString() ?? '—'}</span></>
+                            )}
+                            {player.twitchStatus?.state === 'offline' && <span>OFFLINE</span>}
                           </a>
                         )}
                         {player.confirmed === true && (

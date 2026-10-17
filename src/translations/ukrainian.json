@@ -19,6 +19,8 @@
   "live.plan.esea": "Учасник ESEA",
   "live.plan.token": "Super Match Token",
   "live.twitch": "Twitch: {{0}}",
+  "live.twitch_live": "Twitch: {{0}} — LIVE, {{1}} глядачів",
+  "live.twitch_offline": "Twitch: {{0}} — OFFLINE",
   "live.loading": "Завантаження рейтингу…",
   "live.stale": "Не вдалося оновити рейтинг. Показано останні доступні дані.",
   "live.copy": "Дані гравців — це збережена копія на сервері, що оновлюється приблизно кожні {{0}} хв (станом на {{1}}). ELO та рівень можуть відрізнятися від банера на кілька хвилин.",

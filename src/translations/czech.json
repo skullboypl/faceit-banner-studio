@@ -19,6 +19,8 @@
   "live.plan.esea": "Člen ESEA",
   "live.plan.token": "Super Match Token",
   "live.twitch": "Twitch: {{0}}",
+  "live.twitch_live": "Twitch: {{0}} — LIVE, {{1}} diváků",
+  "live.twitch_offline": "Twitch: {{0}} — OFFLINE",
   "live.loading": "Načítání žebříčku…",
   "live.stale": "Žebříček se nepodařilo obnovit. Zobrazují se poslední dostupná data.",
   "live.copy": "Data hráčů jsou uložená kopie na serveru, obnovovaná zhruba každých {{0}} min (stav z {{1}}). ELO a úroveň se mohou od banneru lišit o několik minut.",

@@ -93,6 +93,7 @@ export type LivePlayer = {
   token?: boolean;
   /** Channel name of the Twitch account linked on FACEIT. */
   twitch?: string;
+  twitchStatus?: { state: 'live' | 'offline' | 'missing' | 'unknown'; viewers?: number };
   /** True when this FACEIT account has signed in to the studio. No date and no account id. */
   confirmed?: boolean;
   elo?: number;

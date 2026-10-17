@@ -19,6 +19,8 @@
   "live.plan.esea": "ESEA üyesi",
   "live.plan.token": "Super Match Token",
   "live.twitch": "Twitch: {{0}}",
+  "live.twitch_live": "Twitch: {{0}} — LIVE, {{1}} izleyici",
+  "live.twitch_offline": "Twitch: {{0}} — OFFLINE",
   "live.loading": "Sıralama yükleniyor…",
   "live.stale": "Sıralama yenilenemedi. Son kullanılabilir veriler gösteriliyor.",
   "live.copy": "Oyuncu verileri sunucuda saklanan bir kopyadır ve yaklaşık her {{0}} dakikada bir yenilenir ({{1}} itibarıyla). ELO ve seviye, bannerdan birkaç dakika farklı olabilir.",

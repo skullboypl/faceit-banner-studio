@@ -18,6 +18,25 @@ const players = Array.from({ length: 16 }, (_, index) => ({
 }));
 
 describe('LiveRanking', () => {
+  test('shows live viewers including zero, offline label, and hides deleted channels', async () => {
+    vi.mocked(getLiveBoard).mockResolvedValue({
+      online: 4, ranked: 4, windowSeconds: 135,
+      players: [
+        { ...players[0], twitch: 'livechannel', twitchStatus: { state: 'live', viewers: 0 } },
+        { ...players[1], twitch: 'offlinechannel', twitchStatus: { state: 'offline' } },
+        { ...players[2], twitch: 'deletedchannel', twitchStatus: { state: 'missing' } },
+        { ...players[3], twitch: 'unknownchannel', twitchStatus: { state: 'unknown' } },
+      ],
+    });
+    renderWithApp(<LiveRanking />);
+    const live = await screen.findByRole('link', { name: 'Twitch: livechannel — LIVE, 0 widzów' });
+    expect(live.textContent).toBe('0');
+    expect(live.querySelector('.live-twitch-dot')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Twitch: offlinechannel — OFFLINE' }).textContent).toBe('OFFLINE');
+    expect(screen.queryByRole('link', { name: /deletedchannel/ })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Twitch: unknownchannel' }).textContent).toBe('');
+  });
+
   beforeEach(() => {
     vi.mocked(getLiveBoard).mockResolvedValue({
       online: 40,

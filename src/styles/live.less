@@ -189,7 +189,18 @@ html.generator .settings.live-panel {
 }
 .live-twitch {
   color: #9146ff;
+  gap: 5px;
+  font-size: 10px;
+  line-height: 1.2;
   transition: transform 0.15s ease, color 0.15s ease;
+}
+.live-twitch[data-state='offline'] { color: #929aaa; }
+.live-twitch[data-state='live'] { color: #5ee69b; }
+.live-twitch-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #5ee69b;
 }
 .live-twitch:hover,
 .live-twitch:focus-visible {

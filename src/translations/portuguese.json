@@ -19,6 +19,8 @@
   "live.plan.esea": "Membro da ESEA",
   "live.plan.token": "Super Match Token",
   "live.twitch": "Twitch: {{0}}",
+  "live.twitch_live": "Twitch: {{0}} — LIVE, {{1}} espectadores",
+  "live.twitch_offline": "Twitch: {{0}} — OFFLINE",
   "live.loading": "Carregando ranking…",
   "live.stale": "Não foi possível atualizar o ranking. Mostrando os últimos dados disponíveis.",
   "live.copy": "Os dados dos jogadores são uma cópia salva no servidor, renovada a cada {{0}} min, aproximadamente (em {{1}}). ELO e nível podem diferir do banner em alguns minutos.",

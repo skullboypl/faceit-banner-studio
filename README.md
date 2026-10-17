@@ -128,3 +128,19 @@ Zgodnie z MIT, w dystrybucji zachowujemy oryginalne informacje o prawach autorsk
 Zrobione przez [Skull](https://github.com/skullboypl) · [Twitch](https://www.twitch.tv/skullboypl) · [faceitbanner.vxh.pl](https://faceitbanner.vxh.pl/)
 
 </div>
+
+## Status Twitch na `/live`
+
+Serwer odczytuje kanały podpięte w profilach FACEIT i sprawdza je przez prywatne API skullboy.pl. W `.env` (lokalnie) i zmiennych aplikacji CapRover ustaw:
+
+```dotenv
+custom_twitch_api=true
+custom_twitch_api_url=https://skullboy.pl
+custom_twitch_api_key=
+```
+
+Wpisz do `custom_twitch_api_key` wspólny klucz używany przez SkullBota. `.env.caprover` zawiera te same pola do konfiguracji produkcji. Klucz jest wysyłany tylko z serwera w nagłówku Bearer; nie potrzebujesz danych Twitch Helix w Faceitbanner.
+
+Status jest sprawdzany przy pobieraniu listy, z osobnym cache 60 sekund, deduplikacją loginów i partiami do 100 kanałów. Nie zmienia to cache profili FACEIT. LIVE pokazuje zieloną kropkę i liczbę widzów (również 0), OFFLINE — ikonę Twitch z napisem. Błąd lub brak wyniku pozostawia sam link bez deklarowania stanu. Wyłączenie integracji lub brak klucza także pozostawia zwykłe linki.
+
+Ukrywanie usuniętych/przemianowanych kanałów wymaga wdrożenia rozszerzenia API w SKULLBOY.PL: wpis w `streams[login]` ma dodatkowe `exists: false`. API sprawdza istnienie przez Helix `/users` i trzyma tę informację przez godzinę. Starsze API nadal obsługuje LIVE/OFFLINE, ale nie pozwala rozpoznać nieistniejących kanałów.

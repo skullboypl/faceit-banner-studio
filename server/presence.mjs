@@ -1,3 +1,4 @@
+import { enrichTwitch } from './twitch-live.mjs';
 import { clientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
 import { fillFromPlayerId, knownImageUrl, loadImage, playerIdFromReferer, publicRanking, sanitizeInfo } from './live.mjs';
@@ -278,7 +279,7 @@ async function buildLiveBoard() {
 }
 
 /** Public board: nick, ELO, level, country. No session id and no address. */
-export async function getLiveBoard() {
+async function getCachedLiveBoard() {
   if (fresh(boardCache, boardCache?.partial ? Math.min(boardTtlMs(), PARTIAL_TTL_MS) : boardTtlMs())) return boardCache.body;
   if (!boardInflight) {
     boardInflight = buildLiveBoard().finally(() => {
@@ -286,6 +287,11 @@ export async function getLiveBoard() {
     });
   }
   return boardInflight;
+}
+
+export async function getLiveBoard() {
+  const board = await getCachedLiveBoard();
+  return { ...board, players: await enrichTwitch(board.players) };
 }
 
 const trustedHops = () => Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS) || 1);
