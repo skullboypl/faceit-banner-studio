@@ -1199,31 +1199,30 @@ html.generator .settings .roster-editor {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   margin-top: 14px;
-  padding: 14px 16px;
-  background: linear-gradient(135deg, #2c1608, #17120f);
-  border: 1px solid #ff6b18;
-  border-radius: 12px;
-  box-shadow: 0 0 0 1px #ff6b1828, 0 10px 28px #ff590024;
+  padding: 12px 14px;
+  background: #1a1614;
+  border: 1px solid #ff5900;
+  border-radius: 8px;
 
   .look-cta-text {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
     min-width: 0;
     flex: 1 1 140px;
     small {
       font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.4px;
       text-transform: uppercase;
-      color: #ffb48a;
+      color: #c9a090;
     }
     strong {
-      font-size: 16px;
-      font-weight: 800;
-      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      color: #f0f0f2;
       line-height: 1.2;
     }
   }
@@ -1231,28 +1230,35 @@ html.generator .settings .roster-editor {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
     flex: 0 0 auto;
     width: auto;
-    min-width: 168px;
-    min-height: 44px;
-    height: auto;
+    min-width: 0;
+    min-height: 39px;
+    height: 39px;
     margin: 0;
-    padding: 10px 18px;
-    font-size: 14px;
-    font-weight: 800;
+    padding: 0 14px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
     white-space: nowrap;
     color: #fff;
     background: #ff5900;
-    border: 0;
-    border-radius: 10px;
-    box-shadow: 0 6px 18px #ff590055;
+    border: 1px solid #ff5900;
+    border-radius: 5px;
+    box-shadow: none;
     cursor: pointer;
-    .studio-icon { width: 16px; height: 16px; }
+    transform: none;
+    .studio-icon { width: 14px; height: 14px; }
     &:hover,
     &:focus-visible {
-      background: #ff7226;
-      box-shadow: 0 8px 22px #ff590070;
+      color: #fff;
+      background: #ff701f;
+      border-color: #ff701f;
+    }
+    &:active {
+      background: #e65000;
+      border-color: #e65000;
     }
   }
 }

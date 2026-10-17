@@ -13,7 +13,11 @@ export const defaultSettings = () =>
 
 /** Renders with the real Polish translations and a spy-able settings context. */
 export function renderWithApp(ui: ReactElement, settings: Settings = defaultSettings(), language = 'pl') {
-  const set = vi.fn(() => true);
+  const set = vi.fn((key: string, value?: unknown) => {
+    void key;
+    void value;
+    return true;
+  });
   const lang = languages.find((entry) => entry.id === language)!;
   const tl = (text: string, args?: string[]) => translate(lang, text, args);
   const view = render(
