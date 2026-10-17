@@ -8,6 +8,8 @@ const GITHUB_REPO_URL =
 
 /** Author channel; the sidebar credit and the footer point here instead of a CS2 blurb in the rail. */
 export const SKULL_YOUTUBE_URL = 'https://www.youtube.com/@skullboypl';
+export const SKULL_X_URL = 'https://x.com/skullboypl';
+export const SMOOTH_WIZARD_URL = 'https://smoothwizard.com/';
 
 export const Footer = () => {
   const tl = useContext(LanguageContext);

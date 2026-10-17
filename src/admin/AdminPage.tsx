@@ -16,6 +16,7 @@ import {
 } from './AdminNavigation';
 import { AdminCatalog } from './AdminCatalog';
 import { AdminCache } from './AdminCache';
+import { AdminPublications } from './AdminPublications';
 
 type State =
   | { status: 'loading' | 'guest' | 'error' }
@@ -231,6 +232,7 @@ export const AdminPage = () => {
                 <AdminLogins logins={state.overview.logins} />
               )}
               {tab === 'queue' && <AdminQueue user={state.user} />}
+              {tab === 'gallery' && <AdminPublications />}
               {tab === 'images' && <AdminProfileImages />}
               {tab === 'system' && (
                 <>

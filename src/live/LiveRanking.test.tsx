@@ -29,10 +29,10 @@ describe('LiveRanking', () => {
       ],
     });
     renderWithApp(<LiveRanking />);
-    const live = await screen.findByRole('link', { name: 'Twitch: livechannel — LIVE, 0 widzów' });
+    const live = await screen.findByRole('link', { name: 'Twitch: livechannel - LIVE, 0 widzów' });
     expect(live.textContent).toBe('0');
     expect(live.querySelector('.live-twitch-dot')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Twitch: offlinechannel — OFFLINE' }).textContent).toBe('OFFLINE');
+    expect(screen.getByRole('link', { name: 'Twitch: offlinechannel - OFFLINE' }).textContent).toBe('OFFLINE');
     expect(screen.queryByRole('link', { name: /deletedchannel/ })).toBeNull();
     expect(screen.getByRole('link', { name: 'Twitch: unknownchannel' }).textContent).toBe('');
   });

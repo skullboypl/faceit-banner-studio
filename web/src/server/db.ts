@@ -139,6 +139,36 @@ export async function migrate(pool: pg.Pool): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         PRIMARY KEY (image_id, reporter_guid)
       );
+      CREATE TABLE IF NOT EXISTS banner_publications (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        banner_id UUID NOT NULL REFERENCES saved_banners(id) ON DELETE CASCADE,
+        author_guid TEXT NOT NULL REFERENCES users(guid) ON DELETE CASCADE,
+        title VARCHAR(80) NOT NULL,
+        body VARCHAR(500) NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending'
+          CHECK (status IN ('pending', 'approved', 'declined')),
+        settings JSONB NOT NULL,
+        schema_version INTEGER NOT NULL DEFAULT 1,
+        votes INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        reviewed_at TIMESTAMPTZ
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS banner_publications_live
+        ON banner_publications (banner_id) WHERE status IN ('pending', 'approved');
+      CREATE INDEX IF NOT EXISTS banner_publications_public
+        ON banner_publications (votes DESC, created_at DESC) WHERE status = 'approved';
+      CREATE INDEX IF NOT EXISTS banner_publications_author
+        ON banner_publications (author_guid, created_at DESC);
+      CREATE INDEX IF NOT EXISTS banner_publications_queue
+        ON banner_publications (status, created_at DESC);
+      CREATE TABLE IF NOT EXISTS banner_publication_votes (
+        publication_id UUID NOT NULL REFERENCES banner_publications(id) ON DELETE CASCADE,
+        user_guid TEXT NOT NULL REFERENCES users(guid) ON DELETE CASCADE,
+        value SMALLINT NOT NULL CHECK (value IN (-1, 1)),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (publication_id, user_guid)
+      );
     `);
   } finally {
     await client.query('SELECT pg_advisory_unlock(727001)').catch(() => undefined);

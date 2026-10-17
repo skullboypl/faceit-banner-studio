@@ -872,6 +872,8 @@
   "banners.loading": "Chargement…",
   "banners.limit_reached": "Vous avez atteint la limite de bannières enregistrées.",
   "banners.load_failed": "Impossible de charger vos bannières.",
+  "catalog.login_vote": "Connectez-vous avec FACEIT pour voter les bannières.",
+  "catalog.load": "Charger cette bannière",
   "donate.link": "Soutenir le projet",
   "donate.hint": "entretien du serveur",
   "account.menu": "Menu du compte",

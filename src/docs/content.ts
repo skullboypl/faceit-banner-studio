@@ -43,7 +43,7 @@ export type DocsPageData = {
 
 export const SITE_URL = 'https://faceitbanner.vxh.pl';
 /** Bump when the documentation changes; used for lastmod and dateModified. */
-export const DOCS_UPDATED = '2026-10-15';
+export const DOCS_UPDATED = '2026-10-18';
 
 const TRANSLATIONS: Record<DocsLang, Record<string, string>> = {
   pl: polish as Record<string, string>,
@@ -66,6 +66,7 @@ const SLUGS: Record<'pl' | 'en', Record<string, string>> = {
     solo: 'banery-solo',
     versus: 'banery-versus',
     modes: 'sklad-split-popup',
+    catalog: 'publiczne-banery',
     size: 'rozmiar-banera',
     stream: 'elo-faceit-na-streamie',
     params: 'parametry-url',
@@ -86,6 +87,7 @@ const SLUGS: Record<'pl' | 'en', Record<string, string>> = {
     solo: 'solo-banners',
     versus: 'versus-banners',
     modes: 'roster-split-popup',
+    catalog: 'public-banners',
     size: 'banner-size',
     stream: 'faceit-elo-on-stream',
     params: 'url-parameters',
@@ -101,7 +103,7 @@ const SLUGS: Record<'pl' | 'en', Record<string, string>> = {
   },
 };
 
-export const USER_PAGE_IDS = ['index', 'obs', 'quick-start', 'solo', 'versus', 'modes', 'size', 'stream', 'params', 'faq', 'about'] as const;
+export const USER_PAGE_IDS = ['index', 'obs', 'quick-start', 'solo', 'versus', 'modes', 'catalog', 'size', 'stream', 'params', 'faq', 'about'] as const;
 export const DEV_PAGE_IDS = ['dev', 'dev-setup', 'dev-settings', 'dev-layouts', 'dev-widget', 'dev-build', 'dev-contributing'] as const;
 export const PAGE_IDS = [...USER_PAGE_IDS, ...DEV_PAGE_IDS] as const;
 
@@ -113,7 +115,7 @@ export const CATEGORIES: {
   pages: readonly string[];
 }[] = [
   { audience: 'user', id: 'start', label: { pl: 'Start', en: 'Start' }, pages: ['index', 'obs', 'quick-start'] },
-  { audience: 'user', id: 'banners', label: { pl: 'Banery', en: 'Banners' }, pages: ['solo', 'versus', 'modes', 'size'] },
+  { audience: 'user', id: 'banners', label: { pl: 'Banery', en: 'Banners' }, pages: ['solo', 'versus', 'modes', 'catalog', 'size'] },
   { audience: 'user', id: 'reference', label: { pl: 'Informacje', en: 'Reference' }, pages: ['stream', 'params', 'faq', 'about'] },
   { audience: 'dev', id: 'dev-intro', label: { pl: 'Wprowadzenie', en: 'Introduction' }, pages: ['dev', 'dev-setup'] },
   { audience: 'dev', id: 'dev-develop', label: { pl: 'Rozwój', en: 'Development' }, pages: ['dev-settings', 'dev-layouts', 'dev-widget'] },
@@ -229,8 +231,8 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
         'FACEIT Banner documentation – ELO and stats widget for OBS'
       ),
       description: t(
-        `Dokumentacja generatora banerów FACEIT do OBS: ${COUNTS.solo} układów solo, ${COUNTS.versus} układów VERSUS, skład, split, popup meczu, znaczek challengera, rozmiar i FAQ.`,
-        'Documentation for the FACEIT banner generator for OBS: {{solo}} solo layouts, {{versus}} VERSUS layouts, roster, split, match popup, the challenger mark, size options and FAQ.'
+        `Dokumentacja generatora banerów FACEIT do OBS: ${COUNTS.solo} układów solo, ${COUNTS.versus} układów VERSUS, skład, split, popup meczu, publiczne banery społeczności, znaczek challengera, rozmiar i FAQ.`,
+        'Documentation for the FACEIT banner generator for OBS: {{solo}} solo layouts, {{versus}} VERSUS layouts, roster, split, match popup, public community banners, the challenger mark, size options and FAQ.'
       ),
       h1: t('Dokumentacja FACEIT Banner', 'FACEIT Banner documentation'),
       intro: t(
@@ -249,6 +251,7 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
             t('rozmiar banera AUTO, Zalecane lub Ręcznie z limitami per baner', 'banner size AUTO, Recommended or Manual with limits per banner'),
             t('animowane banery, poświata levelu, kolory akcentu i zaokrąglenie rogów', 'animated banners, level glow, accent colours and corner radius'),
             t('wygląd klasyczny dla starszych linków', 'the classic look for older links'),
+            t('publiczne banery społeczności z ocenami jak na Reddicie i weryfikacją admina', 'public community banners with Reddit-style votes and an admin review'),
           ],
         },
         { type: 'h2', id: 'start', text: t('Od czego zacząć', 'Where to start') },
@@ -267,6 +270,7 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
             { title: t('Banery solo', 'Solo banners'), text: t('Wszystkie układy z rozmiarami.', 'Every layout with its sizes.'), meta: docsPath(lang, 'solo') },
             { title: t('Banery VERSUS', 'VERSUS banners'), text: t('Rywal, różnica ELO i porównanie statystyk.', 'Rival, ELO gap and statistics comparison.'), meta: docsPath(lang, 'versus') },
             { title: t('Skład, split i popup', 'Roster, split and popup'), text: t('Lista graczy, dwa źródła OBS i karta meczu.', 'A player list, two OBS sources and a match card.'), meta: docsPath(lang, 'modes') },
+            { title: t('Publiczne banery', 'Public banners'), text: t('Galeria overlayów społeczności z ocenami.', 'A community overlay gallery with votes.'), meta: docsPath(lang, 'catalog') },
             { title: t('Rozmiar banera', 'Banner size'), text: t('AUTO, Zalecane, Ręcznie i limity.', 'AUTO, Recommended, Manual and limits.'), meta: docsPath(lang, 'size') },
             { title: t('Parametry linku', 'URL parameters'), text: t('Pełna lista ustawień w adresie.', 'The full list of settings in the address.'), meta: docsPath(lang, 'params') },
             { title: t('ELO na streamie', 'ELO on stream'), text: t('OBS, Streamlabs, Twitch, Kick.', 'OBS, Streamlabs, Twitch, Kick.'), meta: docsPath(lang, 'stream') },
@@ -435,6 +439,91 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
           text: t(
             'Na VERSUS, składzie, splicie i popupie obok ikony poziomu nie ma osobnego znaczka. Gdy gracz ma poziom 10 i miejsce 1–1000 w rankingu regionu, sama ikona poziomu jest challengerem: miejsca 1, 2 i 3 dostają kolor podium, miejsca 4–1000 czerwony znaczek. Gracz, którego FACEIT zdjął z drabinki, zostaje przy zwykłej ikonie poziomu 10.',
             'On VERSUS, the roster, the split and the popup there is no separate badge beside the level icon. When a player is level 10 and ranked 1–1000 in the region, the level icon itself is the challenger mark: places 1, 2 and 3 use the podium colours, places 4–1000 the red mark. A player FACEIT has dropped from the ladder keeps the plain level 10 icon.'
+          ),
+        },
+      ],
+    },
+    {
+      id: 'catalog',
+      slug: slugOf(lang, 'catalog'),
+      title: t(
+        'Publiczne banery FACEIT – galeria overlayów do OBS',
+        'Public FACEIT banners – community OBS overlay gallery'
+      ),
+      description: t(
+        'Publiczne banery FACEIT: publikuj swój overlay z generatora, czekaj na krótką weryfikację admina, oceniaj układy jak na Reddicie i bierz gotowe wyglądy do OBS.',
+        'Public FACEIT banners: publish your overlay from the generator, wait for a short admin review, vote on layouts like on Reddit and take ready looks into OBS.'
+      ),
+      h1: t('Publiczne banery', 'Public banners'),
+      intro: t(
+        'Zakładka Publiczne to galeria overlayów FACEIT, które gracze udostępniają ze studia. Każda karta ma podgląd, tytuł, opis, autora i oceny w górę albo w dół. Na listę trafia tylko to, co sprawdzi administrator.',
+        'The Public tab is a gallery of FACEIT overlays that players share from the studio. Each card has a preview, a title, a description, the author and up or down votes. Only banners an admin has checked reach the public list.'
+      ),
+      blocks: [
+        { type: 'h2', id: 'what', text: t('Czym są publiczne banery', 'What public banners are') },
+        {
+          type: 'p',
+          text: t(
+            'To katalog wyglądów, nie nowy widżet. Baner nadal pokazuje Twoje dane FACEIT w OBS. Na liście publicznej widzisz, jak inni złożyli układ: solo, VERSUS, skład, split albo popup, z tytułem i krótkim opisem.',
+            'It is a catalogue of looks, not a new widget. The banner still shows your FACEIT data in OBS. On the public list you see how others built a layout: solo, VERSUS, roster, split or popup, with a title and a short description.'
+          ),
+        },
+        {
+          type: 'ul',
+          items: [
+            t('podgląd w zalecanym rozmiarze OBS, żeby od razu było widać układ', 'a preview at the recommended OBS size, so the layout is visible at a glance'),
+            t('kto dodał baner i kiedy', 'who added the banner and when'),
+            t('sortowanie: Najlepsze (głosy) albo Najnowsze', 'sorting: Top (votes) or New'),
+            t('Twoje zgłoszenia ze statusem: oczekuje, opublikowany albo odrzucony', 'Your submissions with a status: pending, published or declined'),
+          ],
+        },
+        { type: 'h2', id: 'publish', text: t('Jak opublikować baner', 'How to publish a banner') },
+        {
+          type: 'ol',
+          items: [
+            t('Zaloguj się w generatorze kontem FACEIT.', 'Log in to the generator with a FACEIT account.'),
+            t('W zakładce Moje banery zapisz układ, który chcesz pokazać.', 'In the My banners tab save the layout you want to share.'),
+            t('Kliknij „Generuj link OBS”, jeśli potrzebujesz adresu do sceny.', 'Click "Generate OBS link" if you need the address for the scene.'),
+            t('Kliknij „Opublikuj”, wpisz tytuł i krótki opis układu, wyślij do weryfikacji.', 'Click "Publish", enter a title and a short description of the layout, then send it for review.'),
+          ],
+        },
+        {
+          type: 'p',
+          text: t(
+            'Administrator sprawdza tytuł, opis i wygląd. Do tego czasu baner zostaje na liście Twoich zgłoszeń ze statusem oczekuje i nie widać go publicznie.',
+            'An admin checks the title, the description and the look. Until then the banner stays on Your submissions with the pending status and is not public.'
+          ),
+        },
+        { type: 'h2', id: 'votes', text: t('Oceny jak na Reddicie', 'Votes like on Reddit') },
+        {
+          type: 'p',
+          text: t(
+            'Zalogowany gracz oddaje jeden głos w górę albo w dół i może go zmienić. Najlepsze układa listę według sumy głosów, Najnowsze pokazuje ostatnio zatwierdzone banery.',
+            'A logged-in player casts one up or down vote and can change it. Top sorts the list by the vote score, New shows the latest approved banners.'
+          ),
+        },
+        { type: 'h2', id: 'status', text: t('Statusy zgłoszenia', 'Submission statuses') },
+        {
+          type: 'ul',
+          items: [
+            t('Oczekuje - czeka na admina, widać tylko u Ciebie.', 'Pending — waiting for an admin, visible only to you.'),
+            t('Opublikowany - jest na liście publicznej i można go oceniać.', 'Published — it is on the public list and can be voted on.'),
+            t('Odrzucony - nie trafia do galerii; możesz poprawić układ i wysłać nowy.', 'Declined — it does not enter the gallery; you can fix the layout and send a new one.'),
+          ],
+        },
+        {
+          type: 'p',
+          text: t(
+            'Zgłoszenie oczekujące albo opublikowane możesz wycofać z listy Twoich zgłoszeń.',
+            'You can withdraw a pending or published submission from Your submissions.'
+          ),
+        },
+        { type: 'h2', id: 'obs', text: t('Baner publiczny a OBS', 'A public banner and OBS') },
+        {
+          type: 'p',
+          text: t(
+            'Galeria służy do przeglądania i oceniania overlayów społeczności. Do streamu nadal używasz własnego linku z generatora albo przycisku „Generuj link OBS” przy zapisanym banerze. Publiczny wpis nie podmienia nicku FACEIT na streamie.',
+            'The gallery is for browsing and rating community overlays. For the stream you still use your own generator link or the "Generate OBS link" button on a saved banner. A public entry does not replace the FACEIT nickname on the stream.'
           ),
         },
       ],
@@ -738,6 +827,20 @@ function buildUserPages(lang: DocsLang): Omit<DocsPageData, 'audience' | 'catego
             {
               q: t('Dlaczego baner nie pokazuje danych?', 'Why does the banner show no data?'),
               a: t('Sprawdź, czy nick jest poprawny i czy konto ma rozegrane mecze CS2 na FACEIT. Przy nowym koncie dane mogą pojawić się z opóźnieniem.', 'Check that the nickname is correct and the account has CS2 matches on FACEIT. A new account may take a while to show data.'),
+            },
+            {
+              q: t('Jak udostępnić swój baner innym?', 'How do I share my banner with others?'),
+              a: t(
+                'Zaloguj się, zapisz układ w Moje banery, kliknij Opublikuj i poczekaj na akceptację. Szczegóły są na stronie o publicznych banerach.',
+                'Log in, save the layout in My banners, click Publish and wait for approval. Details are on the public banners page.'
+              ),
+            },
+            {
+              q: t('Czy publiczny baner pokazuje cudze statystyki na moim streamie?', 'Does a public banner show someone else’s stats on my stream?'),
+              a: t(
+                'Nie. Lista publiczna to galeria wyglądów. Na streamie dalej leci Twój nick i Twoje dane FACEIT z Twojego linku OBS.',
+                'No. The public list is a gallery of looks. Your stream still uses your nickname and your FACEIT data from your OBS link.'
+              ),
             },
             {
               q: t('Czy projekt jest powiązany z FACEIT?', 'Is the project affiliated with FACEIT?'),

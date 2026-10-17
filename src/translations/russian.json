@@ -872,6 +872,8 @@
   "banners.loading": "Загрузка…",
   "banners.limit_reached": "Вы достигли лимита сохранённых баннеров.",
   "banners.load_failed": "Не удалось загрузить ваши баннеры.",
+  "catalog.login_vote": "Войдите через FACEIT, чтобы оценивать баннеры.",
+  "catalog.load": "Загрузить этот баннер",
   "donate.link": "Поддержать проект",
   "donate.hint": "содержание сервера",
   "account.menu": "Меню аккаунта",

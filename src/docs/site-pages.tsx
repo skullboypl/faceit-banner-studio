@@ -21,6 +21,7 @@ const WIKI: LinkItem[] = [
   { href: '/wiki/jak-dodac-faceit-do-obs/', label: 'Dodanie do OBS' },
   { href: '/wiki/konfiguracja-widzetu-faceit/', label: 'Konfiguracja' },
   { href: '/wiki/sklad-split-popup/', label: 'Skład, split i popup' },
+  { href: '/wiki/publiczne-banery/', label: 'Publiczne banery' },
   { href: '/wiki/faq-faceit-widget/', label: 'FAQ' },
 ];
 
@@ -37,6 +38,7 @@ const WIKI_DOCS: Record<string, string> = {
   '/wiki/jak-dodac-faceit-do-obs/': 'quick-start',
   '/wiki/konfiguracja-widzetu-faceit/': 'params',
   '/wiki/sklad-split-popup/': 'modes',
+  '/wiki/publiczne-banery/': 'catalog',
   '/wiki/faq-faceit-widget/': 'faq',
 };
 
@@ -285,7 +287,7 @@ export const sitePages: { path: string; element: ReactElement }[] = [
       <SitePage
         path="/wiki/"
         title="Wiki FACEIT Banner"
-        description="Wiki FACEIT Banner: poradniki OBS, skład, split, popup meczu, znaczek challengera i odpowiedzi na najczęstsze pytania."
+        description="Wiki FACEIT Banner: poradniki OBS, skład, split, popup meczu, publiczne banery społeczności, znaczek challengera i odpowiedzi na najczęstsze pytania."
         eyebrow="FACEIT BANNER / WIKI"
         h1="FACEIT Banner Wiki"
         lead="Centrum wiedzy o widżecie: od ustawienia generatora, przez dodanie do OBS, po konfigurację statystyk i rankingu."
@@ -293,11 +295,12 @@ export const sitePages: { path: string; element: ReactElement }[] = [
       >
         <h2 id="artykuly">Artykuły</h2>
         <ul>
-          <li><a href="/wiki/bannerfaceit/">Banner FACEIT do OBS</a> — co pokazuje widżet i po co jest na streamie.</li>
-          <li><a href="/wiki/jak-dodac-faceit-do-obs/">Jak dodać banner do OBS</a> — Browser Source krok po kroku.</li>
-          <li><a href="/wiki/konfiguracja-widzetu-faceit/">Konfiguracja widżetu</a> — statystyki, ranking i czytelność.</li>
-          <li><a href="/wiki/sklad-split-popup/">Skład, split i popup</a> — lista graczy, dwa źródła OBS i karta meczu.</li>
-          <li><a href="/wiki/faq-faceit-widget/">FAQ</a> — gdy coś się nie wyświetla.</li>
+          <li><a href="/wiki/bannerfaceit/">Banner FACEIT do OBS</a> - co pokazuje widżet i po co jest na streamie.</li>
+          <li><a href="/wiki/jak-dodac-faceit-do-obs/">Jak dodać banner do OBS</a> - Browser Source krok po kroku.</li>
+          <li><a href="/wiki/konfiguracja-widzetu-faceit/">Konfiguracja widżetu</a> - statystyki, ranking i czytelność.</li>
+          <li><a href="/wiki/sklad-split-popup/">Skład, split i popup</a> - lista graczy, dwa źródła OBS i karta meczu.</li>
+          <li><a href="/wiki/publiczne-banery/">Publiczne banery</a> - galeria overlayów społeczności, oceny i publikacja ze studia.</li>
+          <li><a href="/wiki/faq-faceit-widget/">FAQ</a> - gdy coś się nie wyświetla.</li>
         </ul>
         <h2 id="start">Szybki start</h2>
         <ol>
@@ -426,6 +429,44 @@ export const sitePages: { path: string; element: ReactElement }[] = [
         <h2 id="challenger">Ikona challengera</h2>
         <p>Gdy gracz ma poziom 10 i miejsce 1–1000 w regionie, ikona poziomu na VERSUS, składzie, splicie i popupie jest znaczkiem challengera. Miejsca 1–3 mają kolor podium, miejsca 4–1000 czerwień. Gracz zdjęty z drabinki FACEIT zostaje przy poziomie 10.</p>
         <p>Pełny opis jest w <a href="/docs/sklad-split-popup/">dokumentacji</a>.</p>
+      </SitePage>
+    ),
+  },
+  {
+    path: '/wiki/publiczne-banery/',
+    element: (
+      <SitePage
+        path="/wiki/publiczne-banery/"
+        title="Publiczne banery FACEIT do OBS"
+        description="Publiczne banery FACEIT: galeria overlayów do OBS, publikacja ze studia, weryfikacja admina i oceny jak na Reddicie. Jak udostępnić swój baner i jak korzystać z listy."
+        eyebrow="FACEIT BANNER / WIKI"
+        h1="Publiczne banery FACEIT"
+        lead="Społecznościowa galeria overlayów: podgląd, autor, tytuł, opis i głosy. Na listę idzie tylko to, co sprawdzi administrator."
+        crumbs={[{ href: '/wiki/', label: 'Wiki' }, { label: 'Publiczne banery' }]}
+      >
+        <h2 id="co-to">Czym są publiczne banery</h2>
+        <p>Zakładka Publiczne w generatorze to katalog wyglądów, nie nowy widżet. Baner na streamie nadal pokazuje Twoje dane FACEIT. Na liście widzisz, jak inni złożyli solo, VERSUS, skład, split albo popup, z tytułem i krótkim opisem.</p>
+        <p>Karta ma podgląd w zalecanym rozmiarze OBS, nick autora, datę i oceny w górę albo w dół. Listę sortujesz według Najlepszych albo Najnowszych.</p>
+        <h2 id="publikacja">Jak opublikować baner</h2>
+        <ol>
+          <li>Zaloguj się w generatorze kontem FACEIT.</li>
+          <li>W Moje banery zapisz układ, który chcesz pokazać.</li>
+          <li>Kliknij „Generuj link OBS”, jeśli potrzebujesz adresu do sceny.</li>
+          <li>Kliknij „Opublikuj”, wpisz tytuł i opis, wyślij do weryfikacji.</li>
+        </ol>
+        <p>Administrator sprawdza tytuł, opis i wygląd. Do akceptacji baner zostaje na liście Twoich zgłoszeń ze statusem oczekuje i nie widać go publicznie.</p>
+        <h2 id="oceny">Oceny jak na Reddicie</h2>
+        <p>Zalogowany gracz oddaje jeden głos w górę albo w dół i może go zmienić. Najlepsze układa listę według sumy głosów. Najnowsze pokazuje ostatnio zatwierdzone overlaye.</p>
+        <h2 id="statusy">Statusy zgłoszenia</h2>
+        <ul>
+          <li>Oczekuje - czeka na admina, widać tylko u Ciebie.</li>
+          <li>Opublikowany - jest na liście publicznej i można go oceniać.</li>
+          <li>Odrzucony - nie trafia do galerii; możesz poprawić układ i wysłać nowy.</li>
+        </ul>
+        <p>Zgłoszenie oczekujące albo opublikowane możesz wycofać z Twoich zgłoszeń.</p>
+        <h2 id="obs">Publiczny baner a OBS</h2>
+        <p>Galeria służy do przeglądania i oceniania overlayów. Do transmisji nadal używasz własnego linku z generatora albo przycisku „Generuj link OBS” przy zapisanym banerze. Publiczny wpis nie podmienia nicku FACEIT na streamie.</p>
+        <p>Pełny opis jest w <a href="/docs/publiczne-banery/">dokumentacji</a>.</p>
       </SitePage>
     ),
   },

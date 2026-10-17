@@ -14,12 +14,14 @@ import {
   languages,
   tl as translate,
 } from '../translations/translations.ts';
+import { tabFromSearch } from './tab-search';
 import { MainTab } from './tabs/MainTab.tsx';
 import { StyleTab } from './tabs/StyleTab.tsx';
 import { StatisticsTab } from './tabs/StatisticsTab.tsx';
 import { GeneratedWidgetModal } from '../components/GeneratedWidgetModal.tsx';
 import { InfoBox } from '../components/InfoBox.tsx';
-import { Footer, SKULL_YOUTUBE_URL } from '../components/Footer.tsx';
+import { Footer, SKULL_YOUTUBE_URL, SKULL_X_URL, SMOOTH_WIZARD_URL } from '../components/Footer.tsx';
+import smoothwizardLogo from '../assets/smoothwizard-logo.png';
 import { CookieNotice } from '../components/CookieNotice.tsx';
 import { PreviewCarousel } from '../components/PreviewCarousel.tsx';
 import { StudioIcon } from '../components/StudioIcon.tsx';
@@ -30,6 +32,7 @@ import { TimelineIcon } from '../assets/icons/tabler/TimelineIcon.tsx';
 import { ShareIcon } from '../assets/icons/tabler/ShareIcon.tsx';
 import { BrandTwitchIcon } from '../assets/icons/tabler/BrandTwitchIcon.tsx';
 import { BrandYoutubeIcon } from '../assets/icons/tabler/BrandYoutubeIcon.tsx';
+import { BrandXIcon } from '../assets/icons/tabler/BrandXIcon.tsx';
 import { BrandDiscordIcon } from '../assets/icons/tabler/BrandDiscordIcon.tsx';
 import { BrandTiktokIcon } from '../assets/icons/tabler/BrandTiktokIcon.tsx';
 import nukePreview from '../assets/previews/nuke.png';
@@ -57,6 +60,7 @@ import type { PopupPhase } from '../../widget/src/widget/popup-options';
 import { ConflictDialog } from '../components/ConflictDialog.tsx';
 import { DonateLink } from '../components/DonateLink.tsx';
 import { MyBannersPanel } from '../components/MyBannersPanel.tsx';
+import { CatalogBoard } from '../catalog/CatalogBoard.tsx';
 import { ProfilePanel } from '../components/ProfilePanel.tsx';
 import { AccountMenu } from '../components/AccountMenu.tsx';
 import { LanguageSelect } from '../components/LanguageSelect.tsx';
@@ -79,9 +83,9 @@ export { LanguageContext, SettingsContext } from './contexts.ts';
 const DEFAULT_GENERATOR_USERNAME = 'donk666';
 /** Tabs pinned to the phone's bottom bar; the rest live in the full-screen menu. */
 const PINNED_TABS = 3;
-/** The feedback board needs the whole width, so it hides the widget preview. */
-const FEEDBACK_TAB_INDEX = 4;
-const TAB_ICONS = ['settings', 'palette', 'stats', 'cloud', 'message'] as const;
+/** Catalog and feedback need the whole width, so they hide the widget preview. */
+const WIDE_TAB_INDEXES = new Set([4, 5]);
+const TAB_ICONS = ['settings', 'palette', 'stats', 'cloud', 'layers', 'message'] as const;
 const PREVIEW_BACKGROUNDS: Record<string, string> = {
   nuke: nukePreview,
   mirage: miragePreview,
@@ -140,10 +144,9 @@ export const Generator = () => {
   const [liveStreamerCount, setLiveStreamerCount] = useState<number | null>(null);
   const [onlineBannerCount, setOnlineBannerCount] = useState<number | null>(null);
   const navigate = useNavigate();
-  const [selectedTabIndex, setSelectedTabIndex] = useState(() => {
-    const value = Number(new URLSearchParams(window.location.search).get('tab'));
-    return Number.isInteger(value) && value >= 0 && value <= 4 ? value : 0;
-  });
+  const [selectedTabIndex, setSelectedTabIndex] = useState(() =>
+    tabFromSearch(window.location.search, TAB_ICONS.length)
+  );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [compactSidebar, setCompactSidebar] = useState(() =>
     typeof window.matchMedia === 'function' &&
@@ -213,6 +216,10 @@ export const Generator = () => {
       window.removeEventListener('keydown', close);
     };
   }, [compactSidebarOpen]);
+  useEffect(() => {
+    if (!searchParams.has('tab')) return;
+    setSelectedTabIndex(tabFromSearch(searchParams, TAB_ICONS.length));
+  }, [searchParams]);
   const toggleSidebar = useCallback(() => {
     if (compactSidebar) {
       setCompactSidebarOpen((open) => !open);
@@ -614,7 +621,20 @@ export const Generator = () => {
     },
     {
       name: tl('banners.title'),
-      component: <MyBannersPanel key={'banners'} user={session.user} />,
+      component: (
+        <MyBannersPanel
+          key={'banners'}
+          user={session.user}
+          onGenerateObs={(url) => {
+            setGeneratedURLMode('widget');
+            setGeneratedURL(url);
+          }}
+        />
+      ),
+    },
+    {
+      name: tl('catalog.title'),
+      component: <CatalogBoard key={'catalog'} user={session.user} onOpenSettings={() => selectTab(0)} />,
     },
     {
       name: tl('feedback.title'),
@@ -847,16 +867,6 @@ export const Generator = () => {
                 </button>
               );
             })}
-            <a
-              className="docs-tab"
-              href="/docs/"
-              title={tl('studio.docs')}
-              aria-label={tl('studio.docs')}
-            >
-              <StudioIcon name="book" />
-              <span>{tl('studio.docs')}</span>
-              <StudioIcon name="arrow" />
-            </a>
             <a className="sidebar-hub-link" href="https://vxh.pl/" title={tl('studio.hub')}>
               <StudioIcon name="home" />
               <span>{tl('studio.hub')}</span>
@@ -903,16 +913,46 @@ export const Generator = () => {
                 localStorage.setItem('fcw_lang', entry.id);
               }}
             />
-            <a
-              className="sidebar-credit"
-              href={SKULL_YOUTUBE_URL}
-              target="_blank"
-              rel="noreferrer"
-              title="YouTube"
-            >
-              <BrandYoutubeIcon />
-              <span>Skull</span>
-            </a>
+            <div className="sidebar-credit-row">
+              <a
+                className="sidebar-icon"
+                href="/docs/"
+                title={tl('studio.docs')}
+                aria-label={tl('studio.docs')}
+              >
+                <StudioIcon name="book" />
+              </a>
+              <a
+                className="sidebar-icon"
+                href={SMOOTH_WIZARD_URL}
+                target="_blank"
+                rel="noreferrer"
+                title={tl('generator.smoothwizard.title')}
+                aria-label={tl('generator.smoothwizard.title')}
+              >
+                <img src={smoothwizardLogo} alt="" />
+              </a>
+              <a
+                className="sidebar-icon"
+                href={SKULL_YOUTUBE_URL}
+                target="_blank"
+                rel="noreferrer"
+                title="YouTube"
+                aria-label="YouTube"
+              >
+                <BrandYoutubeIcon />
+              </a>
+              <a
+                className="sidebar-icon"
+                href={SKULL_X_URL}
+                target="_blank"
+                rel="noreferrer"
+                title="X"
+                aria-label="X"
+              >
+                <BrandXIcon />
+              </a>
+            </div>
           </div>
         </header>
         {compactSidebar && compactSidebarOpen && (
@@ -962,7 +1002,7 @@ export const Generator = () => {
             </span>
           </div>
             <main
-            className={`studio-main${onLive ? ' studio-main--live' : onStreamers ? ' studio-main--streamers' : selectedTabIndex === FEEDBACK_TAB_INDEX && !showProfile ? ' studio-main--wide' : ''}`}
+            className={`studio-main${onLive ? ' studio-main--live' : onStreamers ? ' studio-main--streamers' : WIDE_TAB_INDEXES.has(selectedTabIndex) && !showProfile ? ' studio-main--wide' : ''}`}
           >
             <section
               className={'fixed-width'}
@@ -978,7 +1018,7 @@ export const Generator = () => {
                 {onStreamers ? <TwitchStreamers /> : onLive ? <LiveRanking /> : showProfile ? <ProfilePanel /> : tabs[selectedTabIndex].component}
               </div>
             </section>
-            {!onPublicPage && (showProfile || selectedTabIndex !== FEEDBACK_TAB_INDEX) && (
+            {!onPublicPage && (showProfile || !WIDE_TAB_INDEXES.has(selectedTabIndex)) && (
               <section className={'preview'}>
                 <div className={'settings preview-card'}>
                   <div className="preview-heading">
@@ -1160,16 +1200,11 @@ export const Generator = () => {
                     <p>{tl('generator.recommended')}</p>
                     <a
                       className={'smoothwizard-promo'}
-                      href={'https://smoothwizard.com/'}
+                      href={SMOOTH_WIZARD_URL}
                       target={'_blank'}
                       rel={'noreferrer'}
                     >
-                      <img
-                        src={
-                          'https://smoothwizard.com/wp-content/uploads/2023/12/SmoothWizard-Logo-e1701539638732.png'
-                        }
-                        alt={'SmoothWizard'}
-                      />
+                      <img src={smoothwizardLogo} alt={'SmoothWizard'} />
                       <span>
                         <strong>{tl('generator.smoothwizard.title')}</strong>
                         <small>{tl('generator.smoothwizard.subtitle')}</small>

@@ -872,6 +872,8 @@
   "banners.loading": "Načítání…",
   "banners.limit_reached": "Dosáhl jsi limitu uložených bannerů.",
   "banners.load_failed": "Tvoje bannery se nepodařilo načíst.",
+  "catalog.login_vote": "Přihlas se přes FACEIT, abys mohl hodnotit bannery.",
+  "catalog.load": "Načíst tento banner",
   "donate.link": "Podpoř projekt",
   "donate.hint": "provoz serveru",
   "account.menu": "Nabídka účtu",

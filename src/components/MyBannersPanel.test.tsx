@@ -60,10 +60,14 @@ describe('MyBannersPanel: a picture of each saved banner', () => {
     await open();
     const main = screen.getByTitle('Main look') as HTMLIFrameElement;
     expect(Number(main.getAttribute('width'))).toBeGreaterThan(200);
-    expect(main.style.transform).toMatch(/scale\(/);
+    expect(main.style.width).toBe(`${main.getAttribute('width')}px`);
+    expect(main.style.height).toBe(`${main.getAttribute('height')}px`);
+    expect(main.style.transform).toMatch(/^scale\(/);
     const popup = screen.getByTitle('Popup') as HTMLIFrameElement;
     expect(popup.getAttribute('width')).toBe('1920');
     expect(popup.getAttribute('height')).toBe('1080');
+    expect(popup.style.width).toBe('1920px');
+    expect(popup.style.height).toBe('1080px');
     expect(new URL(popup.src).searchParams.get('popup_preview')).toBe('pre');
     expect(new URL(popup.src).searchParams.get('thumb')).toBe('true');
   });
@@ -75,7 +79,8 @@ describe('MyBannersPanel: a picture of each saved banner', () => {
     });
     renderWithApp(<MyBannersPanel user={user} />, defaultSettings());
     const frame = (await screen.findByTitle('boty squad')) as HTMLIFrameElement;
-    expect(frame.style.transform).toMatch(/scale\(/);
+    expect(Number(frame.getAttribute('height'))).toBeLessThan(280);
+    expect(frame.style.transform).toMatch(/^scale\(/);
     expect(new URL(frame.src).searchParams.get('banner_height_mode')).toBe('recommended');
   });
 
@@ -91,7 +96,7 @@ describe('MyBannersPanel: coloured buttons with icons', () => {
   test('each action has an icon and its own colour', async () => {
     await open();
     const row = screen.getByText('Main look').closest('li')!;
-    for (const [name, tone] of [['Wczytaj', 'load'], ['Zmień nazwę', 'rename'], ['Nadpisz aktualnymi', 'overwrite'], ['Usuń', 'delete']] as const) {
+    for (const [name, tone] of [['Wczytaj', 'load'], ['Generuj link OBS', 'obs'], ['Zmień nazwę', 'rename'], ['Nadpisz aktualnymi', 'overwrite'], ['Opublikuj', 'publish'], ['Usuń', 'delete']] as const) {
       const button = within(row).getByRole('button', { name });
       expect(button.className, name).toContain(`is-${tone}`);
       expect(button.querySelector('svg.studio-icon'), name).toBeTruthy();
@@ -102,6 +107,25 @@ describe('MyBannersPanel: coloured buttons with icons', () => {
     await open();
     const save = screen.getByRole('button', { name: 'Zapisz jako…' });
     expect(save.querySelector('svg.studio-icon')).toBeTruthy();
+  });
+
+  test('Generuj link OBS opens the widget URL of that saved banner', async () => {
+    const onGenerateObs = vi.fn();
+    const view = renderWithApp(<MyBannersPanel user={user} onGenerateObs={onGenerateObs} />, defaultSettings());
+    await screen.findByText('Main look');
+    fireEvent.click(within(screen.getByText('Main look').closest('li')!).getByRole('button', { name: 'Generuj link OBS' }));
+    expect(onGenerateObs).toHaveBeenCalledTimes(1);
+    expect(String(onGenerateObs.mock.calls[0][0])).toContain('/widget/');
+    view.unmount();
+  });
+
+  test('Opublikuj asks for a title and a description', async () => {
+    await open();
+    const row = screen.getByText('Main look').closest('li')!;
+    fireEvent.click(within(row).getByRole('button', { name: 'Opublikuj' }));
+    expect(within(row).getByLabelText('Tytuł')).toBeTruthy();
+    expect(within(row).getByLabelText('Opis')).toBeTruthy();
+    expect(within(row).getByRole('button', { name: 'Wyślij do weryfikacji' })).toBeTruthy();
   });
 
   test('the actions still work: loading applies the banner, deleting asks first and removes it', async () => {

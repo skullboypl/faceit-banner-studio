@@ -42,7 +42,7 @@ export function AdminCache({ clear = requestClear }: { clear?: (scope: string) =
       const code = failure instanceof Error ? failure.message : '';
       setError(
         code === 'cdn_not_configured'
-          ? 'Brak CF_ZONE_ID i CF_API_TOKEN na serwerze — bez nich CDN się nie czyści.'
+          ? 'Brak CF_ZONE_ID i CF_API_TOKEN na serwerze - bez nich CDN się nie czyści.'
           : code === 'cdn_purge_failed'
             ? 'Cloudflare nie przyjął czyszczenia. Sprawdź token i strefę.'
             : 'Nie udało się wyczyścić. Spróbuj jeszcze raz.'

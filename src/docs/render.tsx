@@ -110,6 +110,7 @@ llmsLines.push(
   '',
   `- [Wiki](${SITE_URL}/wiki/)`,
   `- [Skład, split i popup](${SITE_URL}/wiki/sklad-split-popup/)`,
+  `- [Publiczne banery](${SITE_URL}/wiki/publiczne-banery/)`,
   `- [Regulamin](${SITE_URL}/terms/)`,
   `- [Polityka prywatności](${SITE_URL}/privacy/)`,
 );

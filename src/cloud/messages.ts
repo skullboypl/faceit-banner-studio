@@ -16,6 +16,10 @@ export function apiMessage(tl: (key: string, args?: string[]) => string, failure
       const translated = tl('feedback.writing_locked');
       if (translated !== 'feedback.writing_locked') return translated;
     }
+    if (failure.code === 'duplicate_publication') {
+      const translated = tl('catalog.duplicate');
+      if (translated !== 'catalog.duplicate') return translated;
+    }
     const attachmentKey =
       failure.code === 'too_big'
         ? 'attachment.too_big'

@@ -1,11 +1,6 @@
 import { parseRoster } from '../../shared/banner-modes.mjs';
 import { broadcastPresets, resolveBannerStyle } from '../../widget/src/styles/styles';
-import {
-  type BannerSizeMode,
-  getBannerSizeLimits,
-  getRecommendedWidth,
-  resolveBannerSize,
-} from '../../widget/src/utils/banner_size';
+import { getBannerSizeLimits, getRecommendedWidth, resolveBannerSize } from '../../widget/src/utils/banner_size';
 import { readTeamOptions, teamRecommendedHeight, teamRecommendedWidth } from '../../widget/src/widget/team-options';
 import type { SettingKey } from '../settings/manager';
 import { toQueryString, widgetQueryParams } from '../settings/widget-query';
@@ -13,14 +8,42 @@ import { toQueryString, widgetQueryParams } from '../settings/widget-query';
 type Get = (key: SettingKey) => unknown;
 
 /** The size, in pixels, the widget is laid out in before the preview shrinks it into its card. */
-export type PreviewFrame = { width: number; height: number; left?: number; top?: number };
+export type PreviewFrame = { width: number; height: number };
 
-const asMode = (value: unknown): BannerSizeMode =>
-  value === 'manual' || value === 'auto' || value === 'recommended' ? value : 'recommended';
+/** Painted box inside the iframe that the thumbnail should zoom to (the popup card, not the 1920 overlay). */
+export type PreviewSubject = PreviewFrame & { x: number; y: number };
+
+/** Tallest a saved-banner thumbnail may paint, in CSS pixels of the card. */
+export const PREVIEW_ICON_MAX_HEIGHT = 128;
 
 /**
- * A thumbnail has no OBS window, so AUTO is treated as the banner's own size. Manual width/height
- * stay as the saved banner stored them.
+ * CSS scale that turns the recommended OBS size into a small icon: never enlarge, and never taller
+ * than PREVIEW_ICON_MAX_HEIGHT. The widget itself keeps its recommended width.
+ */
+export function previewIconScale(frame: PreviewFrame, cardWidth: number): number {
+  const room = Math.max(0, cardWidth);
+  if (!frame.width || !frame.height || !room) return 0;
+  return Math.min(1, room / frame.width, PREVIEW_ICON_MAX_HEIGHT / frame.height);
+}
+
+/** The popup card inside a 1920 overlay, or null when the iframe is a normal banner. */
+export function previewSubject(doc: Document): PreviewSubject | null {
+  const card = doc.querySelector('.match-popup article');
+  if (!card) return null;
+  const box = card.getBoundingClientRect();
+  if (box.width < 32 || box.height < 32) return null;
+  return { x: box.left, y: box.top, width: box.width, height: box.height };
+}
+
+/** Scale, then pull the subject to the top-left of the icon (translate is in unscaled iframe pixels). */
+export function previewIconTransform(scale: number, subject: PreviewSubject | null): string {
+  if (!subject) return `scale(${scale})`;
+  return `scale(${scale}) translate(${-subject.x}px, ${-subject.y}px)`;
+}
+
+/**
+ * A thumbnail is the banner at its recommended OBS size. The card only applies a CSS scale —
+ * the widget itself must not reflow to the card.
  */
 export function previewFrame(get: Get): PreviewFrame {
   const mode = get('widgetMode');
@@ -39,10 +62,10 @@ export function previewFrame(get: Get): PreviewFrame {
   if (String(get('bannerDesign')) === '2026' && getBannerSizeLimits(style)) {
     const sized = resolveBannerSize({
       style,
-      widthMode: asMode(get('bannerWidthMode')) === 'auto' ? 'recommended' : asMode(get('bannerWidthMode')),
-      width: Number(get('bannerWidth')) || fallback.width,
-      heightMode: asMode(get('bannerHeightMode')) === 'auto' ? 'recommended' : asMode(get('bannerHeightMode')),
-      height: Number(get('bannerHeight')) || fallback.height,
+      widthMode: 'recommended',
+      width: fallback.width,
+      heightMode: 'recommended',
+      height: fallback.height,
       recommendedWidth: mode === 'team' ? teamWidth : getRecommendedWidth(style, Boolean(get('showStatistics'))),
       viewportWidth: Infinity,
       viewportHeight: Infinity,
@@ -55,79 +78,15 @@ export function previewFrame(get: Get): PreviewFrame {
   return fallback;
 }
 
-/**
- * A roomy iframe so the banner can paint at its full width. The card then scales and crops the
- * view to that painting — the iframe size itself must not shrink or the widget clips.
- */
-export function previewStage(frame: PreviewFrame): PreviewFrame {
-  if (frame.width >= 1600) return { width: 1920, height: 1080 };
-  return { width: 1920, height: Math.max(frame.height, 720) };
-}
-
-const previewRoot = (doc: Document): HTMLElement | null =>
-  (doc.querySelector('.team-banner') as HTMLElement | null) ||
-  (doc.querySelector('.match-popup > article') as HTMLElement | null) ||
-  (doc.querySelector('.split-plate') as HTMLElement | null) ||
-  (doc.querySelector('.wrapper') as HTMLElement | null);
-
-/** Border-box of a node plus anything that paints outside it, so the scale never slices a column. */
-function paintedExtent(root: HTMLElement): PreviewFrame {
-  let left = Infinity;
-  let top = Infinity;
-  let right = -Infinity;
-  let bottom = -Infinity;
-  const add = (el: Element) => {
-    const box = el.getBoundingClientRect();
-    if (box.width < 1 || box.height < 1) return;
-    left = Math.min(left, box.left);
-    top = Math.min(top, box.top);
-    right = Math.max(right, box.right);
-    bottom = Math.max(bottom, box.bottom);
-  };
-  add(root);
-  root.querySelectorAll('*').forEach(add);
-  const width = Number.isFinite(left)
-    ? right - left
-    : Math.max(root.scrollWidth, root.offsetWidth);
-  const height = Number.isFinite(top)
-    ? bottom - top
-    : Math.max(root.scrollHeight, root.offsetHeight);
-  return {
-    width: Math.ceil(Math.max(width, root.scrollWidth, root.offsetWidth)),
-    height: Math.ceil(Math.max(height, root.scrollHeight, root.offsetHeight)),
-    left: Math.floor(Number.isFinite(left) ? left : 0),
-    top: Math.floor(Number.isFinite(top) ? top : 0),
-  };
-}
-
-/** The painted widget inside the iframe, ignoring leftover page around it. */
-export function measureBanner(doc: Document): PreviewFrame | null {
-  const node = previewRoot(doc);
-  if (!node) return null;
-  const box = paintedExtent(node);
-  if (box.width < 8 || box.height < 8) return null;
-  return box;
-}
-
 /** The iframe page must not fill the card with a white sheet around the banner. */
 export function paintPreviewPage(doc: Document) {
   const html = doc.documentElement;
-  html.classList.remove('banner-sized');
+  if (!html) return;
   html.style.background = 'transparent';
   html.style.colorScheme = 'dark';
-  html.style.setProperty('overflow', 'visible', 'important');
   if (doc.body) {
     doc.body.style.background = 'transparent';
     doc.body.style.margin = '0';
-    doc.body.style.setProperty('overflow', 'visible', 'important');
-  }
-  const wrapper = doc.querySelector('.wrapper') as HTMLElement | null;
-  if (wrapper && !doc.querySelector('.match-popup')) {
-    wrapper.style.setProperty('width', 'max-content', 'important');
-    wrapper.style.setProperty('height', 'max-content', 'important');
-    wrapper.style.setProperty('max-width', 'none', 'important');
-    wrapper.style.setProperty('overflow', 'visible', 'important');
-    wrapper.style.zoom = '1';
   }
 }
 

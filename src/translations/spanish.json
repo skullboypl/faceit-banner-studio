@@ -872,6 +872,8 @@
   "banners.loading": "Cargando…",
   "banners.limit_reached": "Has alcanzado el límite de banners guardados.",
   "banners.load_failed": "No se pudieron cargar tus banners.",
+  "catalog.login_vote": "Inicia sesión con FACEIT para votar los banners.",
+  "catalog.load": "Cargar este banner",
   "donate.link": "Apoya el proyecto",
   "donate.hint": "mantenimiento del servidor",
   "account.menu": "Menú de la cuenta",

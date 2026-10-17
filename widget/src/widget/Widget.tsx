@@ -439,8 +439,6 @@ export const Widget = ({
 
   useEffect(() => {
     if (!bannerSize) return;
-    /* A saved-banner thumbnail must not clip to the OBS slot; the studio scales the painted widget. */
-    if (isThumb) return;
 
     if (!preview) {
       const update = () =>
@@ -469,7 +467,7 @@ export const Widget = ({
     const observer = new ResizeObserver(update);
     observer.observe(parent);
     return () => observer.disconnect();
-  }, [preview, isThumb, !!bannerSize]);
+  }, [preview, !!bannerSize]);
   const isAvatarPreset = resolvedStyle === 'orbit' || resolvedStyle === 'halo' || resolvedStyle === 'pulse' || resolvedStyle === 'prime';
   const isStaticPreset = resolvedStyle === 'broadcast' || resolvedStyle === 'rail' || resolvedStyle === 'focus' || isAvatarPreset;
   const isBroadcastPreset = broadcastPresets.some((preset) => preset.id === resolvedStyle);
@@ -2287,7 +2285,7 @@ export const Widget = ({
       )}
       <div
         ref={wrapperRef}
-        className={`wrapper banner-load-enter${compatibilityMode ? ' compatibility' : ''}${SETTINGS.get('bannerDesign') === '2026' && SETTINGS.get('style') !== 'custom' ? ' banner-design-2026' : ''}${bannerSize && !isThumb ? ' banner-fill' : ''}`}
+        className={`wrapper banner-load-enter${compatibilityMode ? ' compatibility' : ''}${SETTINGS.get('bannerDesign') === '2026' && SETTINGS.get('style') !== 'custom' ? ' banner-design-2026' : ''}${bannerSize ? ' banner-fill' : ''}`}
         data-layout={resolvedStyle}
         data-part={splitPart || undefined}
         data-density={
@@ -2341,16 +2339,14 @@ export const Widget = ({
         style={
           {
             ...(bannerSize && bannerZoom
-              ? isThumb && !isPopup
-                ? { width: 'max-content', height: 'max-content', maxWidth: 'none', zoom: 1 }
-                : {
-                    width: `${bannerSize.layoutWidth}px`,
-                    maxWidth: 'none',
-                    ...(bannerSize.layoutHeight
-                      ? { height: `${bannerSize.layoutHeight}px` }
-                      : {}),
-                    zoom: bannerZoom,
-                  }
+              ? {
+                  width: `${bannerSize.layoutWidth}px`,
+                  maxWidth: 'none',
+                  ...(bannerSize.layoutHeight
+                    ? { height: `${bannerSize.layoutHeight}px` }
+                    : {}),
+                  zoom: bannerZoom,
+                }
               : {}),
             '--faceit-level': `var(--faceit-level-${currentEloDistribution[0]})`,
             ...(presetAccent

@@ -2,14 +2,22 @@ import { describe, expect, test } from 'vitest';
 import { TEAM_DEFAULTS, teamRecommendedHeight, teamRecommendedWidth } from '../../widget/src/widget/team-options';
 import { SETTINGS_DEFINITIONS } from '../settings/definition';
 import type { SettingKey } from '../settings/manager';
-import { measureBanner, paintPreviewPage, previewFrame, previewStage, previewUrl } from './banner-preview';
+import {
+  PREVIEW_ICON_MAX_HEIGHT,
+  paintPreviewPage,
+  previewFrame,
+  previewIconScale,
+  previewIconTransform,
+  previewSubject,
+  previewUrl,
+} from './banner-preview';
 
 const get = (overrides: Record<string, unknown> = {}) => (key: SettingKey) =>
   Object.prototype.hasOwnProperty.call(overrides, key)
     ? overrides[key]
     : (SETTINGS_DEFINITIONS[key] as { defaultValue?: unknown }).defaultValue;
 
-describe('previewFrame: the saved-banner picture matches the banner, not a leftover OBS slot', () => {
+describe('previewFrame: a thumbnail is the recommended banner, then CSS-scaled', () => {
   test('a two-player roster is as wide as its columns and only as tall as two rows', () => {
     const frame = previewFrame(
       get({
@@ -32,7 +40,7 @@ describe('previewFrame: the saved-banner picture matches the banner, not a lefto
     expect(sheet.height).toBeLessThan(five.height);
   });
 
-  test('a saved OBS size is the preview size, not the preset slot', () => {
+  test('a saved OBS size is ignored: the thumbnail stays at the recommended width', () => {
     const frame = previewFrame(
       get({
         bannerDesign: '2026',
@@ -43,8 +51,9 @@ describe('previewFrame: the saved-banner picture matches the banner, not a lefto
         bannerHeight: 160,
       })
     );
-    expect(frame.width).toBe(720);
-    expect(frame.height).toBe(160);
+    const recommended = previewFrame(get({ bannerDesign: '2026', style: 'prime' }));
+    expect(frame).toEqual(recommended);
+    expect(frame.width).toBeLessThan(720);
   });
 });
 
@@ -52,6 +61,7 @@ describe('previewUrl: a thumbnail, and a popup always before the match', () => {
   test('marks the widget as a thumbnail and pins a popup to the pre phase', () => {
     const solo = new URL(previewUrl(get({ style: 'prime' }), 'pl', 'https://faceitbanner.test'));
     expect(solo.searchParams.get('thumb')).toBe('true');
+    expect(solo.searchParams.get('banner_width_mode')).toBe('recommended');
     expect(solo.searchParams.get('banner_height_mode')).toBe('recommended');
     const popup = new URL(previewUrl(get({ widgetMode: 'popup' }), 'pl', 'https://faceitbanner.test'));
     expect(popup.searchParams.get('popup_preview')).toBe('pre');
@@ -59,72 +69,45 @@ describe('previewUrl: a thumbnail, and a popup always before the match', () => {
   });
 });
 
-describe('measureBanner: the painted widget, not the leftover iframe page', () => {
-  test('reads the roster panel, not a stretched wrapper around it', () => {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'wrapper';
-    const team = document.createElement('div');
-    team.className = 'team-banner';
-    wrapper.append(team);
-    document.body.append(wrapper);
-    wrapper.getBoundingClientRect = () =>
-      ({ width: 1100, height: 720, top: 0, left: 0, bottom: 720, right: 1100, x: 0, y: 0, toJSON: () => undefined }) as DOMRect;
-    team.getBoundingClientRect = () =>
-      ({ width: 640, height: 168, top: 0, left: 0, bottom: 168, right: 640, x: 0, y: 0, toJSON: () => undefined }) as DOMRect;
-    Object.defineProperty(team, 'scrollWidth', { value: 640 });
-    Object.defineProperty(team, 'scrollHeight', { value: 168 });
-    expect(measureBanner(document)).toEqual({ width: 640, height: 168, left: 0, top: 0 });
-    wrapper.remove();
+describe('previewIconScale: a thumbnail is a small icon, never an enlarged widget', () => {
+  test('never scales a banner up, and a tall square stays under the icon cap', () => {
+    expect(previewIconScale({ width: 320, height: 320 }, 414)).toBeLessThanOrEqual(PREVIEW_ICON_MAX_HEIGHT / 320);
+    expect(previewIconScale({ width: 320, height: 320 }, 414)).toBeLessThan(1);
+    expect(previewIconScale({ width: 540, height: 250 }, 414)).toBeLessThanOrEqual(414 / 540);
+    expect(previewIconScale({ width: 540, height: 250 }, 414)).toBeLessThanOrEqual(PREVIEW_ICON_MAX_HEIGHT / 250);
   });
 
-  test('a popup card that sits in the middle of the page is cropped from its own corner', () => {
-    const popup = document.createElement('div');
-    popup.className = 'match-popup';
-    const article = document.createElement('article');
-    popup.append(article);
-    document.body.append(popup);
+  test('a popup thumbnail zooms to the card, not the empty 1920 overlay', () => {
+    const overlay = previewIconScale({ width: 1920, height: 1080 }, 414);
+    const card = previewIconScale({ width: 900, height: 298 }, 414);
+    expect(card).toBeGreaterThan(overlay * 2);
+    expect(298 * card).toBeLessThanOrEqual(PREVIEW_ICON_MAX_HEIGHT);
+  });
+});
+
+describe('previewSubject: zoom the popup card, leave other banners on their frame', () => {
+  test('reads the article box and builds a translate+scale that pins it to the icon', () => {
+    document.body.innerHTML = '<div class="match-popup"><article></article></div>';
+    const article = document.querySelector('article')!;
     article.getBoundingClientRect = () =>
-      ({ width: 900, height: 298, top: 40, left: 510, bottom: 338, right: 1410, x: 510, y: 40, toJSON: () => undefined }) as DOMRect;
-    Object.defineProperty(article, 'scrollWidth', { value: 900 });
-    Object.defineProperty(article, 'scrollHeight', { value: 298 });
-    expect(measureBanner(document)).toEqual({ width: 900, height: 298, left: 510, top: 40 });
-    popup.remove();
+      ({ left: 510, top: 41, width: 900, height: 298, x: 510, y: 41, right: 1410, bottom: 339, toJSON: () => {} }) as DOMRect;
+    expect(previewSubject(document)).toEqual({ x: 510, y: 41, width: 900, height: 298 });
+    expect(previewIconTransform(0.43, { x: 510, y: 41, width: 900, height: 298 })).toBe(
+      'scale(0.43) translate(-510px, -41px)'
+    );
+    expect(previewIconTransform(0.5, null)).toBe('scale(0.5)');
   });
 
-  test('a column that paints past the panel still counts, so the scale does not slice it', () => {
-    const team = document.createElement('div');
-    team.className = 'team-banner';
-    const extra = document.createElement('span');
-    team.append(extra);
-    document.body.append(team);
-    team.getBoundingClientRect = () =>
-      ({ width: 440, height: 168, top: 0, left: 0, bottom: 168, right: 440, x: 0, y: 0, toJSON: () => undefined }) as DOMRect;
-    extra.getBoundingClientRect = () =>
-      ({ width: 80, height: 24, top: 8, left: 620, bottom: 32, right: 700, x: 620, y: 8, toJSON: () => undefined }) as DOMRect;
-    Object.defineProperty(team, 'scrollWidth', { value: 440 });
-    Object.defineProperty(team, 'scrollHeight', { value: 168 });
-    expect(measureBanner(document)).toEqual({ width: 700, height: 168, left: 0, top: 0 });
-    team.remove();
+  test('a banner without a popup card has no crop', () => {
+    document.body.innerHTML = '<div class="widget banner"></div>';
+    expect(previewSubject(document)).toBeNull();
   });
+});
 
-  test('a roomy stage is wider than the banner so the painting is not clipped', () => {
-    const stage = previewStage({ width: 440, height: 200 });
-    expect(stage.width).toBe(1920);
-    expect(stage.width).toBeGreaterThan(440);
-    expect(previewStage({ width: 1920, height: 1080 })).toEqual({ width: 1920, height: 1080 });
-  });
-
-  test('paintPreviewPage drops the white sheet and lets a roster paint past the OBS slot', () => {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'wrapper banner-sized';
-    document.body.append(wrapper);
-    document.documentElement.classList.add('banner-sized');
+describe('paintPreviewPage: no white sheet around the scaled banner', () => {
+  test('drops the white sheet', () => {
     paintPreviewPage(document);
     expect(document.documentElement.style.background).toBe('transparent');
     expect(document.body.style.background).toBe('transparent');
-    expect(document.documentElement.classList.contains('banner-sized')).toBe(false);
-    expect(wrapper.style.width).toBe('max-content');
-    expect(wrapper.style.overflow).toBe('visible');
-    wrapper.remove();
   });
 });

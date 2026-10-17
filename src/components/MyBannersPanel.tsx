@@ -1,5 +1,11 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
 import {
+  listMinePublications,
+  publishBanner,
+  type CatalogPublication,
+} from '../catalog/api';
+import { settingsGetter } from '../catalog/preview-get';
+import {
   createBanner,
   deleteBanner,
   listBanners,
@@ -11,10 +17,10 @@ import { apiMessage } from '../cloud/messages';
 import { fromDelta, toDelta } from '../cloud/delta';
 import { LanguageContext, SettingsContext } from '../generator/contexts';
 import type { SettingKey } from '../settings/manager';
+import { toQueryString, widgetQueryParams } from '../settings/widget-query';
 import { BannerPreview } from './BannerPreview';
 import { FaceitLoginButton } from './FaceitLoginButton';
 import { StudioIcon } from './StudioIcon';
-import { SETTINGS_DEFINITIONS } from '../settings/definition';
 
 /** The language the studio is shown in; a preview uses it unless the banner chose its own widget language. */
 const studioLanguage = () => {
@@ -25,7 +31,13 @@ const studioLanguage = () => {
   }
 };
 
-export const MyBannersPanel = ({ user }: { user: User | null }) => {
+export const MyBannersPanel = ({
+  user,
+  onGenerateObs,
+}: {
+  user: User | null;
+  onGenerateObs?: (url: string) => void;
+}) => {
   const tl = useContext(LanguageContext);
   const settings = useContext(SettingsContext);
   const [banners, setBanners] = useState<SavedBanner[]>([]);
@@ -36,17 +48,22 @@ export const MyBannersPanel = ({ user }: { user: User | null }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [busy, setBusy] = useState(false);
+  const [publishingId, setPublishingId] = useState<string | null>(null);
+  const [publishTitle, setPublishTitle] = useState('');
+  const [publishBody, setPublishBody] = useState('');
+  const [publications, setPublications] = useState<CatalogPublication[]>([]);
 
   const guid = user?.guid;
   useEffect(() => {
     if (!guid) return;
     let cancelled = false;
     setLoading(true);
-    listBanners()
-      .then((data) => {
+    Promise.all([listBanners(), listMinePublications().catch(() => ({ publications: [] as CatalogPublication[] }))])
+      .then(([data, mine]) => {
         if (cancelled) return;
         setBanners(data.banners);
         setLimit(data.limit);
+        setPublications(mine.publications);
         setError(null);
       })
       .catch(() => !cancelled && setError(tl?.('banners.load_failed') ?? 'error'))
@@ -83,15 +100,23 @@ export const MyBannersPanel = ({ user }: { user: User | null }) => {
   const atLimit = banners.length >= limit;
   /* A saved banner as the widget would read it: its own values, then the defaults, and the studio's player when it has none */
   const studioPlayer = settings.get('playerId' as SettingKey);
-  const previewGetter = (banner: SavedBanner) => {
-    const saved = fromDelta(banner.settings) as Record<string, unknown>;
-    return (key: SettingKey) => {
-      const value = saved[key];
-      if (value !== undefined) return value;
-      if (key === 'playerId') return studioPlayer;
-      return (SETTINGS_DEFINITIONS[key] as { defaultValue?: unknown }).defaultValue;
-    };
+  const previewGetter = (banner: SavedBanner) => settingsGetter(banner.settings, studioPlayer);
+  const liveFor = (bannerId: string) =>
+    publications.find((entry) => entry.bannerId === bannerId && (entry.status === 'pending' || entry.status === 'approved'));
+
+  const generateObs = (banner: SavedBanner) => {
+    const url = `${window.location.origin}/widget/${toQueryString(widgetQueryParams(previewGetter(banner), studioLanguage()))}`;
+    onGenerateObs?.(url);
   };
+
+  const sendPublish = (banner: SavedBanner) =>
+    attempt(async () => {
+      const { publication } = await publishBanner(banner.id, publishTitle, publishBody);
+      setPublications((list) => [publication, ...list.filter((entry) => entry.id !== publication.id)]);
+      setPublishingId(null);
+      setPublishTitle('');
+      setPublishBody('');
+    });
   const replace = (banner: SavedBanner) =>
     setBanners((list) => list.map((entry) => (entry.id === banner.id ? banner : entry)));
 
@@ -193,10 +218,49 @@ export const MyBannersPanel = ({ user }: { user: User | null }) => {
                 <small>{new Date(banner.updatedAt).toLocaleDateString()}</small>
               </div>
             )}
+            {publishingId === banner.id && (
+              <form
+                className="my-banners-publish"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void sendPublish(banner);
+                }}
+              >
+                <p className="subtext">{tl('catalog.publish_help')}</p>
+                <input
+                  type="text"
+                  value={publishTitle}
+                  maxLength={80}
+                  placeholder={tl('catalog.publish_title')}
+                  aria-label={tl('catalog.publish_title')}
+                  onChange={(event) => setPublishTitle(event.target.value)}
+                />
+                <textarea
+                  value={publishBody}
+                  maxLength={500}
+                  rows={3}
+                  placeholder={tl('catalog.publish_body')}
+                  aria-label={tl('catalog.publish_body')}
+                  onChange={(event) => setPublishBody(event.target.value)}
+                />
+                <div className="my-banners-publish-actions">
+                  <button type="submit" className="is-publish has-icon" disabled={busy || publishTitle.trim().length < 3 || publishBody.trim().length < 10}>
+                    {tl('catalog.publish_submit')}
+                  </button>
+                  <button type="button" onClick={() => setPublishingId(null)}>
+                    {tl('catalog.publish_cancel')}
+                  </button>
+                </div>
+              </form>
+            )}
             <div className="my-banners-actions">
               <button type="button" className="is-load has-icon" onClick={() => load(banner)}>
                 <StudioIcon name="download" />
                 {tl('banners.load')}
+              </button>
+              <button type="button" className="is-obs has-icon" onClick={() => generateObs(banner)}>
+                <StudioIcon name="monitor" />
+                {tl('banners.obs')}
               </button>
               <button
                 type="button"
@@ -213,6 +277,24 @@ export const MyBannersPanel = ({ user }: { user: User | null }) => {
                 <StudioIcon name="save" />
                 {tl('banners.overwrite')}
               </button>
+              {liveFor(banner.id) ? (
+                <button type="button" className="is-publish has-icon" disabled>
+                  {tl(`catalog.status.${liveFor(banner.id)!.status}`)}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="is-publish has-icon"
+                  onClick={() => {
+                    setPublishingId(banner.id);
+                    setPublishTitle(banner.name);
+                    setPublishBody('');
+                  }}
+                >
+                  <StudioIcon name="plus" />
+                  {tl('banners.publish')}
+                </button>
+              )}
               <button type="button" className="is-delete has-icon" disabled={busy} onClick={() => void remove(banner)}>
                 <StudioIcon name="trash" />
                 {tl('banners.delete')}

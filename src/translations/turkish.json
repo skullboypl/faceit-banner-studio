@@ -872,6 +872,8 @@
   "banners.loading": "Yükleniyor…",
   "banners.limit_reached": "Kayıtlı banner sınırına ulaştın.",
   "banners.load_failed": "Bannerların yüklenemedi.",
+  "catalog.login_vote": "Bannerlara oy vermek için FACEIT ile giriş yap.",
+  "catalog.load": "Bu bannerı yükle",
   "donate.link": "Projeyi destekle",
   "donate.hint": "sunucu bakımı",
   "account.menu": "Hesap menüsü",

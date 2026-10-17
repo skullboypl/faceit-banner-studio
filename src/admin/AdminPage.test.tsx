@@ -89,6 +89,44 @@ describe('AdminPage', () => {
     expect(screen.getByText('Brak wpisów.')).toBeTruthy();
   });
 
+  test('has a tab to approve public banner submissions', async () => {
+    const fetcher = vi.mocked(fetch);
+    const original = fetcher.getMockImplementation()!;
+    fetcher.mockImplementation((async (input: RequestInfo | URL, init?: RequestInit) =>
+      String(input).includes('/api/admin/publications')
+        ? json({
+            publications: [
+              {
+                id: 'pub-1',
+                bannerId: 'ban-1',
+                title: 'Night pulse',
+                body: 'A round banner for the cam.',
+                status: 'pending',
+                votes: 0,
+                vote: 0,
+                settings: { style: 'pulse' },
+                schemaVersion: 1,
+                createdAt: '2026-10-17T10:00:00.000Z',
+                author: 'alice',
+              },
+            ],
+            next: null,
+          })
+        : original(input, init)) as unknown as typeof fetch
+    );
+    render(
+      <MemoryRouter>
+        <AdminPage />
+      </MemoryRouter>
+    );
+    await screen.findByText('Banery online');
+    fireEvent.click(screen.getByRole('button', { name: 'Banery publiczne' }));
+    expect(await screen.findByText('Night pulse')).toBeTruthy();
+    expect(screen.getByText(/dodał alice/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Zatwierdź' })).toBeTruthy();
+    expect(fetcher.mock.calls.some(([url]) => String(url).includes('/api/admin/publications?status=pending'))).toBe(true);
+  });
+
   test('has its own tab for verifying profile pictures, separate from the feedback queue', async () => {
     const fetcher = vi.mocked(fetch);
     const original = fetcher.getMockImplementation()!;

@@ -114,6 +114,8 @@ describe('the language menu on the wiki and the legal pages', () => {
     expect(faq).toContain(`href="${docsPath('fr', 'faq')}"`);
     const modes = render('/wiki/sklad-split-popup/');
     expect(modes).toContain(`href="${docsPath('es', 'modes')}"`);
+    const catalog = render('/wiki/publiczne-banery/');
+    expect(catalog).toContain(`href="${docsPath('de', 'catalog')}"`);
   });
 
   test('the wiki index leads to the documentation overview in each language', () => {

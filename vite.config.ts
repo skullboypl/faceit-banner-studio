@@ -6,11 +6,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createPresenceMiddleware, startOnlineHistory } from './server/presence.mjs';
 import { createAuthMiddleware } from './server/auth.mjs';
+import { createDevPreviewMiddleware } from './server/dev-preview.mjs';
 
 function presenceDevPlugin(): Plugin {
   return {
     name: 'presence-dev-api',
     configureServer(server) {
+      server.middlewares.use(createDevPreviewMiddleware());
       server.middlewares.use(createPresenceMiddleware());
       server.middlewares.use(createAuthMiddleware());
       startOnlineHistory();
@@ -96,8 +98,10 @@ export default defineConfig(({ isSsrBuild }) => ({
   server: {
     proxy: {
       '/api/me': 'http://127.0.0.1:3100',
+      '/api/catalog/banners': 'http://127.0.0.1:3100',
       '/api/posts': 'http://127.0.0.1:3100',
       '/api/admin/posts': 'http://127.0.0.1:3100',
+      '/api/admin/publications': 'http://127.0.0.1:3100',
       '/api/admin/comments': 'http://127.0.0.1:3100',
       '/api/admin/profile-images': 'http://127.0.0.1:3100',
       '/api/profiles': 'http://127.0.0.1:3100',
