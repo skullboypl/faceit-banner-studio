@@ -550,7 +550,7 @@ html.generator {
     line-height: 1.7;
   }
   .settings
-    button:not(.checkbox):not([aria-pressed]):not(.deck-tab):not(.deck-pause):not(.roster-submit):not(.roster-remove):not(.profile-image-remove):not(.catalog-load):not(.catalog-withdraw):not(.catalog-vote-btn):not(.look-cta-button),
+    button:not(.checkbox):not([aria-pressed]):not(.deck-tab):not(.deck-pause):not(.roster-submit):not(.roster-remove):not(.profile-image-remove):not(.catalog-load):not(.catalog-withdraw):not(.catalog-vote-btn):not(.look-cta-button):not(.look-cta-step),
   .cache-reset-button,
   dialog button {
     min-height: 39px;
@@ -942,6 +942,29 @@ html.generator {
     background: #ff701f;
     border-color: #ff701f;
     box-shadow: 0 4px 16px #ff59002b;
+  }
+  .export-still {
+    padding: 2px 20px 0;
+  }
+  .export-still button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin: 0;
+    .studio-icon { width: 15px; height: 15px; }
+  }
+  .export-still-note {
+    margin: 8px 0 0;
+    color: #c4a48a;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+  .export-still-error {
+    margin: 6px 0 0;
+    color: #ff8d8d;
+    font-size: 11px;
   }
   .primary-action > .studio-icon:last-child {
     width: 15px;

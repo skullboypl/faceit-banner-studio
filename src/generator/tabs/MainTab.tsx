@@ -20,7 +20,54 @@ import { OverrideNotice } from '../../components/ProfileImages.tsx';
 import { TeamOptionsPanel } from '../../components/ModeOptions.tsx';
 import { SplitOptionsPanel } from '../../components/SplitOptions.tsx';
 import { settingsFor } from '../appearance';
+import { cycleThemes, themeChoices } from '../theme-cycle';
+import { resolveBannerStyle } from '../../../widget/src/styles/styles';
 import { LOGIN_URL } from '../../components/FaceitLoginButton.tsx';
+
+/** Current layout name with mini previous / next theme arrows. */
+function LayoutStepper() {
+  const tl = useContext(LanguageContext);
+  const settings = useContext(SettingsContext);
+  if (!tl || !settings) return null;
+  const mode = String(settings.get('widgetMode') || 'solo');
+  const design = String(settings.get('bannerDesign') || '2026');
+  const current = resolveBannerStyle(String(settings.get('style') || ''), design);
+  const choices = themeChoices(mode, design);
+  const canStep = choices.length > 1;
+  const step = (delta: number) => settings.set('style', cycleThemes(choices, current, delta));
+  const neighbour = (delta: number) => tl(`style.${cycleThemes(choices, current, delta)}`);
+
+  return (
+    <div className="look-cta-text">
+      <small>{tl(mode === 'solo' ? 'cta.layout' : `cta.${mode}_layout`)}</small>
+      <div className="look-cta-name">
+        {canStep && (
+          <button
+            type="button"
+            className="look-cta-step is-prev"
+            aria-label={tl('cta.prev_theme')}
+            title={`${tl('cta.prev_theme')}: ${neighbour(-1)}`}
+            onClick={() => step(-1)}
+          >
+            <StudioIcon name="chevron" />
+          </button>
+        )}
+        <strong>{tl(`style.${current}`)}</strong>
+        {canStep && (
+          <button
+            type="button"
+            className="look-cta-step"
+            aria-label={tl('cta.next_theme')}
+            title={`${tl('cta.next_theme')}: ${neighbour(1)}`}
+            onClick={() => step(1)}
+          >
+            <StudioIcon name="chevron" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 type Props = {
   playerExists: boolean | undefined;
@@ -277,12 +324,7 @@ export const MainTab = ({
             <TeamRosterEditor accountNickname={accountNickname} />
           )}
         <div className="look-cta">
-          <div className="look-cta-text">
-            <small>{tl(mode === 'solo' ? 'cta.layout' : `cta.${mode}_layout`)}</small>
-            <strong>
-              {tl(`style.${String(settings.get('style'))}`)}
-            </strong>
-          </div>
+          <LayoutStepper />
           <button
             type="button"
             className="look-cta-button"

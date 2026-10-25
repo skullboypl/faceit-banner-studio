@@ -47,6 +47,7 @@ import {
 } from '../settings/manager.ts';
 import { SETTINGS_DEFINITIONS } from '../settings/definition.ts';
 import { resolveBannerStyle } from '../../widget/src/styles/styles';
+import { bannerToPng, stillSource } from '../export/banner-png';
 import type { VersusPlayer } from '../../widget/src/widget/Widget.tsx';
 import { VerifiedBadgeType } from '../../widget/src/utils/faceit_util.ts';
 import { OnlineBannerCount } from '../components/OnlineBannerCount.tsx';
@@ -118,6 +119,7 @@ export const Generator = () => {
   );
   const [previewBackground, setPreviewBackground] = useState<string>('ancient');
   const [shareCopied, setShareCopied] = useState<boolean>(false);
+  const [pngState, setPngState] = useState<'idle' | 'busy' | 'error'>('idle');
   const [importLinkValue, setImportLinkValue] = useState<string>('');
   const [importStatus, setImportStatus] = useState<'success' | 'error' | null>(
     null
@@ -345,6 +347,31 @@ export const Generator = () => {
   }, [buildSettingsQueryParams]);
 
   const jsonToQuery = toQueryString;
+
+  const pngLock = useRef(false);
+  const saveBannerPng = useCallback(async () => {
+    if (pngLock.current) return;
+    const theme = stillSource();
+    if (!theme) {
+      setPngState('error');
+      return;
+    }
+    pngLock.current = true;
+    setPngState('busy');
+    try {
+      const dataUrl = await bannerToPng(theme);
+      const style = String(getSetting('style') || 'banner').replace(/[^a-z0-9_-]+/gi, '');
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `faceit-${style || 'banner'}.png`;
+      link.click();
+      setPngState('idle');
+    } catch {
+      setPngState('error');
+    } finally {
+      pngLock.current = false;
+    }
+  }, [getSetting]);
 
   const copySettingsURLToClipboard = useCallback(async () => {
     const params = buildSettingsQueryParams();
@@ -1100,6 +1127,21 @@ export const Generator = () => {
                       <ShareIcon />
                       {tl('generator.share.button')}
                     </button>
+                  </div>
+                  <div className="export-still">
+                    <button
+                      type="button"
+                      className="with-icon"
+                      disabled={pngState === 'busy'}
+                      onClick={() => {
+                        void saveBannerPng();
+                      }}
+                    >
+                      <StudioIcon name="download" />
+                      {tl(pngState === 'busy' ? 'export.png.busy' : 'export.png')}
+                    </button>
+                    <p className="export-still-note">{tl('export.png.warn')}</p>
+                    {pngState === 'error' && <p className="export-still-error">{tl('export.png.failed')}</p>}
                   </div>
                   <details className="import-settings">
                     <summary>{tl('studio.import')}</summary>

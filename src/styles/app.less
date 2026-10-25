@@ -1226,6 +1226,48 @@ html.generator .settings .roster-editor {
       line-height: 1.2;
     }
   }
+  .look-cta-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    strong {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+  .look-cta-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    color: #ffb088;
+    background: #2a211c;
+    border: 1px solid #6a4634;
+    border-radius: 5px;
+    box-shadow: none;
+    cursor: pointer;
+    transform: none;
+    .studio-icon { width: 14px; height: 14px; }
+    &.is-prev .studio-icon { transform: scaleX(-1); }
+    &:hover,
+    &:focus-visible {
+      color: #fff;
+      background: #ff5900;
+      border-color: #ff5900;
+    }
+    &:active {
+      background: #e65000;
+      border-color: #e65000;
+    }
+  }
   .look-cta-button {
     display: inline-flex;
     align-items: center;

@@ -41,6 +41,7 @@
   "author": "mxgic1337_",
   "dependencies": {
     "dotenv": "^16.4.7",
+    "html-to-image": "^1.11.13",
     "less": "^4.2.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
