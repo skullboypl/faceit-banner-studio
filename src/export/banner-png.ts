@@ -61,6 +61,65 @@ export function stillSource(root: ParentNode = document): HTMLElement | null {
   return theme instanceof HTMLElement ? theme : null;
 }
 
+const SHAPE = new Set(['circle', 'ellipse', 'path', 'polygon', 'polyline', 'rect', 'line', 'text', 'tspan']);
+
+function painted(color: string): boolean {
+  return color !== '' && color !== 'transparent' && color !== 'rgba(0, 0, 0, 0)';
+}
+
+/**
+ * The plate and the profile cover live on ::after / ::before with a negative z-index.
+ * A still drops those, so the preview scene shows through. Paint them as real layers.
+ */
+function bakeBannerBackground(wrapper: HTMLElement) {
+  wrapper.querySelectorAll<HTMLElement>('.widget').forEach((widget) => {
+    const plate = getComputedStyle(widget, '::after');
+    const cover = getComputedStyle(widget, '::before');
+    const plateColor = plate.backgroundColor;
+    const coverImage = cover.backgroundImage;
+    const hasPlate = plate.content !== 'none' && painted(plateColor);
+    const hasCover = cover.content !== 'none' && coverImage !== '' && coverImage !== 'none';
+    if (!hasPlate && !hasCover) return;
+
+    if (hasPlate) widget.style.backgroundColor = plateColor;
+    if (!hasCover) return;
+
+    const photo = document.createElement('div');
+    photo.setAttribute('data-png-cover', '');
+    photo.style.cssText = [
+      'position:absolute',
+      'inset:0',
+      'z-index:0',
+      'border-radius:inherit',
+      'pointer-events:none',
+      `background-image:${coverImage}`,
+      'background-size:cover',
+      'background-position:center',
+      'background-repeat:no-repeat',
+      `filter:${cover.filter}`,
+      `opacity:${cover.opacity}`,
+    ].join(';');
+    widget.insertBefore(photo, widget.firstChild);
+    Array.from(widget.children).forEach((child) => {
+      if (!(child instanceof HTMLElement) || child === photo) return;
+      if (getComputedStyle(child).position === 'static') child.style.position = 'relative';
+      if (getComputedStyle(child).zIndex === 'auto') child.style.zIndex = '1';
+    });
+  });
+}
+
+/** SVG paint comes from CSS. The still keeps the markup, not the stylesheet, so write the computed paint onto each shape. */
+function bakeVectorPaint(root: HTMLElement) {
+  root.querySelectorAll<SVGElement>('svg *').forEach((node) => {
+    if (!SHAPE.has(node.localName)) return;
+    const style = getComputedStyle(node);
+    for (const name of ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-opacity', 'opacity', 'color']) {
+      const value = style.getPropertyValue(name);
+      if (value) node.style.setProperty(name, value);
+    }
+  });
+}
+
 /** Raster of the banner at its own size, transparent around it, with motion held on the resting frame. */
 export async function bannerToPng(theme: HTMLElement): Promise<string> {
   const host = document.createElement('div');
@@ -76,6 +135,9 @@ export async function bannerToPng(theme: HTMLElement): Promise<string> {
     wrapper.style.maxWidth = 'none';
     wrapper.style.animation = 'none';
     wrapper.classList.remove('banner-load-enter');
+    /* Copied computed styles include print-color-adjust: economy, which drops text color in the raster. */
+    wrapper.style.setProperty('print-color-adjust', 'exact');
+    wrapper.style.setProperty('-webkit-print-color-adjust', 'exact');
     copy.querySelectorAll<HTMLElement>('*').forEach((element) => {
       element.style.setProperty('animation', 'none', 'important');
       element.style.setProperty('transition', 'none', 'important');
@@ -86,6 +148,11 @@ export async function bannerToPng(theme: HTMLElement): Promise<string> {
       element.style.setProperty('opacity', '1', 'important');
       element.style.setProperty('visibility', 'visible', 'important');
     });
+    bakeBannerBackground(wrapper);
+    bakeVectorPaint(wrapper);
+    const quiet = document.createElement('style');
+    quiet.textContent = '[data-png-host] .widget::before,[data-png-host] .widget::after{content:none !important;display:none !important;}';
+    host.appendChild(quiet);
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });

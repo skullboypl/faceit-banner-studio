@@ -550,7 +550,7 @@ html.generator {
     line-height: 1.7;
   }
   .settings
-    button:not(.checkbox):not([aria-pressed]):not(.deck-tab):not(.deck-pause):not(.roster-submit):not(.roster-remove):not(.profile-image-remove):not(.catalog-load):not(.catalog-withdraw):not(.catalog-vote-btn):not(.look-cta-button):not(.look-cta-step),
+    button:not(.checkbox):not([aria-pressed]):not(.deck-tab):not(.deck-pause):not(.roster-submit):not(.roster-remove):not(.profile-image-remove):not(.catalog-load):not(.catalog-withdraw):not(.catalog-vote-btn):not(.look-cta-button):not(.look-cta-step):not(.export-generate):not(.png-confirm),
   .cache-reset-button,
   dialog button {
     min-height: 39px;
@@ -922,49 +922,87 @@ html.generator {
     font-size: 10px;
   }
   .settings .export-actions {
-    display: grid;
-    grid-template-columns: 1.25fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 10px;
-    padding: 0 20px;
+    padding: 4px 20px 0;
   }
-  .settings .export-actions button {
-    min-height: 43px;
-    margin: 5px 0;
-    white-space: nowrap;
-  }
-  .settings .export-actions button.primary-action {
-    background: @studio-orange;
-    color: #fff;
-    border-color: @studio-orange;
+  .settings .export-actions .export-generate {
+    width: 100%;
+    min-height: 52px;
+    margin: 0;
+    padding: 0 16px;
+    font-size: 14px;
     font-weight: 700;
+    color: #fff;
+    background: #ff5900;
+    border-color: #ff5900;
+    box-shadow: none;
   }
-  .settings .export-actions button.primary-action:hover {
+  .settings .export-actions .export-generate:hover,
+  .settings .export-actions .export-generate:focus-visible {
+    color: #fff;
     background: #ff701f;
     border-color: #ff701f;
     box-shadow: 0 4px 16px #ff59002b;
   }
-  .export-still {
-    padding: 2px 20px 0;
+  .settings .export-secondary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
-  .export-still button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    width: 100%;
+  .settings .export-secondary button {
+    min-height: 43px;
     margin: 0;
-    .studio-icon { width: 15px; height: 15px; }
+    white-space: nowrap;
   }
-  .export-still-note {
-    margin: 8px 0 0;
-    color: #c4a48a;
-    font-size: 11px;
-    line-height: 1.45;
+  dialog.png-warn {
+    width: min(420px, calc(100vw - 32px));
+    padding: 22px 22px 18px;
+    text-align: left;
+    border: 1px solid #ff5900;
+    border-radius: 10px;
+    background: #171719;
+    color: #eee;
+    box-shadow: 0 24px 80px #000a;
   }
-  .export-still-error {
-    margin: 6px 0 0;
+  dialog.png-warn:not([open]) {
+    display: none;
+  }
+  dialog.png-warn[open] {
+    display: block;
+    animation: studio-dialog 0.24s ease-out both;
+  }
+  dialog.png-warn p {
+    margin: 0;
+    color: #d7c4b6;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  dialog.png-warn .png-warn-error {
+    margin-top: 8px;
     color: #ff8d8d;
-    font-size: 11px;
+  }
+  dialog.png-warn .buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  dialog.png-warn .buttons button {
+    flex: 1;
+    margin: 0;
+  }
+  dialog.png-warn .buttons button.png-confirm {
+    color: #fff;
+    background: #ff5900;
+    border-color: #ff5900;
+    font-weight: 700;
+  }
+  dialog.png-warn .buttons button.png-confirm:hover,
+  dialog.png-warn .buttons button.png-confirm:focus-visible {
+    color: #fff;
+    background: #ff701f;
+    border-color: #ff701f;
   }
   .primary-action > .studio-icon:last-child {
     width: 15px;
@@ -1237,10 +1275,6 @@ html.generator {
     .settings {
       padding: 17px;
     }
-    .settings .export-actions {
-      grid-template-columns: 1fr;
-      gap: 0;
-    }
   }
   @media (max-width: 1000px) {
     #studio-settings-title {
@@ -1265,10 +1299,6 @@ html.generator {
     }
     .studio-main .preview-card {
       margin-top: 0;
-    }
-    .settings .export-actions {
-      grid-template-columns: 1.25fr 1fr;
-      gap: 10px;
     }
     .social-links-wrap {
       margin-bottom: 12px;
@@ -1370,9 +1400,10 @@ html.generator {
       margin: 0 16px;
     }
     .settings .export-actions {
+      padding: 4px 16px 0;
+    }
+    .settings .export-secondary {
       grid-template-columns: 1fr;
-      gap: 0;
-      padding: 0 16px;
     }
     .import-settings {
       padding: 14px 16px 18px;

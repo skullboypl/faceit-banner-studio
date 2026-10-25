@@ -120,6 +120,8 @@ export const Generator = () => {
   const [previewBackground, setPreviewBackground] = useState<string>('ancient');
   const [shareCopied, setShareCopied] = useState<boolean>(false);
   const [pngState, setPngState] = useState<'idle' | 'busy' | 'error'>('idle');
+  const [pngAsk, setPngAsk] = useState(false);
+  const pngDialogRef = useRef<HTMLDialogElement>(null);
   const [importLinkValue, setImportLinkValue] = useState<string>('');
   const [importStatus, setImportStatus] = useState<'success' | 'error' | null>(
     null
@@ -366,12 +368,29 @@ export const Generator = () => {
       link.download = `faceit-${style || 'banner'}.png`;
       link.click();
       setPngState('idle');
+      setPngAsk(false);
     } catch {
       setPngState('error');
     } finally {
       pngLock.current = false;
     }
   }, [getSetting]);
+
+  useEffect(() => {
+    const dialog = pngDialogRef.current;
+    if (!dialog) return;
+    if (pngAsk) {
+      if (!dialog.open) {
+        try {
+          dialog.showModal();
+        } catch {
+          dialog.setAttribute('open', 'true');
+        }
+      }
+      return;
+    }
+    if (dialog.open) dialog.close();
+  }, [pngAsk]);
 
   const copySettingsURLToClipboard = useCallback(async () => {
     const params = buildSettingsQueryParams();
@@ -1107,9 +1126,9 @@ export const Generator = () => {
                     <h3>{tl('studio.export_title')}</h3>
                     <span>OBS · Streamlabs</span>
                   </div>
-                  <div className={'flex export-actions'}>
+                  <div className="export-actions">
                     <button
-                      className={'with-icon primary-action'}
+                      className="with-icon primary-action export-generate"
                       onClick={() => {
                         generateWidgetURL();
                       }}
@@ -1118,31 +1137,63 @@ export const Generator = () => {
                       {tl('studio.generate')}
                       <StudioIcon name="arrow" />
                     </button>
-                    <button
-                      className={'with-icon'}
-                      onClick={() => {
-                        copySettingsURLToClipboard();
-                      }}
-                    >
-                      <ShareIcon />
-                      {tl('generator.share.button')}
-                    </button>
+                    <div className="export-secondary">
+                      <button
+                        className="with-icon"
+                        onClick={() => {
+                          copySettingsURLToClipboard();
+                        }}
+                      >
+                        <ShareIcon />
+                        {tl('generator.share.button')}
+                      </button>
+                      <button
+                        type="button"
+                        className="with-icon"
+                        onClick={() => {
+                          setPngState('idle');
+                          setPngAsk(true);
+                        }}
+                      >
+                        <StudioIcon name="download" />
+                        {tl('export.png')}
+                      </button>
+                    </div>
                   </div>
-                  <div className="export-still">
-                    <button
-                      type="button"
-                      className="with-icon"
-                      disabled={pngState === 'busy'}
-                      onClick={() => {
-                        void saveBannerPng();
-                      }}
-                    >
-                      <StudioIcon name="download" />
-                      {tl(pngState === 'busy' ? 'export.png.busy' : 'export.png')}
-                    </button>
-                    <p className="export-still-note">{tl('export.png.warn')}</p>
-                    {pngState === 'error' && <p className="export-still-error">{tl('export.png.failed')}</p>}
-                  </div>
+                  <dialog
+                    ref={pngDialogRef}
+                    className="png-warn"
+                    aria-labelledby="png-warn-title"
+                    onCancel={(event) => {
+                      event.preventDefault();
+                      if (pngState !== 'busy') setPngAsk(false);
+                    }}
+                    onClick={(event) => {
+                      if (event.target === pngDialogRef.current && pngState !== 'busy') setPngAsk(false);
+                    }}
+                  >
+                    <p id="png-warn-title">{tl('export.png.warn')}</p>
+                    {pngState === 'error' && <p className="png-warn-error">{tl('export.png.failed')}</p>}
+                    <div className="buttons">
+                      <button
+                        type="button"
+                        disabled={pngState === 'busy'}
+                        onClick={() => setPngAsk(false)}
+                      >
+                        {tl('modals.buttons.close')}
+                      </button>
+                      <button
+                        type="button"
+                        className="primary-action png-confirm"
+                        disabled={pngState === 'busy'}
+                        onClick={() => {
+                          void saveBannerPng();
+                        }}
+                      >
+                        {tl(pngState === 'busy' ? 'export.png.busy' : 'export.png')}
+                      </button>
+                    </div>
+                  </dialog>
                   <details className="import-settings">
                     <summary>{tl('studio.import')}</summary>
                     <div className={'import-link-row'}>
