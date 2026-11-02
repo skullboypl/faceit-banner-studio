@@ -1066,5 +1066,9 @@
   "chat.kind.last": "Poslední zápas: mapa, skóre, K-D-A, K/D, ADR, HS a jak dávno to bylo.",
   "chat.kind.kd": "K/D z posledních 20 zápasů a z posledního zápasu.",
   "chat.kind.avg": "Průměry z posledních 20 zápasů: K/D, K/R, ADR, HS, zabití a výhry.",
-  "chat.kind.live": "Zápas, který právě běží: mapa, skóre, průměrné ELO týmů a odkaz na místnost. Stejná data jako popup zápasu."
+  "chat.kind.live": "Zápas, který právě běží: mapa, skóre, průměrné ELO týmů a odkaz na místnost. Stejná data jako popup zápasu.",
+  "chat.setup": "Nastavení bota",
+  "chat.commands": "Příkazy",
+  "chat.try": "Náhled",
+  "chat.viewer": "Divák"
 }

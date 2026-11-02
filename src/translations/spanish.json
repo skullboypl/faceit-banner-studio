@@ -1066,5 +1066,9 @@
   "chat.kind.last": "La última partida: mapa, marcador, K-D-A, K/D, ADR, HS y hace cuánto.",
   "chat.kind.kd": "K/D de las últimas 20 partidas y de la última partida.",
   "chat.kind.avg": "Medias de las últimas 20 partidas: K/D, K/R, ADR, HS, bajas y victorias.",
-  "chat.kind.live": "La partida en curso: mapa, marcador, ELO medio de los equipos y enlace a la sala. Los mismos datos que el popup de partida."
+  "chat.kind.live": "La partida en curso: mapa, marcador, ELO medio de los equipos y enlace a la sala. Los mismos datos que el popup de partida.",
+  "chat.setup": "Configuración del bot",
+  "chat.commands": "Comandos",
+  "chat.try": "Vista previa",
+  "chat.viewer": "Espectador"
 }

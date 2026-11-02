@@ -1106,5 +1106,9 @@
   "chat.kind.last": "The newest match: map, result and score, K-D-A, K/D, ADR, HS and how long ago.",
   "chat.kind.kd": "K/D over the last 20 matches and in the last match.",
   "chat.kind.avg": "Averages over the last 20 matches: K/D, K/R, ADR, HS, kills and wins.",
-  "chat.kind.live": "The match being played now: map, score, average team ELO and a room link. The same data as the match popup."
+  "chat.kind.live": "The match being played now: map, score, average team ELO and a room link. The same data as the match popup.",
+  "chat.setup": "Bot setup",
+  "chat.commands": "Commands",
+  "chat.try": "Preview",
+  "chat.viewer": "Viewer"
 }

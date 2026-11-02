@@ -1066,5 +1066,9 @@
   "chat.kind.last": "Das letzte Match: Map, Ergebnis, K-D-A, K/D, ADR, HS und wie lange es her ist.",
   "chat.kind.kd": "K/D aus den letzten 20 Matches und aus dem letzten Match.",
   "chat.kind.avg": "Schnitt aus den letzten 20 Matches: K/D, K/R, ADR, HS, Kills und Siege.",
-  "chat.kind.live": "Das laufende Match: Map, Spielstand, Team-ELO im Schnitt und ein Raum-Link. Dieselben Daten wie das Match-Popup."
+  "chat.kind.live": "Das laufende Match: Map, Spielstand, Team-ELO im Schnitt und ein Raum-Link. Dieselben Daten wie das Match-Popup.",
+  "chat.setup": "Bot einrichten",
+  "chat.commands": "Befehle",
+  "chat.try": "Vorschau",
+  "chat.viewer": "Zuschauer"
 }

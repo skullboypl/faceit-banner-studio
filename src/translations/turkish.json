@@ -1066,5 +1066,9 @@
   "chat.kind.last": "Son maç: harita, skor, K-D-A, K/D, ADR, HS ve ne kadar önce oynandığı.",
   "chat.kind.kd": "Son 20 maçın ve son maçın K/D değeri.",
   "chat.kind.avg": "Son 20 maçın ortalamaları: K/D, K/R, ADR, HS, öldürme ve galibiyet.",
-  "chat.kind.live": "Şu an oynanan maç: harita, skor, takımların ortalama ELO değeri ve oda bağlantısı. Maç açılır penceresiyle aynı veriler."
+  "chat.kind.live": "Şu an oynanan maç: harita, skor, takımların ortalama ELO değeri ve oda bağlantısı. Maç açılır penceresiyle aynı veriler.",
+  "chat.setup": "Bot ayarları",
+  "chat.commands": "Komutlar",
+  "chat.try": "Önizleme",
+  "chat.viewer": "İzleyici"
 }

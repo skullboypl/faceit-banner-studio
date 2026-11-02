@@ -23,7 +23,14 @@ export type IconName =
   | 'trash'
   | 'plus'
   | 'check'
-  | 'terminal';
+  | 'terminal'
+  | 'trend'
+  | 'history'
+  | 'crosshair'
+  | 'gauge'
+  | 'broadcast'
+  | 'copy'
+  | 'bot';
 
 const paths: Record<IconName, string> = {
   settings: 'M4 7h9m4 0h3M4 17h3m4 0h9M13 4v6M7 14v6',
@@ -52,6 +59,13 @@ const paths: Record<IconName, string> = {
   plus: 'M12 5v14M5 12h14',
   check: 'm5 12.5 4.5 4.5L19 7.5',
   terminal: 'M4 5h16v14H4zM8 10l3 2-3 2M13 15h4',
+  trend: 'M4 17l5-5 4 4 7-7M14 9h6v6',
+  history: 'M3 12a9 9 0 1 0 2.6-6.4M3 4v4h4M12 7v5l3 2',
+  crosshair: 'M12 19a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM12 2v5M12 17v5M2 12h5M17 12h5',
+  gauge: 'M4 16a8 8 0 1 1 16 0M12 16l4-5M3 20h18',
+  broadcast: 'M12 12h.01M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8',
+  copy: 'M9 9h11v11H9zM5 15H4V4h11v1',
+  bot: 'M8 8h8a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-5a3 3 0 0 1 3-3ZM12 4v4M9.5 13.5h.01M14.5 13.5h.01',
 };
 
 export const StudioIcon = ({ name }: { name: IconName }) => (

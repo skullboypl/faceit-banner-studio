@@ -1066,5 +1066,9 @@
   "chat.kind.last": "Le dernier match : carte, score, K-D-A, K/D, ADR, HS et il y a combien de temps.",
   "chat.kind.kd": "K/D sur les 20 derniers matchs et sur le dernier match.",
   "chat.kind.avg": "Moyennes des 20 derniers matchs : K/D, K/R, ADR, HS, kills et victoires.",
-  "chat.kind.live": "Le match en cours : carte, score, ELO moyen des équipes et lien de la room. Les mêmes données que le popup de match."
+  "chat.kind.live": "Le match en cours : carte, score, ELO moyen des équipes et lien de la room. Les mêmes données que le popup de match.",
+  "chat.setup": "Réglages du bot",
+  "chat.commands": "Commandes",
+  "chat.try": "Aperçu",
+  "chat.viewer": "Spectateur"
 }

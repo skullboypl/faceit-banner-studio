@@ -1106,5 +1106,9 @@
   "chat.kind.last": "Ostatni mecz: mapa, wynik, K-D-A, K/D, ADR, HS i ile minęło.",
   "chat.kind.kd": "K/D z ostatnich 20 meczów i z ostatniego meczu.",
   "chat.kind.avg": "Średnie z ostatnich 20 meczów: K/D, K/R, ADR, HS, zabójstwa i wygrane.",
-  "chat.kind.live": "Mecz, który trwa teraz: mapa, wynik, średnie ELO drużyn i link do pokoju. Te same dane co popup meczu."
+  "chat.kind.live": "Mecz, który trwa teraz: mapa, wynik, średnie ELO drużyn i link do pokoju. Te same dane co popup meczu.",
+  "chat.setup": "Ustawienia bota",
+  "chat.commands": "Komendy",
+  "chat.try": "Podgląd",
+  "chat.viewer": "Widz"
 }
