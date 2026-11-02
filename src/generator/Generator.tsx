@@ -27,6 +27,8 @@ import { StudioIcon } from '../components/StudioIcon.tsx';
 import { StudioBrand } from '../components/StudioBrand.tsx';
 import { LiveRanking } from '../live/LiveRanking.tsx';
 import { TwitchStreamers } from '../live/TwitchStreamers.tsx';
+import { StreamerPage } from '../live/StreamerPage.tsx';
+import { parseStreamerPath } from '../live/streamer-seo';
 import { TimelineIcon } from '../assets/icons/tabler/TimelineIcon.tsx';
 import { ShareIcon } from '../assets/icons/tabler/ShareIcon.tsx';
 import { BrandTwitchIcon } from '../assets/icons/tabler/BrandTwitchIcon.tsx';
@@ -134,7 +136,8 @@ export const Generator = () => {
 
   const pathname = useLocation().pathname;
   const onLive = pathname === '/live';
-  const onStreamers = pathname === '/streamers';
+  const streamerSlug = parseStreamerPath(pathname);
+  const onStreamers = pathname === '/streamers' || Boolean(streamerSlug);
   const onPublicPage = onLive || onStreamers;
   const [liveStreamerCount, setLiveStreamerCount] = useState<number | null>(null);
   const [onlineBannerCount, setOnlineBannerCount] = useState<number | null>(null);
@@ -1055,8 +1058,8 @@ export const Generator = () => {
                 </h2>
                 <span>{onStreamers ? tl('streamers.section_lead') : onLive ? tl('live.lead') : tl('studio.settings_hint')}</span>
               </div>
-              <div className="tab-content" key={onStreamers ? 'streamers' : onLive ? 'live' : showProfile ? 'profile' : selectedTabIndex}>
-                {onStreamers ? <TwitchStreamers /> : onLive ? <LiveRanking /> : showProfile ? <ProfilePanel /> : tabs[selectedTabIndex].component}
+              <div className="tab-content" key={streamerSlug || (onStreamers ? 'streamers' : onLive ? 'live' : showProfile ? 'profile' : selectedTabIndex)}>
+                {streamerSlug ? <StreamerPage slug={streamerSlug} /> : onStreamers ? <TwitchStreamers /> : onLive ? <LiveRanking /> : showProfile ? <ProfilePanel /> : tabs[selectedTabIndex].component}
               </div>
             </section>
             {!onPublicPage && (showProfile || !WIDE_TAB_INDEXES.has(selectedTabIndex)) && (

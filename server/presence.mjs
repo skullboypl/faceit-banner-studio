@@ -1,11 +1,35 @@
 import { enrichTwitch } from './twitch-live.mjs';
 import { enrichKick } from './kick-live.mjs';
+import { ingestLiveStreamers } from './streamers.mjs';
 import { clientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
-import { fillFromPlayerId, knownImageUrl, loadImage, playerIdFromReferer, publicRanking, sanitizeInfo } from './live.mjs';
+import {
+  applyCachedProfiles,
+  fillFromPlayerId,
+  knownImageUrl,
+  loadImage,
+  mergeLastGoodPlayers,
+  PLAYER_ID,
+  playerIdFromReferer,
+  publicRanking,
+  sanitizeInfo,
+  warmPlayerCache,
+} from './live.mjs';
 import { count, once, warn } from './log.mjs';
 import { handleFaceitProxy } from './faceit-proxy.mjs';
-import { kicksAmong, recordOnlineSample, twitchesAmong, verifiedAmong, withRedis } from './store.mjs';
+import {
+  getStudioUsersSync,
+  hydrateStudioUsers,
+  kicksAmong,
+  listStudioUsers,
+  recordOnlineSample,
+  rememberStudioUser,
+  resetStudioUsersForTests,
+  touchStudioSession,
+  twitchesAmong,
+  verifiedAmong,
+  withRedis,
+} from './store.mjs';
 
 /** Current widgets ping every minute. Older banners refresh only after a win and never send a heartbeat, so the live pool keeps a banner for an hour after its last contact. */
 export const ACTIVE_WINDOW_MS = 60 * 60_000;
@@ -116,6 +140,7 @@ export function resetPresenceForTests() {
   boardCache = null;
   hydrated = false;
   hydrating = null;
+  resetStudioUsersForTests();
 }
 
 function forget(id) {
@@ -167,10 +192,86 @@ export function clearLiveBoard() {
   countCache = null;
 }
 
-/** Banners seen in the activity window (read in-process by the admin overview). */
+function requestHost(req) {
+  const raw = String(req?.headers?.host || '');
+  if (raw.startsWith('[')) {
+    const end = raw.indexOf(']');
+    return end === -1 ? raw : raw.slice(1, end);
+  }
+  return raw.split(':')[0];
+}
+
+/** Local `dev:admin` only. Matches auth.mjs so Dev Admin can appear on the local live list. */
+function rememberLocalDevAdmin(req) {
+  if (process.env.DEV_ADMIN !== '1' || process.env.NODE_ENV === 'production') return;
+  const host = requestHost(req);
+  if (host !== 'localhost' && host !== '127.0.0.1' && host !== '::1') return;
+  rememberStudioUser({ guid: 'dev-admin', nickname: 'Dev Admin', avatar: null });
+}
+
+function studioInfo(user) {
+  const playerId = PLAYER_ID.test(user.guid) ? user.guid.toLowerCase() : '';
+  return sanitizeInfo({
+    nickname: user.nickname,
+    playerId,
+  });
+}
+
+/** Studio sessions that are not already represented by a widget heartbeat. */
+function countStudioOnly() {
+  const users = getStudioUsersSync();
+  if (!users.length) return 0;
+  const widgetIds = new Set();
+  const widgetNicks = new Set();
+  for (const entry of sessions.values()) {
+    if (entry.info?.playerId) widgetIds.add(entry.info.playerId);
+    if (entry.info?.nickname) widgetNicks.add(entry.info.nickname.toLowerCase());
+  }
+  let extra = 0;
+  for (const user of users) {
+    const id = PLAYER_ID.test(user.guid) ? user.guid : '';
+    if (id && widgetIds.has(id)) continue;
+    if (widgetNicks.has(String(user.nickname).toLowerCase())) continue;
+    extra += 1;
+  }
+  return extra;
+}
+
+function onlineTotal() {
+  return sessions.size + countStudioOnly();
+}
+
+function attachStudioUsers(board) {
+  const users = getStudioUsersSync();
+  const studioNicks = new Set(users.map((user) => String(user.nickname).toLowerCase()));
+  const names = new Set(board.players.map((player) => player.nickname.toLowerCase()));
+  const extras = [];
+  for (const user of users) {
+    const info = studioInfo(user);
+    if (!info?.nickname || names.has(info.nickname.toLowerCase())) continue;
+    names.add(info.nickname.toLowerCase());
+    extras.push({
+      nickname: info.nickname,
+      confirmed: true,
+      ...(PLAYER_ID.test(user.guid) ? { avatar: `/api/presence/avatar/${user.guid}` } : {}),
+    });
+  }
+  const players = extras.length ? [...board.players, ...extras] : board.players;
+  const marked = players.map((player) =>
+    studioNicks.has(player.nickname.toLowerCase()) ? { ...player, confirmed: true } : player
+  );
+  return {
+    ...board,
+    players: marked.slice(0, 200),
+    ranked: marked.length,
+    online: board.online + extras.length,
+  };
+}
+
+/** Banners seen in the activity window, plus signed-in studio accounts (read in-process by the admin overview). */
 export const getPresenceCount = () => {
   prune();
-  return sessions.size;
+  return onlineTotal();
 };
 
 const SAMPLE_MS = 60_000;
@@ -237,10 +338,13 @@ function rememberCount(online, at = Date.now()) {
 
 /** Cheap counter for the studio menu. Reuses the live-list snapshot when that one is still warm. */
 export function getPublicOnline() {
-  if (fresh(boardCache)) return { online: boardCache.body.online, windowSeconds: boardCache.body.windowSeconds };
+  if (fresh(boardCache)) {
+    const attached = attachStudioUsers(boardCache.body);
+    return { online: attached.online, windowSeconds: attached.windowSeconds };
+  }
   if (fresh(countCache)) return countCache.body;
   prune();
-  return rememberCount(sessions.size);
+  return rememberCount(onlineTotal());
 }
 
 async function buildLiveBoard() {
@@ -249,27 +353,55 @@ async function buildLiveBoard() {
   for (const entry of sessions.values()) {
     if (entry.info) entries.push({ info: { ...entry.info }, lastSeen: entry.lastSeen });
   }
+  const studio = await listStudioUsers();
+  const seenIds = new Set(entries.map((entry) => entry.info?.playerId).filter(Boolean));
+  const seenNicks = new Set(
+    entries.map((entry) => entry.info?.nickname?.toLowerCase()).filter(Boolean)
+  );
+  for (const user of studio) {
+    const info = studioInfo(user);
+    if (!info) continue;
+    if (info.playerId && seenIds.has(info.playerId)) continue;
+    if (info.nickname && seenNicks.has(info.nickname.toLowerCase())) continue;
+    if (info.playerId) seenIds.add(info.playerId);
+    if (info.nickname) seenNicks.add(info.nickname.toLowerCase());
+    entries.push({ info, lastSeen: Date.now() });
+  }
+  /* Redis/Postgres snapshots first, so a slow FACEIT cannot blank nicks and ELO after a deploy. */
+  await warmPlayerCache([...seenIds]);
+  applyCachedProfiles(entries);
+  const previousPlayers = boardCache?.body?.players;
   /* The list must never wait on FACEIT: nginx gives up after a few seconds. Whatever is filled in by then is shown;
      the rest keeps loading into the caches, and a partial list is rebuilt soon instead of being kept for 15 minutes. */
   const filled = await Promise.race([
     fillFromPlayerId(entries).then(() => true, () => true),
     new Promise((resolve) => setTimeout(() => resolve(false), fillDeadlineMs())),
   ]);
+  if (!filled) applyCachedProfiles(entries);
   const signedIn = await verifiedAmong(entries.map((entry) => entry.info?.playerId));
   const kicks = await kicksAmong(entries.map((entry) => entry.info?.playerId));
   const twitches = await twitchesAmong(entries.map((entry) => entry.info?.playerId));
+  const studioIds = new Set(studio.map((user) => user.guid).filter((id) => PLAYER_ID.test(id)));
+  const studioNicks = new Set(studio.map((user) => String(user.nickname).toLowerCase()));
   for (const entry of entries) {
     const id = entry.info?.playerId;
-    if (id && signedIn.has(id)) entry.info.confirmed = true;
+    if (
+      (id && signedIn.has(id)) ||
+      (id && studioIds.has(id)) ||
+      (entry.info?.nickname && studioNicks.has(entry.info.nickname.toLowerCase()))
+    ) {
+      entry.info.confirmed = true;
+    }
     const kick = id ? kicks.get(id) : '';
     if (kick) entry.info.kick = kick;
     const twitch = id ? twitches.get(id) : '';
     if (twitch) entry.info.twitch = twitch;
   }
-  const players = publicRanking(entries);
+  let players = publicRanking(entries);
+  if (!filled && previousPlayers?.length) players = mergeLastGoodPlayers(players, previousPlayers);
   const at = Date.now();
   const body = {
-    online: sessions.size,
+    online: onlineTotal(),
     ranked: players.length,
     windowSeconds: ACTIVE_WINDOW_MS / 1000,
     players: players.slice(0, 200),
@@ -298,8 +430,11 @@ async function getCachedLiveBoard() {
 }
 
 export async function getLiveBoard() {
-  const board = await getCachedLiveBoard();
-  return { ...board, players: await enrichKick(await enrichTwitch(board.players)) };
+  await hydrateStudioUsers();
+  const board = attachStudioUsers(await getCachedLiveBoard());
+  const players = await enrichKick(await enrichTwitch(board.players));
+  void ingestLiveStreamers(players).catch(() => undefined);
+  return { ...board, players };
 }
 
 const trustedHops = () => Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS) || 1);
@@ -325,6 +460,9 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
     const now = Date.now();
     const ip = clientIp(req.headers, req.socket.remoteAddress, trustedHops());
     await hydratePresence();
+    await hydrateStudioUsers();
+    await touchStudioSession(req.headers.cookie);
+    rememberLocalDevAdmin(req);
 
     if (req.method === 'GET' && avatarId) {
       if (!avatarLimit(ip)) {

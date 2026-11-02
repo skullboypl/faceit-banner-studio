@@ -2,6 +2,7 @@ import { createRateLimiter } from '../shared/rate-limit.mjs';
 import { faceitFetch, faceitPressure, faceitServerKey, rememberImageSources } from './faceit-gate.mjs';
 import { count, once, warn } from './log.mjs';
 import { clientIp } from '../shared/client-ip.mjs';
+import { clearFaceitAnswers, loadFaceitAnswer, removeFaceitAnswers, saveFaceitAnswer } from './store.mjs';
 
 /** Repeated reads of the same player reuse this answer instead of calling FACEIT again. */
 export const FACEIT_TTL_MS = 30_000;
@@ -12,6 +13,8 @@ const CACHE_LIMIT = 400;
 const STALE_ANSWER_MS = 10 * 60_000;
 /** A profile or stat read is kept up to this long when the player has not finished a match since. */
 const SMART_MAX_MS = 10 * 60_000;
+/** Redis/Postgres copies stay good for first paint after a deploy; the next refresh still checks FACEIT. */
+const STORE_KEEP_MS = 6 * 60 * 60_000;
 /** After a new match, reads stay at the normal pace this long, so the ELO FACEIT updates a little later is picked up. */
 const HOT_MS = 2 * 60_000;
 const RETRY_SOON_MS = 5_000;
@@ -125,6 +128,7 @@ export function faceitTarget(rawUrl) {
   const watched = path.match(new RegExp(`^\/players\/(${PLAYER})(?:\/games\/cs2\/stats|\/stats\/cs2)?$`, 'i'));
   const query = params.toString();
   const player = path.toLowerCase() === '/players' || new RegExp(`^\\/players\\/${PLAYER}$`, 'i').test(path);
+  const playerId = path.match(new RegExp(`/players/(${PLAYER})`, 'i'));
   return {
     upstream: `https://open.faceit.com/data/v4${path}${query ? `?${query}` : ''}`,
     key: `${path.toLowerCase()}?${query}`,
@@ -132,6 +136,7 @@ export function faceitTarget(rawUrl) {
     watch: watched ? watched[1].toLowerCase() : undefined,
     /** Player reads also ask the public site whether this season is still unranked. */
     calibrate: player,
+    guid: playerId ? playerId[1].toLowerCase() : undefined,
   };
 }
 
@@ -211,12 +216,20 @@ export async function withCalibration(body, fetcher) {
   return body;
 }
 
+const durableFaceitAnswers = {
+  load: (id, key) => loadFaceitAnswer(id, key),
+  save: (id, key, entry) => saveFaceitAnswer(id, key, entry),
+  remove: (id) => removeFaceitAnswers(id),
+  clear: () => clearFaceitAnswers(),
+};
+
 export function createFaceitCache({
   now = Date.now,
   fetcher = faceitFetch,
   getKey = faceitKey,
   ttl = FACEIT_TTL_MS,
   pressure = faceitPressure,
+  store = null,
 } = {}) {
   const cache = new Map();
   const pending = new Map();
@@ -242,6 +255,11 @@ export function createFaceitCache({
     else if (seen.head !== head) heads.set(player, { head, changedAt: now() });
     return head;
   };
+  const persist = (target, entry, playerId) => {
+    const id = playerId || target.guid;
+    if (!id || !store?.save || entry?.status !== 200) return;
+    void Promise.resolve(store.save(id, target.key, entry)).catch(() => undefined);
+  };
   const load = (target) => {
     const hit = cache.get(target.key);
     /* Under load answers are kept longer, so a busy server asks FACEIT less instead of more */
@@ -252,24 +270,48 @@ export function createFaceitCache({
     }
     const waiting = pending.get(target.key);
     if (waiting) return waiting;
-    /* The last good answer, kept up to ten minutes: better than an error when FACEIT refuses or is down */
-    const fallback = () => {
-      if (!hit || hit.status !== 200 || now() - hit.at > STALE_ANSWER_MS) return null;
+    const hydrate = async () => {
+      if (hit || !store?.load || !target.guid) return hit;
+      const stored = await Promise.resolve(store.load(target.guid, target.key)).catch(() => null);
+      if (!stored || stored.status !== 200 || typeof stored.body !== 'string') return hit;
+      const entry = { ...stored, stored: true };
+      remember(target.key, entry);
+      return entry;
+    };
+    /* The last good answer: ten minutes from memory, six hours from Redis/Postgres after a restart. */
+    const fallback = (live) => {
+      const row = live || hit;
+      if (!row || row.status !== 200) return null;
+      const age = now() - (row.fetchedAt ?? row.at);
+      if (age > STORE_KEEP_MS) return null;
+      if (age > STALE_ANSWER_MS && !row.stored) return null;
       count('cache.stale');
       if (once('cache-stale', 60_000)) warn('faceit', 'FACEIT refused or failed: serving the last good answers');
-      const entry = { ...hit, at: now() - ttl + RETRY_SOON_MS };
+      const entry = { ...row, at: now() - ttl + RETRY_SOON_MS };
       remember(target.key, entry);
       return entry;
     };
     const task = (async () => {
+      const stored = await hydrate();
+      const live = stored || hit;
+      if (live && now() - live.at < keep) {
+        count('cache.hit');
+        return live;
+      }
+      if (live?.stored && live.status === 200 && now() - (live.fetchedAt ?? live.at) < STORE_KEEP_MS) {
+        const same = { ...live, at: now(), stored: true };
+        count('cache.kept');
+        remember(target.key, same);
+        return same;
+      }
       let head = null;
       if (target.watch) {
         head = await headOf(target.watch).catch(() => null);
         const seen = heads.get(target.watch);
         const settled = seen && now() - seen.changedAt > HOT_MS;
         /* Nothing new since this was read: keep it, and ask again in a minute or so */
-        if (hit && hit.status === 200 && head && hit.head === head && settled && now() - hit.fetchedAt < SMART_MAX_MS) {
-          const same = { ...hit, at: now() };
+        if (live && live.status === 200 && head && live.head === head && settled && now() - live.fetchedAt < SMART_MAX_MS) {
+          const same = { ...live, at: now() };
           count('cache.kept');
           remember(target.key, same);
           return same;
@@ -282,7 +324,7 @@ export function createFaceitCache({
           timeoutMs: 8000,
         });
         if (response.status === 429 || response.status >= 500) {
-          const stale = fallback();
+          const stale = fallback(live);
           if (stale) return stale;
         }
         let body = (await response.text()).slice(0, MAX_BODY);
@@ -291,9 +333,19 @@ export function createFaceitCache({
         if (response.status === 200 && target.calibrate) body = withLocalImages(body);
         const entry = { status: response.status, body, at: now(), fetchedAt: now(), head };
         remember(target.key, entry);
+        let playerId = target.guid;
+        if (!playerId && response.status === 200) {
+          try {
+            const id = JSON.parse(body)?.player_id;
+            if (typeof id === 'string' && new RegExp(`^${PLAYER}$`, 'i').test(id)) playerId = id.toLowerCase();
+          } catch {
+            playerId = undefined;
+          }
+        }
+        persist(target, entry, playerId);
         return entry;
       } catch {
-        const stale = fallback();
+        const stale = fallback(live);
         if (stale) return stale;
         const entry = { status: 502, body: JSON.stringify({ error: 'faceit_unavailable' }), at: now() };
         remember(target.key, entry);
@@ -307,6 +359,7 @@ export function createFaceitCache({
   const clear = () => {
     cache.clear();
     pending.clear();
+    void Promise.resolve(store?.clear?.()).catch(() => undefined);
   };
   /** Drops reads that mention this player, so their next banner/list read goes to FACEIT. */
   const dropPlayer = (id) => {
@@ -318,11 +371,12 @@ export function createFaceitCache({
     for (const key of [...pending.keys()]) {
       if (key.includes(needle)) pending.delete(key);
     }
+    void Promise.resolve(store?.remove?.(needle)).catch(() => undefined);
   };
   return { load, clear, dropPlayer };
 }
 
-const shared = createFaceitCache();
+const shared = createFaceitCache({ store: durableFaceitAnswers });
 
 /** Admin: drop every cached FACEIT answer. */
 export const clearFaceitCache = () => shared.clear();

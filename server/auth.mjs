@@ -9,6 +9,7 @@ import { purgeFrontCache } from './cdn-cache.mjs';
 import {
   consumeState,
   deleteSession,
+  hydrateStudioUsers,
   loadSession,
   loginActivity,
   onlineHistory,
@@ -16,6 +17,7 @@ import {
   loginsForUser,
   kickForUser,
   recordLogin,
+  rememberStudioUser,
   saveSession,
   saveState,
   setKick,
@@ -123,7 +125,11 @@ async function currentUser(req) {
     const user = await loadSession(id);
     if (user) return user;
   }
-  return localDevAdmin(req) ? DEV_ADMIN_USER : null;
+  if (localDevAdmin(req)) {
+    rememberStudioUser(DEV_ADMIN_USER);
+    return DEV_ADMIN_USER;
+  }
+  return null;
 }
 
 async function handleLogin(req, res) {
@@ -483,6 +489,7 @@ export function createAuthMiddleware() {
         if (!user) return sendJson(res, 401, { error: 'unauthorized' });
         if (!isAdmin(user)) return sendJson(res, 403, { error: 'forbidden' });
         await hydratePresence();
+        await hydrateStudioUsers();
         const presence = getPresenceCount();
         return sendJson(res, 200, {
           online: presence,

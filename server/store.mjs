@@ -1,6 +1,7 @@
 /**
- * Storage for login sessions (Redis) and the login history (PostgreSQL).
- * Both are optional: without REDIS_URL / DATABASE_URL the data lives in memory,
+ * Storage for login sessions (Redis), the login history (PostgreSQL), and per-player
+ * FACEIT snapshots. Redis is the hot copy; Postgres keeps a warm copy so a deploy
+ * does not empty stats. Both URLs are optional: without them the data lives in memory,
  * which is enough for local development but is lost on restart.
  */
 import { fail, once } from './log.mjs';
@@ -101,6 +102,44 @@ async function getPostgres() {
           updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
         CREATE UNIQUE INDEX IF NOT EXISTS user_twitch_login ON user_twitch (lower(twitch));
+        CREATE TABLE IF NOT EXISTS faceit_profiles (
+          guid VARCHAR(64) PRIMARY KEY,
+          payload JSONB NOT NULL,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_faceit_profiles_updated ON faceit_profiles (updated_at);
+        CREATE TABLE IF NOT EXISTS streamer_identities (
+          slug VARCHAR(32) PRIMARY KEY,
+          canonical VARCHAR(32) NOT NULL,
+          platform VARCHAR(8) NOT NULL,
+          login VARCHAR(25) NOT NULL,
+          guid VARCHAR(64),
+          nickname VARCHAR(64),
+          avatar VARCHAR(255),
+          twitch VARCHAR(25),
+          kick VARCHAR(25),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_streamer_identities_canonical ON streamer_identities (canonical);
+        CREATE TABLE IF NOT EXISTS streamer_daily (
+          slug VARCHAR(32) NOT NULL,
+          day DATE NOT NULL,
+          platform VARCHAR(8) NOT NULL,
+          login VARCHAR(25) NOT NULL,
+          guid VARCHAR(64),
+          nickname VARCHAR(64),
+          avatar VARCHAR(255),
+          twitch VARCHAR(25),
+          kick VARCHAR(25),
+          viewers_peak INTEGER NOT NULL DEFAULT 0,
+          viewers_sum BIGINT NOT NULL DEFAULT 0,
+          viewers_samples INTEGER NOT NULL DEFAULT 0,
+          elo INTEGER,
+          matches INTEGER NOT NULL DEFAULT 0,
+          last_match_id VARCHAR(64),
+          PRIMARY KEY (slug, day)
+        );
+        CREATE INDEX IF NOT EXISTS idx_streamer_daily_day ON streamer_daily (day DESC);
       `);
       return pool;
     })
@@ -147,20 +186,66 @@ export async function postgresCall(run) {
   }
 }
 
-export async function saveSession(id, user) {
-  const stored = await withRedis((redis) =>
-    redis.set(`fb:session:${id}`, JSON.stringify(user), 'EX', SESSION_TTL_SECONDS)
-  );
-  if (stored) return;
-  memorySessions.set(id, { user, expires: Date.now() + SESSION_TTL_SECONDS * 1000 });
+const SESSION_COOKIE = 'fb_session';
+const SESSION_COOKIE_ID = /^[a-f0-9]{48}$/;
+const studioUsers = new Map();
+let studioHydrated = false;
+let studioHydrating = null;
+
+function studioGuid(user) {
+  const guid = String(user?.guid || '').trim();
+  return guid ? guid.toLowerCase() : '';
 }
 
-export async function loadSession(id) {
+function pruneStudioUsers(now = Date.now()) {
+  for (const [key, entry] of studioUsers) {
+    if (entry.expires < now) studioUsers.delete(key);
+  }
+}
+
+/** A signed-in studio account belongs on the public live list, even without a widget ping. */
+export function rememberStudioUser(user, expires = Date.now() + SESSION_TTL_SECONDS * 1000) {
+  const guid = studioGuid(user);
+  const nickname = typeof user?.nickname === 'string' ? user.nickname.trim() : '';
+  if (!guid || !nickname) return;
+  studioUsers.set(guid, {
+    guid,
+    nickname,
+    avatar: user.avatar ?? null,
+    expires,
+  });
+}
+
+export function forgetStudioUser(guid) {
+  const key = studioGuid({ guid });
+  if (key) studioUsers.delete(key);
+}
+
+export function resetStudioUsersForTests() {
+  studioUsers.clear();
+  studioHydrated = false;
+  studioHydrating = null;
+}
+
+function takeSessionUser(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const guid = studioGuid(raw);
+  const nickname = typeof raw.nickname === 'string' ? raw.nickname.trim() : '';
+  if (!guid || !nickname) return null;
+  return { guid, nickname, avatar: raw.avatar ?? null };
+}
+
+async function readSession(id) {
   try {
     const redis = await getRedis();
     if (redis) {
       const raw = await redis.get(`fb:session:${id}`);
-      return raw ? JSON.parse(raw) : null;
+      if (!raw) return null;
+      try {
+        return takeSessionUser(JSON.parse(raw));
+      } catch {
+        return null;
+      }
     }
   } catch (error) {
     markRedisDown(error);
@@ -171,12 +256,101 @@ export async function loadSession(id) {
     memorySessions.delete(id);
     return null;
   }
-  return entry.user;
+  return takeSessionUser(entry.user);
+}
+
+async function loadStudioUsers() {
+  await withRedis(async (redis) => {
+    let cursor = '0';
+    do {
+      const [next, keys] = await redis.scan(cursor, 'MATCH', 'fb:session:*', 'COUNT', 200);
+      cursor = String(next);
+      if (!keys?.length) continue;
+      const values = await redis.mget(...keys);
+      for (const raw of values) {
+        if (!raw) continue;
+        try {
+          rememberStudioUser(JSON.parse(raw));
+        } catch {
+          /* a broken session row is skipped */
+        }
+      }
+    } while (cursor !== '0');
+  });
+  const now = Date.now();
+  for (const [id, entry] of memorySessions) {
+    if (id.startsWith('state:') || !entry?.user || entry.expires < now) continue;
+    rememberStudioUser(entry.user, entry.expires);
+  }
+  studioHydrated = true;
+}
+
+export async function hydrateStudioUsers() {
+  if (studioHydrated) return;
+  studioHydrating ??= loadStudioUsers().finally(() => {
+    studioHydrating = null;
+  });
+  return studioHydrating;
+}
+
+/** Unique FACEIT (or local Dev Admin) accounts that still have a studio session. */
+export async function listStudioUsers() {
+  await hydrateStudioUsers();
+  pruneStudioUsers();
+  return [...studioUsers.values()].map(({ guid, nickname, avatar }) => ({ guid, nickname, avatar }));
+}
+
+export function getStudioUsersSync() {
+  pruneStudioUsers();
+  return [...studioUsers.values()].map(({ guid, nickname, avatar }) => ({ guid, nickname, avatar }));
+}
+
+function sessionIdFromCookie(header = '') {
+  for (const part of String(header).split(';')) {
+    const [name, ...rest] = part.trim().split('=');
+    if (name !== SESSION_COOKIE) continue;
+    try {
+      const id = decodeURIComponent(rest.join('='));
+      return SESSION_COOKIE_ID.test(id) ? id : '';
+    } catch {
+      return '';
+    }
+  }
+  return '';
+}
+
+/** Puts this request's studio cookie on the live list. Logged-out visitors stay off it. */
+export async function touchStudioSession(cookieHeader) {
+  const id = sessionIdFromCookie(cookieHeader);
+  if (!id) return null;
+  const user = await readSession(id);
+  if (user) rememberStudioUser(user);
+  return user;
+}
+
+export async function saveSession(id, user) {
+  rememberStudioUser(user);
+  const stored = await withRedis((redis) =>
+    redis.set(`fb:session:${id}`, JSON.stringify(user), 'EX', SESSION_TTL_SECONDS)
+  );
+  if (stored) return;
+  memorySessions.set(id, { user, expires: Date.now() + SESSION_TTL_SECONDS * 1000 });
+}
+
+export async function loadSession(id) {
+  const user = await readSession(id);
+  if (user) rememberStudioUser(user);
+  return user;
 }
 
 export async function deleteSession(id) {
+  const user = await readSession(id);
   const removed = await withRedis((redis) => redis.del(`fb:session:${id}`));
   if (!removed) memorySessions.delete(id);
+  if (user) {
+    forgetStudioUser(user.guid);
+    studioHydrated = false;
+  }
 }
 
 /** One-time OAuth state plus its PKCE verifier, valid for 10 minutes and consumed on first use. */
@@ -416,6 +590,239 @@ export async function twitchesAmong(guids) {
   return found;
 }
 
+export const FACEIT_PROFILE_PREFIX = 'fb:profile:';
+export const FACEIT_ANSWERS_PREFIX = 'fb:fapi:';
+export const FACEIT_PROFILE_TTL_SECONDS = 24 * 60 * 60;
+
+/** Deletes every Redis key with this prefix, a page at a time. */
+export async function deleteRedisPrefix(prefix) {
+  await redisCall(async (redis) => {
+    let cursor = '0';
+    do {
+      const [next, keys] = await redis.scan(cursor, 'MATCH', `${prefix}*`, 'COUNT', 200);
+      cursor = next;
+      if (keys.length) await redis.del(...keys);
+    } while (cursor !== '0');
+  });
+}
+
+function parseAnswers(raw) {
+  if (!raw) return null;
+  try {
+    const answers = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return answers && typeof answers === 'object' && !Array.isArray(answers) ? answers : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Redis/Postgres row: { profile, at, answers }. Older rows that only have a live snapshot still parse. */
+export function parseFaceitProfile(raw) {
+  if (!raw) return null;
+  try {
+    const entry = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!entry || typeof entry !== 'object') return null;
+    const at = Number(entry.at);
+    const profile = entry.profile && typeof entry.profile === 'object' ? entry.profile : null;
+    const answers = parseAnswers(entry.answers);
+    if (!profile && !answers) return null;
+    return {
+      at: Number.isFinite(at) ? at : 0,
+      ...(profile ? { profile } : {}),
+      ...(answers ? { answers } : {}),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Shallow profile replace, answers merged by cache key. */
+export function mergeFaceitPayload(current, patch) {
+  const answers = { ...(current?.answers || {}), ...(patch?.answers || {}) };
+  const at = Number.isFinite(patch?.at) ? patch.at : Number.isFinite(current?.at) ? current.at : Date.now();
+  const profile = patch?.profile ?? current?.profile;
+  return {
+    at,
+    ...(profile ? { profile } : {}),
+    ...(Object.keys(answers).length ? { answers } : {}),
+  };
+}
+
+/** Newest finished match from a history body: what the banner uses to decide whether stats changed. */
+export function lastMatchFromHistory(body) {
+  try {
+    const item = JSON.parse(body)?.items?.[0];
+    if (!item || typeof item.match_id !== 'string' || !item.match_id) return null;
+    const summary = { matchId: item.match_id };
+    if (Number.isFinite(Number(item.started_at))) summary.startedAt = Number(item.started_at);
+    if (Number.isFinite(Number(item.finished_at))) summary.finishedAt = Number(item.finished_at);
+    if (item.game === 'cs2') summary.game = 'cs2';
+    return summary;
+  } catch {
+    return null;
+  }
+}
+
+async function promoteFaceitProfile(id, payload) {
+  if (payload?.profile && Number.isFinite(payload.at)) {
+    await redisCall((redis) =>
+      redis.set(
+        `${FACEIT_PROFILE_PREFIX}${id}`,
+        JSON.stringify({ profile: payload.profile, at: payload.at }),
+        'EX',
+        FACEIT_PROFILE_TTL_SECONDS
+      )
+    );
+  }
+  if (payload?.answers && Object.keys(payload.answers).length) {
+    await redisCall((redis) =>
+      redis.set(`${FACEIT_ANSWERS_PREFIX}${id}`, JSON.stringify(payload.answers), 'EX', FACEIT_PROFILE_TTL_SECONDS)
+    );
+  }
+}
+
+/** Hot Redis first, then Postgres. A warm hit is copied back to Redis. */
+export async function loadFaceitProfile(id) {
+  const key = String(id || '').toLowerCase();
+  if (!ACCOUNT_ID.test(key)) return null;
+  const hot = parseFaceitProfile(await redisCall((redis) => redis.get(`${FACEIT_PROFILE_PREFIX}${key}`)));
+  const hotAnswers = parseAnswers(await redisCall((redis) => redis.get(`${FACEIT_ANSWERS_PREFIX}${key}`)));
+  if (hot?.profile || hotAnswers) {
+    let answers = { ...(hot?.answers || {}), ...(hotAnswers || {}) };
+    if (!Object.keys(answers).length) {
+      const warm = await postgresCall((pool) => pool.query('SELECT payload FROM faceit_profiles WHERE guid = $1', [key]));
+      const parsed = parseFaceitProfile(warm?.rows?.[0]?.payload);
+      if (parsed?.answers) {
+        answers = { ...parsed.answers, ...answers };
+        void promoteFaceitProfile(key, { ...hot, answers });
+      }
+    }
+    return {
+      at: hot?.at ?? 0,
+      ...(hot?.profile ? { profile: hot.profile } : {}),
+      ...(Object.keys(answers).length ? { answers } : {}),
+    };
+  }
+  const warm = await postgresCall((pool) => pool.query('SELECT payload FROM faceit_profiles WHERE guid = $1', [key]));
+  const parsed = parseFaceitProfile(warm?.rows?.[0]?.payload);
+  if (!parsed) return null;
+  void promoteFaceitProfile(key, parsed);
+  return parsed;
+}
+
+export async function loadFaceitProfiles(ids) {
+  const wanted = [...new Set(ids.map((id) => String(id || '').toLowerCase()).filter((id) => ACCOUNT_ID.test(id)))];
+  const found = new Map();
+  if (!wanted.length) return found;
+  const rows = await redisCall((redis) => redis.mget(wanted.map((id) => `${FACEIT_PROFILE_PREFIX}${id}`)));
+  const missing = [];
+  wanted.forEach((id, index) => {
+    const entry = parseFaceitProfile(rows?.[index]);
+    if (entry?.profile && Number.isFinite(entry.at)) found.set(id, entry);
+    else missing.push(id);
+  });
+  if (!missing.length) return found;
+  const warm = await postgresCall((pool) =>
+    pool.query('SELECT guid, payload FROM faceit_profiles WHERE guid = ANY($1::text[])', [missing])
+  );
+  for (const row of warm?.rows ?? []) {
+    const entry = parseFaceitProfile(row.payload);
+    if (!entry?.profile) continue;
+    const id = String(row.guid).toLowerCase();
+    found.set(id, entry);
+    void promoteFaceitProfile(id, entry);
+  }
+  return found;
+}
+
+export async function loadFaceitAnswer(id, cacheKey) {
+  const row = await loadFaceitProfile(id);
+  return row?.answers?.[cacheKey] ?? null;
+}
+
+export async function saveFaceitProfile(id, patch) {
+  const key = String(id || '').toLowerCase();
+  if (!ACCOUNT_ID.test(key) || !patch || typeof patch !== 'object') return false;
+  const current = (await loadFaceitProfile(key)) || {};
+  let next = mergeFaceitPayload(current, patch);
+  if (patch.answers && next.profile) {
+    for (const [answerKey, entry] of Object.entries(patch.answers)) {
+      if (entry?.status === 200 && /\/history\?/i.test(answerKey) && typeof entry.body === 'string') {
+        const lastMatch = lastMatchFromHistory(entry.body);
+        if (lastMatch) next = { ...next, profile: { ...next.profile, lastMatch } };
+      }
+    }
+  }
+  await promoteFaceitProfile(key, next);
+  await postgresCall((pool) =>
+    pool.query(
+      `INSERT INTO faceit_profiles (guid, payload) VALUES ($1, $2::jsonb)
+       ON CONFLICT (guid) DO UPDATE SET
+         payload = jsonb_build_object(
+           'at', COALESCE(EXCLUDED.payload->'at', faceit_profiles.payload->'at'),
+           'profile', COALESCE(EXCLUDED.payload->'profile', faceit_profiles.payload->'profile'),
+           'answers', COALESCE(faceit_profiles.payload->'answers', '{}'::jsonb) || COALESCE(EXCLUDED.payload->'answers', '{}'::jsonb)
+         ),
+         updated_at = NOW()`,
+      [key, JSON.stringify(next)]
+    )
+  );
+  if (once('faceit-profile-prune', 60_000)) {
+    await postgresCall((pool) => pool.query(`DELETE FROM faceit_profiles WHERE updated_at < NOW() - INTERVAL '14 days'`));
+  }
+  return true;
+}
+
+export async function saveFaceitAnswer(id, cacheKey, entry) {
+  if (!cacheKey || entry?.status !== 200 || typeof entry.body !== 'string') return false;
+  return saveFaceitProfile(id, {
+    answers: {
+      [cacheKey]: {
+        status: entry.status,
+        body: entry.body,
+        at: entry.at,
+        fetchedAt: entry.fetchedAt ?? entry.at,
+        head: entry.head ?? null,
+      },
+    },
+  });
+}
+
+export async function removeFaceitProfile(id) {
+  const key = String(id || '').toLowerCase();
+  if (!ACCOUNT_ID.test(key)) return false;
+  await redisCall((redis) => redis.del(`${FACEIT_PROFILE_PREFIX}${key}`, `${FACEIT_ANSWERS_PREFIX}${key}`));
+  await postgresCall((pool) => pool.query('DELETE FROM faceit_profiles WHERE guid = $1', [key]));
+  return true;
+}
+
+export async function clearFaceitProfileSnapshots() {
+  await deleteRedisPrefix(FACEIT_PROFILE_PREFIX);
+  await postgresCall((pool) => pool.query(`UPDATE faceit_profiles SET payload = payload - 'profile', updated_at = NOW()`));
+}
+
+export async function clearFaceitAnswers() {
+  await deleteRedisPrefix(FACEIT_ANSWERS_PREFIX);
+  await postgresCall((pool) =>
+    pool.query(
+      `UPDATE faceit_profiles SET payload = jsonb_set(COALESCE(payload, '{}'::jsonb), '{answers}', '{}'::jsonb), updated_at = NOW()`
+    )
+  );
+}
+
+export async function removeFaceitAnswers(id) {
+  const key = String(id || '').toLowerCase();
+  if (!ACCOUNT_ID.test(key)) return false;
+  await redisCall((redis) => redis.del(`${FACEIT_ANSWERS_PREFIX}${key}`));
+  await postgresCall((pool) =>
+    pool.query(
+      `UPDATE faceit_profiles SET payload = jsonb_set(COALESCE(payload, '{}'::jsonb), '{answers}', '{}'::jsonb), updated_at = NOW() WHERE guid = $1`,
+      [key]
+    )
+  );
+  return true;
+}
+
 /** This account's own studio sign-ins. The address stays in the database and is not returned. */
 export async function loginsForUser(guid, limit = 8) {
   const cap = Math.min(20, Math.max(1, Number(limit) || 8));
@@ -616,4 +1023,422 @@ export async function loginActivity(days = 30) {
     markPostgresDown(error);
   }
   return activityFromEntries(memoryLogins, span);
+}
+
+const STREAMER_SLUG = /^[A-Za-z0-9_-]{3,25}$/;
+const STREAMER_KEEP_DAYS = 90;
+const memoryStreamerDaily = new Map();
+const memoryStreamerIdentities = new Map();
+
+/** UTC calendar day `YYYY-MM-DD`. */
+export function utcDay(at = new Date()) {
+  const date = at instanceof Date ? at : new Date(at);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().slice(0, 10);
+}
+
+/** Canonical slug: Twitch login when present, otherwise Kick. */
+export function streamerSlugFrom(player) {
+  const twitch = cleanTwitch(player?.twitch);
+  if (twitch) return twitch.toLowerCase();
+  const kick = cleanKick(player?.kick);
+  return kick ? kick.toLowerCase() : '';
+}
+
+function dailyKey(slug, day) {
+  return `${slug}|${day}`;
+}
+
+function asInt(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, Math.round(number)) : fallback;
+}
+
+/** Continuous UTC days so a quiet date still has a row (peak/avg/matches at zero). */
+export function fillStreamerDays(rows, days, now = new Date()) {
+  const span = Math.min(STREAMER_KEEP_DAYS, Math.max(1, Number(days) || 7));
+  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const keys = [];
+  for (let i = span - 1; i >= 0; i -= 1) {
+    const day = new Date(end);
+    day.setUTCDate(end.getUTCDate() - i);
+    keys.push(day.toISOString().slice(0, 10));
+  }
+  const byDay = new Map();
+  for (const row of rows || []) {
+    const day = String(row.day || '').slice(0, 10);
+    if (!day) continue;
+    const samples = asInt(row.viewersSamples ?? row.viewers_samples);
+    const avg = Number.isFinite(Number(row.viewersAvg ?? row.viewers_avg))
+      ? asInt(row.viewersAvg ?? row.viewers_avg)
+      : samples
+        ? Math.round(asInt(row.viewersSum ?? row.viewers_sum) / samples)
+        : 0;
+    const eloRaw = row.elo;
+    byDay.set(day, {
+      day,
+      viewersPeak: asInt(row.viewersPeak ?? row.viewers_peak),
+      viewersAvg: avg,
+      viewersSamples: samples,
+      elo: Number.isInteger(Number(eloRaw)) ? Number(eloRaw) : null,
+      matches: asInt(row.matches),
+    });
+  }
+  return keys.map((day) => byDay.get(day) ?? { day, viewersPeak: 0, viewersAvg: 0, viewersSamples: 0, elo: null, matches: 0 });
+}
+
+export function summarizeStreamerDays(series) {
+  let peak = 0;
+  let weighted = 0;
+  let samples = 0;
+  let matches = 0;
+  let elo = null;
+  for (const point of series || []) {
+    peak = Math.max(peak, asInt(point.viewersPeak));
+    samples += asInt(point.viewersSamples);
+    weighted += asInt(point.viewersAvg) * asInt(point.viewersSamples);
+    matches += asInt(point.matches);
+    if (point.elo != null) elo = Number(point.elo);
+  }
+  return {
+    viewersPeak: peak,
+    viewersAvg: samples ? Math.round(weighted / samples) : 0,
+    matches,
+    elo: Number.isInteger(elo) ? elo : null,
+  };
+}
+
+function rememberIdentity(identity) {
+  if (!identity?.slug) return;
+  memoryStreamerIdentities.set(identity.slug, { ...memoryStreamerIdentities.get(identity.slug), ...identity });
+}
+
+function rememberDaily(row) {
+  memoryStreamerDaily.set(dailyKey(row.slug, row.day), { ...row });
+  const cutoff = utcDay(new Date(Date.now() - STREAMER_KEEP_DAYS * 24 * 60 * 60 * 1000));
+  for (const [key, entry] of memoryStreamerDaily) {
+    if (entry.day < cutoff) memoryStreamerDaily.delete(key);
+  }
+}
+
+/** FACEIT id stored for this Twitch or Kick login (OAuth pairing first). */
+export async function guidForChannel({ twitch, kick } = {}) {
+  const twitchLogin = cleanTwitch(twitch);
+  const kickLogin = cleanKick(kick);
+  if (twitchLogin) {
+    for (const [guid, name] of memoryTwitch) {
+      if (String(name).toLowerCase() === twitchLogin.toLowerCase()) return guid;
+    }
+    const found = await postgresCall((pool) =>
+      pool.query('SELECT guid FROM user_twitch WHERE lower(twitch) = lower($1)', [twitchLogin])
+    );
+    if (found?.rows[0]?.guid) return String(found.rows[0].guid).toLowerCase();
+  }
+  if (kickLogin) {
+    for (const [guid, name] of memoryKick) {
+      if (String(name).toLowerCase() === kickLogin.toLowerCase()) return guid;
+    }
+    const found = await postgresCall((pool) =>
+      pool.query('SELECT guid FROM user_kick WHERE lower(kick) = lower($1)', [kickLogin])
+    );
+    if (found?.rows[0]?.guid) return String(found.rows[0].guid).toLowerCase();
+  }
+  return null;
+}
+
+/**
+ * One live (or identity) sample folded into today's row: peak/sum/samples for viewers,
+ * last ELO, and +1 match when `matchId` is new for that day.
+ */
+export async function recordStreamerSample(sample, at = new Date()) {
+  const slug = streamerSlugFrom(sample);
+  if (!STREAMER_SLUG.test(slug)) return null;
+  const day = utcDay(at);
+  if (!day) return null;
+  const twitch = cleanTwitch(sample.twitch) || null;
+  const kick = cleanKick(sample.kick) || null;
+  const platform = twitch ? 'twitch' : 'kick';
+  const login = (twitch || kick || slug).slice(0, 25);
+  const viewers = Number.isInteger(sample.viewers) && sample.viewers >= 0 ? sample.viewers : null;
+  const elo = Number.isInteger(sample.elo) && sample.elo >= 0 && sample.elo <= 10000 ? sample.elo : null;
+  const matchId = typeof sample.matchId === 'string' && sample.matchId ? sample.matchId.slice(0, 64) : '';
+  const guid = typeof sample.guid === 'string' && ACCOUNT_ID.test(sample.guid) ? sample.guid.toLowerCase() : '';
+  const nickname = typeof sample.nickname === 'string' ? sample.nickname.trim().slice(0, 64) : '';
+  const avatar = typeof sample.avatar === 'string' ? sample.avatar.slice(0, 255) : '';
+
+  const identity = {
+    slug,
+    canonical: slug,
+    platform,
+    login,
+    guid: guid || null,
+    nickname: nickname || null,
+    avatar: avatar || null,
+    twitch,
+    kick,
+  };
+  rememberIdentity(identity);
+  if (kick && kick.toLowerCase() !== slug) {
+    rememberIdentity({ ...identity, slug: kick.toLowerCase(), platform: 'kick', login: kick, canonical: slug });
+  }
+
+  const saved = await postgresCall(async (pool) => {
+    await pool.query(
+      `INSERT INTO streamer_identities (slug, canonical, platform, login, guid, nickname, avatar, twitch, kick)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       ON CONFLICT (slug) DO UPDATE SET
+         canonical = EXCLUDED.canonical,
+         platform = EXCLUDED.platform,
+         login = EXCLUDED.login,
+         guid = COALESCE(EXCLUDED.guid, streamer_identities.guid),
+         nickname = COALESCE(EXCLUDED.nickname, streamer_identities.nickname),
+         avatar = COALESCE(EXCLUDED.avatar, streamer_identities.avatar),
+         twitch = COALESCE(EXCLUDED.twitch, streamer_identities.twitch),
+         kick = COALESCE(EXCLUDED.kick, streamer_identities.kick),
+         updated_at = NOW()`,
+      [slug, slug, platform, login, guid || null, nickname || null, avatar || null, twitch, kick]
+    );
+    if (kick && kick.toLowerCase() !== slug) {
+      await pool.query(
+        `INSERT INTO streamer_identities (slug, canonical, platform, login, guid, nickname, avatar, twitch, kick)
+         VALUES ($1, $2, 'kick', $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (slug) DO UPDATE SET canonical = EXCLUDED.canonical, updated_at = NOW()`,
+        [kick.toLowerCase(), slug, kick, guid || null, nickname || null, avatar || null, twitch, kick]
+      );
+    }
+    await pool.query(
+      `INSERT INTO streamer_daily (
+         slug, day, platform, login, guid, nickname, avatar, twitch, kick,
+         viewers_peak, viewers_sum, viewers_samples, elo, matches, last_match_id
+       ) VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+       ON CONFLICT (slug, day) DO UPDATE SET
+         platform = EXCLUDED.platform,
+         login = EXCLUDED.login,
+         guid = COALESCE(EXCLUDED.guid, streamer_daily.guid),
+         nickname = COALESCE(EXCLUDED.nickname, streamer_daily.nickname),
+         avatar = COALESCE(EXCLUDED.avatar, streamer_daily.avatar),
+         twitch = COALESCE(EXCLUDED.twitch, streamer_daily.twitch),
+         kick = COALESCE(EXCLUDED.kick, streamer_daily.kick),
+         viewers_peak = GREATEST(streamer_daily.viewers_peak, EXCLUDED.viewers_peak),
+         viewers_sum = streamer_daily.viewers_sum + EXCLUDED.viewers_sum,
+         viewers_samples = streamer_daily.viewers_samples + EXCLUDED.viewers_samples,
+         elo = COALESCE(EXCLUDED.elo, streamer_daily.elo),
+         matches = streamer_daily.matches + CASE
+           WHEN EXCLUDED.last_match_id IS NOT NULL
+            AND EXCLUDED.last_match_id IS DISTINCT FROM streamer_daily.last_match_id
+           THEN 1 ELSE 0 END,
+         last_match_id = COALESCE(EXCLUDED.last_match_id, streamer_daily.last_match_id)`,
+      [
+        slug,
+        day,
+        platform,
+        login,
+        guid || null,
+        nickname || null,
+        avatar || null,
+        twitch,
+        kick,
+        viewers ?? 0,
+        viewers == null ? 0 : viewers,
+        viewers == null ? 0 : 1,
+        elo,
+        matchId ? 1 : 0,
+        matchId || null,
+      ]
+    );
+    if (once('streamer-daily-prune', 60_000)) {
+      await pool.query(`DELETE FROM streamer_daily WHERE day < (NOW() AT TIME ZONE 'UTC')::date - 90`);
+    }
+    return true;
+  });
+
+  if (saved === undefined) {
+    const prev = memoryStreamerDaily.get(dailyKey(slug, day)) || {
+      slug,
+      day,
+      platform,
+      login,
+      guid: guid || null,
+      nickname,
+      avatar,
+      twitch,
+      kick,
+      viewersPeak: 0,
+      viewersSum: 0,
+      viewersSamples: 0,
+      elo: null,
+      matches: 0,
+      lastMatchId: null,
+    };
+    if (viewers != null) {
+      prev.viewersPeak = Math.max(prev.viewersPeak, viewers);
+      prev.viewersSum += viewers;
+      prev.viewersSamples += 1;
+    }
+    if (elo != null) prev.elo = elo;
+    if (matchId && matchId !== prev.lastMatchId) {
+      prev.matches += 1;
+      prev.lastMatchId = matchId;
+    }
+    if (guid) prev.guid = guid;
+    if (nickname) prev.nickname = nickname;
+    if (avatar) prev.avatar = avatar;
+    if (twitch) prev.twitch = twitch;
+    if (kick) prev.kick = kick;
+    rememberDaily(prev);
+  }
+  return { slug, day };
+}
+
+export async function resolveStreamerCanonical(slug) {
+  const key = String(slug || '').toLowerCase();
+  if (!STREAMER_SLUG.test(key)) return '';
+  const memory = memoryStreamerIdentities.get(key);
+  if (memory?.canonical) return memory.canonical;
+  const result = await postgresCall((pool) => pool.query('SELECT canonical FROM streamer_identities WHERE slug = $1', [key]));
+  return result?.rows?.[0]?.canonical || key;
+}
+
+export async function streamerIdentity(slug) {
+  const key = String(slug || '').toLowerCase();
+  const canonical = (await resolveStreamerCanonical(key)) || key;
+  const result = await postgresCall((pool) =>
+    pool.query(
+      'SELECT slug, canonical, platform, login, guid, nickname, avatar, twitch, kick FROM streamer_identities WHERE slug = $1',
+      [canonical]
+    )
+  );
+  if (result?.rows?.[0]) {
+    rememberIdentity(result.rows[0]);
+    return result.rows[0];
+  }
+  return memoryStreamerIdentities.get(canonical) || memoryStreamerIdentities.get(key) || null;
+}
+
+export async function streamerDailySeries(slug, days = 7, now = new Date()) {
+  const canonical = (await resolveStreamerCanonical(slug)) || String(slug || '').toLowerCase();
+  const span = Math.min(STREAMER_KEEP_DAYS, Math.max(1, Number(days) || 7));
+  const result = await postgresCall((pool) =>
+    pool.query(
+      `SELECT to_char(day, 'YYYY-MM-DD') AS day,
+              viewers_peak AS "viewersPeak",
+              CASE WHEN viewers_samples > 0 THEN ROUND(viewers_sum::numeric / viewers_samples)::int ELSE 0 END AS "viewersAvg",
+              viewers_samples AS "viewersSamples",
+              elo, matches
+       FROM streamer_daily
+       WHERE slug = $1 AND day >= (NOW() AT TIME ZONE 'UTC')::date - ($2::int - 1)
+       ORDER BY day`,
+      [canonical, span]
+    )
+  );
+  const rows =
+    result === undefined
+      ? [...memoryStreamerDaily.values()]
+          .filter((row) => row.slug === canonical)
+          .map((row) => ({
+            day: row.day,
+            viewersPeak: row.viewersPeak,
+            viewersAvg: row.viewersSamples ? Math.round(row.viewersSum / row.viewersSamples) : 0,
+            viewersSamples: row.viewersSamples,
+            elo: row.elo,
+            matches: row.matches,
+          }))
+      : result.rows;
+  return { slug: canonical, days: span, series: fillStreamerDays(rows, span, now) };
+}
+
+function rankingFromMemory(span, now) {
+  const start = utcDay(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - (span - 1))));
+  const bySlug = new Map();
+  for (const row of memoryStreamerDaily.values()) {
+    if (row.day < start) continue;
+    const cur = bySlug.get(row.slug) || {
+      slug: row.slug,
+      nickname: row.nickname || row.slug,
+      avatar: row.avatar || null,
+      platform: row.platform,
+      twitch: row.twitch || null,
+      kick: row.kick || null,
+      guid: row.guid || null,
+      viewersPeak: 0,
+      viewersSum: 0,
+      viewersSamples: 0,
+      matches: 0,
+      elo: null,
+      lastDay: '',
+    };
+    cur.viewersPeak = Math.max(cur.viewersPeak, row.viewersPeak);
+    cur.viewersSum += row.viewersSum;
+    cur.viewersSamples += row.viewersSamples;
+    cur.matches += row.matches;
+    if (row.day >= cur.lastDay && row.elo != null) {
+      cur.elo = row.elo;
+      cur.lastDay = row.day;
+    }
+    if (row.nickname) cur.nickname = row.nickname;
+    if (row.avatar) cur.avatar = row.avatar;
+    if (row.twitch) cur.twitch = row.twitch;
+    if (row.kick) cur.kick = row.kick;
+    bySlug.set(row.slug, cur);
+  }
+  return [...bySlug.values()]
+    .map((row) => ({
+      slug: row.slug,
+      nickname: row.nickname,
+      avatar: row.avatar,
+      platform: row.platform,
+      twitch: row.twitch,
+      kick: row.kick,
+      guid: row.guid,
+      viewersPeak: row.viewersPeak,
+      viewersAvg: row.viewersSamples ? Math.round(row.viewersSum / row.viewersSamples) : 0,
+      matches: row.matches,
+      elo: row.elo,
+    }))
+    .sort((a, b) => b.viewersAvg - a.viewersAvg || b.viewersPeak - a.viewersPeak || String(a.nickname).localeCompare(String(b.nickname)));
+}
+
+export async function streamerRankingRows(days = 7, now = new Date()) {
+  const span = Math.min(STREAMER_KEEP_DAYS, Math.max(1, Number(days) || 7));
+  const result = await postgresCall((pool) =>
+    pool.query(
+      `SELECT d.slug,
+              MAX(d.nickname) AS nickname,
+              MAX(d.avatar) AS avatar,
+              MAX(d.platform) AS platform,
+              MAX(d.twitch) AS twitch,
+              MAX(d.kick) AS kick,
+              MAX(d.guid) AS guid,
+              MAX(d.viewers_peak) AS "viewersPeak",
+              CASE WHEN SUM(d.viewers_samples) > 0
+                THEN ROUND(SUM(d.viewers_sum)::numeric / SUM(d.viewers_samples))::int
+                ELSE 0 END AS "viewersAvg",
+              SUM(d.matches)::int AS matches,
+              (ARRAY_AGG(d.elo ORDER BY d.day DESC) FILTER (WHERE d.elo IS NOT NULL))[1] AS elo
+       FROM streamer_daily d
+       WHERE d.day >= (NOW() AT TIME ZONE 'UTC')::date - ($1::int - 1)
+       GROUP BY d.slug
+       ORDER BY 9 DESC, 8 DESC, 2`,
+      [span]
+    )
+  );
+  if (result === undefined) return rankingFromMemory(span, now);
+  return result.rows.map((row) => ({
+    slug: row.slug,
+    nickname: row.nickname || row.slug,
+    avatar: row.avatar || null,
+    platform: row.platform,
+    twitch: row.twitch || null,
+    kick: row.kick || null,
+    guid: row.guid || null,
+    viewersPeak: asInt(row.viewersPeak),
+    viewersAvg: asInt(row.viewersAvg),
+    matches: asInt(row.matches),
+    elo: Number.isInteger(Number(row.elo)) ? Number(row.elo) : null,
+  }));
+}
+
+export function resetStreamerStoreForTests() {
+  memoryStreamerDaily.clear();
+  memoryStreamerIdentities.clear();
 }

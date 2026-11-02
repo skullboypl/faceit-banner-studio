@@ -5,6 +5,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createPresenceMiddleware, startOnlineHistory } from './server/presence.mjs';
+import { createStreamersMiddleware } from './server/streamers.mjs';
 import { createAuthMiddleware } from './server/auth.mjs';
 import { createDevPreviewMiddleware } from './server/dev-preview.mjs';
 import { createStillFallbackMiddleware } from './server/still-fallback.mjs';
@@ -16,12 +17,14 @@ function presenceDevPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use(createStillFallbackMiddleware(root));
       server.middlewares.use(createDevPreviewMiddleware());
+      server.middlewares.use(createStreamersMiddleware());
       server.middlewares.use(createPresenceMiddleware());
       server.middlewares.use(createAuthMiddleware());
       startOnlineHistory();
     },
     configurePreviewServer(server) {
       server.middlewares.use(createStillFallbackMiddleware(root));
+      server.middlewares.use(createStreamersMiddleware());
       server.middlewares.use(createPresenceMiddleware());
       server.middlewares.use(createAuthMiddleware());
     },

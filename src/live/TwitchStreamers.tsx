@@ -1,7 +1,10 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { LanguageContext } from '../generator/contexts';
 import { getLiveBoard, LIVE_LIST_REFRESH_MS, type LivePlayer } from '../utils/presence';
 import { KickIcon, TwitchIcon } from './MemberIcons';
+import { applyStreamerMeta, streamerIndexDescription, streamerIndexTitle, streamerPath, streamerSlugOf } from './streamer-seo';
+import { StreamerRanking } from './StreamerRanking';
 
 const CHANNEL_LOGIN = /^[A-Za-z0-9_]{3,25}$/;
 const TOP_LIMIT = 10;
@@ -119,7 +122,7 @@ export function TwitchStreamers() {
   useEffect(() => {
     if (!t) return;
     const previousTitle = document.title;
-    document.title = t('streamers.title');
+    applyStreamerMeta(streamerIndexTitle(t('streamers.analytics.title')), streamerIndexDescription(t('streamers.index.description')));
     let active = true;
     let pending = false;
     const controller = new AbortController();
@@ -162,12 +165,14 @@ export function TwitchStreamers() {
     [linked]
   );
   const top = live.slice(0, TOP_LIMIT);
-  const rest = [
-    ...live.slice(TOP_LIMIT),
-    ...linked
-      .filter((player) => !isLive(player))
-      .sort((a, b) => a.nickname.localeCompare(b.nickname)),
-  ];
+  const moreLive = live.slice(TOP_LIMIT);
+  const offline = useMemo(
+    () =>
+      linked
+        .filter((player) => !isLive(player) && streamerSlugOf(player))
+        .sort((a, b) => a.nickname.localeCompare(b.nickname)),
+    [linked]
+  );
   const selected = top.find((player) => playerKey(player) === selectedLogin) ?? top[0];
 
   useEffect(() => {
@@ -186,6 +191,7 @@ export function TwitchStreamers() {
         </span>
         <p><strong>{t('streamers.how.title')}</strong> {t('streamers.how.body')}</p>
       </aside>
+      <StreamerRanking />
 
       {error && players === null ? (
         <p className="streamers-empty" role="alert">{t('streamers.error')}</p>
@@ -265,25 +271,19 @@ export function TwitchStreamers() {
         </>
       )}
 
-      {players !== null && rest.length > 0 && (
+      {players !== null && moreLive.length > 0 && (
         <section className="streamers-rest" aria-labelledby="streamers-rest-title">
           <div className="streamers-section-head">
             <div>
               <span>{t('streamers.community')}</span>
               <h3 id="streamers-rest-title">{t('streamers.rest')}</h3>
             </div>
-            <strong>{rest.length}</strong>
+            <strong>{moreLive.length}</strong>
           </div>
           <ul>
-            {rest.map((player) => {
-              const liveNow = isLive(player);
+            {moreLive.map((player) => {
               const platform = featuredPlatform(player);
               const login = player[platform];
-              const status = liveNow
-                ? `${viewers(player).toLocaleString()} ${t('streamers.viewers')}`
-                : (platform === 'kick' ? player.kickStatus : player.twitchStatus)?.state === 'offline'
-                  ? t('streamers.offline')
-                  : platform.toUpperCase();
               return (
                 <li key={playerKey(player)}>
                   <StreamerAvatar player={player} />
@@ -291,8 +291,8 @@ export function TwitchStreamers() {
                     <strong>{player.nickname}</strong>
                     <small>@{login}</small>
                   </span>
-                  <span className={liveNow ? 'streamers-status is-live' : 'streamers-status'}>
-                    {status}
+                  <span className="streamers-status is-live">
+                    {`${viewers(player).toLocaleString()} ${t('streamers.viewers')}`}
                   </span>
                   <a
                     href={channelUrl(player, platform)}
@@ -306,6 +306,23 @@ export function TwitchStreamers() {
               );
             })}
           </ul>
+        </section>
+      )}
+
+      {players !== null && offline.length > 0 && (
+        <section className="streamers-offline" aria-labelledby="streamers-offline-title">
+          <h3 id="streamers-offline-title">{t('streamers.offline_heading')}</h3>
+          <p className="streamers-offline-nicks">
+            {offline.map((player, index) => {
+              const slug = streamerSlugOf(player);
+              return (
+                <span key={playerKey(player)}>
+                  {index > 0 ? <span aria-hidden="true"> · </span> : null}
+                  <Link to={streamerPath(slug)}>{player.nickname}</Link>
+                </span>
+              );
+            })}
+          </p>
         </section>
       )}
     </div>

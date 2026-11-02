@@ -1,19 +1,23 @@
 import { createServer } from 'node:http';
 import { createPresenceMiddleware, hydratePresence, startOnlineHistory } from './presence.mjs';
+import { createStreamersMiddleware } from './streamers.mjs';
 import { createAuthMiddleware } from './auth.mjs';
 import { faceitKeySource } from './faceit-gate.mjs';
 import { fail, log, startSummary } from './log.mjs';
 
 const port = Number(process.env.PRESENCE_PORT) || 3001;
 const presence = createPresenceMiddleware();
+const streamers = createStreamersMiddleware();
 
 const auth = createAuthMiddleware();
 
 const server = createServer((req, res) => {
-  presence(req, res, () => {
-    auth(req, res, () => {
-      res.statusCode = 404;
-      res.end();
+  streamers(req, res, () => {
+    presence(req, res, () => {
+      auth(req, res, () => {
+        res.statusCode = 404;
+        res.end();
+      });
     });
   });
 });

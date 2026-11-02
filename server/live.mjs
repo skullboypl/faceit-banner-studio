@@ -1,7 +1,15 @@
 import { withCalibration } from './faceit-proxy.mjs';
 import { faceitFetch, faceitServerKey, imageSource } from './faceit-gate.mjs';
 import { once, warn } from './log.mjs';
-import { redisCall } from './store.mjs';
+import {
+  clearFaceitProfileSnapshots,
+  deleteRedisPrefix,
+  loadFaceitProfile,
+  loadFaceitProfiles,
+  redisCall,
+  removeFaceitProfile,
+  saveFaceitProfile,
+} from './store.mjs';
 
 const NICK_MAX = 32;
 const STYLE_MAX = 24;
@@ -106,43 +114,110 @@ function faceitKey() {
   return faceitServerKey();
 }
 
-const PROFILE_PREFIX = 'fb:profile:';
-
 /**
- * Profiles are also kept in Redis, so a restart or a deploy does not empty the live list
- * and send a burst of lookups to FACEIT. An entry is { profile, at }.
+ * Profiles are kept in Redis (hot) and PostgreSQL (warm), so a restart or a deploy
+ * does not empty the live list and send a burst of lookups to FACEIT. An entry is { profile, at }.
  */
 export const redisProfileStore = {
   async load(id) {
-    const raw = await redisCall((redis) => redis.get(`${PROFILE_PREFIX}${id}`));
-    try {
-      const entry = typeof raw === 'string' ? JSON.parse(raw) : null;
-      return entry?.profile && Number.isFinite(entry.at) ? entry : null;
-    } catch {
-      return null;
-    }
+    const entry = await loadFaceitProfile(id);
+    return entry?.profile && Number.isFinite(entry.at) ? { profile: entry.profile, at: entry.at } : null;
   },
   async loadMany(ids) {
     const found = new Map();
-    if (!ids.length) return found;
-    const rows = await redisCall((redis) => redis.mget(ids.map((id) => `${PROFILE_PREFIX}${id}`)));
-    (rows ?? []).forEach((raw, index) => {
-      try {
-        const entry = typeof raw === 'string' ? JSON.parse(raw) : null;
-        if (entry?.profile && Number.isFinite(entry.at)) found.set(ids[index], entry);
-      } catch {
-        /* a broken row is read again from FACEIT */
-      }
-    });
+    const rows = await loadFaceitProfiles(ids);
+    for (const [id, entry] of rows) {
+      if (entry?.profile && Number.isFinite(entry.at)) found.set(id, { profile: entry.profile, at: entry.at });
+    }
     return found;
   },
   async save(id, entry) {
-    await redisCall((redis) => redis.set(`${PROFILE_PREFIX}${id}`, JSON.stringify(entry), 'EX', 24 * 60 * 60));
+    await saveFaceitProfile(id, { profile: entry.profile, at: entry.at });
   },
   async remove(id) {
-    await redisCall((redis) => redis.del(`${PROFILE_PREFIX}${id}`));
+    await removeFaceitProfile(id);
   },
 };
+
+/** Heartbeat fields win when they are present; FACEIT cache fills the rest. */
+export function attachProfile(info, profile) {
+  if (!profile?.nickname) return info || {};
+  const calibrating = profile.calibrating === true || info?.calibrating === true;
+  const next = {
+    ...profile,
+    ...info,
+    nickname: info?.nickname || profile.nickname,
+    elo: Number.isInteger(info?.elo) ? info.elo : profile.elo,
+    level: Number.isInteger(info?.level) ? info.level : profile.level,
+    country: info?.country || profile.country,
+    ...(profile.verifiedBadge ? { verifiedBadge: profile.verifiedBadge } : {}),
+    ...(Number.isInteger(profile.ranking) ? { ranking: profile.ranking } : {}),
+    ...(profile.membership ? { membership: profile.membership } : {}),
+    ...(profile.esea ? { esea: true } : {}),
+    ...(profile.token ? { token: true } : {}),
+    ...(profile.twitch ? { twitch: profile.twitch } : {}),
+    ...(profile.kick ? { kick: profile.kick } : {}),
+    ...(profile.avatar ? { avatar: profile.avatar } : {}),
+  };
+  delete next.lastMatch;
+  delete next.playerId;
+  if (info?.playerId) next.playerId = info.playerId;
+  else if (profile.playerId) next.playerId = profile.playerId;
+  if (calibrating) {
+    next.calibrating = true;
+    delete next.level;
+    delete next.ranking;
+  } else {
+    delete next.calibrating;
+  }
+  return next;
+}
+
+/** Paint live rows from the in-memory profile cache without waiting on FACEIT. */
+export function applyCachedProfiles(entries, peek = (id) => playerLookup.peek(id)) {
+  for (const entry of entries) {
+    const id = entry?.info?.playerId;
+    if (!id) continue;
+    const profile = peek(id);
+    if (!profile?.nickname) continue;
+    entry.info = attachProfile(entry.info, profile);
+  }
+  return entries;
+}
+
+/** When a partial rebuild lost badges or ELO, keep the last good public row. */
+export function mergeLastGoodPlayers(current, previous) {
+  if (!previous?.length) return current;
+  const byNick = new Map();
+  const byAvatar = new Map();
+  for (const row of previous) {
+    if (row?.nickname) byNick.set(String(row.nickname).toLowerCase(), row);
+    if (typeof row?.avatar === 'string' && row.avatar) byAvatar.set(row.avatar, row);
+  }
+  return current.map((row) => {
+    const prev =
+      (row.nickname && byNick.get(String(row.nickname).toLowerCase())) ||
+      (row.avatar && byAvatar.get(row.avatar)) ||
+      null;
+    if (!prev) return row;
+    return {
+      ...prev,
+      ...row,
+      elo: Number.isInteger(row.elo) ? row.elo : prev.elo,
+      level: Number.isInteger(row.level) ? row.level : prev.level,
+      country: row.country || prev.country,
+      avatar: row.avatar || prev.avatar,
+      verifiedBadge: row.verifiedBadge || prev.verifiedBadge,
+      membership: row.membership || prev.membership,
+      ranking: Number.isInteger(row.ranking) ? row.ranking : prev.ranking,
+      ...(prev.esea || row.esea ? { esea: true } : {}),
+      ...(prev.token || row.token ? { token: true } : {}),
+      twitch: row.twitch || prev.twitch,
+      kick: row.kick || prev.kick,
+      confirmed: row.confirmed === true || prev.confirmed === true ? true : undefined,
+    };
+  });
+}
 
 /** Shared per-process cache (backed by `store`), including negative results and in-flight requests. */
 export function createPlayerLookup({
@@ -320,6 +395,7 @@ export function createPlayerLookup({
 }
 const playerLookup = createPlayerLookup();
 export const lookupPlayer = playerLookup.lookup;
+export const warmPlayerCache = (ids) => playerLookup.warm(ids);
 
 const AVATAR_HOSTS = new Set([
   'assets.faceit-cdn.net',
@@ -425,16 +501,8 @@ export function knownImageUrl(playerId, kind) {
   return typeof source === 'string' && avatarAllowed(source) ? source : null;
 }
 
-/** Deletes every Redis key with this prefix, a page at a time. */
 async function deleteByPrefix(prefix) {
-  await redisCall(async (redis) => {
-    let cursor = '0';
-    do {
-      const [next, keys] = await redis.scan(cursor, 'MATCH', `${prefix}*`, 'COUNT', 200);
-      cursor = next;
-      if (keys.length) await redis.del(...keys);
-    } while (cursor !== '0');
-  });
+  await deleteRedisPrefix(prefix);
 }
 
 /** Admin or the player: drop one FACEIT profile so Twitch and badges are read again. */
@@ -453,7 +521,7 @@ export async function forgetPlayerCache(id) {
 export async function clearLiveCache(kind) {
   if (kind === 'profiles') {
     playerLookup.clear();
-    await deleteByPrefix(PROFILE_PREFIX);
+    await clearFaceitProfileSnapshots();
   }
   else if (kind === 'avatars') {
     imageMemory.avatar.clear();
@@ -528,7 +596,7 @@ export function playerIdFromReferer(referer) {
  * At most 12 cold/expired profiles per snapshot and 6 simultaneous requests.
  * Warm profiles do not consume the budget, so later snapshots fill the remaining rows.
  */
-export async function fillFromPlayerId(entries) {
+export async function fillFromPlayerId(entries, lookup = playerLookup) {
   const grouped = new Map();
   for (const entry of entries) {
     const id = entry?.info?.playerId;
@@ -536,7 +604,8 @@ export async function fillFromPlayerId(entries) {
     if (!grouped.has(id)) grouped.set(id, []);
     grouped.get(id).push(entry);
   }
-  await playerLookup.warm(grouped.keys());
+  await lookup.warm(grouped.keys());
+  applyCachedProfiles(entries, (id) => lookup.peek(id));
   let budget = 40;
   const work = [...grouped.entries()].filter(([id, rows]) => {
     const freshStats = rows.some(
@@ -545,7 +614,7 @@ export async function fillFromPlayerId(entries) {
         !Number.isInteger(info.elo) ||
         !Number.isInteger(info.level)
     );
-    return !playerLookup.needsRefresh(id, freshStats) || budget-- > 0;
+    return !lookup.needsRefresh(id, freshStats) || budget-- > 0;
   });
   let cursor = 0;
   await Promise.all(
@@ -558,41 +627,14 @@ export async function fillFromPlayerId(entries) {
             !Number.isInteger(info.elo) ||
             !Number.isInteger(info.level)
         );
-        const profile = await lookupPlayer(id, { freshStats });
+        const profile = await lookup.lookup(id, { freshStats });
         if (!profile?.nickname) continue;
         if (!profile.calibrating && profile.level === 10 && !Number.isInteger(profile.ranking)) {
           const ranking = await lookupRanking(id, profile.region);
           if (ranking) profile.ranking = ranking;
         }
         for (const entry of rows) {
-          const calibrating = profile.calibrating === true || entry.info.calibrating === true;
-          const next = {
-            ...profile,
-            ...entry.info,
-            nickname: entry.info.nickname || profile.nickname,
-            elo: Number.isInteger(entry.info.elo)
-              ? entry.info.elo
-              : profile.elo,
-            level: Number.isInteger(entry.info.level)
-              ? entry.info.level
-              : profile.level,
-            country: entry.info.country || profile.country,
-            verifiedBadge: profile.verifiedBadge,
-            ...(profile.membership ? { membership: profile.membership } : {}),
-            ...(profile.esea ? { esea: true } : {}),
-            ...(profile.token ? { token: true } : {}),
-            ...(profile.twitch ? { twitch: profile.twitch } : {}),
-            ...(profile.kick ? { kick: profile.kick } : {}),
-            ...(profile.avatar ? { avatar: profile.avatar } : {}),
-          };
-          if (calibrating) {
-            next.calibrating = true;
-            delete next.level;
-            delete next.ranking;
-          } else {
-            delete next.calibrating;
-          }
-          entry.info = next;
+          entry.info = attachProfile(entry.info, profile);
         }
       }
     })
