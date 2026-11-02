@@ -10,6 +10,8 @@ export const FACEIT_TTL_MS = 30_000;
 export const FACEIT_RANKING_TTL_MS = 10 * 60_000;
 const PREFIX = '/api/faceit/v4';
 const CACHE_LIMIT = 400;
+/** How many keys remember that their stored copy was already served once. */
+const PAINTED_LIMIT = 20_000;
 const STALE_ANSWER_MS = 10 * 60_000;
 /** A profile or stat read is kept up to this long when the player has not finished a match since. */
 const SMART_MAX_MS = 10 * 60_000;
@@ -233,6 +235,8 @@ export function createFaceitCache({
 } = {}) {
   const cache = new Map();
   const pending = new Map();
+  /** Keys whose stored copy was already served once by this process. */
+  const painted = new Set();
   /** player id → the newest finished match seen, and when it changed */
   const heads = new Map();
   const remember = (key, entry) => {
@@ -298,7 +302,11 @@ export function createFaceitCache({
         count('cache.hit');
         return live;
       }
-      if (live?.stored && live.status === 200 && now() - (live.fetchedAt ?? live.at) < STORE_KEEP_MS) {
+      /* A copy from Redis/Postgres paints once per key after a restart. Every later read checks FACEIT, even when
+       * the copy is loaded again after being pushed out of memory, or a banner would show it for six hours. */
+      if (live?.stored && !painted.has(target.key) && live.status === 200 && now() - (live.fetchedAt ?? live.at) < STORE_KEEP_MS) {
+        painted.add(target.key);
+        while (painted.size > PAINTED_LIMIT) painted.delete(painted.values().next().value);
         const same = { ...live, at: now(), stored: true };
         count('cache.kept');
         remember(target.key, same);

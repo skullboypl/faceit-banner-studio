@@ -266,3 +266,65 @@ test('a live fill that times out still keeps cached profile stats', async () => 
   assert.equal(entries[0].info.elo, 2100);
   assert.equal(publicRanking(entries)[0].nickname, 'Cached');
 });
+
+test('a stored answer paints once after a restart, then the next refresh asks FACEIT', async () => {
+  const store = answerStore();
+  const target = faceitTarget(`/api/faceit/v4/players/${id}/games/cs2/stats?limit=100`);
+  const history = faceitTarget(`/api/faceit/v4/players/${id}/history?game=cs2&offset=0&limit=1`);
+  const old = { status: 200, at: 1_000, fetchedAt: 1_000, head: 'match-old' };
+  store.warm.set(`${id}\n${target.key}`, { ...old, body: '{"items":["old"]}' });
+  store.warm.set(`${id}\n${history.key}`, { ...old, body: '{"items":[{"match_id":"match-old"}]}' });
+  let clock = 1_000 + 60 * 60_000;
+  const upstream = [];
+  const cache = createFaceitCache({
+    now: () => clock,
+    getKey: () => 'k',
+    pressure: () => 0,
+    store,
+    fetcher: async (url) => {
+      upstream.push(String(url));
+      const body = String(url).includes('/history') ? '{"items":[{"match_id":"match-new"}]}' : '{"items":["new"]}';
+      return { status: 200, text: async () => body };
+    },
+  });
+  assert.equal((await cache.load(target)).body, '{"items":["old"]}');
+  assert.equal(upstream.length, 0);
+  clock += 61_000;
+  assert.equal((await cache.load(target)).body, '{"items":["new"]}');
+  assert.ok(upstream.some((url) => url.includes('/games/cs2/stats')));
+  clock += 61_000;
+  await cache.load(target);
+  assert.ok(upstream.some((url) => url.includes('/history')), 'the newest match is read from FACEIT, not the store');
+});
+
+test('an answer pushed out of memory is not re-served from the store forever', async () => {
+  const store = answerStore();
+  const target = faceitTarget(`/api/faceit/v4/players/${id}`);
+  store.warm.set(`${id}\n${target.key}`, { status: 200, body: '{"nickname":"Old"}', at: 1_000, fetchedAt: 1_000, head: null });
+  let clock = 1_000 + 60 * 60_000;
+  let calls = 0;
+  const cache = createFaceitCache({
+    now: () => clock,
+    getKey: () => 'k',
+    pressure: () => 0,
+    fetcher: async (url) => {
+      if (String(url).includes('/players/2')) return { status: 404, text: async () => '{}' };
+      if (String(url).includes('/api/users/')) return { status: 404, text: async () => '{}' };
+      if (String(url).includes('/history')) return { status: 200, text: async () => '{"items":[]}' };
+      calls++;
+      return { status: 200, text: async () => '{"nickname":"New"}' };
+    },
+    store: {
+      ...store,
+      save: async () => undefined,
+    },
+  });
+  assert.equal((await cache.load(target)).body, '{"nickname":"Old"}');
+  /* Other banners push this read out of the in-memory cache */
+  for (let i = 0; i < 450; i++) {
+    await cache.load(faceitTarget(`/api/faceit/v4/players/2${String(i).padStart(7, '0')}-1111-1111-1111-111111111111`));
+  }
+  clock += 61_000;
+  assert.equal((await cache.load(target)).body, '{"nickname":"New"}');
+  assert.equal(calls, 1);
+});
