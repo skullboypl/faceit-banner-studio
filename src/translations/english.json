@@ -90,6 +90,8 @@
   "streamers.page.last_stream": "Latest stream",
   "streamers.page.past_stream": "Earlier stream",
   "streamers.page.history_days": "90-day history",
+  "streamers.page.chart_days": "Last {{0}} days",
+  "streamers.page.day": "Day",
   "streamers.live.description": "Live Twitch and Kick channels using the FACEIT banner. Ranking and full history live on their own page.",
   "streamers.open_channel": "Open {{0}} on Twitch",
   "studio.presets": "Stream layouts",

@@ -326,10 +326,11 @@ a.streamers-open-kick:focus { color: #fff; }
 .streamers-archive-list a,
 .streamers-archive-list a:visited {
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) max-content minmax(0, 12rem);
   align-items: center;
-  gap: 8px 10px;
-  padding: 9px 10px;
+  gap: 8px 16px;
+  min-width: 0;
+  padding: 10px 12px;
   border: 1px solid #2a2630;
   background: #100f13;
   color: inherit;
@@ -337,10 +338,39 @@ a.streamers-open-kick:focus { color: #fff; }
 }
 .streamers-archive-list a:hover,
 .streamers-archive-list a:focus { border-color: #9146ff; }
-.streamers-archive-list svg { color: #a970ff; }
-.streamers-archive-list strong { color: #fff; font-size: 14px; }
-.streamers-archive-list small { color: #7c7684; font-size: 11px; }
-.streamers-archive-list i { color: #6f6a74; font-size: 11px; font-style: normal; }
+.streamers-archive-who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.streamers-archive-list svg { flex: 0 0 auto; color: #a970ff; }
+.streamers-archive-list strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #fff;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.streamers-archive-day {
+  flex: 0 0 auto;
+  color: #8a8492;
+  font-size: 12px;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.streamers-archive-handle {
+  min-width: 0;
+  overflow: hidden;
+  color: #7c7684;
+  font-size: 11px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .streamers-elo-stream { margin: 8px 0 18px; }
 .streamers-elo-stream > h3 {
   margin: 0 0 10px;
@@ -348,21 +378,32 @@ a.streamers-open-kick:focus { color: #fff; }
   font-size: 16px;
 }
 .streamers-session {
-  margin: 0 0 12px;
-  padding: 12px 14px;
+  margin: 0 0 10px;
+  padding: 0;
   border: 1px solid #2a2630;
   background: #100f13;
 }
+.streamers-session summary {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+.streamers-session summary::-webkit-details-marker { display: none; }
+.streamers-session[open] summary { border-bottom: 1px solid #26232a; }
 .streamers-session h4 {
-  margin: 0 0 4px;
+  margin: 0;
   color: #fff;
   font-size: 13px;
 }
 .streamers-session p {
-  margin: 0 0 10px;
+  margin: 0;
   color: #8a8492;
   font-size: 11px;
 }
+.streamers-session .streamers-elo-line,
+.streamers-session .streamers-session-empty { margin: 8px 14px 12px; }
 .streamers-session-empty {
   margin: 0;
   color: #8a8492;
@@ -374,13 +415,53 @@ a.streamers-open-kick:focus { color: #fff; }
   height: 96px;
 }
 .streamers-daytable-wrap {
-  max-height: 420px;
+  max-width: 100%;
   overflow: auto;
 }
 .streamers-profile-back {
   margin: 0;
   font-size: 12px;
 }
+.streamers-profile-head {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.streamers-profile-title { min-width: 0; }
+.streamers-profile a.streamers-open-twitch,
+.streamers-profile a.streamers-open-kick {
+  margin: 0;
+  width: fit-content;
+}
+.streamers-profile-charts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+}
+.streamers-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+.streamers-pager button {
+  width: auto;
+  min-width: 36px;
+  margin: 0;
+  padding: 7px 10px;
+  border: 1px solid #3a3145;
+  background: #1b1524;
+  color: #f4f2f7;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.streamers-pager button:hover,
+.streamers-pager button:focus-visible { border-color: #9146ff; color: #fff; }
+.streamers-pager button:disabled { opacity: 0.4; cursor: default; }
+.streamers-pager span { color: #8a8492; font-size: 12px; }
 .streamers-profile-back a,
 .streamers-profile-back a:visited {
   color: #a970ff;
@@ -389,12 +470,12 @@ a.streamers-open-kick:focus { color: #fff; }
 .streamers-profile-back a:hover,
 .streamers-profile-back a:focus { color: #fff; }
 .streamers-profile-head h3 {
-  margin: 8px 0 4px;
+  margin: 0;
   color: #fff;
   font-size: 26px;
   letter-spacing: -0.5px;
 }
-.streamers-profile-head p { margin: 0 0 12px; color: #8a8492; font-size: 13px; }
+.streamers-profile-head p { margin: 4px 0 0; color: #8a8492; font-size: 13px; }
 .streamers-analytics {
   padding: 16px 18px 18px;
   border: 1px solid #2f2a36;
@@ -428,7 +509,7 @@ a.streamers-open-kick:focus { color: #fff; }
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
-  margin: 0 0 14px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -436,15 +517,28 @@ a.streamers-open-kick:focus { color: #fff; }
 .streamers-profile-stats b { display: block; color: #fff; font-size: 20px; }
 .streamers-profile-stats span { color: #7c7684; font-size: 10px; text-transform: uppercase; }
 .streamers-profile-daily { margin: 18px 0 8px; color: #fff; font-size: 16px; }
-.streamers-daychart { margin: 0 0 14px; }
+.streamers-daychart {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #2a2630;
+  background: #100f13;
+  min-width: 0;
+}
 .streamers-daychart h3 { margin: 0 0 8px; color: #9a93a3; font-size: 11px; text-transform: uppercase; }
-.streamers-daychart ol { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
-.streamers-daychart li { display: grid; grid-template-columns: 42px minmax(0, 1fr) 48px; gap: 8px; align-items: center; color: #8a8492; font-size: 11px; }
-.streamers-daychart-bar { display: block; height: 8px; overflow: hidden; background: #1c1822; }
-.streamers-daychart-bar i { display: block; height: 100%; background: #9146ff; }
-.streamers-daychart-bar[data-tone='kick'] i { background: #53fc18; }
-.streamers-daychart-bar[data-tone='elo'] i { background: #ff5500; }
-.streamers-daychart strong { text-align: right; color: #f4f2f7; font-variant-numeric: tabular-nums; }
+.streamers-daychart-svg { display: block; width: 100%; height: 88px; }
+.streamers-daychart-col { fill: #9146ff; }
+.streamers-daychart-col[data-tone='kick'] { fill: #53fc18; }
+.streamers-daychart-col[data-tone='elo'] { fill: #ff5500; }
+.streamers-daychart-range {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 0 0;
+  color: #8a8492;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.streamers-daychart-range strong { color: #f4f2f7; }
 .streamers-daytable { width: 100%; border-collapse: collapse; font-size: 12px; }
 .streamers-daytable th,
 .streamers-daytable td { padding: 7px 8px; border-bottom: 1px solid #26232a; text-align: left; }
@@ -456,6 +550,12 @@ a.streamers-open-kick:focus { color: #fff; }
   background: #151218;
   color: #aaa2b1;
   text-align: center;
+}
+.streamers-profile .streamers-empty,
+.streamers-elo-stream .streamers-empty,
+.streamers-profile-daily-block .streamers-empty {
+  padding: 18px 14px;
+  font-size: 12px;
 }
 .streamers-empty svg { color: #9146ff; }
 .streamers-empty h3 { margin: 12px 0 5px; color: #fff; font-size: 20px; }
@@ -513,6 +613,18 @@ html.generator .studio-main.studio-main--streamers .section-heading {
   .streamers-analytics-list li > a { grid-template-columns: 28px minmax(0, 1fr) 1fr; }
   .streamers-analytics-list li > a > span:nth-child(n + 4) { display: none; }
   .streamers-profile-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .streamers-profile-head h3 { font-size: 22px; }
+  .streamers-profile-charts { grid-template-columns: 1fr; }
+  .streamers-archive-list a {
+    grid-template-columns: minmax(0, 1fr) max-content;
+  }
+  .streamers-archive-handle {
+    grid-column: 1 / -1;
+    text-align: left;
+    padding-left: 24px;
+  }
+  .streamers-daytable th,
+  .streamers-daytable td { padding: 7px 6px; }
   .streamers-rail { grid-auto-columns: minmax(180px, 78%); }
   .streamers-rest li { grid-template-columns: 36px minmax(0, 1fr) auto 30px; gap: 8px; padding-inline: 4px; }
   .streamer-avatar { width: 34px; height: 34px; }

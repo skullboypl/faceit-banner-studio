@@ -37,7 +37,12 @@ describe('StreamerRanking', () => {
     expect(first.textContent).toContain('400');
     expect(within(rank).getByRole('link', { name: /Mapet/i }).getAttribute('href')).toBe('/streamers/mapet');
     const archive = screen.getByRole('list', { name: 'Pełna historia streamerów' });
-    expect(within(archive).getByRole('link', { name: /OldOne/i }).getAttribute('href')).toBe('/streamers/oldone');
+    const old = within(archive).getByRole('link', { name: /OldOne/i });
+    expect(old.getAttribute('href')).toBe('/streamers/oldone');
+    expect(old.querySelector('.streamers-archive-who')?.textContent).toContain('OldOne');
+    expect(old.querySelector('.streamers-archive-day')?.textContent).toBe('2026-10-01');
+    expect(old.querySelector('.streamers-archive-handle')?.textContent).toBe('@oldone');
+    expect(within(archive).getByText('2026-11-02').className).toContain('streamers-archive-day');
     expect(screen.getByRole('link', { name: 'Wszyscy streamerzy' }).getAttribute('href')).toBe('/streamers');
   });
 });

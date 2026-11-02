@@ -112,11 +112,19 @@ export function StreamerRanking() {
           <ul className="streamers-archive-list" aria-label={t('streamers.history.title')}>
             {archive.map((row) => (
               <li key={row.slug}>
-                <Link to={streamerPath(row.slug)}>
-                  <PlatformMark row={row} />
-                  <strong>{row.nickname}</strong>
-                  <small>@{row.slug}</small>
-                  {row.lastDay ? <i>{row.lastDay}</i> : null}
+                <Link to={streamerPath(row.slug)} className="streamers-archive-row">
+                  <span className="streamers-archive-who">
+                    <PlatformMark row={row} />
+                    <strong>{row.nickname}</strong>
+                  </span>
+                  {row.lastDay ? (
+                    <time className="streamers-archive-day" dateTime={row.lastDay}>
+                      {row.lastDay}
+                    </time>
+                  ) : (
+                    <span className="streamers-archive-day">—</span>
+                  )}
+                  <small className="streamers-archive-handle">@{row.slug}</small>
                 </Link>
               </li>
             ))}
