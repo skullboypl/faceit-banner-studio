@@ -6,28 +6,46 @@
  * Viewer counts come from the existing Twitch enrich (`custom_twitch_api`) and
  * Kick public v2 — not Helix. TWITCH_CLIENT_ID/SECRET and KICK_* are OAuth pairing
  * only; Helix `streams:read` is unused.
+ *
+ * Offline board rows never enter rank math: ingest writes viewer/ELO points only
+ * while Twitch/Kick report live (or live=true / viewers > 0).
  */
 import {
+  downsamplePoints,
   fillStreamerDays,
+  groupStreamerSessions,
   guidForChannel,
+  isLiveStreamerSample,
   lastMatchFromHistory,
   loadFaceitProfile,
   recordStreamerSample,
   redisCall,
+  STREAMER_KEEP_DAYS,
+  streamerArchiveRows,
   streamerDailySeries,
   streamerIdentity,
   streamerRankingRows,
+  streamerSamplePoints,
   streamerSlugFrom,
   summarizeStreamerDays,
 } from './store.mjs';
 
 export const STREAMERS_RANK_KEY = 'fb:streamers:rank';
 export const STREAMERS_PAGE_PREFIX = 'fb:streamers:page:';
+export const STREAMERS_SAMPLES_PREFIX = 'fb:streamers:samples:';
 export const STREAMERS_TTL_SECONDS = 60;
+export const STREAMERS_SAMPLES_KEEP = 200;
+export const STREAMER_RESERVED = new Set(['ranking', 'stats']);
 const RANK_DAYS = 7;
+const MAX_SESSIONS = 24;
+const MAX_SESSION_POINTS = 80;
 const SLUG = /^[A-Za-z0-9_-]{3,25}$/;
 const BOT =
   /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandex|facebookexternalhit|twitterbot|linkedinbot|embedly|whatsapp|telegrambot/i;
+
+export function isReservedStreamerSlug(slug) {
+  return STREAMER_RESERVED.has(String(slug || '').toLowerCase());
+}
 
 export function createDebouncer() {
   const pending = new Map();
@@ -79,6 +97,7 @@ function liveViewers(player) {
 export function playerToSample(player) {
   if (!player || typeof player !== 'object') return null;
   const viewers = liveViewers(player);
+  const live = viewers != null;
   return {
     twitch: player.twitch,
     kick: player.kick,
@@ -86,8 +105,8 @@ export function playerToSample(player) {
     avatar: player.avatar,
     elo: player.elo,
     guid: player.playerId,
-    viewers,
-    live: viewers != null,
+    viewers: live ? viewers : null,
+    live,
     matchId: player.lastMatch?.matchId,
   };
 }
@@ -110,6 +129,55 @@ async function faceitBits(sample) {
   return { ...sample, guid, elo, matchId };
 }
 
+function samplePointFrom(sample, at) {
+  return {
+    ts: at instanceof Date ? at.getTime() : Number(at) || Date.now(),
+    elo: Number.isInteger(sample.elo) ? sample.elo : null,
+    viewers: Number.isInteger(sample.viewers) ? sample.viewers : null,
+    matchId: typeof sample.matchId === 'string' ? sample.matchId : '',
+  };
+}
+
+async function pushHotSample(slug, point) {
+  if (!slug || !point?.ts) return;
+  await redisCall(async (redis) => {
+    const key = `${STREAMERS_SAMPLES_PREFIX}${slug}`;
+    await redis.lpush(key, JSON.stringify(point));
+    await redis.ltrim(key, 0, STREAMERS_SAMPLES_KEEP - 1);
+    await redis.expire(key, STREAMER_KEEP_DAYS * 24 * 3600);
+  });
+}
+
+async function loadHotSamples(slug) {
+  const raw = await redisCall((redis) => redis.lrange(`${STREAMERS_SAMPLES_PREFIX}${slug}`, 0, STREAMERS_SAMPLES_KEEP - 1));
+  if (!Array.isArray(raw) || !raw.length) return [];
+  return raw
+    .map((entry) => {
+      try {
+        return typeof entry === 'string' ? JSON.parse(entry) : entry;
+      } catch {
+        return null;
+      }
+    })
+    .filter((point) => point && Number.isFinite(Number(point.ts)))
+    .map((point) => ({
+      ts: Number(point.ts),
+      elo: Number.isInteger(Number(point.elo)) ? Number(point.elo) : null,
+      viewers: Number.isInteger(Number(point.viewers)) ? Number(point.viewers) : null,
+      matchId: typeof point.matchId === 'string' ? point.matchId : '',
+    }))
+    .sort((a, b) => a.ts - b.ts);
+}
+
+function shapeSessions(points) {
+  return groupStreamerSessions(points)
+    .slice(0, MAX_SESSIONS)
+    .map((session) => ({
+      ...session,
+      points: downsamplePoints(session.points, MAX_SESSION_POINTS),
+    }));
+}
+
 export function ingestLiveStreamers(players, at = new Date()) {
   const samples = (players || []).map(playerToSample).filter((sample) => sample && streamerSlugFrom(sample));
   if (!samples.length) return Promise.resolve();
@@ -121,20 +189,26 @@ export function ingestLiveStreamers(players, at = new Date()) {
       for (const { samples: group, at: when } of batch) {
         for (const sample of group) {
           const slug = streamerSlugFrom(sample);
-          if (sample.live) liveOverlay.set(slug, { viewers: sample.viewers ?? 0, elo: sample.elo ?? null, at: Date.now() });
-          else liveOverlay.delete(slug);
-          const rich = await faceitBits(sample);
-          await recordStreamerSample(rich, when);
+          if (isLiveStreamerSample(sample)) {
+            liveOverlay.set(slug, { viewers: sample.viewers ?? 0, elo: sample.elo ?? null, at: Date.now() });
+            const rich = await faceitBits({ ...sample, live: true });
+            await recordStreamerSample(rich, when);
+            await pushHotSample(slug, samplePointFrom(rich, when));
+          } else {
+            liveOverlay.delete(slug);
+            await recordStreamerSample({ ...sample, live: false, viewers: null }, when);
+          }
         }
       }
     } while (ingestQueue.length);
   });
 }
 
-function rankingPayload(rows, days) {
+function rankingPayload(rows, archive, days) {
   return {
     ok: true,
     days,
+    historyDays: STREAMER_KEEP_DAYS,
     generatedAt: Date.now(),
     cacheSeconds: STREAMERS_TTL_SECONDS,
     streamers: rows.map((row) => {
@@ -154,6 +228,16 @@ function rankingPayload(rows, days) {
         viewers: live ? live.viewers : 0,
       };
     }),
+    archive: (archive || []).map((row) => ({
+      slug: row.slug,
+      nickname: row.nickname || row.slug,
+      avatar: row.avatar || null,
+      platform: row.platform || (row.twitch ? 'twitch' : 'kick'),
+      twitch: row.twitch || null,
+      kick: row.kick || null,
+      elo: Number.isInteger(Number(row.elo)) ? Number(row.elo) : null,
+      lastDay: row.lastDay || null,
+    })),
   };
 }
 
@@ -172,7 +256,8 @@ export async function buildStreamerRanking(days = RANK_DAYS) {
       }
     }
     try {
-      const body = rankingPayload(await streamerRankingRows(days), days);
+      const [rows, archive] = await Promise.all([streamerRankingRows(days), streamerArchiveRows()]);
+      const body = rankingPayload(rows, archive, days);
       lastGoodRank = body;
       await redisCall((redis) => redis.set(STREAMERS_RANK_KEY, JSON.stringify(body), 'EX', STREAMERS_TTL_SECONDS));
       return body;
@@ -181,9 +266,11 @@ export async function buildStreamerRanking(days = RANK_DAYS) {
         lastGoodRank || {
           ok: true,
           days,
+          historyDays: STREAMER_KEEP_DAYS,
           generatedAt: Date.now(),
           cacheSeconds: STREAMERS_TTL_SECONDS,
           streamers: [],
+          archive: [],
           stale: true,
         }
       );
@@ -191,11 +278,13 @@ export async function buildStreamerRanking(days = RANK_DAYS) {
   });
 }
 
-function pagePayload(slug, identity, history) {
+function pagePayload(slug, identity, history, sessions) {
   const totals = summarizeStreamerDays(history.series);
   const live = liveOverlay.get(history.slug || slug);
   const found = Boolean(
-    identity || history.series.some((point) => point.viewersSamples || point.matches || point.elo != null)
+    identity ||
+      history.series.some((point) => point.viewersSamples || point.matches || point.elo != null) ||
+      (sessions || []).length
   );
   return {
     ok: true,
@@ -218,11 +307,19 @@ function pagePayload(slug, identity, history) {
     },
     days: history.days,
     series: history.series,
+    sessions: sessions || [],
   };
 }
 
-export async function buildStreamerPage(slug, days = RANK_DAYS) {
+async function loadPagePoints(slug, days) {
+  const stored = await streamerSamplePoints(slug, days);
+  if (stored.points.length) return stored.points;
+  return loadHotSamples(slug);
+}
+
+export async function buildStreamerPage(slug, days = STREAMER_KEEP_DAYS) {
   const key = String(slug || '').toLowerCase();
+  if (isReservedStreamerSlug(key)) return buildStreamerRanking(RANK_DAYS);
   if (!SLUG.test(key)) {
     return {
       ok: true,
@@ -232,6 +329,7 @@ export async function buildStreamerPage(slug, days = RANK_DAYS) {
       streamer: { slug: key, nickname: key, viewersPeak: 0, viewersAvg: 0, matches: 0, elo: null, live: false, viewers: 0 },
       days,
       series: fillStreamerDays([], days),
+      sessions: [],
     };
   }
   return streamerDebounce.run(`page:${key}`, async () => {
@@ -249,8 +347,12 @@ export async function buildStreamerPage(slug, days = RANK_DAYS) {
       }
     }
     try {
-      const [identity, history] = await Promise.all([streamerIdentity(key), streamerDailySeries(key, days)]);
-      const body = pagePayload(key, identity, history);
+      const [identity, history, points] = await Promise.all([
+        streamerIdentity(key),
+        streamerDailySeries(key, days),
+        loadPagePoints(key, days),
+      ]);
+      const body = pagePayload(key, identity, history, shapeSessions(points));
       lastGoodPage.set(key, body);
       await redisCall((redis) => redis.set(redisKey, JSON.stringify(body), 'EX', STREAMERS_TTL_SECONDS));
       return body;
@@ -264,6 +366,7 @@ export async function buildStreamerPage(slug, days = RANK_DAYS) {
           streamer: { slug: key, nickname: key, viewersPeak: 0, viewersAvg: 0, matches: 0, elo: null, live: false, viewers: 0 },
           days,
           series: fillStreamerDays([], days),
+          sessions: [],
           stale: true,
         }
       );
@@ -286,6 +389,10 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;');
 }
 
+function renderLiveHtml() {
+  return `<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>Nasi streamerzy FACEIT Banner</title><meta name="description" content="Kanały Twitch i Kick na żywo z banerem FACEIT. Ranking i pełna historia są na osobnej stronie."><link rel="canonical" href="https://faceitbanner.vxh.pl/streamers"></head><body><h1>Nasi streamerzy</h1><p><a href="/streamers/ranking">Ranking i historia streamerów</a></p></body></html>`;
+}
+
 function renderRankHtml(rank) {
   const items = (rank.streamers || [])
     .map(
@@ -293,7 +400,10 @@ function renderRankHtml(rank) {
         `<li><a href="/streamers/${escapeHtml(row.slug)}">${escapeHtml(row.nickname)}</a> — śr. ${row.viewersAvg} widzów</li>`
     )
     .join('');
-  return `<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>Ranking streamerów FACEIT – widzowie z 7 dni</title><meta name="description" content="Ranking streamerów Twitch i Kick z banerem FACEIT. Widzowie z 7 dni, średnia, ELO i mecze CS2."><link rel="canonical" href="https://faceitbanner.vxh.pl/streamers"></head><body><h1>Ranking streamerów – 7 dni</h1><ol>${items || '<li>Brak zapisanych widzów.</li>'}</ol></body></html>`;
+  const archive = (rank.archive || [])
+    .map((row) => `<li><a href="/streamers/${escapeHtml(row.slug)}">${escapeHtml(row.nickname)}</a></li>`)
+    .join('');
+  return `<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>Ranking streamerów FACEIT – widzowie z 7 dni</title><meta name="description" content="Ranking streamerów Twitch i Kick z banerem FACEIT. Widzowie z 7 dni, średnia, ELO i mecze CS2."><link rel="canonical" href="https://faceitbanner.vxh.pl/streamers/ranking"></head><body><p><a href="/streamers">Nasi streamerzy</a></p><h1>Ranking streamerów – 7 dni</h1><ol>${items || '<li>Brak zapisanych widzów.</li>'}</ol><h2>Pełna historia streamerów</h2><ul>${archive || '<li>Brak zapisanych streamerów.</li>'}</ul></body></html>`;
 }
 
 function renderPageHtml(page) {
@@ -302,7 +412,11 @@ function renderPageHtml(page) {
   const rows = (page.series || [])
     .map((point) => `<tr><td>${escapeHtml(point.day)}</td><td>${point.viewersAvg}</td><td>${point.elo ?? '—'}</td><td>${point.matches}</td></tr>`)
     .join('');
-  return `<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>${name} · Streamerzy FACEIT Banner</title><meta name="description" content="${name} na FACEIT Banner: widzowie, ELO i mecze z każdego dnia."><link rel="canonical" href="https://faceitbanner.vxh.pl/streamers/${slug}"></head><body><p><a href="/streamers">Wszyscy streamerzy</a></p><h1>${name}</h1><table><thead><tr><th>Dzień</th><th>Widzowie</th><th>ELO</th><th>Mecze</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+  return `<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>${name} · Streamerzy FACEIT Banner</title><meta name="description" content="${name} na FACEIT Banner: widzowie, ELO i mecze z każdego dnia."><link rel="canonical" href="https://faceitbanner.vxh.pl/streamers/${slug}"></head><body><p><a href="/streamers">Wszyscy streamerzy</a> · <a href="/streamers/ranking">Ranking</a></p><h1>${name}</h1><table><thead><tr><th>Dzień</th><th>Widzowie</th><th>ELO</th><th>Mecze</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+}
+
+function isRankingPath(pathname) {
+  return pathname === '/streamers/ranking' || pathname === '/streamers/stats' || pathname === '/api/streamers/ranking' || pathname === '/api/streamers/stats';
 }
 
 export function createStreamersMiddleware() {
@@ -310,20 +424,31 @@ export function createStreamersMiddleware() {
     const url = new URL(req.url || '/', 'http://localhost');
     const pathname = url.pathname;
     if (req.method !== 'GET') return next();
-    if (pathname === '/api/streamers') return sendJson(res, 200, await buildStreamerRanking(RANK_DAYS));
+    if (pathname === '/api/streamers' || pathname === '/api/streamers/ranking' || pathname === '/api/streamers/stats') {
+      return sendJson(res, 200, await buildStreamerRanking(RANK_DAYS));
+    }
     const api = pathname.match(/^\/api\/streamers\/([A-Za-z0-9_-]{3,25})$/i);
-    if (api) return sendJson(res, 200, await buildStreamerPage(api[1].toLowerCase(), RANK_DAYS));
+    if (api) {
+      const slug = api[1].toLowerCase();
+      if (isReservedStreamerSlug(slug)) return sendJson(res, 200, await buildStreamerRanking(RANK_DAYS));
+      return sendJson(res, 200, await buildStreamerPage(slug));
+    }
     if (BOT.test(String(req.headers['user-agent'] || ''))) {
       if (pathname === '/streamers') {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.end(renderLiveHtml());
+      }
+      if (isRankingPath(pathname)) {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         return res.end(renderRankHtml(await buildStreamerRanking(RANK_DAYS)));
       }
       const page = pathname.match(/^\/streamers\/([A-Za-z0-9_-]{3,25})$/i);
-      if (page) {
+      if (page && !isReservedStreamerSlug(page[1])) {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        return res.end(renderPageHtml(await buildStreamerPage(page[1].toLowerCase(), RANK_DAYS)));
+        return res.end(renderPageHtml(await buildStreamerPage(page[1].toLowerCase())));
       }
     }
     return next();

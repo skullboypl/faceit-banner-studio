@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import { LanguageContext } from '../generator/contexts';
 import { getLiveBoard, LIVE_LIST_REFRESH_MS, type LivePlayer } from '../utils/presence';
 import { KickIcon, TwitchIcon } from './MemberIcons';
-import { applyStreamerMeta, streamerIndexDescription, streamerIndexTitle, streamerPath, streamerSlugOf } from './streamer-seo';
-import { StreamerRanking } from './StreamerRanking';
+import { applyStreamerMeta, STREAMER_RANKING_PATH, streamerIndexDescription, streamerIndexTitle, streamerPath, streamerSlugOf } from './streamer-seo';
 
 const CHANNEL_LOGIN = /^[A-Za-z0-9_]{3,25}$/;
 const TOP_LIMIT = 10;
@@ -122,7 +121,7 @@ export function TwitchStreamers() {
   useEffect(() => {
     if (!t) return;
     const previousTitle = document.title;
-    applyStreamerMeta(streamerIndexTitle(t('streamers.analytics.title')), streamerIndexDescription(t('streamers.index.description')));
+    applyStreamerMeta(streamerIndexTitle(t('streamers.title')), streamerIndexDescription(t('streamers.live.description')));
     let active = true;
     let pending = false;
     const controller = new AbortController();
@@ -191,7 +190,9 @@ export function TwitchStreamers() {
         </span>
         <p><strong>{t('streamers.how.title')}</strong> {t('streamers.how.body')}</p>
       </aside>
-      <StreamerRanking />
+      <p className="streamers-to-rank">
+        <Link to={STREAMER_RANKING_PATH}>{t('streamers.rank.open')}</Link>
+      </p>
 
       {error && players === null ? (
         <p className="streamers-empty" role="alert">{t('streamers.error')}</p>

@@ -1,10 +1,11 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LanguageContext } from '../generator/contexts';
-import { getStreamerPage, type StreamerDay, type StreamerDetail } from './streamer-api';
+import { getStreamerPage, type StreamerDay, type StreamerDetail, type StreamerSamplePoint, type StreamerSession } from './streamer-api';
 import {
   applyStreamerMeta,
   parseStreamerPath,
+  STREAMER_RANKING_PATH,
   streamerPageDescription,
   streamerPageTitle,
   streamerPath,
@@ -47,6 +48,56 @@ function DayChart({
         })}
       </ol>
     </section>
+  );
+}
+
+function EloLine({ points, empty }: { points: StreamerSamplePoint[]; empty: string }) {
+  const series = points.filter((point) => Number.isInteger(point.elo));
+  if (series.length === 0) return <p className="streamers-session-empty">{empty}</p>;
+  const elos = series.map((point) => point.elo as number);
+  const min = Math.min(...elos);
+  const max = Math.max(...elos);
+  const span = Math.max(1, max - min);
+  const t0 = series[0].ts;
+  const t1 = series[series.length - 1].ts;
+  const tspan = Math.max(1, t1 - t0);
+  const width = 640;
+  const height = 120;
+  const pad = 8;
+  const coords = series.map((point, index) => {
+    const x = pad + ((point.ts - t0) / tspan) * (width - pad * 2);
+    const y = pad + (1 - ((point.elo as number) - min) / span) * (height - pad * 2);
+    return `${Number.isFinite(x) ? x : pad + index} ${y}`;
+  });
+  return (
+    <svg className="streamers-elo-line" viewBox={`0 0 ${width} ${height}`} role="img" aria-hidden="true">
+      <polyline fill="none" stroke="#ff5500" strokeWidth="2.5" points={coords.join(' ')} />
+    </svg>
+  );
+}
+
+function sessionStamp(ts: number) {
+  return new Date(ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function SessionBlock({ session, index, lastLabel, pastLabel, empty }: { session: StreamerSession; index: number; lastLabel: string; pastLabel: string; empty: string }) {
+  const change = session.eloStart != null && session.eloEnd != null ? session.eloEnd - session.eloStart : null;
+  return (
+    <article className="streamers-session">
+      <header>
+        <h4>{index === 0 ? lastLabel : pastLabel}</h4>
+        <p>
+          {sessionStamp(session.startedAt)}
+          {session.endedAt !== session.startedAt ? ` – ${sessionStamp(session.endedAt)}` : ''}
+          {' · '}
+          {session.eloStart == null ? '—' : session.eloStart.toLocaleString()}
+          {' → '}
+          {session.eloEnd == null ? '—' : session.eloEnd.toLocaleString()}
+          {change != null ? ` (${change > 0 ? '+' : ''}${change.toLocaleString()})` : ''}
+        </p>
+      </header>
+      <EloLine points={session.points} empty={empty} />
+    </article>
   );
 }
 
@@ -97,12 +148,15 @@ export function StreamerPage({ slug }: { slug: string }) {
   const name = detail?.streamer.nickname || login;
   const href = detail ? channelHref(detail) : '';
   const series = detail?.series ?? [];
+  const sessions = detail?.sessions ?? [];
   const kickOnly = Boolean(detail?.streamer.kick && !detail.streamer.twitch);
 
   return (
     <div className="streamers-page streamers-profile">
       <p className="streamers-profile-back">
         <Link to="/streamers">{t('streamers.page.back')}</Link>
+        {' · '}
+        <Link to={STREAMER_RANKING_PATH}>{t('streamers.rank.open')}</Link>
       </p>
       <header className="streamers-profile-head">
         <h3>{name}</h3>
@@ -145,30 +199,49 @@ export function StreamerPage({ slug }: { slug: string }) {
         <p className="streamers-empty" role="status">{t('streamers.analytics.loading')}</p>
       ) : (
         <>
+          <section className="streamers-elo-stream" aria-labelledby="streamers-elo-stream-title">
+            <h3 id="streamers-elo-stream-title">{t('streamers.page.elo_stream')}</h3>
+            {sessions.length === 0 ? (
+              <p className="streamers-empty">{t('streamers.page.elo_stream_empty')}</p>
+            ) : (
+              sessions.map((session, index) => (
+                <SessionBlock
+                  key={`${session.startedAt}-${session.endedAt}`}
+                  session={session}
+                  index={index}
+                  lastLabel={t('streamers.page.last_stream')}
+                  pastLabel={t('streamers.page.past_stream')}
+                  empty={t('streamers.page.elo_stream_empty')}
+                />
+              ))
+            )}
+          </section>
           <h3 className="streamers-profile-daily">{t('streamers.page.daily')}</h3>
           <DayChart series={series} valueOf={(point) => point.viewersAvg} label={t('streamers.page.viewers_day')} tone="twitch" />
           <DayChart series={series} valueOf={(point) => point.elo ?? 0} label={t('streamers.page.elo_day')} tone="elo" />
           <DayChart series={series} valueOf={(point) => point.matches} label={t('streamers.page.matches_day')} tone="kick" />
-          <table className="streamers-daytable">
-            <thead>
-              <tr>
-                <th>{t('streamers.analytics.days')}</th>
-                <th>{t('streamers.page.viewers_day')}</th>
-                <th>{t('streamers.page.elo_day')}</th>
-                <th>{t('streamers.page.matches_day')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {series.map((point) => (
-                <tr key={point.day}>
-                  <td>{point.day}</td>
-                  <td>{point.viewersAvg.toLocaleString()}</td>
-                  <td>{point.elo == null ? '—' : point.elo.toLocaleString()}</td>
-                  <td>{point.matches.toLocaleString()}</td>
+          <div className="streamers-daytable-wrap">
+            <table className="streamers-daytable">
+              <thead>
+                <tr>
+                  <th>{t('streamers.page.history_days')}</th>
+                  <th>{t('streamers.page.viewers_day')}</th>
+                  <th>{t('streamers.page.elo_day')}</th>
+                  <th>{t('streamers.page.matches_day')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {series.map((point) => (
+                  <tr key={point.day}>
+                    <td>{point.day}</td>
+                    <td>{point.viewersAvg.toLocaleString()}</td>
+                    <td>{point.elo == null ? '—' : point.elo.toLocaleString()}</td>
+                    <td>{point.matches.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           {!detail.found && <p className="streamers-empty">{t('streamers.page.missing')}</p>}
         </>
       )}

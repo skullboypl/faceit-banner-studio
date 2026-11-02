@@ -140,6 +140,15 @@ async function getPostgres() {
           PRIMARY KEY (slug, day)
         );
         CREATE INDEX IF NOT EXISTS idx_streamer_daily_day ON streamer_daily (day DESC);
+        CREATE TABLE IF NOT EXISTS streamer_samples (
+          slug VARCHAR(32) NOT NULL,
+          ts TIMESTAMPTZ NOT NULL,
+          elo INTEGER,
+          viewers INTEGER,
+          match_id VARCHAR(64),
+          PRIMARY KEY (slug, ts)
+        );
+        CREATE INDEX IF NOT EXISTS idx_streamer_samples_slug_ts ON streamer_samples (slug, ts DESC);
       `);
       return pool;
     })
@@ -203,7 +212,7 @@ function pruneStudioUsers(now = Date.now()) {
   }
 }
 
-/** A signed-in studio account belongs on the public live list, even without a widget ping. */
+/** Remembers a signed-in FACEIT account so a matching live row can get the confirmed badge. */
 export function rememberStudioUser(user, expires = Date.now() + SESSION_TTL_SECONDS * 1000) {
   const guid = studioGuid(user);
   const nickname = typeof user?.nickname === 'string' ? user.nickname.trim() : '';
@@ -319,7 +328,7 @@ function sessionIdFromCookie(header = '') {
   return '';
 }
 
-/** Puts this request's studio cookie on the live list. Logged-out visitors stay off it. */
+/** Remembers this request's studio cookie so a matching FACEIT live row can be marked confirmed. */
 export async function touchStudioSession(cookieHeader) {
   const id = sessionIdFromCookie(cookieHeader);
   if (!id) return null;
@@ -1026,9 +1035,11 @@ export async function loginActivity(days = 30) {
 }
 
 const STREAMER_SLUG = /^[A-Za-z0-9_-]{3,25}$/;
-const STREAMER_KEEP_DAYS = 90;
+export const STREAMER_KEEP_DAYS = 90;
+export const STREAMER_SESSION_GAP_MS = 45 * 60 * 1000;
 const memoryStreamerDaily = new Map();
 const memoryStreamerIdentities = new Map();
+const memoryStreamerSamples = new Map();
 
 /** UTC calendar day `YYYY-MM-DD`. */
 export function utcDay(at = new Date()) {
@@ -1121,6 +1132,71 @@ function rememberDaily(row) {
   }
 }
 
+function samplePoint(row) {
+  const ts = row instanceof Date ? row.getTime() : Number(row.ts);
+  return {
+    ts: Number.isFinite(ts) ? ts : 0,
+    elo: Number.isInteger(Number(row.elo)) ? Number(row.elo) : null,
+    viewers: Number.isInteger(Number(row.viewers)) ? Number(row.viewers) : null,
+    matchId: typeof row.matchId === 'string' && row.matchId ? row.matchId : row.match_id || '',
+  };
+}
+
+function rememberSample(slug, point) {
+  if (!slug || !point?.ts) return;
+  const list = memoryStreamerSamples.get(slug) || [];
+  const next = samplePoint(point);
+  const index = list.findIndex((row) => row.ts === next.ts);
+  if (index >= 0) list[index] = { ...list[index], ...next };
+  else list.push(next);
+  const cutoff = Date.now() - STREAMER_KEEP_DAYS * 24 * 60 * 60 * 1000;
+  memoryStreamerSamples.set(
+    slug,
+    list.filter((row) => row.ts >= cutoff).sort((a, b) => a.ts - b.ts)
+  );
+}
+
+/** A gap longer than this between samples starts a new stream session. */
+export function groupStreamerSessions(points, gapMs = STREAMER_SESSION_GAP_MS) {
+  const sorted = [...(points || [])].filter((point) => Number.isFinite(Number(point?.ts))).sort((a, b) => a.ts - b.ts);
+  const sessions = [];
+  for (const raw of sorted) {
+    const point = samplePoint(raw);
+    const last = sessions[sessions.length - 1];
+    if (!last || point.ts - last.endedAt > gapMs) {
+      sessions.push({
+        startedAt: point.ts,
+        endedAt: point.ts,
+        eloStart: point.elo,
+        eloEnd: point.elo,
+        viewersPeak: asInt(point.viewers),
+        points: [point],
+      });
+      continue;
+    }
+    last.endedAt = point.ts;
+    last.points.push(point);
+    if (point.elo != null) {
+      if (last.eloStart == null) last.eloStart = point.elo;
+      last.eloEnd = point.elo;
+    }
+    last.viewersPeak = Math.max(last.viewersPeak, asInt(point.viewers));
+  }
+  return sessions.reverse();
+}
+
+export function downsamplePoints(points, max = 80) {
+  const list = points || [];
+  if (list.length <= max) return list;
+  const out = [];
+  const last = list.length - 1;
+  for (let i = 0; i < max; i += 1) {
+    const index = Math.round((i / (max - 1)) * last);
+    if (!out.length || out[out.length - 1] !== list[index]) out.push(list[index]);
+  }
+  return out;
+}
+
 /** FACEIT id stored for this Twitch or Kick login (OAuth pairing first). */
 export async function guidForChannel({ twitch, kick } = {}) {
   const twitchLogin = cleanTwitch(twitch);
@@ -1146,9 +1222,17 @@ export async function guidForChannel({ twitch, kick } = {}) {
   return null;
 }
 
+/** Live samples only. Offline board rows (viewers 0 / live=false) must not enter rank math. */
+export function isLiveStreamerSample(sample) {
+  if (!sample || typeof sample !== 'object') return false;
+  if (sample.live === false) return false;
+  if (sample.live === true) return true;
+  return Number.isInteger(sample.viewers) && sample.viewers > 0;
+}
+
 /**
- * One live (or identity) sample folded into today's row: peak/sum/samples for viewers,
- * last ELO, and +1 match when `matchId` is new for that day.
+ * Identity always; viewer/ELO/match rollups and time-series points only while live.
+ * Offline 0s are not samples and must not pull the 7-day average down.
  */
 export async function recordStreamerSample(sample, at = new Date()) {
   const slug = streamerSlugFrom(sample);
@@ -1159,7 +1243,8 @@ export async function recordStreamerSample(sample, at = new Date()) {
   const kick = cleanKick(sample.kick) || null;
   const platform = twitch ? 'twitch' : 'kick';
   const login = (twitch || kick || slug).slice(0, 25);
-  const viewers = Number.isInteger(sample.viewers) && sample.viewers >= 0 ? sample.viewers : null;
+  const live = isLiveStreamerSample(sample);
+  const viewers = live && Number.isInteger(sample.viewers) && sample.viewers >= 0 ? sample.viewers : null;
   const elo = Number.isInteger(sample.elo) && sample.elo >= 0 && sample.elo <= 10000 ? sample.elo : null;
   const matchId = typeof sample.matchId === 'string' && sample.matchId ? sample.matchId.slice(0, 64) : '';
   const guid = typeof sample.guid === 'string' && ACCOUNT_ID.test(sample.guid) ? sample.guid.toLowerCase() : '';
@@ -1206,6 +1291,7 @@ export async function recordStreamerSample(sample, at = new Date()) {
         [kick.toLowerCase(), slug, kick, guid || null, nickname || null, avatar || null, twitch, kick]
       );
     }
+    if (!live) return true;
     await pool.query(
       `INSERT INTO streamer_daily (
          slug, day, platform, login, guid, nickname, avatar, twitch, kick,
@@ -1246,13 +1332,25 @@ export async function recordStreamerSample(sample, at = new Date()) {
         matchId || null,
       ]
     );
+    if (viewers != null) {
+      await pool.query(
+        `INSERT INTO streamer_samples (slug, ts, elo, viewers, match_id)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (slug, ts) DO UPDATE SET
+           elo = COALESCE(EXCLUDED.elo, streamer_samples.elo),
+           viewers = COALESCE(EXCLUDED.viewers, streamer_samples.viewers),
+           match_id = COALESCE(EXCLUDED.match_id, streamer_samples.match_id)`,
+        [slug, at, elo, viewers, matchId || null]
+      );
+    }
     if (once('streamer-daily-prune', 60_000)) {
       await pool.query(`DELETE FROM streamer_daily WHERE day < (NOW() AT TIME ZONE 'UTC')::date - 90`);
+      await pool.query(`DELETE FROM streamer_samples WHERE ts < NOW() - INTERVAL '90 days'`);
     }
     return true;
   });
 
-  if (saved === undefined) {
+  if (saved === undefined && live) {
     const prev = memoryStreamerDaily.get(dailyKey(slug, day)) || {
       slug,
       day,
@@ -1287,6 +1385,7 @@ export async function recordStreamerSample(sample, at = new Date()) {
     if (kick) prev.kick = kick;
     rememberDaily(prev);
   }
+  if (viewers != null) rememberSample(slug, { ts: at.getTime(), elo, viewers, matchId });
   return { slug, day };
 }
 
@@ -1347,6 +1446,89 @@ export async function streamerDailySeries(slug, days = 7, now = new Date()) {
   return { slug: canonical, days: span, series: fillStreamerDays(rows, span, now) };
 }
 
+export async function streamerSamplePoints(slug, days = STREAMER_KEEP_DAYS, now = new Date()) {
+  const canonical = (await resolveStreamerCanonical(slug)) || String(slug || '').toLowerCase();
+  const span = Math.min(STREAMER_KEEP_DAYS, Math.max(1, Number(days) || STREAMER_KEEP_DAYS));
+  const since = new Date(now.getTime() - span * 24 * 60 * 60 * 1000);
+  const result = await postgresCall((pool) =>
+    pool.query(
+      `SELECT ts, elo, viewers, match_id AS "matchId"
+       FROM streamer_samples
+       WHERE slug = $1 AND ts >= $2
+       ORDER BY ts`,
+      [canonical, since]
+    )
+  );
+  const rows =
+    result === undefined
+      ? memoryStreamerSamples.get(canonical) || []
+      : result.rows.map((row) => samplePoint({ ...row, ts: row.ts instanceof Date ? row.ts.getTime() : row.ts }));
+  return {
+    slug: canonical,
+    points: rows
+      .map((row) => samplePoint(row))
+      .filter((point) => point.ts >= since.getTime())
+      .sort((a, b) => a.ts - b.ts),
+  };
+}
+
+export async function streamerArchiveRows() {
+  const result = await postgresCall((pool) =>
+    pool.query(
+      `SELECT i.slug,
+              COALESCE(i.nickname, i.slug) AS nickname,
+              i.avatar,
+              i.platform,
+              i.twitch,
+              i.kick,
+              (SELECT d.elo FROM streamer_daily d WHERE d.slug = i.slug AND d.elo IS NOT NULL ORDER BY d.day DESC LIMIT 1) AS elo,
+              (SELECT to_char(MAX(d.day), 'YYYY-MM-DD') FROM streamer_daily d WHERE d.slug = i.slug) AS "lastDay"
+       FROM streamer_identities i
+       WHERE i.slug = i.canonical
+       ORDER BY COALESCE(i.nickname, i.slug)`
+    )
+  );
+  if (result === undefined) {
+    const lastBySlug = new Map();
+    for (const row of memoryStreamerDaily.values()) {
+      const prev = lastBySlug.get(row.slug);
+      if (!prev || row.day >= prev.day) lastBySlug.set(row.slug, row);
+    }
+    return [...memoryStreamerIdentities.values()]
+      .filter((row) => row.slug && row.slug === row.canonical)
+      .map((row) => {
+        const daily = lastBySlug.get(row.slug);
+        return {
+          slug: row.slug,
+          nickname: row.nickname || row.slug,
+          avatar: row.avatar || null,
+          platform: row.platform || (row.twitch ? 'twitch' : 'kick'),
+          twitch: row.twitch || null,
+          kick: row.kick || null,
+          elo: daily?.elo ?? null,
+          lastDay: daily?.day || null,
+          viewersPeak: daily?.viewersPeak || 0,
+          viewersAvg: 0,
+          matches: 0,
+        };
+      })
+      .sort((a, b) => String(a.nickname).localeCompare(String(b.nickname)));
+  }
+  return result.rows.map((row) => ({
+    slug: row.slug,
+    nickname: row.nickname || row.slug,
+    avatar: row.avatar || null,
+    platform: row.platform || (row.twitch ? 'twitch' : 'kick'),
+    twitch: row.twitch || null,
+    kick: row.kick || null,
+    elo: Number.isInteger(Number(row.elo)) ? Number(row.elo) : null,
+    lastDay: row.lastDay || null,
+    viewersPeak: 0,
+    viewersAvg: 0,
+    matches: 0,
+  }));
+}
+
 function rankingFromMemory(span, now) {
   const start = utcDay(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - (span - 1))));
   const bySlug = new Map();
@@ -1382,6 +1564,7 @@ function rankingFromMemory(span, now) {
     bySlug.set(row.slug, cur);
   }
   return [...bySlug.values()]
+    .filter((row) => row.viewersSamples > 0)
     .map((row) => ({
       slug: row.slug,
       nickname: row.nickname,
@@ -1391,7 +1574,7 @@ function rankingFromMemory(span, now) {
       kick: row.kick,
       guid: row.guid,
       viewersPeak: row.viewersPeak,
-      viewersAvg: row.viewersSamples ? Math.round(row.viewersSum / row.viewersSamples) : 0,
+      viewersAvg: Math.round(row.viewersSum / row.viewersSamples),
       matches: row.matches,
       elo: row.elo,
     }))
@@ -1418,6 +1601,7 @@ export async function streamerRankingRows(days = 7, now = new Date()) {
        FROM streamer_daily d
        WHERE d.day >= (NOW() AT TIME ZONE 'UTC')::date - ($1::int - 1)
        GROUP BY d.slug
+       HAVING SUM(d.viewers_samples) > 0
        ORDER BY 9 DESC, 8 DESC, 2`,
       [span]
     )
@@ -1441,4 +1625,5 @@ export async function streamerRankingRows(days = 7, now = new Date()) {
 export function resetStreamerStoreForTests() {
   memoryStreamerDaily.clear();
   memoryStreamerIdentities.clear();
+  memoryStreamerSamples.clear();
 }

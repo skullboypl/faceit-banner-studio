@@ -1,5 +1,15 @@
 import { describe, expect, test } from 'vitest';
-import { parseStreamerPath, streamerIndexTitle, streamerPageDescription, streamerPageTitle, streamerPath, streamerSlugOf } from './streamer-seo';
+import {
+  isReservedStreamerSlug,
+  isStreamerRankingPath,
+  parseStreamerPath,
+  STREAMER_RANKING_PATH,
+  streamerIndexTitle,
+  streamerPageDescription,
+  streamerPageTitle,
+  streamerPath,
+  streamerSlugOf,
+} from './streamer-seo';
 
 describe('streamer permalinks', () => {
   test('prefers Twitch login as the slug and keeps Kick as the fallback', () => {
@@ -13,6 +23,19 @@ describe('streamer permalinks', () => {
     expect(parseStreamerPath('/streamers/s1mple')).toBe('s1mple');
     expect(parseStreamerPath('/streamers')).toBe('');
     expect(parseStreamerPath('/live')).toBe('');
+  });
+
+  test('keeps /streamers/ranking reserved so it never collides with a nick', () => {
+    expect(STREAMER_RANKING_PATH).toBe('/streamers/ranking');
+    expect(isReservedStreamerSlug('ranking')).toBe(true);
+    expect(isReservedStreamerSlug('stats')).toBe(true);
+    expect(isReservedStreamerSlug('s1mple')).toBe(false);
+    expect(parseStreamerPath('/streamers/ranking')).toBe('');
+    expect(parseStreamerPath('/streamers/stats')).toBe('');
+    expect(isStreamerRankingPath('/streamers/ranking')).toBe(true);
+    expect(isStreamerRankingPath('/streamers/stats')).toBe(true);
+    expect(isStreamerRankingPath('/streamers/s1mple')).toBe(false);
+    expect(streamerPath('ranking')).toBe('/streamers');
   });
 
   test('puts the streamer name in the document title', () => {

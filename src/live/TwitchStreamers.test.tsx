@@ -19,7 +19,7 @@ vi.mock('../utils/presence', () => ({
 }));
 
 vi.mock('./streamer-api', () => ({
-  getStreamerRanking: vi.fn().mockResolvedValue({ ok: true, days: 7, generatedAt: 0, cacheSeconds: 60, streamers: [] }),
+  getStreamerRanking: vi.fn().mockResolvedValue({ ok: true, days: 7, historyDays: 90, generatedAt: 0, cacheSeconds: 60, streamers: [], archive: [] }),
   getStreamerPage: vi.fn(),
 }));
 
@@ -95,6 +95,9 @@ describe('TwitchStreamers', () => {
     expect(note.textContent).toContain('Używaj naszego banera');
     expect(note.textContent).toContain('profilu FACEIT');
     expect(note.textContent).toContain('Kick');
+    const ranking = screen.getByRole('link', { name: 'Ranking i historia streamerów' });
+    expect(ranking.getAttribute('href')).toBe('/streamers/ranking');
+    expect(screen.queryByRole('heading', { name: 'Ranking streamerów – 7 dni' })).toBeNull();
   });
 
   test('shows only compact nicks when nobody is live', async () => {

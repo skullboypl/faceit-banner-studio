@@ -56,7 +56,7 @@ const wikiPaths = existsSync(wikiDir)
 const url = (loc: string, priority: string, changefreq: string, alternates = '') =>
   `  <url>\n    <loc>${SITE_URL}${loc}</loc>\n${alternates}    <lastmod>${DOCS_UPDATED}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
 
-const entries: string[] = [url('/', '1.0', 'weekly'), url('/streamers', '0.8', 'daily')];
+const entries: string[] = [url('/', '1.0', 'weekly'), url('/streamers', '0.8', 'daily'), url('/streamers/ranking', '0.7', 'daily')];
 for (const lang of LANGS) {
   for (const id of pageIdsFor(lang)) {
     /* hreflang alternates only for the languages this page exists in: developer pages exist in two */

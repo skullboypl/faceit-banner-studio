@@ -290,6 +290,93 @@ a.streamers-open-kick:focus { color: #fff; }
   color: #fff;
   text-decoration: underline;
 }
+.streamers-to-rank {
+  margin: 0;
+}
+.streamers-to-rank a,
+.streamers-to-rank a:visited {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid #3a3145;
+  background: #1b1524;
+  color: #f4f2f7;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.streamers-to-rank a:hover,
+.streamers-to-rank a:focus {
+  border-color: #9146ff;
+  color: #fff;
+}
+.streamers-archive {
+  padding: 16px 18px 18px;
+  border: 1px solid #2f2a36;
+  background: #141218;
+}
+.streamers-archive-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.streamers-archive-list a,
+.streamers-archive-list a:visited {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 9px 10px;
+  border: 1px solid #2a2630;
+  background: #100f13;
+  color: inherit;
+  text-decoration: none;
+}
+.streamers-archive-list a:hover,
+.streamers-archive-list a:focus { border-color: #9146ff; }
+.streamers-archive-list svg { color: #a970ff; }
+.streamers-archive-list strong { color: #fff; font-size: 14px; }
+.streamers-archive-list small { color: #7c7684; font-size: 11px; }
+.streamers-archive-list i { color: #6f6a74; font-size: 11px; font-style: normal; }
+.streamers-elo-stream { margin: 8px 0 18px; }
+.streamers-elo-stream > h3 {
+  margin: 0 0 10px;
+  color: #fff;
+  font-size: 16px;
+}
+.streamers-session {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid #2a2630;
+  background: #100f13;
+}
+.streamers-session h4 {
+  margin: 0 0 4px;
+  color: #fff;
+  font-size: 13px;
+}
+.streamers-session p {
+  margin: 0 0 10px;
+  color: #8a8492;
+  font-size: 11px;
+}
+.streamers-session-empty {
+  margin: 0;
+  color: #8a8492;
+  font-size: 12px;
+}
+.streamers-elo-line {
+  display: block;
+  width: 100%;
+  height: 96px;
+}
+.streamers-daytable-wrap {
+  max-height: 420px;
+  overflow: auto;
+}
 .streamers-profile-back {
   margin: 0;
   font-size: 12px;
