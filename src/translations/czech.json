@@ -1037,7 +1037,7 @@
   "admin.kind.request": "Požadavek",
   "chat.tab": "Příkaz do chatu",
   "chat.title": "Příkaz !{{0}}",
-  "chat.intro": "Diváci napíšou !{{0}} nebo !{{0}} přezdívka a bot odpoví v chatu FACEIT ELO, úrovní a posledními zápasy.",
+  "chat.intro": "Diváci napíšou příkaz samotný nebo s přezdívkou, třeba !{{0}} nebo !{{0}} s1mple, a bot odpoví v chatu daty z FACEIT. Bot, jazyk a výchozí přezdívka platí pro všechny příkazy.",
   "chat.nick": "Výchozí přezdívka (když divák nezadá jinou)",
   "chat.command": "Název příkazu",
   "chat.language": "Jazyk odpovědi",
@@ -1050,9 +1050,9 @@
   "chat.part.rank": "Místo v žebříčku regionu",
   "chat.part.kd": "K/D z 20 zápasů",
   "chat.part.last": "Výsledky 5 posledních zápasů",
-  "chat.how.streamelements": "V panelu StreamElements otevři Chatbot, Commands, Custom commands a přidej příkaz s názvem {{0}}. Jako odpověď vlož:",
-  "chat.how.nightbot": "V panelu Nightbot otevři Commands, Custom a přidej !{{0}}. Jako zprávu vlož:",
-  "chat.how.fossabot": "V panelu Fossabot otevři Commands a přidej !{{0}}. Jako odpověď vlož:",
+  "chat.how.streamelements": "V panelu StreamElements otevři Chatbot, Commands, Custom commands a přidej každý příkaz níže pod jeho názvem. Jako odpověď vlož jeho text.",
+  "chat.how.nightbot": "V panelu Nightbot otevři Commands, Custom a přidej každý příkaz níže pod jeho názvem, nebo napiš jeho řádek do chatu jako streamer nebo moderátor.",
+  "chat.how.fossabot": "V panelu Fossabot otevři Commands a přidej každý příkaz níže pod jeho názvem. Jako odpověď vlož jeho text.",
   "chat.how.url": "Jakýkoli bot, který umí vypsat text z webové adresy (custom API, urlfetch, readapi). Na konec adresy připiš text, který divák napsal za příkaz:",
   "chat.reply": "Odpověď bota",
   "chat.copy": "Kopírovat",
@@ -1061,5 +1061,10 @@
   "chat.limits": "Odpověď má nejvýše 380 znaků, protože boti delší ořezávají. Data jsou z FACEIT a obnovují se každých 30 sekund.",
   "chat.preview": "Náhled odpovědi",
   "chat.test_nick": "Vyzkoušet jinou přezdívku",
-  "chat.loading": "Načítání…"
+  "chat.loading": "Načítání…",
+  "chat.kind.elo": "ELO, úroveň, místo v žebříčku regionu a poslední výsledky.",
+  "chat.kind.last": "Poslední zápas: mapa, skóre, K-D-A, K/D, ADR, HS a jak dávno to bylo.",
+  "chat.kind.kd": "K/D z posledních 20 zápasů a z posledního zápasu.",
+  "chat.kind.avg": "Průměry z posledních 20 zápasů: K/D, K/R, ADR, HS, zabití a výhry.",
+  "chat.kind.live": "Zápas, který právě běží: mapa, skóre, průměrné ELO týmů a odkaz na místnost. Stejná data jako popup zápasu."
 }

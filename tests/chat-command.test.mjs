@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CHAT_REPLY_MAX, chatNick, chatReply, chatRequest, handleChatCommand, recentForm } from '../server/chat-command.mjs';
+import { CHAT_REPLY_MAX, chatNick, chatReply, chatRequest, handleChatCommand, mapName, recentAverages, recentForm } from '../server/chat-command.mjs';
 import { faceitTarget } from '../server/faceit-proxy.mjs';
 
 const id = '10b53a6d-5fc9-4095-920c-2953cfa62486';
@@ -36,13 +36,17 @@ test('a chat nick is the first word without the @, and junk is not a nick', () =
 });
 
 test('the request falls back to the streamer nick, English and the default parts', () => {
-  assert.deepEqual(chatRequest('/api/faceit/elo?nick=&default=SkullBoy'), { nick: 'SkullBoy', lang: 'en', show: ['rank', 'last'], cmd: 'elo' });
+  assert.deepEqual(chatRequest('/api/faceit/elo?nick=&default=SkullBoy'), { nick: 'SkullBoy', lang: 'en', show: ['rank', 'last'], cmd: 'elo', kind: 'elo' });
   assert.deepEqual(chatRequest('/api/faceit/elo?nick=%40other&default=SkullBoy&lang=pl&show=kd,bogus&cmd=faceit'), {
     nick: 'other',
     lang: 'pl',
     show: ['kd'],
     cmd: 'faceit',
+    kind: 'elo',
   });
+  assert.equal(chatRequest('/api/faceit/elo?type=live').kind, 'live');
+  assert.equal(chatRequest('/api/faceit/elo?type=live').cmd, 'live');
+  assert.equal(chatRequest('/api/faceit/elo?type=drop').kind, 'elo');
   assert.equal(chatRequest('/api/faceit/elo?lang=xx').lang, 'en');
 });
 
@@ -105,4 +109,96 @@ test('the proxy allows the player search, always for CS2', () => {
   const target = faceitTarget('/api/faceit/v4/search/players?nickname=SkullBoy&limit=20&game=csgo');
   assert.equal(target.upstream, 'https://open.faceit.com/data/v4/search/players?nickname=skullboy&game=cs2&offset=0&limit=20');
   assert.equal(faceitTarget('/api/faceit/v4/search/players?nickname=%3Cx%3E'), null);
+});
+
+const NOW = Date.parse('2026-11-02T22:30:00Z');
+const full = (result, map, score, kills, deaths, extra = {}) => ({
+  stats: {
+    Result: result,
+    Map: map,
+    Score: score,
+    Kills: String(kills),
+    Deaths: String(deaths),
+    Assists: '4',
+    ADR: '91.6',
+    'Headshots %': '48',
+    'K/R Ratio': '0.9',
+    'Match Finished At': NOW - 25 * 60_000,
+    ...extra,
+  },
+});
+
+test('!last describes the newest match: map, result, score, K-D-A, K/D, ADR, HS and when', async () => {
+  const { read } = fakeRead({ items: [full('0', 'de_mirage', '9 / 13', 24, 15), full('1', 'de_nuke', '13 / 5', 10, 10)] });
+  const reply = await chatReply({ nick: 'SkullBoy', lang: 'pl', kind: 'last', cmd: 'last' }, read, NOW);
+  assert.equal(reply, 'SkullBoy · Ostatni mecz: Mirage · L 9:13 · 24-15-4 · K/D 1.60 · ADR 92 · HS 48% · 25 min temu');
+});
+
+test('!kd gives the K/D of twenty matches and of the last one', async () => {
+  const items = [full('1', 'de_inferno', '13 / 7', 30, 10), ...Array.from({ length: 24 }, () => full('0', 'de_nuke', '5 / 13', 10, 10))];
+  const { read } = fakeRead({ items });
+  assert.equal(await chatReply({ nick: 'SkullBoy', lang: 'en', kind: 'kd' }, read, NOW), 'SkullBoy: K/D 1.10 (20 matches) · last match 3.00');
+});
+
+test('!avg gives per-match averages over twenty matches', async () => {
+  const items = [full('1', 'de_inferno', '13 / 7', 20, 10), full('0', 'de_nuke', '5 / 13', 10, 10)];
+  const { read } = fakeRead({ items });
+  assert.equal(
+    await chatReply({ nick: 'SkullBoy', lang: 'en', kind: 'avg' }, read, NOW),
+    'SkullBoy · average of 2 matches: K/D 1.50 · K/R 0.90 · ADR 91.6 · HS 48% · 15.0 kills · 50% wins'
+  );
+});
+
+test('a player without matches gets one sentence from !last, !kd and !avg', async () => {
+  const { read } = fakeRead({ items: [] });
+  for (const kind of ['last', 'kd', 'avg']) {
+    assert.equal(await chatReply({ nick: 'SkullBoy', lang: 'en', kind }, read, NOW), 'SkullBoy has no CS2 matches on FACEIT yet.');
+  }
+});
+
+/** The popup's reads: the active lookup, the match, and the ten profiles behind the team averages. */
+function liveRead({ status = 'ONGOING', active = true, mineOnRight = false } = {}) {
+  const base = fakeRead();
+  const friends = ['33333333-3333-3333-3333-333333333331', '33333333-3333-3333-3333-333333333332'];
+  const rivals = ['44444444-4444-4444-4444-444444444441', '44444444-4444-4444-4444-444444444442'];
+  const roster = (ids) => ({ roster: ids.map((player_id) => ({ player_id })) });
+  const own = roster([id, ...friends]);
+  const other = roster(rivals);
+  const read = async (path) => {
+    if (path.endsWith('/active')) return ok(active ? { match_id: '1-abc-match', status } : {});
+    if (path === '/matches/1-abc-match') {
+      return ok({
+        status,
+        voting: { map: { pick: ['de_ancient'] } },
+        results: { score: { faction1: 8, faction2: 5 } },
+        teams: mineOnRight ? { faction1: other, faction2: own } : { faction1: own, faction2: other },
+      });
+    }
+    if (friends.some((f) => path === `/players/${f}`)) return ok({ games: { cs2: { faceit_elo: 3000 } } });
+    if (rivals.some((r) => path === `/players/${r}`)) return ok({ games: { cs2: { faceit_elo: 2800 } } });
+    return base.read(path);
+  };
+  return read;
+}
+
+test('!live shows the running match the way the popup reads it, with the streamer team first', async () => {
+  assert.equal(
+    await chatReply({ nick: 'SkullBoy', lang: 'en', kind: 'live' }, liveRead()),
+    'SkullBoy is playing now · Ancient · 8:5 · avg ELO 3061 vs 2800 · faceit.com/en/cs2/room/1-abc-match'
+  );
+  assert.equal(
+    await chatReply({ nick: 'SkullBoy', lang: 'en', kind: 'live' }, liveRead({ mineOnRight: true })),
+    'SkullBoy is playing now · Ancient · 5:8 · avg ELO 3061 vs 2800 · faceit.com/en/cs2/room/1-abc-match'
+  );
+});
+
+test('!live tells a lobby from a match, and says when there is neither', async () => {
+  assert.match(await chatReply({ nick: 'SkullBoy', lang: 'pl', kind: 'live' }, liveRead({ status: 'VOTING' })), /^SkullBoy jest w lobby meczu · Ancient/);
+  assert.equal(await chatReply({ nick: 'SkullBoy', lang: 'pl', kind: 'live' }, liveRead({ active: false })), 'SkullBoy nie gra teraz meczu.');
+});
+
+test('map names lose the de_ prefix, and averages of nothing are nothing', () => {
+  assert.equal(mapName('de_mirage'), 'Mirage');
+  assert.equal(mapName(''), '');
+  assert.equal(recentAverages([]), null);
 });

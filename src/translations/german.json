@@ -1037,7 +1037,7 @@
   "admin.kind.request": "Wunsch",
   "chat.tab": "Chat-Befehl",
   "chat.title": "Befehl !{{0}}",
-  "chat.intro": "Zuschauer schreiben !{{0}} oder !{{0}} name, und der Bot antwortet im Chat mit FACEIT-ELO, Level und den letzten Matches.",
+  "chat.intro": "Zuschauer schreiben einen Befehl allein oder mit einem Namen, zum Beispiel !{{0}} oder !{{0}} s1mple, und der Bot antwortet im Chat mit FACEIT-Daten. Bot, Sprache und Standardname gelten für alle Befehle.",
   "chat.nick": "Standardname (wenn der Zuschauer keinen angibt)",
   "chat.command": "Befehlsname",
   "chat.language": "Sprache der Antwort",
@@ -1050,9 +1050,9 @@
   "chat.part.rank": "Platz in der Regionsrangliste",
   "chat.part.kd": "K/D aus 20 Matches",
   "chat.part.last": "Ergebnisse der letzten 5 Matches",
-  "chat.how.streamelements": "Öffne im StreamElements-Dashboard Chatbot, Commands, Custom commands und lege einen Befehl namens {{0}} an. Als Antwort einfügen:",
-  "chat.how.nightbot": "Öffne im Nightbot-Dashboard Commands, Custom und lege !{{0}} an. Als Nachricht einfügen:",
-  "chat.how.fossabot": "Öffne im Fossabot-Dashboard Commands und lege !{{0}} an. Als Antwort einfügen:",
+  "chat.how.streamelements": "Öffne im StreamElements-Dashboard Chatbot, Commands, Custom commands und lege jeden Befehl unten unter seinem Namen an. Füge seinen Text als Antwort ein.",
+  "chat.how.nightbot": "Öffne im Nightbot-Dashboard Commands, Custom und lege jeden Befehl unten unter seinem Namen an, oder schreib seine Chat-Zeile als Streamer oder Moderator.",
+  "chat.how.fossabot": "Öffne im Fossabot-Dashboard Commands und lege jeden Befehl unten unter seinem Namen an. Füge seinen Text als Antwort ein.",
   "chat.how.url": "Jeder Bot, der Text von einer Webadresse ausgeben kann (custom API, urlfetch, readapi). Hänge den Text, den der Zuschauer nach dem Befehl schreibt, an das Ende dieser Adresse:",
   "chat.reply": "Antwort des Bots",
   "chat.copy": "Kopieren",
@@ -1061,5 +1061,10 @@
   "chat.limits": "Eine Antwort hat höchstens 380 Zeichen, weil Bots längere abschneiden. Die Daten kommen von FACEIT und werden alle 30 Sekunden aktualisiert.",
   "chat.preview": "Vorschau der Antwort",
   "chat.test_nick": "Anderen Namen testen",
-  "chat.loading": "Lädt…"
+  "chat.loading": "Lädt…",
+  "chat.kind.elo": "ELO, Level, Platz in der Regionsrangliste und die letzten Ergebnisse.",
+  "chat.kind.last": "Das letzte Match: Map, Ergebnis, K-D-A, K/D, ADR, HS und wie lange es her ist.",
+  "chat.kind.kd": "K/D aus den letzten 20 Matches und aus dem letzten Match.",
+  "chat.kind.avg": "Schnitt aus den letzten 20 Matches: K/D, K/R, ADR, HS, Kills und Siege.",
+  "chat.kind.live": "Das laufende Match: Map, Spielstand, Team-ELO im Schnitt und ein Raum-Link. Dieselben Daten wie das Match-Popup."
 }

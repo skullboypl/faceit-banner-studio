@@ -1037,7 +1037,7 @@
   "admin.kind.request": "Demande",
   "chat.tab": "Commande de chat",
   "chat.title": "Commande !{{0}}",
-  "chat.intro": "Les spectateurs tapent !{{0}} ou !{{0}} pseudo et le bot répond dans le chat avec l'ELO, le niveau et les derniers matchs FACEIT.",
+  "chat.intro": "Les spectateurs tapent une commande seule ou avec un pseudo, par exemple !{{0}} ou !{{0}} s1mple, et le bot répond dans le chat avec les données FACEIT. Le bot, la langue et le pseudo par défaut valent pour toutes les commandes.",
   "chat.nick": "Pseudo par défaut (quand le spectateur n'en donne pas)",
   "chat.command": "Nom de la commande",
   "chat.language": "Langue de la réponse",
@@ -1050,9 +1050,9 @@
   "chat.part.rank": "Place au classement de la région",
   "chat.part.kd": "K/D sur 20 matchs",
   "chat.part.last": "Résultats des 5 derniers matchs",
-  "chat.how.streamelements": "Dans le tableau de bord StreamElements, ouvre Chatbot, Commands, Custom commands et ajoute une commande nommée {{0}}. Colle ceci comme réponse :",
-  "chat.how.nightbot": "Dans le tableau de bord Nightbot, ouvre Commands, Custom et ajoute !{{0}}. Colle ceci comme message :",
-  "chat.how.fossabot": "Dans le tableau de bord Fossabot, ouvre Commands et ajoute !{{0}}. Colle ceci comme réponse :",
+  "chat.how.streamelements": "Dans le tableau de bord StreamElements, ouvre Chatbot, Commands, Custom commands et ajoute chaque commande ci-dessous sous son nom. Colle son texte comme réponse.",
+  "chat.how.nightbot": "Dans le tableau de bord Nightbot, ouvre Commands, Custom et ajoute chaque commande ci-dessous sous son nom, ou tape sa ligne de chat en tant que streamer ou modérateur.",
+  "chat.how.fossabot": "Dans le tableau de bord Fossabot, ouvre Commands et ajoute chaque commande ci-dessous sous son nom. Colle son texte comme réponse.",
   "chat.how.url": "Tout bot capable d'afficher le texte d'une adresse web (custom API, urlfetch, readapi). Ajoute à la fin de cette adresse le texte que le spectateur a tapé après la commande :",
   "chat.reply": "Réponse du bot",
   "chat.copy": "Copier",
@@ -1061,5 +1061,10 @@
   "chat.limits": "Une réponse fait au plus 380 caractères, car les bots coupent les plus longues. Les données viennent de FACEIT et se mettent à jour toutes les 30 secondes.",
   "chat.preview": "Aperçu de la réponse",
   "chat.test_nick": "Essayer un autre pseudo",
-  "chat.loading": "Chargement…"
+  "chat.loading": "Chargement…",
+  "chat.kind.elo": "ELO, niveau, place au classement de la région et derniers résultats.",
+  "chat.kind.last": "Le dernier match : carte, score, K-D-A, K/D, ADR, HS et il y a combien de temps.",
+  "chat.kind.kd": "K/D sur les 20 derniers matchs et sur le dernier match.",
+  "chat.kind.avg": "Moyennes des 20 derniers matchs : K/D, K/R, ADR, HS, kills et victoires.",
+  "chat.kind.live": "Le match en cours : carte, score, ELO moyen des équipes et lien de la room. Les mêmes données que le popup de match."
 }

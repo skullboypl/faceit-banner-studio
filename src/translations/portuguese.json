@@ -1037,7 +1037,7 @@
   "admin.kind.request": "Pedido",
   "chat.tab": "Comando de chat",
   "chat.title": "Comando !{{0}}",
-  "chat.intro": "Os espectadores digitam !{{0}} ou !{{0}} nick e o bot responde no chat com o ELO, o nível e as últimas partidas da FACEIT.",
+  "chat.intro": "Os espectadores digitam um comando sozinho ou com um nick, por exemplo !{{0}} ou !{{0}} s1mple, e o bot responde no chat com dados da FACEIT. Bot, idioma e nick padrão valem para todos os comandos.",
   "chat.nick": "Nick padrão (quando o espectador não informa outro)",
   "chat.command": "Nome do comando",
   "chat.language": "Idioma da resposta",
@@ -1050,9 +1050,9 @@
   "chat.part.rank": "Posição no ranking da região",
   "chat.part.kd": "K/D de 20 partidas",
   "chat.part.last": "Resultados das últimas 5 partidas",
-  "chat.how.streamelements": "No painel da StreamElements abra Chatbot, Commands, Custom commands e adicione um comando chamado {{0}}. Cole isto como resposta:",
-  "chat.how.nightbot": "No painel do Nightbot abra Commands, Custom e adicione !{{0}}. Cole isto como mensagem:",
-  "chat.how.fossabot": "No painel do Fossabot abra Commands e adicione !{{0}}. Cole isto como resposta:",
+  "chat.how.streamelements": "No painel da StreamElements abra Chatbot, Commands, Custom commands e adicione cada comando abaixo com o nome dele. Cole o texto dele como resposta.",
+  "chat.how.nightbot": "No painel do Nightbot abra Commands, Custom e adicione cada comando abaixo com o nome dele, ou digite a linha de chat dele como streamer ou moderador.",
+  "chat.how.fossabot": "No painel do Fossabot abra Commands e adicione cada comando abaixo com o nome dele. Cole o texto dele como resposta.",
   "chat.how.url": "Qualquer bot que consiga mostrar o texto de um endereço web (custom API, urlfetch, readapi). Coloque no fim deste endereço o texto que o espectador digitou depois do comando:",
   "chat.reply": "Resposta do bot",
   "chat.copy": "Copiar",
@@ -1061,5 +1061,10 @@
   "chat.limits": "A resposta tem no máximo 380 caracteres, porque os bots cortam as mais longas. Os dados vêm da FACEIT e são atualizados a cada 30 segundos.",
   "chat.preview": "Prévia da resposta",
   "chat.test_nick": "Testar outro nick",
-  "chat.loading": "Carregando…"
+  "chat.loading": "Carregando…",
+  "chat.kind.elo": "ELO, nível, posição no ranking da região e os últimos resultados.",
+  "chat.kind.last": "A última partida: mapa, placar, K-D-A, K/D, ADR, HS e há quanto tempo.",
+  "chat.kind.kd": "K/D das últimas 20 partidas e da última partida.",
+  "chat.kind.avg": "Médias das últimas 20 partidas: K/D, K/R, ADR, HS, abates e vitórias.",
+  "chat.kind.live": "A partida em andamento: mapa, placar, ELO médio dos times e link da sala. Os mesmos dados do popup da partida."
 }

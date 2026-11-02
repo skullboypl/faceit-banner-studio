@@ -1037,7 +1037,7 @@
   "admin.kind.request": "İstek",
   "chat.tab": "Sohbet komutu",
   "chat.title": "!{{0}} komutu",
-  "chat.intro": "İzleyiciler !{{0}} veya !{{0}} kullanıcıadı yazar, bot da sohbette FACEIT ELO, seviye ve son maçlarla yanıt verir.",
+  "chat.intro": "İzleyiciler bir komutu tek başına veya kullanıcı adıyla yazar, örneğin !{{0}} veya !{{0}} s1mple, bot da sohbette FACEIT verileriyle yanıt verir. Bot, dil ve varsayılan kullanıcı adı tüm komutlar için geçerlidir.",
   "chat.nick": "Varsayılan kullanıcı adı (izleyici başka bir ad yazmazsa)",
   "chat.command": "Komut adı",
   "chat.language": "Yanıt dili",
@@ -1050,9 +1050,9 @@
   "chat.part.rank": "Bölge sıralamasındaki yer",
   "chat.part.kd": "20 maçlık K/D",
   "chat.part.last": "Son 5 maçın sonuçları",
-  "chat.how.streamelements": "StreamElements panelinde Chatbot, Commands, Custom commands bölümünü aç ve {{0}} adında bir komut ekle. Yanıt olarak şunu yapıştır:",
-  "chat.how.nightbot": "Nightbot panelinde Commands, Custom bölümünü aç ve !{{0}} ekle. Mesaj olarak şunu yapıştır:",
-  "chat.how.fossabot": "Fossabot panelinde Commands bölümünü aç ve !{{0}} ekle. Yanıt olarak şunu yapıştır:",
+  "chat.how.streamelements": "StreamElements panelinde Chatbot, Commands, Custom commands bölümünü aç ve aşağıdaki her komutu kendi adıyla ekle. Yanıt olarak metnini yapıştır.",
+  "chat.how.nightbot": "Nightbot panelinde Commands, Custom bölümünü aç ve aşağıdaki her komutu kendi adıyla ekle ya da sohbet satırını yayıncı veya moderatör olarak yaz.",
+  "chat.how.fossabot": "Fossabot panelinde Commands bölümünü aç ve aşağıdaki her komutu kendi adıyla ekle. Yanıt olarak metnini yapıştır.",
   "chat.how.url": "Bir web adresindeki metni yazabilen her bot (custom API, urlfetch, readapi). İzleyicinin komuttan sonra yazdığı metni bu adresin sonuna ekle:",
   "chat.reply": "Bot yanıtı",
   "chat.copy": "Kopyala",
@@ -1061,5 +1061,10 @@
   "chat.limits": "Yanıt en fazla 380 karakterdir, çünkü botlar daha uzun olanları keser. Veriler FACEIT'ten gelir ve 30 saniyede bir yenilenir.",
   "chat.preview": "Yanıt önizlemesi",
   "chat.test_nick": "Başka bir kullanıcı adı dene",
-  "chat.loading": "Yükleniyor…"
+  "chat.loading": "Yükleniyor…",
+  "chat.kind.elo": "ELO, seviye, bölge sıralamasındaki yer ve son sonuçlar.",
+  "chat.kind.last": "Son maç: harita, skor, K-D-A, K/D, ADR, HS ve ne kadar önce oynandığı.",
+  "chat.kind.kd": "Son 20 maçın ve son maçın K/D değeri.",
+  "chat.kind.avg": "Son 20 maçın ortalamaları: K/D, K/R, ADR, HS, öldürme ve galibiyet.",
+  "chat.kind.live": "Şu an oynanan maç: harita, skor, takımların ortalama ELO değeri ve oda bağlantısı. Maç açılır penceresiyle aynı veriler."
 }

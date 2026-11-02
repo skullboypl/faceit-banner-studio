@@ -8,6 +8,10 @@ export type ChatLanguage = (typeof CHAT_LANGUAGES)[number];
 export const CHAT_PARTS = ['rank', 'kd', 'last'] as const;
 export type ChatPart = (typeof CHAT_PARTS)[number];
 
+/** What each command answers. `live` reads the same lobby and match data as the match popup. */
+export const CHAT_KINDS = ['elo', 'last', 'kd', 'avg', 'live'] as const;
+export type ChatKind = (typeof CHAT_KINDS)[number];
+
 export type ChatCommandOptions = {
   /** Site origin, for example https://faceitbanner.vxh.pl */
   origin: string;
@@ -15,6 +19,8 @@ export type ChatCommandOptions = {
   nick: string;
   /** Command name without the "!". */
   cmd: string;
+  /** What the command answers; the ELO line when left out. */
+  kind?: ChatKind;
   lang: ChatLanguage;
   show: ChatPart[];
 };
@@ -28,12 +34,14 @@ export const cleanCommandName = (value: string) => value.replace(/^!+/, '').repl
 export const cleanChatNick = (value: string) => value.trim().replace(/^@+/, '').split(/\s+/)[0]?.slice(0, 36) ?? '';
 
 /** The address a bot reads. The viewer's text goes after `nick=`, so it is always the last parameter. */
-export function chatCommandUrl({ origin, nick, cmd, lang, show }: ChatCommandOptions) {
+export function chatCommandUrl({ origin, nick, cmd, lang, show, kind = 'elo' }: ChatCommandOptions) {
   const params = new URLSearchParams();
+  if (kind !== 'elo') params.set('type', kind);
   params.set('lang', lang);
-  params.set('show', CHAT_PARTS.filter((part) => show.includes(part)).join(','));
+  /* Only the ELO line has parts to choose */
+  if (kind === 'elo') params.set('show', CHAT_PARTS.filter((part) => show.includes(part)).join(','));
   const name = cleanCommandName(cmd);
-  if (name && name !== 'elo') params.set('cmd', name);
+  if (name && name !== kind) params.set('cmd', name);
   const fallback = cleanChatNick(nick);
   if (fallback) params.set('default', fallback);
   return `${origin.replace(/\/$/, '')}${CHAT_COMMAND_PATH}?${params.toString()}&nick=`;
@@ -63,4 +71,4 @@ export function chatCommandReply(bot: ChatBot, options: ChatCommandOptions) {
 
 /** Nightbot also takes a new command typed in the chat by the streamer or a moderator. */
 export const nightbotChatLine = (options: ChatCommandOptions) =>
-  `!commands add !${cleanCommandName(options.cmd) || 'elo'} ${chatCommandReply('nightbot', options)}`;
+  `!commands add !${cleanCommandName(options.cmd) || options.kind || 'elo'} ${chatCommandReply('nightbot', options)}`;

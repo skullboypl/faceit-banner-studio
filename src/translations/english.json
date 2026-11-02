@@ -1077,7 +1077,7 @@
   "admin.kind.request": "Request",
   "chat.tab": "Chat command",
   "chat.title": "Command !{{0}}",
-  "chat.intro": "Viewers type !{{0}} or !{{0}} nickname and the bot answers in chat with the FACEIT ELO, level and recent matches.",
+  "chat.intro": "Viewers type a command alone or with a nickname, for example !{{0}} or !{{0}} s1mple, and the bot answers in chat with FACEIT data. The bot, language and default nickname apply to every command.",
   "chat.nick": "Default nickname (when the viewer gives none)",
   "chat.command": "Command name",
   "chat.language": "Reply language",
@@ -1090,9 +1090,9 @@
   "chat.part.rank": "Place in the region ranking",
   "chat.part.kd": "K/D over 20 matches",
   "chat.part.last": "Results of the last 5 matches",
-  "chat.how.streamelements": "In the StreamElements dashboard open Chatbot, Commands, Custom commands and add a command named {{0}}. Paste this as the response:",
-  "chat.how.nightbot": "In the Nightbot dashboard open Commands, Custom and add !{{0}}. Paste this as the message:",
-  "chat.how.fossabot": "In the Fossabot dashboard open Commands and add !{{0}}. Paste this as the response:",
+  "chat.how.streamelements": "In the StreamElements dashboard open Chatbot, Commands, Custom commands and add each command below under its name. Paste its text as the response.",
+  "chat.how.nightbot": "In the Nightbot dashboard open Commands, Custom and add each command below under its name, or type its chat line as the streamer or a moderator.",
+  "chat.how.fossabot": "In the Fossabot dashboard open Commands and add each command below under its name. Paste its text as the response.",
   "chat.how.url": "Any bot that can print text from a web address (custom API, urlfetch, readapi). Put the text the viewer typed after the command at the end of this address:",
   "chat.reply": "Bot response",
   "chat.copy": "Copy",
@@ -1101,5 +1101,10 @@
   "chat.limits": "A reply has at most 380 characters, because bots cut longer ones. The data comes from FACEIT and refreshes every 30 seconds.",
   "chat.preview": "Reply preview",
   "chat.test_nick": "Try another nickname",
-  "chat.loading": "Loading…"
+  "chat.loading": "Loading…",
+  "chat.kind.elo": "ELO, level, place in the region ranking and the last results.",
+  "chat.kind.last": "The newest match: map, result and score, K-D-A, K/D, ADR, HS and how long ago.",
+  "chat.kind.kd": "K/D over the last 20 matches and in the last match.",
+  "chat.kind.avg": "Averages over the last 20 matches: K/D, K/R, ADR, HS, kills and wins.",
+  "chat.kind.live": "The match being played now: map, score, average team ELO and a room link. The same data as the match popup."
 }

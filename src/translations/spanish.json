@@ -1037,7 +1037,7 @@
   "admin.kind.request": "Petición",
   "chat.tab": "Comando de chat",
   "chat.title": "Comando !{{0}}",
-  "chat.intro": "Los espectadores escriben !{{0}} o !{{0}} nick y el bot responde en el chat con el ELO, el nivel y las últimas partidas de FACEIT.",
+  "chat.intro": "Los espectadores escriben un comando solo o con un nick, por ejemplo !{{0}} o !{{0}} s1mple, y el bot responde en el chat con datos de FACEIT. El bot, el idioma y el nick por defecto valen para todos los comandos.",
   "chat.nick": "Nick por defecto (cuando el espectador no indica otro)",
   "chat.command": "Nombre del comando",
   "chat.language": "Idioma de la respuesta",
@@ -1050,9 +1050,9 @@
   "chat.part.rank": "Puesto en el ranking de la región",
   "chat.part.kd": "K/D de 20 partidas",
   "chat.part.last": "Resultados de las últimas 5 partidas",
-  "chat.how.streamelements": "En el panel de StreamElements abre Chatbot, Commands, Custom commands y añade un comando llamado {{0}}. Pega esto como respuesta:",
-  "chat.how.nightbot": "En el panel de Nightbot abre Commands, Custom y añade !{{0}}. Pega esto como mensaje:",
-  "chat.how.fossabot": "En el panel de Fossabot abre Commands y añade !{{0}}. Pega esto como respuesta:",
+  "chat.how.streamelements": "En el panel de StreamElements abre Chatbot, Commands, Custom commands y añade cada comando de abajo con su nombre. Pega su texto como respuesta.",
+  "chat.how.nightbot": "En el panel de Nightbot abre Commands, Custom y añade cada comando de abajo con su nombre, o escribe su línea de chat como streamer o moderador.",
+  "chat.how.fossabot": "En el panel de Fossabot abre Commands y añade cada comando de abajo con su nombre. Pega su texto como respuesta.",
   "chat.how.url": "Cualquier bot que pueda mostrar el texto de una dirección web (custom API, urlfetch, readapi). Añade al final de esta dirección el texto que el espectador escribió después del comando:",
   "chat.reply": "Respuesta del bot",
   "chat.copy": "Copiar",
@@ -1061,5 +1061,10 @@
   "chat.limits": "La respuesta tiene como máximo 380 caracteres, porque los bots cortan las más largas. Los datos vienen de FACEIT y se actualizan cada 30 segundos.",
   "chat.preview": "Vista previa de la respuesta",
   "chat.test_nick": "Probar otro nick",
-  "chat.loading": "Cargando…"
+  "chat.loading": "Cargando…",
+  "chat.kind.elo": "ELO, nivel, puesto en el ranking de la región y los últimos resultados.",
+  "chat.kind.last": "La última partida: mapa, marcador, K-D-A, K/D, ADR, HS y hace cuánto.",
+  "chat.kind.kd": "K/D de las últimas 20 partidas y de la última partida.",
+  "chat.kind.avg": "Medias de las últimas 20 partidas: K/D, K/R, ADR, HS, bajas y victorias.",
+  "chat.kind.live": "La partida en curso: mapa, marcador, ELO medio de los equipos y enlace a la sala. Los mismos datos que el popup de partida."
 }

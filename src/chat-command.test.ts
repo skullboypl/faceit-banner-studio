@@ -18,6 +18,12 @@ describe('chat command', () => {
     expect(chatCommandReply('url', options)).toBe(url);
   });
 
+  test('every other command names its type, and keeps no ELO parts', () => {
+    expect(chatCommandUrl({ ...options, kind: 'live', cmd: 'live' })).toBe('https://faceitbanner.vxh.pl/api/faceit/elo?type=live&lang=pl&default=SkullBoy&nick=');
+    expect(chatCommandUrl({ ...options, kind: 'avg', cmd: 'stats' })).toBe('https://faceitbanner.vxh.pl/api/faceit/elo?type=avg&lang=pl&cmd=stats&default=SkullBoy&nick=');
+    expect(nightbotChatLine({ ...options, kind: 'last', cmd: '' })).toMatch(/^!commands add !last \$\(urlfetch .*type=last/);
+  });
+
   test('Nightbot can add the command from chat, and the command name stays a plain word', () => {
     expect(nightbotChatLine({ ...options, cmd: '!faceit' })).toMatch(/^!commands add !faceit \$\(urlfetch /);
     expect(cleanCommandName('!!el o<>')).toBe('elo');

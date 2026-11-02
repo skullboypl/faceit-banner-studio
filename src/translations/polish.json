@@ -1077,7 +1077,7 @@
   "admin.kind.request": "Prośba",
   "chat.tab": "Komenda na czat",
   "chat.title": "Komenda !{{0}}",
-  "chat.intro": "Widzowie wpisują !{{0}} albo !{{0}} nick, a bot odpisuje na czacie ELO, poziom i ostatnie mecze z FACEIT.",
+  "chat.intro": "Widzowie wpisują komendę samą albo z nickiem, np. !{{0}} albo !{{0}} s1mple, a bot odpisuje na czacie danymi z FACEIT. Bot, język i domyślny nick dotyczą wszystkich komend.",
   "chat.nick": "Domyślny nick (gdy widz nie poda innego)",
   "chat.command": "Nazwa komendy",
   "chat.language": "Język odpowiedzi",
@@ -1090,9 +1090,9 @@
   "chat.part.rank": "Miejsce w rankingu regionu",
   "chat.part.kd": "K/D z 20 meczów",
   "chat.part.last": "Wyniki 5 ostatnich meczów",
-  "chat.how.streamelements": "W panelu StreamElements otwórz Chatbot, Commands, Custom commands i dodaj komendę o nazwie {{0}}. Jako odpowiedź wklej:",
-  "chat.how.nightbot": "W panelu Nightbot otwórz Commands, Custom i dodaj !{{0}}. Jako wiadomość wklej:",
-  "chat.how.fossabot": "W panelu Fossabot otwórz Commands i dodaj !{{0}}. Jako odpowiedź wklej:",
+  "chat.how.streamelements": "W panelu StreamElements otwórz Chatbot, Commands, Custom commands i dodaj każdą komendę poniżej pod jej nazwą. Jako odpowiedź wklej jej tekst.",
+  "chat.how.nightbot": "W panelu Nightbot otwórz Commands, Custom i dodaj każdą komendę poniżej pod jej nazwą albo wpisz jej linię na czacie jako streamer lub moderator.",
+  "chat.how.fossabot": "W panelu Fossabot otwórz Commands i dodaj każdą komendę poniżej pod jej nazwą. Jako odpowiedź wklej jej tekst.",
   "chat.how.url": "Każdy bot, który umie wypisać tekst z adresu (custom API, urlfetch, readapi). Na końcu adresu dopisz tekst, który widz wpisał po komendzie:",
   "chat.reply": "Odpowiedź bota",
   "chat.copy": "Kopiuj",
@@ -1101,5 +1101,10 @@
   "chat.limits": "Odpowiedź ma najwyżej 380 znaków, bo boty ucinają dłuższe. Dane są z FACEIT i odświeżają się co 30 sekund.",
   "chat.preview": "Podgląd odpowiedzi",
   "chat.test_nick": "Sprawdź inny nick",
-  "chat.loading": "Ładowanie…"
+  "chat.loading": "Ładowanie…",
+  "chat.kind.elo": "ELO, poziom, miejsce w rankingu regionu i ostatnie wyniki.",
+  "chat.kind.last": "Ostatni mecz: mapa, wynik, K-D-A, K/D, ADR, HS i ile minęło.",
+  "chat.kind.kd": "K/D z ostatnich 20 meczów i z ostatniego meczu.",
+  "chat.kind.avg": "Średnie z ostatnich 20 meczów: K/D, K/R, ADR, HS, zabójstwa i wygrane.",
+  "chat.kind.live": "Mecz, który trwa teraz: mapa, wynik, średnie ELO drużyn i link do pokoju. Te same dane co popup meczu."
 }
