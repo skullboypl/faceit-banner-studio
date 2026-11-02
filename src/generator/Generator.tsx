@@ -14,7 +14,7 @@ import {
   languages,
   tl as translate,
 } from '../translations/translations.ts';
-import { tabFromSearch } from './tab-search';
+import { tabFromLocation, tabFromSearch } from './tab-search';
 import { MainTab } from './tabs/MainTab.tsx';
 import { StyleTab } from './tabs/StyleTab.tsx';
 import { StatisticsTab } from './tabs/StatisticsTab.tsx';
@@ -139,7 +139,7 @@ export const Generator = () => {
   const [onlineBannerCount, setOnlineBannerCount] = useState<number | null>(null);
   const navigate = useNavigate();
   const [selectedTabIndex, setSelectedTabIndex] = useState(() =>
-    tabFromSearch(window.location.search, TAB_ICONS.length)
+    tabFromLocation(window.location.pathname, window.location.search, TAB_ICONS.length)
   );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [compactSidebar, setCompactSidebar] = useState(() =>
@@ -211,9 +211,13 @@ export const Generator = () => {
     };
   }, [compactSidebarOpen]);
   useEffect(() => {
+    if (pathname.startsWith('/feedback/')) {
+      setSelectedTabIndex(tabFromLocation(pathname, searchParams, TAB_ICONS.length));
+      return;
+    }
     if (!searchParams.has('tab')) return;
     setSelectedTabIndex(tabFromSearch(searchParams, TAB_ICONS.length));
-  }, [searchParams]);
+  }, [pathname, searchParams]);
   const toggleSidebar = useCallback(() => {
     if (compactSidebar) {
       setCompactSidebarOpen((open) => !open);

@@ -11,7 +11,11 @@ const memorySessions = new Map();
 const memoryLogins = [];
 const memoryOnline = [];
 const memoryVerified = new Set();
+const memoryKick = new Map();
+const memoryTwitch = new Map();
 const ACCOUNT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const KICK_NAME = /^[A-Za-z0-9_-]{3,25}$/;
+export const TWITCH_NAME = /^[A-Za-z0-9_]{3,25}$/;
 
 let redisPromise;
 let postgresPromise;
@@ -85,6 +89,18 @@ async function getPostgres() {
           bucket TIMESTAMPTZ PRIMARY KEY,
           online INTEGER NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS user_kick (
+          guid VARCHAR(64) PRIMARY KEY,
+          kick VARCHAR(25) NOT NULL,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS user_kick_login ON user_kick (lower(kick));
+        CREATE TABLE IF NOT EXISTS user_twitch (
+          guid VARCHAR(64) PRIMARY KEY,
+          twitch VARCHAR(25) NOT NULL,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS user_twitch_login ON user_twitch (lower(twitch));
       `);
       return pool;
     })
@@ -235,6 +251,168 @@ export async function verifiedAmong(guids) {
     pool.query('SELECT guid FROM verified_accounts WHERE guid = ANY($1::text[])', [wanted])
   );
   for (const row of result?.rows ?? []) found.add(String(row.guid).toLowerCase());
+  return found;
+}
+
+/** A Kick channel name as Kick itself accepts it; empty when the value is not a channel. */
+export function cleanKick(value) {
+  if (typeof value !== 'string') return '';
+  const kick = value.trim();
+  return KICK_NAME.test(kick) ? kick : '';
+}
+
+/** The Kick login stored for this FACEIT account, or null. */
+export async function kickForUser(guid) {
+  const id = String(guid || '').trim().toLowerCase();
+  if (!ACCOUNT_ID.test(id)) return null;
+  const result = await postgresCall((pool) =>
+    pool.query('SELECT kick FROM user_kick WHERE guid = $1', [id])
+  );
+  if (result?.rows[0]?.kick) {
+    const kick = cleanKick(result.rows[0].kick);
+    if (kick) {
+      memoryKick.set(id, kick);
+      return kick;
+    }
+  }
+  return memoryKick.get(id) || null;
+}
+
+/**
+ * Store or clear a Kick login that OAuth already verified. The same channel cannot sit on two accounts.
+ * `{ ok: false, error }` is `invalid` or `taken`. Callers must not pass a typed nick from the profile form.
+ */
+export async function setKick(guid, raw) {
+  const id = String(guid || '').trim().toLowerCase();
+  if (!ACCOUNT_ID.test(id)) return { ok: false, error: 'invalid' };
+  if (raw === null || raw === '') {
+    memoryKick.delete(id);
+    await postgresCall((pool) => pool.query('DELETE FROM user_kick WHERE guid = $1', [id]));
+    return { ok: true, kick: null };
+  }
+  const kick = cleanKick(raw);
+  if (!kick) return { ok: false, error: 'invalid' };
+  for (const [other, name] of memoryKick) {
+    if (other !== id && String(name).toLowerCase() === kick.toLowerCase()) return { ok: false, error: 'taken' };
+  }
+  const saved = await postgresCall(async (pool) => {
+    try {
+      await pool.query(
+        `INSERT INTO user_kick (guid, kick) VALUES ($1, $2)
+         ON CONFLICT (guid) DO UPDATE SET kick = EXCLUDED.kick, updated_at = NOW()`,
+        [id, kick]
+      );
+      return { kick };
+    } catch (error) {
+      if (error?.code === '23505') return { error: 'taken' };
+      throw error;
+    }
+  });
+  if (saved?.error === 'taken') return { ok: false, error: 'taken' };
+  memoryKick.set(id, saved?.kick ?? kick);
+  return { ok: true, kick: saved?.kick ?? kick };
+}
+
+/** Kick logins stored for these FACEIT ids. */
+export async function kicksAmong(guids) {
+  const wanted = [...new Set(guids.map((guid) => String(guid || '').trim().toLowerCase()).filter((id) => ACCOUNT_ID.test(id)))];
+  const found = new Map();
+  for (const id of wanted) {
+    const kick = memoryKick.get(id);
+    if (kick) found.set(id, kick);
+  }
+  if (wanted.length === 0) return found;
+  const result = await postgresCall((pool) =>
+    pool.query('SELECT guid, kick FROM user_kick WHERE guid = ANY($1::text[])', [wanted])
+  );
+  for (const row of result?.rows ?? []) {
+    const kick = cleanKick(row.kick);
+    if (!kick) continue;
+    const id = String(row.guid).toLowerCase();
+    memoryKick.set(id, kick);
+    found.set(id, kick);
+  }
+  return found;
+}
+
+/** A Twitch login as Twitch itself accepts it; empty when the value is not a channel. */
+export function cleanTwitch(value) {
+  if (typeof value !== 'string') return '';
+  const twitch = value.trim();
+  return TWITCH_NAME.test(twitch) ? twitch : '';
+}
+
+/** The Twitch login stored for this FACEIT account, or null. */
+export async function twitchForUser(guid) {
+  const id = String(guid || '').trim().toLowerCase();
+  if (!ACCOUNT_ID.test(id)) return null;
+  const result = await postgresCall((pool) =>
+    pool.query('SELECT twitch FROM user_twitch WHERE guid = $1', [id])
+  );
+  if (result?.rows[0]?.twitch) {
+    const twitch = cleanTwitch(result.rows[0].twitch);
+    if (twitch) {
+      memoryTwitch.set(id, twitch);
+      return twitch;
+    }
+  }
+  return memoryTwitch.get(id) || null;
+}
+
+/**
+ * Store or clear a Twitch login that OAuth already verified. The same channel cannot sit on two accounts.
+ * `{ ok: false, error }` is `invalid` or `taken`. Callers must not pass a typed nick from the profile form.
+ */
+export async function setTwitch(guid, raw) {
+  const id = String(guid || '').trim().toLowerCase();
+  if (!ACCOUNT_ID.test(id)) return { ok: false, error: 'invalid' };
+  if (raw === null || raw === '') {
+    memoryTwitch.delete(id);
+    await postgresCall((pool) => pool.query('DELETE FROM user_twitch WHERE guid = $1', [id]));
+    return { ok: true, twitch: null };
+  }
+  const twitch = cleanTwitch(raw);
+  if (!twitch) return { ok: false, error: 'invalid' };
+  for (const [other, name] of memoryTwitch) {
+    if (other !== id && String(name).toLowerCase() === twitch.toLowerCase()) return { ok: false, error: 'taken' };
+  }
+  const saved = await postgresCall(async (pool) => {
+    try {
+      await pool.query(
+        `INSERT INTO user_twitch (guid, twitch) VALUES ($1, $2)
+         ON CONFLICT (guid) DO UPDATE SET twitch = EXCLUDED.twitch, updated_at = NOW()`,
+        [id, twitch]
+      );
+      return { twitch };
+    } catch (error) {
+      if (error?.code === '23505') return { error: 'taken' };
+      throw error;
+    }
+  });
+  if (saved?.error === 'taken') return { ok: false, error: 'taken' };
+  memoryTwitch.set(id, saved?.twitch ?? twitch);
+  return { ok: true, twitch: saved?.twitch ?? twitch };
+}
+
+/** Twitch logins stored for these FACEIT ids. */
+export async function twitchesAmong(guids) {
+  const wanted = [...new Set(guids.map((guid) => String(guid || '').trim().toLowerCase()).filter((id) => ACCOUNT_ID.test(id)))];
+  const found = new Map();
+  for (const id of wanted) {
+    const twitch = memoryTwitch.get(id);
+    if (twitch) found.set(id, twitch);
+  }
+  if (wanted.length === 0) return found;
+  const result = await postgresCall((pool) =>
+    pool.query('SELECT guid, twitch FROM user_twitch WHERE guid = ANY($1::text[])', [wanted])
+  );
+  for (const row of result?.rows ?? []) {
+    const twitch = cleanTwitch(row.twitch);
+    if (!twitch) continue;
+    const id = String(row.guid).toLowerCase();
+    memoryTwitch.set(id, twitch);
+    found.set(id, twitch);
+  }
   return found;
 }
 

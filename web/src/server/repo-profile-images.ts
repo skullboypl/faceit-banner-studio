@@ -53,8 +53,9 @@ async function pool() {
 }
 
 /**
- * One image per owner and kind. A new file replaces the old one, goes back to review (an admin's own
- * upload is approved at once) and starts with no reports. The old file is returned so it can be deleted.
+ * One image per owner and kind. A new file replaces the old one and goes back to review (an admin's
+ * own upload is approved at once). Pending pictures are already public; admin approval is the later
+ * stamp. The old file is returned so it can be deleted.
  */
 export async function saveProfileImage(input: {
   ownerGuid: string;
@@ -103,10 +104,10 @@ export async function listOwnProfileImages(ownerGuid: string): Promise<ProfileIm
   return rows.map(toRow);
 }
 
-/** What anybody may see: approved images only. */
-export async function listApprovedProfileImages(ownerGuid: string): Promise<ProfileImageRow[]> {
+/** What anybody may see: pending (live at once) and approved. Hidden and rejected stay private. */
+export async function listVisibleProfileImages(ownerGuid: string): Promise<ProfileImageRow[]> {
   const { rows } = await (await pool()).query<Raw>(
-    `SELECT ${COLUMNS} FROM profile_images WHERE owner_guid = $1 AND status = 'approved' ORDER BY kind`,
+    `SELECT ${COLUMNS} FROM profile_images WHERE owner_guid = $1 AND status IN ('pending', 'approved') ORDER BY kind`,
     [ownerGuid]
   );
   return rows.map(toRow);
@@ -124,8 +125,8 @@ export async function deleteProfileImage(ownerGuid: string, kind: ProfileKind): 
 export type ReportOutcome = 'reported' | 'hidden' | 'duplicate' | 'own' | 'not_found';
 
 /**
- * A logged-in user reports somebody else's approved image, once. The third different reporter
- * hides it until an admin decides. Reporters are never shown to the owner.
+ * A logged-in user reports somebody else's public image (pending or approved), once. The third
+ * different reporter hides it until an admin decides. Reporters are never shown to the owner.
  */
 export async function reportProfileImage(input: {
   ownerGuid: string;
@@ -139,7 +140,7 @@ export async function reportProfileImage(input: {
   try {
     await client.query('BEGIN');
     const found = await client.query<{ id: string }>(
-      `SELECT id FROM profile_images WHERE owner_guid = $1 AND kind = $2 AND status = 'approved' FOR UPDATE`,
+      `SELECT id FROM profile_images WHERE owner_guid = $1 AND kind = $2 AND status IN ('pending', 'approved') FOR UPDATE`,
       [input.ownerGuid, input.kind]
     );
     const image = found.rows[0];
@@ -179,7 +180,7 @@ export async function listForReview(filter: ReviewFilter, limit: number): Promis
       : filter === 'hidden'
         ? [`p.status = 'hidden'`]
         : filter === 'reported'
-          ? [`p.status IN ('approved', 'hidden')`, 'COALESCE(r.total, 0) > 0']
+          ? [`p.status IN ('pending', 'approved', 'hidden')`, 'COALESCE(r.total, 0) > 0']
           : ['TRUE'];
   const order = filter === 'reported' ? 'COALESCE(r.total, 0) DESC, p.created_at' : 'p.created_at';
   const { rows } = await (await pool()).query<Raw & { nickname: string; reports: string }>(

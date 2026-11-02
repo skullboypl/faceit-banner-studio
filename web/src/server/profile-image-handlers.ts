@@ -5,7 +5,7 @@ import { isPlayerId, isProfileKind, profileKey, toProfileWebp, type ProfileKind 
 import { deleteObject, isR2Configured, publicUrl, putObject } from './r2';
 import {
   deleteProfileImage,
-  listApprovedProfileImages,
+  listVisibleProfileImages,
   listForReview,
   listOwnProfileImages,
   reportProfileImage,
@@ -19,8 +19,8 @@ type KindCtx = { params: Promise<{ kind: string }> };
 type IdCtx = { params: Promise<{ id: string }> };
 type PlayerCtx = { params: Promise<{ playerId: string }> };
 
-/** Cached at the edge: a profile changes rarely, and approving a new image may take a few minutes to show. */
-const PUBLIC_CACHE = 'public, max-age=60, s-maxage=300, stale-while-revalidate=600';
+/** Short so a new upload shows on banners quickly; admin approval is a later stamp. */
+const PUBLIC_CACHE = 'public, max-age=15, s-maxage=30, stale-while-revalidate=60';
 const FILTERS: ReviewFilter[] = ['pending', 'reported', 'hidden', 'all'];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -62,14 +62,14 @@ export function createProfileImageHandlers(options: { unlimited?: boolean } = {}
   const dropFile = (key: string | null) => (key ? deleteObject(key).catch(() => undefined) : Promise.resolve());
 
   return {
-    /** Anyone: the approved avatar and cover of one player. Nothing else about the account. */
+    /** Anyone: the live avatar and cover of one player (pending or approved). Nothing else about the account. */
     publicProfile: (request: Request, ctx: PlayerCtx) =>
       run(async () => {
         if (!limits.ip(request, false)) return tooManyRequests('60');
         const { playerId } = await ctx.params;
         if (!isPlayerId(playerId)) return fail(400, 'invalid_player', 'Not a player id.').response;
         const body: Record<string, { url: string; width: number; height: number }> = {};
-        for (const image of await listApprovedProfileImages(playerId)) {
+        for (const image of await listVisibleProfileImages(playerId)) {
           const url = urlOf(image.key);
           if (url) body[image.kind] = { url, width: image.width, height: image.height };
         }
@@ -141,7 +141,7 @@ export function createProfileImageHandlers(options: { unlimited?: boolean } = {}
         return json(200, { ok: true });
       }),
 
-    /** A logged-in player flags somebody else's approved image. The owner is never told who. */
+    /** A logged-in player flags somebody else's public image. The owner is never told who. */
     report: (request: Request, ctx: PlayerCtx) =>
       run(async () => {
         const user = await member(request, { write: true, limiter: limits.profileReport, retryAfter: '60' });

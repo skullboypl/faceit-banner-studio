@@ -830,7 +830,22 @@
 }
 .admin-shell .feedback-detail header {
   display: grid;
+  justify-content: start;
+  justify-items: stretch;
+  align-content: start;
   gap: 10px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+.admin-shell .feedback-detail-lead {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 16rem;
 }
 .admin-shell .feedback-detail h3 {
   font-size: 22px;
@@ -838,6 +853,7 @@
 }
 .admin-shell .feedback-detail small {
   color: #a1adbd;
+  text-align: left;
 }
 .admin-shell .feedback-body,
 .admin-shell .feedback-comment p {

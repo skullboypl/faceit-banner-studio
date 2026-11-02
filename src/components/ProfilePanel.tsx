@@ -19,14 +19,39 @@ type FaceitCard = {
 type Profile = {
   nickname: string;
   avatar: string | null;
+  kick: string | null;
+  twitch: string | null;
+  oauth?: { twitch?: boolean; kick?: boolean };
   faceit: FaceitCard | null;
   logins: { createdAt: string }[];
 };
+
+type PairKind = 'twitch' | 'kick';
+
+async function unlinkChannel(kind: PairKind) {
+  const response = await fetch(`/api/auth/${kind}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    cache: 'no-store',
+    credentials: 'same-origin',
+    body: JSON.stringify({ [kind]: null }),
+  });
+  const body = (await response.json().catch(() => ({}))) as { error?: string };
+  if (!response.ok) throw new Error(body.error || 'error');
+}
 
 async function clearOwnCache() {
   const response = await fetch('/api/auth/profile/cache', { method: 'POST', cache: 'no-store', credentials: 'same-origin' });
   const body = (await response.json().catch(() => ({}))) as { error?: string };
   if (!response.ok) throw new Error(body.error || 'cache');
+}
+
+function pairStatus() {
+  try {
+    return new URLSearchParams(window.location.search).get('pair') || '';
+  } catch {
+    return '';
+  }
 }
 
 function ProfileCacheCard({
@@ -62,10 +87,132 @@ function ProfileCacheCard({
   );
 }
 
+function ProfileChannelRow({
+  tl,
+  kind,
+  linked,
+  configured,
+  justPaired,
+  onUnlink,
+}: {
+  tl: (key: string, args?: string[]) => string;
+  kind: PairKind;
+  linked: string | null;
+  configured: boolean;
+  justPaired: boolean;
+  onUnlink: () => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [name, setName] = useState(linked);
+
+  const unlink = () => {
+    setBusy(true);
+    setError('');
+    void onUnlink()
+      .then(() => setName(null))
+      .catch(() => setError(tl(`profile.${kind}.error`)))
+      .finally(() => setBusy(false));
+  };
+
+  return (
+    <div className={`profile-channel profile-${kind}`}>
+      <h4 className="profile-channel-title">{tl(`profile.${kind}.title`)}</h4>
+      <p>{tl(`profile.${kind}.note`)}</p>
+      {name && <p className="profile-kick-linked">{tl(`profile.${kind}.linked`, [name])}</p>}
+      {justPaired && name && (
+        <p className="profile-cache-done" role="status">
+          {tl(`profile.${kind}.saved`)}
+        </p>
+      )}
+      {error && <p className="profile-empty" role="alert">{error}</p>}
+      <div className="profile-kick-row">
+        {configured ? (
+          <a className="profile-connect" href={`/api/auth/${kind}`}>
+            {tl(`profile.${kind}.connect`)}
+          </a>
+        ) : (
+          <button type="button" disabled>
+            {tl(`profile.${kind}.connect`)}
+          </button>
+        )}
+        {name && (
+          <button type="button" className="profile-kick-clear" disabled={busy} onClick={unlink}>
+            {tl(`profile.${kind}.clear`)}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProfileConnections({
+  tl,
+  twitch,
+  kick,
+  oauth,
+  unlinkTwitch,
+  unlinkKick,
+}: {
+  tl: (key: string, args?: string[]) => string;
+  twitch: string | null;
+  kick: string | null;
+  oauth: { twitch: boolean; kick: boolean };
+  unlinkTwitch: () => Promise<void>;
+  unlinkKick: () => Promise<void>;
+}) {
+  const status = pairStatus();
+  const pairError =
+    status === 'oauth_not_configured'
+      ? tl('profile.connections.no_keys')
+      : status === 'taken'
+        ? tl('profile.connections.taken')
+        : status === 'cancelled'
+          ? tl('profile.connections.cancelled')
+          : status === 'expired'
+            ? tl('profile.connections.expired')
+            : status === 'failed'
+              ? tl('profile.connections.failed')
+              : '';
+  const keysMissing = !oauth.twitch || !oauth.kick;
+
+  return (
+    <section className="settings profile-connections">
+      <h3 className="card-heading">
+        <StudioIcon name="user" />
+        {tl('profile.connections.title')}
+      </h3>
+      <p>{tl('profile.connections.note')}</p>
+      {keysMissing && <p className="profile-empty">{tl('profile.connections.no_keys')}</p>}
+      {pairError && <p className="profile-empty" role="alert">{pairError}</p>}
+      <ProfileChannelRow
+        tl={tl}
+        kind="twitch"
+        linked={twitch}
+        configured={oauth.twitch}
+        justPaired={status === 'twitch'}
+        onUnlink={unlinkTwitch}
+      />
+      <ProfileChannelRow
+        tl={tl}
+        kind="kick"
+        linked={kick}
+        configured={oauth.kick}
+        justPaired={status === 'kick'}
+        onUnlink={unlinkKick}
+      />
+    </section>
+  );
+}
+
 export function ProfilePanel({
   clearCache = clearOwnCache,
+  unlinkTwitchAccount = () => unlinkChannel('twitch'),
+  unlinkKickAccount = () => unlinkChannel('kick'),
 }: {
   clearCache?: () => Promise<void>;
+  unlinkTwitchAccount?: () => Promise<void>;
+  unlinkKickAccount?: () => Promise<void>;
 }) {
   const tl = useContext(LanguageContext);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -183,6 +330,14 @@ export function ProfilePanel({
         </ul>
       </section>
       <ProfileImages />
+      <ProfileConnections
+        tl={tl}
+        twitch={profile.twitch ?? null}
+        kick={profile.kick ?? null}
+        oauth={{ twitch: profile.oauth?.twitch === true, kick: profile.oauth?.kick === true }}
+        unlinkTwitch={unlinkTwitchAccount}
+        unlinkKick={unlinkKickAccount}
+      />
       {cacheCard}
       <section className="settings profile-logins">
         <h3 className="card-heading">

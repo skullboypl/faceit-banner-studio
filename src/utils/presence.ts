@@ -43,7 +43,7 @@ export function subscribeLiveStreamerCount(listener: OnlineListener) {
 }
 
 function publishLiveStreamerCount(players: LivePlayer[]) {
-  const count = players.filter((player) => player.twitchStatus?.state === 'live').length;
+  const count = players.filter((player) => player.twitchStatus?.state === 'live' || player.kickStatus?.state === 'live').length;
   lastStreamerOnline = count;
   for (const listener of streamerListeners) listener(count);
 }
@@ -106,6 +106,15 @@ export async function getOnlineBannerCount(signal?: AbortSignal) {
   return count;
 }
 
+export type StreamStatus = {
+  state: 'live' | 'offline' | 'missing' | 'unknown';
+  viewers?: number;
+  title?: string;
+  game?: string;
+  thumbnail?: string;
+  startedAt?: string;
+};
+
 export type LivePlayer = {
   nickname: string;
   avatar?: string;
@@ -118,14 +127,10 @@ export type LivePlayer = {
   token?: boolean;
   /** Channel name of the Twitch account linked on FACEIT. */
   twitch?: string;
-  twitchStatus?: {
-    state: 'live' | 'offline' | 'missing' | 'unknown';
-    viewers?: number;
-    title?: string;
-    game?: string;
-    thumbnail?: string;
-    startedAt?: string;
-  };
+  twitchStatus?: StreamStatus;
+  /** Channel name of the Kick account paired in the studio, or taken from FACEIT when present. */
+  kick?: string;
+  kickStatus?: StreamStatus;
   /** True when this FACEIT account has signed in to the studio. No date and no account id. */
   confirmed?: boolean;
   elo?: number;

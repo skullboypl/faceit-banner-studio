@@ -36,7 +36,7 @@ function problem(error: unknown, tl: (key: string, args?: string[]) => string): 
 
 /**
  * "Look on banners": the player's own avatar and background for this project's banners. A new picture
- * waits for an admin; everybody who types the nickname sees it after approval.
+ * is visible at once; an admin still has to approve it afterwards.
  */
 export function ProfileImages({
   api = defaultApi,

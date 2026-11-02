@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 vi.mock('./api', async (importOriginal) => ({
@@ -15,10 +16,28 @@ vi.mock('./api', async (importOriginal) => ({
   adminExport: vi.fn(),
 }));
 
-import { ApiError } from '../cloud/api';
+import { ApiError, type User } from '../cloud/api';
 import { defaultSettings, renderWithApp } from '../components/test-utils';
+import type { Settings } from '../settings/manager';
 import * as api from './api';
 import { FeedbackBoard } from './FeedbackBoard';
+
+const renderBoard = (
+  props: { user: User | null; admin: boolean } = { user: alice, admin: false },
+  settings?: Settings,
+  path = '/'
+) =>
+  renderWithApp(
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route element={<FeedbackBoard user={props.user} admin={props.admin} />}>
+          <Route path="/" element={<></>} />
+          <Route path="/feedback/:postId" element={<></>} />
+        </Route>
+      </Routes>
+    </MemoryRouter>,
+    settings
+  );
 
 const listPosts = vi.mocked(api.listPosts);
 const createPost = vi.mocked(api.createPost);
@@ -58,7 +77,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('lists', () => {
   test('requests and bugs are separate lists', async () => {
-    renderWithApp(<FeedbackBoard user={alice} admin={false} />);
+    renderBoard();
     await screen.findByText('Dark theme');
     expect(listPosts).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'request' }));
     listPosts.mockResolvedValue({ posts: [memberPost('9', 'Clipped glow', { kind: 'bug' })], next: null });
@@ -69,7 +88,7 @@ describe('lists', () => {
   });
 
   test('the status filter and the sort order are sent to the server', async () => {
-    renderWithApp(<FeedbackBoard user={alice} admin={false} />);
+    renderBoard();
     await screen.findByText('Dark theme');
     fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'planned' } });
     await waitFor(() => expect(listPosts).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'planned' })));
@@ -79,7 +98,7 @@ describe('lists', () => {
 
   test('"Pokaż więcej" loads the next page with the cursor', async () => {
     listPosts.mockResolvedValueOnce({ posts: [memberPost('1', 'First page')], next: 'cursor-2' });
-    renderWithApp(<FeedbackBoard user={alice} admin={false} />);
+    renderBoard();
     await screen.findByText('First page');
     listPosts.mockResolvedValueOnce({ posts: [memberPost('2', 'Second page')], next: null });
     fireEvent.click(screen.getByRole('button', { name: 'Pokaż więcej' }));
@@ -91,13 +110,13 @@ describe('lists', () => {
 
   test('an empty list says so', async () => {
     listPosts.mockResolvedValue({ posts: [], next: null });
-    renderWithApp(<FeedbackBoard user={alice} admin={false} />);
+    renderBoard();
     expect(await screen.findByText('Nic tu jeszcze nie ma. Dodaj pierwsze zgłoszenie.')).toBeTruthy();
   });
 
   test('markup in a title is rendered as text', async () => {
     listPosts.mockResolvedValue({ posts: [memberPost('1', '<img src=x onerror=alert(1)> hi')], next: null });
-    const { container } = renderWithApp(<FeedbackBoard user={alice} admin={false} />);
+    const { container } = renderBoard();
     expect(await screen.findByText('<img src=x onerror=alert(1)> hi')).toBeTruthy();
     expect(container.querySelector('img[src="x"]')).toBeNull();
   });
@@ -109,22 +128,22 @@ describe('guests', () => {
   });
 
   test('see titles and counters but no authors', async () => {
-    renderWithApp(<FeedbackBoard user={null} admin={false} />);
+    renderBoard({ user: null, admin: false });
     await screen.findByText('Dark theme');
     expect(screen.queryByText(/bob/)).toBeNull();
     expect(screen.getAllByText('3').length).toBeGreaterThan(0);
   });
 
   test('opening a post shows the login call to action and never asks for details', async () => {
-    renderWithApp(<FeedbackBoard user={null} admin={false} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Dark theme' }));
+    renderBoard({ user: null, admin: false });
+    fireEvent.click(await screen.findByRole('link', { name: 'Dark theme' }));
     expect(screen.getByRole('link', { name: /Zaloguj przez FACEIT/ }).getAttribute('href')).toBe('/api/auth/login');
     expect(screen.getByText(/Zaloguj się, aby zobaczyć szczegóły/)).toBeTruthy();
     expect(getPost).not.toHaveBeenCalled();
   });
 
   test('voting and adding are login links, not actions', async () => {
-    renderWithApp(<FeedbackBoard user={null} admin={false} />);
+    renderBoard({ user: null, admin: false });
     await screen.findByText('Dark theme');
     expect(screen.queryByRole('button', { name: /Popieram/ })).toBeNull();
     expect(screen.getAllByRole('link', { name: /Popieram/ })[0].getAttribute('href')).toBe('/api/auth/login');
@@ -135,14 +154,14 @@ describe('guests', () => {
 
 describe('logged-in users', () => {
   test('see authors in the list', async () => {
-    renderWithApp(<FeedbackBoard user={alice} admin={false} />);
+    renderBoard();
     await screen.findByText('Dark theme');
     expect(screen.getAllByText(/bob/).length).toBeGreaterThan(0);
   });
 
   test('the vote button toggles and updates the counter', async () => {
     vote.mockResolvedValueOnce({ voted: true, votes: 4 }).mockResolvedValueOnce({ voted: false, votes: 3 });
-    renderWithApp(<FeedbackBoard user={alice} admin={false} />);
+    renderBoard();
     await screen.findByText('Dark theme');
     const button = () => screen.getAllByRole('button', { name: /Popieram/ })[0];
     fireEvent.click(button());
@@ -156,7 +175,7 @@ describe('logged-in users', () => {
 
   test('bug lists label the vote "U mnie też"', async () => {
     listPosts.mockResolvedValue({ posts: [memberPost('9', 'Clipped glow', { kind: 'bug' })], next: null });
-    renderWithApp(<FeedbackBoard user={alice} admin={false} />);
+    renderBoard();
     fireEvent.click(screen.getByRole('tab', { name: 'Błędy' }));
     expect(await screen.findByRole('button', { name: /U mnie też/ })).toBeTruthy();
   });
@@ -167,8 +186,8 @@ describe('logged-in users', () => {
         thread: [{ id: 'c1', body: 'Great idea', byAdmin: false, createdAt: '2026-10-14T11:00:00.000Z', author: 'carol', mine: false }],
       }),
     });
-    renderWithApp(<FeedbackBoard user={alice} admin={false} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Dark theme' }));
+    renderBoard();
+    fireEvent.click(await screen.findByRole('link', { name: 'Dark theme' }));
     expect(await screen.findByText('Full description of the post.')).toBeTruthy();
     expect(screen.getByText('Great idea')).toBeTruthy();
     expect(screen.getByText('carol')).toBeTruthy();
@@ -181,8 +200,8 @@ describe('logged-in users', () => {
     addComment.mockResolvedValue({
       comment: { id: 'c2', body: 'My two cents', byAdmin: false, createdAt: '2026-10-14T12:00:00.000Z', author: 'alice', mine: true },
     });
-    renderWithApp(<FeedbackBoard user={alice} admin={false} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Dark theme' }));
+    renderBoard();
+    fireEvent.click(await screen.findByRole('link', { name: 'Dark theme' }));
     await screen.findByText('Full description of the post.');
     fireEvent.change(screen.getByPlaceholderText('Napisz komentarz…'), { target: { value: 'My two cents' } });
     fireEvent.click(screen.getByRole('button', { name: 'Dodaj komentarz' }));
@@ -196,16 +215,16 @@ describe('logged-in users', () => {
         thread: [{ id: 'c1', body: 'Planned for next week', byAdmin: true, createdAt: '2026-10-14T11:00:00.000Z', author: 'SkullBoy', mine: false }],
       }),
     });
-    renderWithApp(<FeedbackBoard user={alice} admin={false} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Dark theme' }));
+    renderBoard();
+    fireEvent.click(await screen.findByRole('link', { name: 'Dark theme' }));
     expect(await screen.findByText('admin')).toBeTruthy();
   });
 
   test('a server error on a comment is shown', async () => {
     getPost.mockResolvedValue({ post: detail(memberPost('1', 'Dark theme')) });
     addComment.mockRejectedValue(new ApiError(429, 'rate_limited', 'Too many requests, slow down.'));
-    renderWithApp(<FeedbackBoard user={alice} admin={false} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Dark theme' }));
+    renderBoard();
+    fireEvent.click(await screen.findByRole('link', { name: 'Dark theme' }));
     await screen.findByText('Full description of the post.');
     fireEvent.change(screen.getByPlaceholderText('Napisz komentarz…'), { target: { value: 'spam' } });
     fireEvent.click(screen.getByRole('button', { name: 'Dodaj komentarz' }));
@@ -215,8 +234,8 @@ describe('logged-in users', () => {
   test('a blocked comment shows the translated reason', async () => {
     getPost.mockResolvedValue({ post: detail(memberPost('1', 'Dark theme')) });
     addComment.mockRejectedValue(new ApiError(400, 'content_blocked', 'This text looks like spam.', { category: 'spam' }));
-    renderWithApp(<FeedbackBoard user={alice} admin={false} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Dark theme' }));
+    renderBoard();
+    fireEvent.click(await screen.findByRole('link', { name: 'Dark theme' }));
     await screen.findByText('Full description of the post.');
     fireEvent.change(screen.getByPlaceholderText('Napisz komentarz…'), { target: { value: 'spam' } });
     fireEvent.click(screen.getByRole('button', { name: 'Dodaj komentarz' }));
@@ -227,7 +246,7 @@ describe('logged-in users', () => {
 
 describe('new post form', () => {
   const open = async () => {
-    renderWithApp(<FeedbackBoard user={alice} admin={false} />, { ...defaultSettings(), bannerRadius: 22, bannerRadiusCustom: true } as never);
+    renderBoard({ user: alice, admin: false }, { ...defaultSettings(), bannerRadius: 22, bannerRadiusCustom: true } as never);
     await screen.findByText('Dark theme');
     fireEvent.click(screen.getByRole('button', { name: 'Nowe zgłoszenie' }));
   };
@@ -259,7 +278,7 @@ describe('new post form', () => {
 
   test('a bug attaches the current banner settings by default and can drop them', async () => {
     createPost.mockResolvedValue({ post: memberPost('8', 'Glow is cut', { kind: 'bug', author: 'alice', mine: true }) });
-    renderWithApp(<FeedbackBoard user={alice} admin={false} />, { ...defaultSettings(), bannerRadius: 22, bannerRadiusCustom: true } as never);
+    renderBoard({ user: alice, admin: false }, { ...defaultSettings(), bannerRadius: 22, bannerRadiusCustom: true } as never);
     fireEvent.click(screen.getByRole('tab', { name: 'Błędy' }));
     await screen.findByText('Dark theme').catch(() => undefined);
     fireEvent.click(screen.getByRole('button', { name: 'Nowe zgłoszenie' }));
@@ -277,7 +296,7 @@ describe('new post form', () => {
 
   test('dropping the attachment sends no settings', async () => {
     createPost.mockResolvedValue({ post: memberPost('8', 'Glow is cut', { kind: 'bug' }) });
-    renderWithApp(<FeedbackBoard user={alice} admin={false} />);
+    renderBoard();
     fireEvent.click(screen.getByRole('tab', { name: 'Błędy' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Nowe zgłoszenie' }));
     fill('Glow is cut', 'On the left side.');
@@ -315,8 +334,8 @@ describe('new post form', () => {
 describe('admin tools', () => {
   const openAs = async (admin: boolean) => {
     getPost.mockResolvedValue({ post: detail(memberPost('1', 'Dark theme')) });
-    renderWithApp(<FeedbackBoard user={alice} admin={admin} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Dark theme' }));
+    renderBoard({ user: alice, admin });
+    fireEvent.click(await screen.findByRole('link', { name: 'Dark theme' }));
     await screen.findByText('Full description of the post.');
   };
 
@@ -355,5 +374,23 @@ describe('admin tools', () => {
     await waitFor(() => expect(adminDeletePost).toHaveBeenCalledWith('1'));
     expect(await screen.findByText('Banner animations')).toBeTruthy();
     expect(within(screen.getByRole('list')).queryByText('Dark theme')).toBeNull();
+  });
+});
+
+describe('permalinks', () => {
+  test('list titles are shareable /feedback/:id links', async () => {
+    renderBoard();
+    expect((await screen.findByRole('link', { name: 'Dark theme' })).getAttribute('href')).toBe('/feedback/1');
+    expect(screen.getByRole('link', { name: 'Banner animations' }).getAttribute('href')).toBe('/feedback/2');
+  });
+
+  test('opening /feedback/:id shows that ticket and sets the document title', async () => {
+    getPost.mockResolvedValue({ post: detail(memberPost('1', 'Dark theme')) });
+    renderBoard({ user: alice, admin: false }, undefined, '/feedback/1');
+    expect(await screen.findByText('Full description of the post.')).toBeTruthy();
+    expect(document.title).toContain('Dark theme');
+    fireEvent.click(screen.getByRole('button', { name: '← Wróć do listy' }));
+    expect(await screen.findByText('Banner animations')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Dark theme' })).toBeTruthy();
   });
 });

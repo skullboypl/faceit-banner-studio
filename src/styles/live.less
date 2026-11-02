@@ -139,13 +139,23 @@ html.generator .settings.live-panel {
   display: none;
 }
 .live-profile {
+  flex: 1 1 0;
   min-width: 0;
 }
 .live-player-name {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 4px 6px;
   min-width: 0;
+}
+.live-player-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  min-width: 0;
+  max-width: 100%;
 }
 .live-nick,
 .live-nick:hover,
@@ -155,7 +165,9 @@ html.generator .settings.live-panel {
   font-size: 14px;
   font-weight: 700;
   text-decoration: none;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -178,7 +190,8 @@ html.generator .settings.live-panel {
 }
 /* Plan, ESEA and token badges, and the Twitch link, sit in a row after the nickname */
 .live-plan,
-.live-twitch {
+.live-twitch,
+.live-kick {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -205,6 +218,20 @@ html.generator .settings.live-panel {
 .live-twitch:hover,
 .live-twitch:focus-visible {
   color: #b794ff;
+  transform: translateY(-1px);
+}
+.live-kick {
+  color: #53fc18;
+  gap: 5px;
+  font-size: 10px;
+  line-height: 1.2;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+.live-kick[data-state='offline'] { color: #929aaa; }
+.live-kick[data-state='live'] { color: #53fc18; }
+.live-kick:hover,
+.live-kick:focus-visible {
+  color: #9dff6a;
   transform: translateY(-1px);
 }
 .live-badge-icon {
@@ -393,7 +420,8 @@ html.generator .settings.live-panel {
   .live-nick {
     font-size: 12px;
   }
-  .live-player-name {
+  .live-player-name,
+  .live-player-badges {
     gap: 4px;
   }
   .live-verified {

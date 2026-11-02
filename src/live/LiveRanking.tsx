@@ -8,7 +8,7 @@ import {
 import { VerifiedBadgeIcon } from '../assets/icons/faceit/VerifiedBadgeIcon';
 import { VerifiedGoldBadgeIcon } from '../assets/icons/faceit/VerifiedGoldBadgeIcon';
 import { FaceitLevel } from './FaceitLevel';
-import { EseaIcon, PlusIcon, PremiumIcon, TokenIcon, TwitchIcon } from './MemberIcons';
+import { EseaIcon, KickIcon, PlusIcon, PremiumIcon, TokenIcon, TwitchIcon } from './MemberIcons';
 
 const PAGE_SIZE = 15;
 
@@ -167,7 +167,8 @@ export function LiveRanking() {
                         >
                           {player.nickname}
                         </a>
-                        {(player.membership === 'plus' || player.membership === 'premium') && (
+                        <span className="live-player-badges">
+                          {(player.membership === 'plus' || player.membership === 'premium') && (
                           <span
                             className="live-plan"
                             data-plan={player.membership}
@@ -203,6 +204,23 @@ export function LiveRanking() {
                               <><i className="live-twitch-dot" aria-hidden="true" /><span>{player.twitchStatus.viewers?.toLocaleString() ?? '—'}</span></>
                             )}
                             {player.twitchStatus?.state === 'offline' && <span>OFFLINE</span>}
+                          </a>
+                        )}
+                        {player.kickStatus?.state !== 'missing' && typeof player.kick === 'string' && /^[A-Za-z0-9_]{3,25}$/.test(player.kick) && (
+                          <a
+                            className="live-kick"
+                            data-state={player.kickStatus?.state}
+                            href={`https://kick.com/${player.kick}`}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            aria-label={t(player.kickStatus?.state === 'live' ? 'live.kick_live' : player.kickStatus?.state === 'offline' ? 'live.kick_offline' : 'live.kick', [player.kick, String(player.kickStatus?.viewers ?? '—')])}
+                            title={t(player.kickStatus?.state === 'live' ? 'live.kick_live' : player.kickStatus?.state === 'offline' ? 'live.kick_offline' : 'live.kick', [player.kick, String(player.kickStatus?.viewers ?? '—')])}
+                          >
+                            <KickIcon />
+                            {player.kickStatus?.state === 'live' && (
+                              <><i className="live-twitch-dot" aria-hidden="true" /><span>{player.kickStatus.viewers?.toLocaleString() ?? '—'}</span></>
+                            )}
+                            {player.kickStatus?.state === 'offline' && <span>OFFLINE</span>}
                           </a>
                         )}
                         {player.confirmed === true && (
@@ -241,6 +259,7 @@ export function LiveRanking() {
                             )}
                           </span>
                         )}
+                        </span>
                       </div>
                       <span className="live-player-meta">
                         {player.country &&

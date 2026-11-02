@@ -1,10 +1,11 @@
 import { enrichTwitch } from './twitch-live.mjs';
+import { enrichKick } from './kick-live.mjs';
 import { clientIp } from '../shared/client-ip.mjs';
 import { createRateLimiter } from '../shared/rate-limit.mjs';
 import { fillFromPlayerId, knownImageUrl, loadImage, playerIdFromReferer, publicRanking, sanitizeInfo } from './live.mjs';
 import { count, once, warn } from './log.mjs';
 import { handleFaceitProxy } from './faceit-proxy.mjs';
-import { recordOnlineSample, verifiedAmong, withRedis } from './store.mjs';
+import { kicksAmong, recordOnlineSample, twitchesAmong, verifiedAmong, withRedis } from './store.mjs';
 
 /** Current widgets ping every minute. Older banners refresh only after a win and never send a heartbeat, so the live pool keeps a banner for an hour after its last contact. */
 export const ACTIVE_WINDOW_MS = 60 * 60_000;
@@ -255,8 +256,15 @@ async function buildLiveBoard() {
     new Promise((resolve) => setTimeout(() => resolve(false), fillDeadlineMs())),
   ]);
   const signedIn = await verifiedAmong(entries.map((entry) => entry.info?.playerId));
+  const kicks = await kicksAmong(entries.map((entry) => entry.info?.playerId));
+  const twitches = await twitchesAmong(entries.map((entry) => entry.info?.playerId));
   for (const entry of entries) {
-    if (entry.info?.playerId && signedIn.has(entry.info.playerId)) entry.info.confirmed = true;
+    const id = entry.info?.playerId;
+    if (id && signedIn.has(id)) entry.info.confirmed = true;
+    const kick = id ? kicks.get(id) : '';
+    if (kick) entry.info.kick = kick;
+    const twitch = id ? twitches.get(id) : '';
+    if (twitch) entry.info.twitch = twitch;
   }
   const players = publicRanking(entries);
   const at = Date.now();
@@ -291,7 +299,7 @@ async function getCachedLiveBoard() {
 
 export async function getLiveBoard() {
   const board = await getCachedLiveBoard();
-  return { ...board, players: await enrichTwitch(board.players) };
+  return { ...board, players: await enrichKick(await enrichTwitch(board.players)) };
 }
 
 const trustedHops = () => Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS) || 1);

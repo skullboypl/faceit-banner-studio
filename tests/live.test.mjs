@@ -225,6 +225,18 @@ test('publicRanking keeps the token flag and a valid Twitch name, and drops the 
   assert.equal('twitch' in byName.Odd, false);
 });
 
+test('publicRanking keeps a valid Kick name and drops the rest', () => {
+  const rows = publicRanking([
+    { info: { nickname: 'Linked', playerId: '11111111-1111-1111-1111-111111111111', kick: 'MapeT' }, lastSeen: 2 },
+    { info: { nickname: 'Hyphen', playerId: '33333333-3333-3333-3333-333333333333', kick: 'john-doe' }, lastSeen: 3 },
+    { info: { nickname: 'Odd', playerId: '22222222-2222-2222-2222-222222222222', kick: 'a b/c' }, lastSeen: 1 },
+  ]);
+  const byName = Object.fromEntries(rows.map((row) => [row.nickname, row]));
+  assert.equal(byName.Linked.kick, 'MapeT');
+  assert.equal(byName.Hyphen.kick, 'john-doe');
+  assert.equal('kick' in byName.Odd, false);
+});
+
 test('the live list is kept longer than the online counter, and the list says how long', async () => {
   const { boardTtlMs, countTtlMs } = await import('../server/presence.mjs');
   const previous = process.env.LIVE_BOARD_TTL_MS;

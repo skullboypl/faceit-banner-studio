@@ -28,7 +28,8 @@ describe('ProfileImages', () => {
     expect(await screen.findByText('Avatar na banerach')).toBeTruthy();
     expect(screen.getByText('Tło na banerach')).toBeTruthy();
     expect(screen.getByText(/tylko w banerach z tego projektu/)).toBeTruthy();
-    expect(screen.getByText(/widzi je każdy, kto wpisze Twój nick/)).toBeTruthy();
+    expect(screen.getByText(/wpisze Twój nick/)).toBeTruthy();
+    expect(screen.getByText(/zatwierdzić/)).toBeTruthy();
   });
 
   test('shows the status of each image: waiting, live, refused with the reason, hidden after reports', async () => {
@@ -41,14 +42,14 @@ describe('ProfileImages', () => {
         prepare={prepare}
       />
     );
-    expect(await screen.findByText('Czeka na akceptację')).toBeTruthy();
+    expect(await screen.findByText('Widoczne, czeka na zatwierdzenie admina')).toBeTruthy();
     expect(screen.getByText('Odrzucone')).toBeTruthy();
     expect(screen.getByText(/Not a photo of you/)).toBeTruthy();
   });
 
   test('approved and hidden states read clearly', async () => {
     const approved = renderWithApp(<ProfileImages api={api([image({ status: 'approved' })])} prepare={prepare} />);
-    expect(await screen.findByText('Widoczne na banerach')).toBeTruthy();
+    expect(await screen.findByText('Zatwierdzone — widoczne na banerach')).toBeTruthy();
     approved.unmount();
     renderWithApp(<ProfileImages api={api([image({ status: 'hidden' })])} prepare={prepare} />);
     expect(await screen.findByText('Ukryte po zgłoszeniach, czeka na decyzję admina')).toBeTruthy();
@@ -62,19 +63,19 @@ describe('ProfileImages', () => {
     fireEvent.change(input, { target: { files: [new File(['raw'], 'me.png', { type: 'image/png' })] } });
     await waitFor(() => expect(client.upload).toHaveBeenCalledWith('avatar', expect.any(Blob)));
     expect(prepare).toHaveBeenCalledWith(expect.any(File), 'avatar');
-    expect(await screen.findByText('Czeka na akceptację')).toBeTruthy();
+    expect(await screen.findByText('Widoczne, czeka na zatwierdzenie admina')).toBeTruthy();
   });
 
   test('a refused upload shows the reason in plain words and keeps the old image', async () => {
     const client = api([image({ status: 'approved' })]);
     client.upload.mockRejectedValueOnce(new ApiError(413, 'too_big', 'Image is larger than 1 MB.'));
     const { container } = renderWithApp(<ProfileImages api={client} prepare={prepare} />);
-    await screen.findByText('Widoczne na banerach');
+    await screen.findByText('Zatwierdzone — widoczne na banerach');
     fireEvent.change(container.querySelector('input[data-kind="avatar"]') as HTMLInputElement, {
       target: { files: [new File(['raw'], 'me.png', { type: 'image/png' })] },
     });
     expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.getByText('Widoczne na banerach')).toBeTruthy();
+    expect(screen.getByText('Zatwierdzone — widoczne na banerach')).toBeTruthy();
   });
 
   test('a file that is not an image never reaches the server', async () => {

@@ -14,11 +14,26 @@ import {
   onlineHistory,
   recentLogins,
   loginsForUser,
+  kickForUser,
   recordLogin,
   saveSession,
   saveState,
+  setKick,
+  setTwitch,
   storageStatus,
+  twitchForUser,
 } from './store.mjs';
+import {
+  authorizeUrl,
+  beginPairingState,
+  kickOAuthConfigured,
+  loginFromProvider,
+  pairingRedirectUri,
+  pairingReturnPath,
+  parsePairingState,
+  providerKeys,
+  twitchOAuthConfigured,
+} from './channel-oauth.mjs';
 
 const AUTHORIZE_URL = 'https://accounts.faceit.com/accounts';
 const TOKEN_URL = 'https://api.faceit.com/auth/v1/oauth/token';
@@ -181,6 +196,63 @@ async function handleCallback(req, res, url) {
   redirect(res, '/');
 }
 
+async function startChannelPairing(req, res, provider) {
+  const keys = providerKeys(provider);
+  if (!keys) return sendJson(res, 503, { error: 'oauth_not_configured' });
+  const user = await currentUser(req);
+  if (!user) return sendJson(res, 401, { error: 'unauthorized' });
+  const playerId = PLAYER_ID.test(user.guid) ? user.guid.toLowerCase() : '';
+  if (!playerId) return sendJson(res, 400, { error: 'invalid_player' });
+  const { state, challenge } = await beginPairingState(provider, playerId);
+  const redirectUri = pairingRedirectUri(publicUrl(req), provider);
+  redirect(res, authorizeUrl(provider, { clientId: keys.id, redirectUri, state, challenge }));
+}
+
+async function handleChannelCallback(req, res, url, provider) {
+  const keys = providerKeys(provider);
+  if (!keys) return redirect(res, pairingReturnPath('oauth_not_configured'));
+  const code = url.searchParams.get('code');
+  const state = url.searchParams.get('state');
+  if (url.searchParams.get('error') || !code || !state) {
+    return redirect(res, pairingReturnPath('cancelled'));
+  }
+  const pairing = parsePairingState(await consumeState(state));
+  if (!pairing || pairing.provider !== provider) return redirect(res, pairingReturnPath('expired'));
+  const user = await currentUser(req);
+  const sessionId = user && PLAYER_ID.test(user.guid) ? user.guid.toLowerCase() : '';
+  if (!sessionId || sessionId !== pairing.guid) return redirect(res, pairingReturnPath('expired'));
+  const redirectUri = pairingRedirectUri(publicUrl(req), provider);
+  let verified;
+  try {
+    verified = await loginFromProvider(provider, { code, verifier: pairing.verifier, redirectUri });
+  } catch {
+    return redirect(res, pairingReturnPath('failed'));
+  }
+  if (!verified.ok) return redirect(res, pairingReturnPath(verified.error === 'oauth_not_configured' ? 'oauth_not_configured' : 'failed'));
+  const saved = provider === 'twitch' ? await setTwitch(pairing.guid, verified.login) : await setKick(pairing.guid, verified.login);
+  if (!saved.ok) return redirect(res, pairingReturnPath(saved.error === 'taken' ? 'taken' : 'failed'));
+  clearLiveBoard();
+  redirect(res, pairingReturnPath(provider));
+}
+
+async function unlinkChannel(req, res, provider) {
+  if (!originAllowed(req)) return sendJson(res, 403, { error: 'bad_origin' });
+  const user = await currentUser(req);
+  if (!user) return sendJson(res, 401, { error: 'unauthorized' });
+  const playerId = PLAYER_ID.test(user.guid) ? user.guid.toLowerCase() : '';
+  if (!playerId) return sendJson(res, 400, { error: 'invalid_player' });
+  const body = await readJson(req);
+  if (!body) return sendJson(res, 400, { error: 'invalid_body' });
+  const field = provider === 'twitch' ? 'twitch' : 'kick';
+  if (body[field] !== null && body[field] !== '') {
+    return sendJson(res, 400, { error: 'oauth_required' });
+  }
+  const result = provider === 'twitch' ? await setTwitch(playerId, null) : await setKick(playerId, null);
+  if (!result.ok) return sendJson(res, 400, { error: result.error });
+  clearLiveBoard();
+  return sendJson(res, 200, provider === 'twitch' ? { twitch: null } : { kick: null });
+}
+
 const LOCKOUT = { strikes: 5, windowMs: 5 * 60_000, blockMs: 15 * 60_000 };
 
 /** PUBLIC_URL may list several origins, comma separated. */
@@ -265,7 +337,7 @@ export function createAuthMiddleware() {
       ? 'login'
       : pathname.endsWith('/callback')
         ? 'callback'
-        : pathname.endsWith('/me') || pathname.endsWith('/profile') || pathname.endsWith('/profile/cache')
+        : pathname.endsWith('/me') || pathname.endsWith('/profile') || pathname.endsWith('/profile/cache') || pathname.endsWith('/kick') || pathname.endsWith('/twitch')
           ? 'me'
         : pathname.endsWith('/logout')
           ? 'logout'
@@ -297,9 +369,14 @@ export function createAuthMiddleware() {
         const profile = faceitId ? await lookupPlayer(faceitId) : null;
         const ranking = !profile?.calibrating && profile?.level === 10 ? await lookupRanking(faceitId, profile.region) : null;
         const logins = await loginsForUser(user.guid, 8);
+        const kick = faceitId ? await kickForUser(faceitId) : null;
+        const twitch = faceitId ? await twitchForUser(faceitId) : null;
         return sendJson(res, 200, {
           nickname: user.nickname,
           avatar: faceitId ? `/api/presence/avatar/${faceitId}` : null,
+          kick,
+          twitch,
+          oauth: { twitch: twitchOAuthConfigured(), kick: kickOAuthConfigured() },
           faceit: profile
             ? {
                 elo: Number.isInteger(profile.elo) ? profile.elo : null,
@@ -312,6 +389,24 @@ export function createAuthMiddleware() {
             : null,
           logins: logins.map((entry) => ({ createdAt: entry.createdAt })),
         });
+      }
+      if (pathname === '/api/auth/twitch/callback' && req.method === 'GET') {
+        return await handleChannelCallback(req, res, url, 'twitch');
+      }
+      if (pathname === '/api/auth/kick/callback' && req.method === 'GET') {
+        return await handleChannelCallback(req, res, url, 'kick');
+      }
+      if (pathname === '/api/auth/twitch' && req.method === 'GET') {
+        return await startChannelPairing(req, res, 'twitch');
+      }
+      if (pathname === '/api/auth/kick' && req.method === 'GET') {
+        return await startChannelPairing(req, res, 'kick');
+      }
+      if (pathname === '/api/auth/twitch' && req.method === 'PUT') {
+        return await unlinkChannel(req, res, 'twitch');
+      }
+      if (pathname === '/api/auth/kick' && req.method === 'PUT') {
+        return await unlinkChannel(req, res, 'kick');
       }
       if (pathname === '/api/auth/profile/cache' && req.method === 'POST') {
         if (!originAllowed(req)) return sendJson(res, 403, { error: 'bad_origin' });

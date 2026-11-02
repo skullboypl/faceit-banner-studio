@@ -193,10 +193,15 @@ export async function withCalibration(body, fetcher) {
       data.games.cs2.is_calibrating = true;
       changed = true;
     }
-    /* The Twitch account the player linked on FACEIT; only a plain channel name is passed on */
+    /* The Twitch / Kick account the player linked on FACEIT; only a plain channel name is passed on */
     const twitch = site?.payload?.streaming?.twitch_id;
     if (typeof twitch === 'string' && /^[A-Za-z0-9_]{3,25}$/.test(twitch)) {
       data.twitch_id = twitch;
+      changed = true;
+    }
+    const kick = site?.payload?.streaming?.kick_id;
+    if (typeof kick === 'string' && /^[A-Za-z0-9_]{3,25}$/.test(kick)) {
+      data.kick_id = kick;
       changed = true;
     }
     if (changed) return JSON.stringify(data);

@@ -88,6 +88,12 @@ describe('LiveRanking', () => {
     renderWithApp(<LiveRanking />);
     await screen.findByRole('link', { name: 'player1' });
     const rows = screen.getAllByRole('listitem');
+    const nameRow = rows[0].querySelector('.live-player-name');
+    const badges = nameRow?.querySelector('.live-player-badges');
+    expect(nameRow).toBeTruthy();
+    expect(badges).toBeTruthy();
+    expect(badges?.contains(within(rows[0]).getByRole('link', { name: 'player1' }))).toBe(false);
+    expect(nameRow?.contains(within(rows[0]).getByRole('link', { name: 'player1' }))).toBe(true);
     expect(within(rows[0]).getByRole('img', { name: 'Plan FACEIT Premium' })).toBeTruthy();
     expect(within(rows[0]).getByRole('img', { name: 'Członek ESEA' })).toBeTruthy();
     expect(within(rows[0]).getByRole('img', { name: 'Super Match Token' })).toBeTruthy();
@@ -98,6 +104,19 @@ describe('LiveRanking', () => {
     expect(within(rows[2]).queryByRole('img', { name: /Plan|ESEA|Token/ })).toBeNull();
     expect(within(rows[3]).queryByRole('img', { name: /Plan|ESEA|Token/ })).toBeNull();
     expect(within(rows[3]).queryByRole('link', { name: /Twitch/ })).toBeNull();
+  });
+
+  test('shows a Kick link next to the nickname', async () => {
+    vi.mocked(getLiveBoard).mockResolvedValue({
+      online: 1,
+      ranked: 1,
+      windowSeconds: 135,
+      players: [{ ...players[0], kick: 'MapeT', kickStatus: { state: 'live', viewers: 12 } }],
+    });
+    renderWithApp(<LiveRanking />);
+    const kick = await screen.findByRole('link', { name: 'Kick: MapeT — LIVE, 12 widzów' });
+    expect(kick.getAttribute('href')).toBe('https://kick.com/MapeT');
+    expect(kick.textContent).toBe('12');
   });
 
   test('shows real level artwork and only the verification badge supplied by the server', async () => {

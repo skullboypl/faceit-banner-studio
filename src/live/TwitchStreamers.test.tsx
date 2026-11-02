@@ -77,5 +77,19 @@ describe('TwitchStreamers', () => {
     const note = await screen.findByRole('note');
     expect(note.textContent).toContain('Używaj naszego banera');
     expect(note.textContent).toContain('profilu FACEIT');
+    expect(note.textContent).toContain('Kick');
+  });
+
+  test('embeds a Kick player when that channel is the live one', async () => {
+    vi.mocked(getLiveBoard).mockResolvedValue({
+      online: 1,
+      ranked: 1,
+      windowSeconds: 3600,
+      players: [{ nickname: 'KickPlayer', kick: 'mapet', kickStatus: { state: 'live', viewers: 33, title: 'CS2' } }],
+    });
+    renderWithApp(<TwitchStreamers />);
+    const frame = await screen.findByTitle('Transmisja Kick: KickPlayer');
+    expect(frame.getAttribute('src')).toBe('https://player.kick.com/mapet');
+    expect(screen.getByRole('link', { name: 'Otwórz kanał na Kick' }).getAttribute('href')).toBe('https://kick.com/mapet');
   });
 });

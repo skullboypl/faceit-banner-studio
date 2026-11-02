@@ -51,6 +51,16 @@ export const PostDetail = ({ summary, user, admin, onBack, onChanged, onDeleted 
     };
   }, [id, guid]);
 
+  const pageTitle = post?.title || summary.title;
+  useEffect(() => {
+    if (!tl) return;
+    const previous = document.title;
+    document.title = pageTitle ? `${pageTitle} · ${tl('feedback.title')}` : tl('feedback.title');
+    return () => {
+      document.title = previous;
+    };
+  }, [pageTitle, tl]);
+
   if (!tl) return null;
 
   const explain = (failure: unknown) => apiMessage(tl, failure);
@@ -99,6 +109,9 @@ export const PostDetail = ({ summary, user, admin, onBack, onChanged, onDeleted 
     });
   };
 
+  const createdAt = shown.createdAt ? new Date(shown.createdAt) : null;
+  const createdLabel = createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt.toLocaleDateString() : '';
+
   const shots = post?.attachments ?? summary.attachments ?? [];
 
   const removeShot = (attachmentId: string) =>
@@ -121,10 +134,13 @@ export const PostDetail = ({ summary, user, admin, onBack, onChanged, onDeleted 
         {tl('feedback.back')}
       </button>
       <header>
-        <StatusBadge status={shown.status} />
-        <h3>{shown.title}</h3>
+        <div className="feedback-detail-lead">
+          <StatusBadge status={shown.status} />
+          <h3>{shown.title}</h3>
+        </div>
         <small>
-          {tl(`feedback.kind.${shown.kind}`)} · {new Date(shown.createdAt).toLocaleDateString()}
+          {tl(`feedback.kind.${shown.kind}`)}
+          {createdLabel ? ` · ${createdLabel}` : ''}
           {user && shown.author ? ` · ${tl('feedback.by', [shown.author])}` : ''}
         </small>
       </header>

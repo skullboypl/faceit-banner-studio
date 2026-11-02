@@ -132,6 +132,22 @@ export function TokenIcon({ size = 18 }: { size?: number }) {
   );
 }
 
+/** Kick's K mark. */
+export function KickIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="live-badge-icon"
+      aria-hidden="true"
+    >
+      <path d="M4 3h6.2v7.1L16.6 3H24l-7.8 8.4L24 21h-7.3l-6.5-7.2V21H4z" />
+    </svg>
+  );
+}
+
 /** The Twitch glitch logo. */
 export function TwitchIcon({ size = 18 }: { size?: number }) {
   return (

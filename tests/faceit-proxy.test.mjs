@@ -150,6 +150,15 @@ test('a Twitch account linked on FACEIT is added to the player, and only a valid
   assert.equal(none.twitch_id, undefined);
 });
 
+test('a Kick account linked on FACEIT is added to the player, and only a valid name', async () => {
+  const player = { player_id: id, games: { cs2: { skill_level: 5, faceit_elo: 1500 } } };
+  const site = (streaming) => async () => ({ ok: true, text: async () => JSON.stringify({ payload: { games: { cs2: {} }, streaming } }) });
+  const linked = JSON.parse(await withCalibration(JSON.stringify(player), site({ kick_id: 'MapeT' })));
+  assert.equal(linked.kick_id, 'MapeT');
+  const odd = JSON.parse(await withCalibration(JSON.stringify(player), site({ kick_id: '../evil?x=<b>' })));
+  assert.equal(odd.kick_id, undefined);
+});
+
 test('clear() forgets every cached read, so the next one goes to FACEIT again', async () => {
   let calls = 0;
   const cache = createFaceitCache({

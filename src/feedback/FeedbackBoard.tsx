@@ -1,7 +1,9 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ApiError, type User } from '../cloud/api';
 import { LOGIN_URL } from '../components/FaceitLoginButton';
 import { LanguageContext } from '../generator/contexts';
+import { feedbackBoardPath, feedbackPostPath } from '../generator/tab-search';
 import {
   POST_STATUSES,
   listPosts,
@@ -14,12 +16,24 @@ import { PostDetail } from './PostDetail';
 import { PostForm } from './PostForm';
 import { StatusBadge } from './StatusBadge';
 
-type View = { type: 'list' } | { type: 'form' } | { type: 'detail'; post: FeedbackPost };
+type View = { type: 'list' } | { type: 'form' };
+
+const stubPost = (id: string, kind: PostKind): FeedbackPost => ({
+  id,
+  kind,
+  title: '',
+  status: 'new',
+  votes: 0,
+  comments: 0,
+  createdAt: '',
+});
 
 const KINDS: PostKind[] = ['request', 'bug'];
 
 export const FeedbackBoard = ({ user, admin }: { user: User | null; admin: boolean }) => {
   const tl = useContext(LanguageContext);
+  const navigate = useNavigate();
+  const { postId } = useParams<{ postId?: string }>();
   const [kind, setKind] = useState<PostKind>('request');
   const [status, setStatus] = useState<PostStatus | ''>('');
   const [sort, setSort] = useState<'top' | 'new'>('top');
@@ -28,6 +42,7 @@ export const FeedbackBoard = ({ user, admin }: { user: User | null; admin: boole
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>({ type: 'list' });
+  const openBoard = () => navigate(feedbackBoardPath);
 
   const guid = user?.guid;
   useEffect(() => {
@@ -78,19 +93,19 @@ export const FeedbackBoard = ({ user, admin }: { user: User | null; admin: boole
   const voteLabel = (post: FeedbackPost) =>
     `${post.kind === 'bug' ? tl('feedback.vote.bug') : tl('feedback.vote.request')}: ${post.votes}`;
 
-  if (view.type === 'detail') {
-    const current = posts.find((entry) => entry.id === view.post.id) ?? view.post;
+  if (postId) {
+    const current = posts.find((entry) => entry.id === postId) ?? stubPost(postId, kind);
     return (
       <div className="settings feedback-board">
         <PostDetail
           summary={current}
           user={user}
           admin={admin}
-          onBack={() => setView({ type: 'list' })}
+          onBack={openBoard}
           onChanged={replace}
           onDeleted={(id) => {
             setPosts((list) => list.filter((entry) => entry.id !== id));
-            setView({ type: 'list' });
+            openBoard();
           }}
         />
       </div>
@@ -185,9 +200,9 @@ export const FeedbackBoard = ({ user, admin }: { user: User | null; admin: boole
               </a>
             )}
             <div className="feedback-main">
-              <button type="button" className="feedback-title" onClick={() => setView({ type: 'detail', post })}>
+              <Link className="feedback-title" to={feedbackPostPath(post.id)}>
                 {post.title}
-              </button>
+              </Link>
               <small>
                 <StatusBadge status={post.status} />
                 <span>

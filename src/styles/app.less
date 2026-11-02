@@ -2298,6 +2298,7 @@ html.generator .studio-sidebar .tabs > .mobile-menu-toggle { display: none; }
 /* Feedback board: requests and bugs (prefixed so the global button styles do not win) */
 html.generator .settings.feedback-board,
 html.generator .settings.catalog-board {
+  text-align: left;
   .feedback-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
   .feedback-head .primary-action { width: auto; margin: 0; padding: 8px 14px; text-decoration: none; white-space: nowrap; }
   .feedback-tabs {
@@ -2387,6 +2388,7 @@ html.generator .settings.catalog-board {
     font-weight: 700;
     text-align: left;
     color: #f0f0f2;
+    text-decoration: none;
     overflow-wrap: anywhere;
     background: transparent;
     border: 0;
@@ -2537,9 +2539,28 @@ html.generator .settings.catalog-board .feedback-tabs {
 }
 html.generator .feedback-detail {
   display: grid;
+  justify-items: stretch;
   gap: 12px;
+  width: 100%;
+  text-align: left;
   .feedback-back { width: auto; margin: 0; justify-self: start; padding: 6px 12px; font-size: 12px; }
-  header { display: grid; justify-items: start; gap: 6px; text-align: left; h3 { margin: 0; font-size: 18px; overflow-wrap: anywhere; } small { color: #8b8683; } }
+  /* Reset the global `header { width: 70%; margin: auto; text-align: center }` so the ticket is a full-width studio row. */
+  header {
+    display: grid;
+    justify-content: start;
+    justify-items: stretch;
+    align-content: start;
+    gap: 6px;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    box-sizing: border-box;
+  }
+  .feedback-detail-lead { display: grid; justify-items: start; gap: 6px; min-width: 0; width: 100%; }
+  header h3 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
+  header small { color: #8b8683; text-align: left; }
   .feedback-body { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
   .feedback-context { font-size: 12px; pre { max-height: 220px; padding: 10px; overflow: auto; background: #0f0f10; border-radius: 8px; } }
   .feedback-login { padding: 14px; background: #17120f; border: 1px solid #3a2a20; border-radius: 12px; p { margin: 0 0 8px; } }
@@ -2644,6 +2665,8 @@ html.generator .studio-main.studio-main--live .section-heading {
 
 /* The global `a:hover, a:focus { color: blue }` is heavier than single-class link styles, so every link of ours
    states its own colour for all link states. */
+a.feedback-title, a.feedback-title:hover, a.feedback-title:focus, a.feedback-title:visited { color: #f0f0f2; text-decoration: none; }
+a.feedback-title:hover, a.feedback-title:focus { color: #ff8a4a; }
 a.faceit-login, a.faceit-login:hover, a.faceit-login:focus, a.faceit-login:visited,
 a.sync-chip-action, a.sync-chip-action:hover, a.sync-chip-action:focus, a.sync-chip-action:visited,
 a.primary-action, a.primary-action:hover, a.primary-action:focus, a.primary-action:visited,
@@ -2709,11 +2732,44 @@ a.donate-link:hover { background: #271a12; border-color: #ff6b18; }
   strong { display: block; font-size: 18px; font-weight: 700; line-height: 1.2; }
   span { color: #9c9ca3; font-size: 10px; letter-spacing: 0.6px; text-transform: uppercase; }
 }
-.profile-cache {
+.profile-cache,
+.profile-kick,
+.profile-connections {
   p { margin: 0 0 10px; color: #9c9ca3; font-size: 12px; line-height: 1.45; }
-  .profile-cache-done { color: #7dffa8; }
-  button { width: auto; min-height: 36px; padding: 0 14px; }
+  .profile-cache-done, .profile-kick-linked { color: #7dffa8; }
+  button, .profile-connect { width: auto; min-height: 36px; padding: 0 14px; }
 }
+.profile-channel {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #2b2b2e;
+  .profile-channel-title {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+}
+.profile-connect {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  color: inherit;
+  text-decoration: none;
+}
+.profile-kick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  input {
+    flex: 1 1 160px;
+    min-width: 0;
+    min-height: 36px;
+    padding: 0 12px;
+  }
+}
+.profile-kick-clear { color: #c8c8ce; }
 .profile-logins {
   p { margin: 0 0 8px; color: #9c9ca3; font-size: 12px; line-height: 1.45; }
   .profile-empty { margin-bottom: 0; }

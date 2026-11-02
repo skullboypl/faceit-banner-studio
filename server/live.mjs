@@ -6,6 +6,7 @@ import { redisCall } from './store.mjs';
 const NICK_MAX = 32;
 const STYLE_MAX = 24;
 const TWITCH_NAME = /^[A-Za-z0-9_]{3,25}$/;
+const KICK_NAME = /^[A-Za-z0-9_-]{3,25}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function cleanNick(value) {
@@ -85,6 +86,7 @@ export function publicRanking(entries) {
       if (player.esea !== true) delete next.esea;
       if (player.token !== true) delete next.token;
       if (typeof player.twitch !== 'string' || !TWITCH_NAME.test(player.twitch)) delete next.twitch;
+      if (typeof player.kick !== 'string' || !KICK_NAME.test(player.kick)) delete next.kick;
       return next;
     });
 }
@@ -254,6 +256,7 @@ export function createPlayerLookup({
         if (plans.includes('esea')) profile.esea = true;
         if (plans.includes('super_match_token')) profile.token = true;
         if (typeof data.twitch_id === 'string' && TWITCH_NAME.test(data.twitch_id)) profile.twitch = data.twitch_id;
+        if (typeof data.kick_id === 'string' && KICK_NAME.test(data.kick_id)) profile.kick = data.kick_id;
         const regionRaw = data.games?.cs2?.region;
         profile.region =
           typeof regionRaw === 'string' && /^[A-Za-z0-9_-]{2,8}$/.test(regionRaw) ? regionRaw : 'EU';
@@ -579,6 +582,7 @@ export async function fillFromPlayerId(entries) {
             ...(profile.esea ? { esea: true } : {}),
             ...(profile.token ? { token: true } : {}),
             ...(profile.twitch ? { twitch: profile.twitch } : {}),
+            ...(profile.kick ? { kick: profile.kick } : {}),
             ...(profile.avatar ? { avatar: profile.avatar } : {}),
           };
           if (calibrating) {

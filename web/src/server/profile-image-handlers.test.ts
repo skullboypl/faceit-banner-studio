@@ -220,11 +220,14 @@ describe('what the owner sees', () => {
 describe('the public profile', () => {
   const publicProfile = async (playerId: string) => handlers.publicProfile(request('GET', `/api/profiles/${playerId}`), playerCtx(playerId));
 
-  test('shows nothing for a pending image, and says so with a cacheable empty answer', async () => {
+  test('shows a pending image at once, with a short public cache', async () => {
     await putImage(alice);
     const response = await publicProfile(alice.guid);
     expect(response.status).toBe(200);
-    expect(await data(response)).toEqual({});
+    const body = await data(response);
+    expect(Object.keys(body)).toEqual(['avatar']);
+    expect(body.avatar.url).toContain('https://fbstorage.vxh.pl/pf/avatar/');
+    expect(JSON.stringify(body)).not.toMatch(/alice|guid|status|report/i);
     expect(response.headers.get('cache-control')).toContain('s-maxage');
   });
 
@@ -255,6 +258,11 @@ describe('the public profile', () => {
 describe('reports', () => {
   const report = (cookie: string | undefined, playerId: string, body: unknown, origin: string | null = ORIGIN) =>
     handlers.report(request('POST', `/api/profiles/${playerId}/report`, { cookie, body, origin }), playerCtx(playerId));
+
+  test('a pending image can be reported because it is already public', async () => {
+    await putImage(alice, 'avatar');
+    expect((await report(await login(bob), alice.guid, { kind: 'avatar' })).status).toBe(201);
+  });
 
   beforeEach(async () => {
     await putImage(alice, 'avatar');

@@ -35,18 +35,18 @@ afterAll(async () => {
 });
 
 describe('saving', () => {
-  test('a new image waits for review and is not public', async () => {
+  test('a new image is public at once and still waits for review', async () => {
     const saved = await upload(alice.guid, 'avatar', 'pf/avatar/a1.webp');
     expect(saved.image.status).toBe('pending');
     expect(saved.replacedKey).toBeNull();
-    expect(await repo.listApprovedProfileImages(alice.guid)).toEqual([]);
+    expect((await repo.listVisibleProfileImages(alice.guid)).map((image) => image.status)).toEqual(['pending']);
     const own = await repo.listOwnProfileImages(alice.guid);
     expect(own.map((image) => [image.kind, image.status, image.key])).toEqual([['avatar', 'pending', 'pf/avatar/a1.webp']]);
   });
 
   test('an approved upload (an admin\'s own) is public at once', async () => {
     await upload(root.guid, 'cover', 'pf/cover/r1.webp', true);
-    expect((await repo.listApprovedProfileImages(root.guid)).map((image) => image.kind)).toEqual(['cover']);
+    expect((await repo.listVisibleProfileImages(root.guid)).map((image) => image.kind)).toEqual(['cover']);
   });
 
   test('one image per kind: a second upload replaces the first and returns the old file to delete', async () => {
@@ -63,7 +63,7 @@ describe('saving', () => {
     await repo.reportProfileImage({ ownerGuid: alice.guid, kind: 'avatar', reporterGuid: bob.guid, reason: 'x' });
     const second = await upload(alice.guid, 'avatar', 'pf/avatar/new.webp');
     expect(second.image.status).toBe('pending');
-    expect(await repo.listApprovedProfileImages(alice.guid)).toEqual([]);
+    expect((await repo.listVisibleProfileImages(alice.guid)).map((image) => image.key)).toEqual(['pf/avatar/new.webp']);
     const { rows } = await (await db.getPool())!.query('SELECT 1 FROM profile_image_reports');
     expect(rows).toHaveLength(0);
   });
@@ -76,13 +76,15 @@ describe('saving', () => {
 });
 
 describe('visibility', () => {
-  test('only approved images are public, and only the owner sees the others', async () => {
+  test('pending and approved images are public; rejected ones are not', async () => {
     await upload(alice.guid, 'avatar', 'pf/avatar/a.webp');
     await upload(alice.guid, 'cover', 'pf/cover/c.webp');
-    const approved = (await repo.listForReview('pending', 10)).find((row) => row.kind === 'cover')!;
-    await repo.reviewProfileImage(approved.id, 'approve', root.guid);
-    expect((await repo.listApprovedProfileImages(alice.guid)).map((image) => image.kind)).toEqual(['cover']);
-    expect(await repo.listApprovedProfileImages(bob.guid)).toEqual([]);
+    const cover = (await repo.listForReview('pending', 10)).find((row) => row.kind === 'cover')!;
+    await repo.reviewProfileImage(cover.id, 'approve', root.guid);
+    const avatar = (await repo.listForReview('pending', 10)).find((row) => row.kind === 'avatar')!;
+    await repo.reviewProfileImage(avatar.id, 'reject', root.guid, 'no');
+    expect((await repo.listVisibleProfileImages(alice.guid)).map((image) => image.kind)).toEqual(['cover']);
+    expect(await repo.listVisibleProfileImages(bob.guid)).toEqual([]);
   });
 });
 
@@ -111,18 +113,20 @@ describe('reports', () => {
     expect(await repo.reportProfileImage({ ownerGuid: alice.guid, kind: 'avatar', reporterGuid: bob.guid, reason: 'again' })).toBe('duplicate');
   });
 
-  test('the owner cannot report their own image, and a missing or unapproved image cannot be reported', async () => {
+  test('the owner cannot report their own image, and a missing or rejected image cannot be reported', async () => {
     expect(await repo.reportProfileImage({ ownerGuid: alice.guid, kind: 'avatar', reporterGuid: alice.guid, reason: '' })).toBe('own');
     expect(await repo.reportProfileImage({ ownerGuid: alice.guid, kind: 'cover', reporterGuid: bob.guid, reason: '' })).toBe('not_found');
     await upload(bob.guid, 'avatar', 'pf/avatar/b.webp');
-    expect(await repo.reportProfileImage({ ownerGuid: bob.guid, kind: 'avatar', reporterGuid: carol.guid, reason: '' })).toBe('not_found');
+    expect(await repo.reportProfileImage({ ownerGuid: bob.guid, kind: 'avatar', reporterGuid: carol.guid, reason: '' })).toBe('reported');
+    await repo.reviewProfileImage((await repo.listForReview('pending', 10)).find((row) => row.ownerGuid === bob.guid)!.id, 'reject', root.guid, 'no');
+    expect(await repo.reportProfileImage({ ownerGuid: bob.guid, kind: 'avatar', reporterGuid: dave.guid, reason: '' })).toBe('not_found');
   });
 
   test('three different people hide the image until an admin decides', async () => {
     for (const reporter of [bob, carol]) await repo.reportProfileImage({ ownerGuid: alice.guid, kind: 'avatar', reporterGuid: reporter.guid, reason: '' });
-    expect((await repo.listApprovedProfileImages(alice.guid)).length).toBe(1);
+    expect((await repo.listVisibleProfileImages(alice.guid)).length).toBe(1);
     expect(await repo.reportProfileImage({ ownerGuid: alice.guid, kind: 'avatar', reporterGuid: dave.guid, reason: '' })).toBe('hidden');
-    expect(await repo.listApprovedProfileImages(alice.guid)).toEqual([]);
+    expect(await repo.listVisibleProfileImages(alice.guid)).toEqual([]);
     expect((await repo.listOwnProfileImages(alice.guid))[0].status).toBe('hidden');
   });
 
@@ -146,14 +150,14 @@ describe('review', () => {
     const [row] = await repo.listForReview('pending', 10);
     const result = await repo.reviewProfileImage(row.id, 'approve', root.guid);
     expect(result).toMatchObject({ ok: true, key: null });
-    expect((await repo.listApprovedProfileImages(alice.guid))[0].key).toBe('pf/avatar/a.webp');
+    expect((await repo.listVisibleProfileImages(alice.guid))[0].key).toBe('pf/avatar/a.webp');
   });
 
   test('rejecting keeps the file out of public view and tells the owner why', async () => {
     await upload(alice.guid, 'avatar', 'pf/avatar/a.webp');
     const [row] = await repo.listForReview('pending', 10);
     await repo.reviewProfileImage(row.id, 'reject', root.guid, 'Not a photo of you');
-    expect(await repo.listApprovedProfileImages(alice.guid)).toEqual([]);
+    expect(await repo.listVisibleProfileImages(alice.guid)).toEqual([]);
     expect(await repo.listOwnProfileImages(alice.guid)).toMatchObject([{ status: 'rejected', rejectReason: 'Not a photo of you' }]);
   });
 

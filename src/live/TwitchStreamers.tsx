@@ -1,19 +1,46 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { LanguageContext } from '../generator/contexts';
 import { getLiveBoard, LIVE_LIST_REFRESH_MS, type LivePlayer } from '../utils/presence';
-import { TwitchIcon } from './MemberIcons';
+import { KickIcon, TwitchIcon } from './MemberIcons';
 
-const TWITCH_LOGIN = /^[A-Za-z0-9_]{3,25}$/;
+const CHANNEL_LOGIN = /^[A-Za-z0-9_]{3,25}$/;
 const TOP_LIMIT = 10;
 
-function viewers(player: LivePlayer) {
-  return player.twitchStatus?.state === 'live' && Number.isInteger(player.twitchStatus.viewers)
-    ? player.twitchStatus.viewers!
-    : 0;
+type Platform = 'twitch' | 'kick';
+
+function hasChannel(player: LivePlayer, platform: Platform) {
+  const login = player[platform];
+  const status = platform === 'twitch' ? player.twitchStatus : player.kickStatus;
+  return typeof login === 'string' && CHANNEL_LOGIN.test(login) && status?.state !== 'missing';
 }
 
-function channelUrl(player: LivePlayer) {
-  return `https://www.twitch.tv/${player.twitch}`;
+function liveViewers(player: LivePlayer, platform: Platform) {
+  const status = platform === 'twitch' ? player.twitchStatus : player.kickStatus;
+  return status?.state === 'live' && Number.isInteger(status.viewers) ? status.viewers! : status?.state === 'live' ? 0 : -1;
+}
+
+function featuredPlatform(player: LivePlayer): Platform {
+  const twitchLive = liveViewers(player, 'twitch');
+  const kickLive = liveViewers(player, 'kick');
+  if (twitchLive >= 0 && twitchLive >= kickLive) return 'twitch';
+  if (kickLive >= 0) return 'kick';
+  return hasChannel(player, 'twitch') ? 'twitch' : 'kick';
+}
+
+function viewers(player: LivePlayer) {
+  return Math.max(liveViewers(player, 'twitch'), liveViewers(player, 'kick'), 0);
+}
+
+function isLive(player: LivePlayer) {
+  return liveViewers(player, 'twitch') >= 0 || liveViewers(player, 'kick') >= 0;
+}
+
+function channelUrl(player: LivePlayer, platform = featuredPlatform(player)) {
+  return platform === 'kick' ? `https://kick.com/${player.kick}` : `https://www.twitch.tv/${player.twitch}`;
+}
+
+function playerKey(player: LivePlayer) {
+  return `${featuredPlatform(player)}:${(player[featuredPlatform(player)] || '').toLowerCase()}`;
 }
 
 function embedUrl(channel: string) {
@@ -40,26 +67,30 @@ export function twitchPlayerFrame(containerWidth: number) {
   };
 }
 
-function FeaturedPlayer({ channel, title }: { channel: string; title: string }) {
+function FeaturedPlayer({ player, title }: { player: LivePlayer; title: string }) {
+  const platform = featuredPlatform(player);
   const box = useRef<HTMLDivElement>(null);
   const [frame, setFrame] = useState<ReturnType<typeof twitchPlayerFrame>>(null);
+  const channel = platform === 'kick' ? player.kick! : player.twitch!;
 
   useEffect(() => {
     const node = box.current;
     if (!node || typeof ResizeObserver === 'undefined') return;
-    const measure = () => setFrame(twitchPlayerFrame(node.clientWidth));
+    const measure = () => setFrame(platform === 'twitch' ? twitchPlayerFrame(node.clientWidth) : null);
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [platform]);
+
+  const src = platform === 'kick' ? `https://player.kick.com/${encodeURIComponent(channel)}` : embedUrl(channel);
 
   return (
-    <div className="streamers-player-slot" ref={box}>
+    <div className="streamers-player-slot" ref={box} data-platform={platform}>
       <iframe
-        key={channel}
+        key={`${platform}:${channel}`}
         className="streamers-player"
-        src={embedUrl(channel)}
+        src={src}
         title={title}
         style={frame ? { width: `${frame.width}px`, height: `${frame.height}px`, transform: `scale(${frame.scale})` } : undefined}
         allow="autoplay; fullscreen; picture-in-picture"
@@ -121,16 +152,12 @@ export function TwitchStreamers() {
   }, [t]);
 
   const linked = useMemo(
-    () => (players ?? []).filter((player) =>
-      typeof player.twitch === 'string' &&
-      TWITCH_LOGIN.test(player.twitch) &&
-      player.twitchStatus?.state !== 'missing'
-    ),
+    () => (players ?? []).filter((player) => hasChannel(player, 'twitch') || hasChannel(player, 'kick')),
     [players]
   );
   const live = useMemo(
     () => linked
-      .filter((player) => player.twitchStatus?.state === 'live')
+      .filter(isLive)
       .sort((a, b) => viewers(b) - viewers(a) || a.nickname.localeCompare(b.nickname)),
     [linked]
   );
@@ -138,14 +165,14 @@ export function TwitchStreamers() {
   const rest = [
     ...live.slice(TOP_LIMIT),
     ...linked
-      .filter((player) => player.twitchStatus?.state !== 'live')
+      .filter((player) => !isLive(player))
       .sort((a, b) => a.nickname.localeCompare(b.nickname)),
   ];
-  const selected = top.find((player) => player.twitch?.toLowerCase() === selectedLogin) ?? top[0];
+  const selected = top.find((player) => playerKey(player) === selectedLogin) ?? top[0];
 
   useEffect(() => {
-    const first = top[0]?.twitch?.toLowerCase() ?? '';
-    if (!top.some((player) => player.twitch?.toLowerCase() === selectedLogin)) setSelectedLogin(first);
+    const first = top[0] ? playerKey(top[0]) : '';
+    if (!top.some((player) => playerKey(player) === selectedLogin)) setSelectedLogin(first);
   }, [selectedLogin, top]);
 
   if (!t) return null;
@@ -153,7 +180,10 @@ export function TwitchStreamers() {
   return (
     <div className="streamers-page">
       <aside className="streamers-rule" role="note">
-        <TwitchIcon size={20} />
+        <span className="streamers-rule-brands" aria-hidden="true">
+          <TwitchIcon size={20} />
+          <KickIcon size={20} />
+        </span>
         <p><strong>{t('streamers.how.title')}</strong> {t('streamers.how.body')}</p>
       </aside>
 
@@ -174,16 +204,27 @@ export function TwitchStreamers() {
               <div>
                 <span className="streamers-live-mark"><i /> LIVE</span>
                 <h3 id="featured-stream-title">{selected.nickname}</h3>
-                <p>{selected.twitchStatus?.title || selected.twitchStatus?.game || t('streamers.now_live')}</p>
+                <p>{(featuredPlatform(selected) === 'kick' ? selected.kickStatus : selected.twitchStatus)?.title
+                  || (featuredPlatform(selected) === 'kick' ? selected.kickStatus : selected.twitchStatus)?.game
+                  || t('streamers.now_live')}</p>
               </div>
               <div className="streamers-feature-meta">
                 <strong>{viewers(selected).toLocaleString()}</strong>
                 <span>{t('streamers.viewers')}</span>
               </div>
             </div>
-            <FeaturedPlayer channel={selected.twitch!} title={t('streamers.player_title', [selected.nickname])} />
-            <a className="streamers-open-twitch" href={channelUrl(selected)} target="_blank" rel="noreferrer noopener">
-              <TwitchIcon size={16} /> {t('streamers.open_twitch')}
+            <FeaturedPlayer
+              player={selected}
+              title={t(featuredPlatform(selected) === 'kick' ? 'streamers.player_title_kick' : 'streamers.player_title', [selected.nickname])}
+            />
+            <a
+              className={featuredPlatform(selected) === 'kick' ? 'streamers-open-kick' : 'streamers-open-twitch'}
+              href={channelUrl(selected)}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              {featuredPlatform(selected) === 'kick' ? <KickIcon size={16} /> : <TwitchIcon size={16} />}
+              {t(featuredPlatform(selected) === 'kick' ? 'streamers.open_kick' : 'streamers.open_twitch')}
             </a>
           </section>
 
@@ -205,11 +246,13 @@ export function TwitchStreamers() {
                 <button
                   type="button"
                   className="streamers-card"
-                  aria-pressed={player.twitch === selected.twitch}
-                  onClick={() => setSelectedLogin(player.twitch!.toLowerCase())}
-                  key={player.twitch}
+                  aria-pressed={playerKey(player) === playerKey(selected)}
+                  onClick={() => setSelectedLogin(playerKey(player))}
+                  key={playerKey(player)}
                 >
-                  {player.twitchStatus?.thumbnail && <img src={player.twitchStatus.thumbnail} alt="" loading="lazy" />}
+                  {(featuredPlatform(player) === 'kick' ? player.kickStatus : player.twitchStatus)?.thumbnail && (
+                    <img src={(featuredPlatform(player) === 'kick' ? player.kickStatus : player.twitchStatus)?.thumbnail} alt="" loading="lazy" />
+                  )}
                   <span className="streamers-card-shade" />
                   <span className="streamers-card-rank">#{index + 1}</span>
                   <span className="streamers-card-live"><i /> LIVE</span>
@@ -233,23 +276,32 @@ export function TwitchStreamers() {
           </div>
           <ul>
             {rest.map((player) => {
-              const isLive = player.twitchStatus?.state === 'live';
-              const status = isLive
+              const liveNow = isLive(player);
+              const platform = featuredPlatform(player);
+              const login = player[platform];
+              const status = liveNow
                 ? `${viewers(player).toLocaleString()} ${t('streamers.viewers')}`
-                : player.twitchStatus?.state === 'offline'
+                : (platform === 'kick' ? player.kickStatus : player.twitchStatus)?.state === 'offline'
                   ? t('streamers.offline')
-                  : 'TWITCH';
+                  : platform.toUpperCase();
               return (
-                <li key={player.twitch}>
+                <li key={playerKey(player)}>
                   <StreamerAvatar player={player} />
                   <span className="streamers-rest-person">
                     <strong>{player.nickname}</strong>
-                    <small>@{player.twitch}</small>
+                    <small>@{login}</small>
                   </span>
-                  <span className={isLive ? 'streamers-status is-live' : 'streamers-status'}>
+                  <span className={liveNow ? 'streamers-status is-live' : 'streamers-status'}>
                     {status}
                   </span>
-                  <a href={channelUrl(player)} target="_blank" rel="noreferrer noopener" aria-label={t('streamers.open_channel', [player.nickname])}>↗</a>
+                  <a
+                    href={channelUrl(player, platform)}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    aria-label={t(platform === 'kick' ? 'streamers.open_channel_kick' : 'streamers.open_channel', [player.nickname])}
+                  >
+                    ↗
+                  </a>
                 </li>
               );
             })}
