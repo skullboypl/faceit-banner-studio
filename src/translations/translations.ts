@@ -35,7 +35,7 @@ export function tl(language: Language, text: string, params?: string[]) {
     languages.find((language) => language.id === 'en')?.translations[text] ||
     text;
   params.forEach((param, index) => {
-    text = text.replace(`{{${index}}}`, param);
+    text = text.split(`{{${index}}}`).join(param);
   });
   return text;
 }

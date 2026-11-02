@@ -25,6 +25,7 @@ const PLAYER = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const MATCH = '[0-9a-zA-Z-]{8,80}';
 const ALLOWED = [
   /^\/players$/i,
+  /^\/search\/players$/i,
   new RegExp(`^\\/players\\/${PLAYER}$`, 'i'),
   new RegExp(`^\\/players\\/${PLAYER}\\/games\\/cs2\\/stats$`, 'i'),
   new RegExp(`^\\/players\\/${PLAYER}\\/stats\\/cs2$`, 'i'),
@@ -103,6 +104,14 @@ export function faceitTarget(rawUrl) {
     const nick = cleanNick(parsed.searchParams.get('nickname') || '');
     if (!nick) return null;
     params.set('nickname', nick);
+  } else if (path.toLowerCase() === '/search/players') {
+    /* The nickname lookup is case-sensitive; the search finds "skullboy" typed in a chat as well */
+    const nick = cleanNick(parsed.searchParams.get('nickname') || '');
+    if (!nick) return null;
+    params.set('nickname', nick.toLowerCase());
+    params.set('game', 'cs2');
+    params.set('offset', '0');
+    if (!keep('limit', intIn(parsed.searchParams.get('limit'), 1, 20))) return null;
   } else if (/\/stats$/i.test(path) && path.includes('/games/')) {
     if (!keep('limit', intIn(parsed.searchParams.get('limit'), 1, 100))) return null;
   } else if (/\/history$/i.test(path)) {
@@ -387,6 +396,18 @@ export function createFaceitCache({
 }
 
 const shared = createFaceitCache({ store: durableFaceitAnswers });
+
+/**
+ * One Data API read through the same cache the banners use, for server code (the chat command).
+ * `path` is the part after /data/v4, for example `/players?nickname=SkullBoy`. An address outside the allowlist,
+ * or a server without a FACEIT key, gives a 400 or 503 entry instead of a request.
+ */
+export async function readFaceit(path) {
+  const target = faceitTarget(`${PREFIX}${path}`);
+  if (!target) return { status: 400, body: '{}' };
+  if (!faceitKey()) return { status: 503, body: '{}' };
+  return shared.load(target);
+}
 
 /** Admin: drop every cached FACEIT answer. */
 export const clearFaceitCache = () => shared.clear();

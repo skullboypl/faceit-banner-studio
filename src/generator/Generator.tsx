@@ -18,6 +18,7 @@ import { tabFromLocation, tabFromSearch } from './tab-search';
 import { MainTab } from './tabs/MainTab.tsx';
 import { StyleTab } from './tabs/StyleTab.tsx';
 import { StatisticsTab } from './tabs/StatisticsTab.tsx';
+import { ChatCommandTab } from './tabs/ChatCommandTab.tsx';
 import { GeneratedWidgetModal } from '../components/GeneratedWidgetModal.tsx';
 import { InfoBox } from '../components/InfoBox.tsx';
 import { Footer, SKULL_YOUTUBE_URL, SKULL_X_URL, SMOOTH_WIZARD_LOGO, SMOOTH_WIZARD_URL } from '../components/Footer.tsx';
@@ -93,8 +94,8 @@ const DEFAULT_GENERATOR_USERNAME = 'donk666';
 /** Tabs pinned to the phone's bottom bar; the rest live in the full-screen menu. */
 const PINNED_TABS = 3;
 /** Catalog and feedback need the whole width, so they hide the widget preview. */
-const WIDE_TAB_INDEXES = new Set([4, 5]);
-const TAB_ICONS = ['settings', 'palette', 'stats', 'cloud', 'layers', 'message'] as const;
+const WIDE_TAB_INDEXES = new Set([4, 5, 6]);
+const TAB_ICONS = ['settings', 'palette', 'stats', 'cloud', 'layers', 'message', 'terminal'] as const;
 const PREVIEW_BACKGROUNDS = MAP_ART;
 
 export const Generator = () => {
@@ -725,6 +726,10 @@ export const Generator = () => {
           admin={session.admin}
         />
       ),
+    },
+    {
+      name: tl('chat.tab'),
+      component: <ChatCommandTab key={'chat'} username={username} studioLanguage={language.id} />,
     },
   ];
 

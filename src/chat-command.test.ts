@@ -1,0 +1,25 @@
+import { describe, expect, test } from 'vitest';
+import { chatCommandReply, chatCommandUrl, cleanCommandName, nightbotChatLine, type ChatCommandOptions } from './generator/chat-command';
+
+const options: ChatCommandOptions = { origin: 'https://faceitbanner.vxh.pl/', nick: 'SkullBoy', cmd: 'elo', lang: 'pl', show: ['last', 'rank'] };
+
+describe('chat command', () => {
+  test('the address ends with nick=, so every bot can append what the viewer typed', () => {
+    expect(chatCommandUrl(options)).toBe('https://faceitbanner.vxh.pl/api/faceit/elo?lang=pl&show=rank%2Clast&default=SkullBoy&nick=');
+    expect(chatCommandUrl({ ...options, cmd: 'faceit', nick: '' })).toBe('https://faceitbanner.vxh.pl/api/faceit/elo?lang=pl&show=rank%2Clast&cmd=faceit&nick=');
+  });
+
+  test('each bot gets its own variables for the viewer text', () => {
+    const url = chatCommandUrl(options);
+    expect(chatCommandReply('streamelements', options)).toBe(`$(customapi ${url}$(queryescape $(1|SkullBoy)))`);
+    expect(chatCommandReply('streamelements', { ...options, nick: '' })).toBe(`$(customapi ${chatCommandUrl({ ...options, nick: '' })}$(queryescape $(1)))`);
+    expect(chatCommandReply('nightbot', options)).toBe(`$(urlfetch ${url}$(querystring))`);
+    expect(chatCommandReply('fossabot', options)).toBe(`$(customapi ${url}$(querystring))`);
+    expect(chatCommandReply('url', options)).toBe(url);
+  });
+
+  test('Nightbot can add the command from chat, and the command name stays a plain word', () => {
+    expect(nightbotChatLine({ ...options, cmd: '!faceit' })).toMatch(/^!commands add !faceit \$\(urlfetch /);
+    expect(cleanCommandName('!!el o<>')).toBe('elo');
+  });
+});

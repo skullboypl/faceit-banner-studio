@@ -17,6 +17,7 @@ import {
 } from './live.mjs';
 import { count, once, warn } from './log.mjs';
 import { handleFaceitProxy } from './faceit-proxy.mjs';
+import { handleChatCommand } from './chat-command.mjs';
 import {
   getStudioUsersSync,
   hydrateStudioUsers,
@@ -380,6 +381,7 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
 
   return async (req, res, next) => {
     if (await handleFaceitProxy(req, res, { unlimitedRate })) return;
+    if (await handleChatCommand(req, res, { unlimitedRate })) return;
     const pathname = new URL(req.url || '/', 'http://localhost').pathname;
     const imageKind = pathname.startsWith('/api/presence/cover/') ? 'cover' : 'avatar';
     const avatarId = pathname.startsWith(`/api/presence/${imageKind}/`)

@@ -1473,4 +1473,53 @@ html.generator {
       transition: none !important;
     }
   }
+  /* Chat command tab: ready text for the bot, and the answer the chat will see */
+  .chat-command-intro {
+    margin: -8px 0 14px;
+    color: @studio-muted;
+  }
+  .chat-command-code {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .chat-command-code textarea {
+    flex: 1;
+    min-width: 0;
+    resize: vertical;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.45;
+    word-break: break-all;
+  }
+  .chat-command-code button {
+    width: auto;
+    flex: none;
+    padding: 6px 14px;
+  }
+  .chat-command-preview {
+    display: grid;
+    gap: 6px;
+    padding: 12px 14px;
+    background: @studio-input;
+    border: 1px solid @studio-line;
+    border-radius: 8px;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+  .chat-command-viewer {
+    color: @studio-muted;
+  }
+  .chat-command-answer {
+    color: @studio-orange;
+    font-weight: 600;
+  }
+  @media (max-width: 700px) {
+    .chat-command-code {
+      flex-direction: column;
+    }
+    .chat-command-code button {
+      width: 100%;
+    }
+  }
 }
