@@ -56,11 +56,30 @@ describe('ProfilePanel', () => {
   test('offers OAuth connect links and no typed nick field', async () => {
     renderWithApp(<ProfilePanel />);
     expect(await screen.findByText('Połączenia')).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Twitch' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Kick' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Połącz Twitch' }).getAttribute('href')).toBe('/api/auth/twitch');
     expect(screen.getByRole('link', { name: 'Połącz Kick' }).getAttribute('href')).toBe('/api/auth/kick');
     expect(screen.queryByPlaceholderText('nick na Kick')).toBeNull();
     expect(screen.queryByPlaceholderText('nick na Twitch')).toBeNull();
     expect(screen.queryByRole('textbox')).toBeNull();
+  });
+
+  test('keeps Twitch and Kick marks when a channel is already linked', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo) => {
+        if (String(input).includes('/api/auth/profile') && !String(input).includes('cache')) {
+          return { ok: true, json: async () => ({ ...profile, twitch: 'SkullBoyPL', kick: 'jebaka' }) };
+        }
+        return { ok: true, json: async () => ({}) };
+      })
+    );
+    renderWithApp(<ProfilePanel />);
+    expect(await screen.findByText('Połączony Twitch: SkullBoyPL')).toBeTruthy();
+    expect(screen.getByText('Połączony Kick: jebaka')).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Twitch' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Kick' })).toBeTruthy();
   });
 
   test('disables connect when OAuth keys are missing', async () => {

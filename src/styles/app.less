@@ -2744,10 +2744,24 @@ a.donate-link:hover { background: #271a12; border-color: #ff6b18; }
   padding-top: 14px;
   border-top: 1px solid #2b2b2e;
   .profile-channel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin: 0 0 8px;
     font-size: 14px;
     font-weight: 700;
   }
+  .profile-channel-mark {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    line-height: 0;
+  }
+  &.profile-twitch .profile-channel-mark { color: #9146ff; }
+  &.profile-kick .profile-channel-mark { color: #53fc18; }
 }
 .profile-connect {
   display: inline-flex;

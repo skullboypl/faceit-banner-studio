@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { LanguageContext } from '../generator/contexts';
 import { FaceitLevel } from '../live/FaceitLevel';
+import { KickIcon, TwitchIcon } from '../live/MemberIcons';
 import { VerifiedBadgeIcon } from '../assets/icons/faceit/VerifiedBadgeIcon';
 import { VerifiedGoldBadgeIcon } from '../assets/icons/faceit/VerifiedGoldBadgeIcon';
 import { ProfileImages } from './ProfileImages';
@@ -117,7 +118,12 @@ function ProfileChannelRow({
 
   return (
     <div className={`profile-channel profile-${kind}`}>
-      <h4 className="profile-channel-title">{tl(`profile.${kind}.title`)}</h4>
+      <h4 className="profile-channel-title">
+        <span className="profile-channel-mark" role="img" aria-label={kind === 'twitch' ? 'Twitch' : 'Kick'}>
+          {kind === 'twitch' ? <TwitchIcon size={28} /> : <KickIcon size={28} />}
+        </span>
+        {tl(`profile.${kind}.title`)}
+      </h4>
       <p>{tl(`profile.${kind}.note`)}</p>
       {name && <p className="profile-kick-linked">{tl(`profile.${kind}.linked`, [name])}</p>}
       {justPaired && name && (
