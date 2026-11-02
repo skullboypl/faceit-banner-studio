@@ -64,7 +64,10 @@ export function publicRanking(entries) {
     if (!info?.nickname) continue;
     const key = info.playerId || info.nickname.toLowerCase();
     const prev = byPlayer.get(key);
-    if (!prev || entry.lastSeen >= prev.lastSeen)
+    /* An OBS banner (it names its style) refreshes its ELO; a studio tab read it once when the nick was typed */
+    const banner = Boolean(info.style);
+    const prevBanner = Boolean(prev?.style);
+    if (!prev || (banner && !prevBanner) || (banner === prevBanner && entry.lastSeen >= prev.lastSeen))
       byPlayer.set(key, { ...info, lastSeen: entry.lastSeen });
   }
   return [...byPlayer.values()]

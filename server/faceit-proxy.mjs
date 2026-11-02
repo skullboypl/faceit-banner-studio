@@ -126,8 +126,10 @@ export function faceitTarget(rawUrl) {
       site: true,
     };
   }
-  /* Reads that only change when the player finishes a match: their freshness can be checked with one cheap call */
-  const watched = path.match(new RegExp(`^\/players\/(${PLAYER})(?:\/games\/cs2\/stats|\/stats\/cs2)?$`, 'i'));
+  /* Match stats only change when the player finishes a match: their freshness can be checked with one cheap call.
+     The profile is not one of them: it carries the ELO, which FACEIT can move before the match is listed, so it
+     follows the normal 30-second pace. */
+  const watched = path.match(new RegExp(`^\/players\/(${PLAYER})(?:\/games\/cs2\/stats|\/stats\/cs2)$`, 'i'));
   const query = params.toString();
   const player = path.toLowerCase() === '/players' || new RegExp(`^\\/players\\/${PLAYER}$`, 'i').test(path);
   const playerId = path.match(new RegExp(`/players/(${PLAYER})`, 'i'));

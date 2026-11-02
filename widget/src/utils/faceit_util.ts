@@ -173,6 +173,8 @@ export async function getPlayerRankingPosition(
  * localStorage, which OBS keeps between scene switches), and each refresh asks one small question first: what is the
  * newest finished match? Only when the answer changed is the full set read again. A reading is never trusted for more
  * than ten minutes, and for two minutes after a new match every refresh reads in full, because FACEIT updates ELO a little later.
+ * ELO and level are not kept: a kept reading gets them from the profile on every refresh, so they follow the
+ * refresh interval even when FACEIT lists the match before it moves the ELO.
  */
 const REUSE_MS = 10 * 60_000;
 const SETTLE_MS = 2 * 60_000;
@@ -221,13 +223,14 @@ async function newestMatch(playerId: string): Promise<string | null> {
 
 async function remembered<T>(
   key: string,
-  load: () => Promise<{ value: T; playerId: string } | undefined>
+  load: () => Promise<{ value: T; playerId: string } | undefined>,
+  refreshKept: (value: T, playerId: string) => Promise<T> = async (value) => value
 ): Promise<T | undefined> {
   const stored = storedReading<T>(key);
   let changedAt = stored?.changedAt ?? 0;
   if (stored && stored.head && Date.now() - stored.fetchedAt < REUSE_MS) {
     const head = await newestMatch(stored.playerId);
-    if (head && head === stored.head && Date.now() - changedAt > SETTLE_MS) return stored.value;
+    if (head && head === stored.head && Date.now() - changedAt > SETTLE_MS) return refreshKept(stored.value, stored.playerId);
     if (head && head !== stored.head) changedAt = Date.now();
   }
   const loaded = await load();
@@ -238,16 +241,39 @@ async function remembered<T>(
   return loaded.value;
 }
 
+type Rating = { elo: number; level: number; calibrating: boolean };
+
+/** ELO, level and the placement flag as the profile has them now: one small read. */
+async function currentRating(playerId: string): Promise<Rating | undefined> {
+  try {
+    const response = await faceitGet(`/players/${playerId}`);
+    if (!response.ok) return undefined;
+    const cs2 = ((await response.json()) as V4PlayersResponse).games?.cs2;
+    if (!cs2) return undefined;
+    const calibrating = cs2.is_calibrating === true;
+    return { elo: cs2.faceit_elo || 100, level: calibrating ? 0 : cs2.skill_level || 1, calibrating };
+  } catch {
+    return undefined;
+  }
+}
+
 export function getPlayerStats(
   id: string,
   matchCount: number,
   startDate: Date,
   onlyOfficial: boolean
 ): Promise<FaceitPlayer | undefined> {
-  return remembered(`stats|${id}|${matchCount}|${onlyOfficial}|${startDate.getTime()}`, async () => {
-    const value = await loadPlayerStats(id, matchCount, startDate, onlyOfficial);
-    return value ? { value, playerId: value.id } : undefined;
-  });
+  return remembered(
+    `stats|${id}|${matchCount}|${onlyOfficial}|${startDate.getTime()}`,
+    async () => {
+      const value = await loadPlayerStats(id, matchCount, startDate, onlyOfficial);
+      return value ? { value, playerId: value.id } : undefined;
+    },
+    async (kept, playerId) => {
+      const rating = await currentRating(playerId);
+      return rating ? { ...kept, ...rating } : kept;
+    }
+  );
 }
 
 function loadPlayerStats(
@@ -625,10 +651,17 @@ export function summarizeSessionMatches(items: MatchRow[], startMs: number): Ses
 
 /** Profile plus K/D and win rate from the last 20 or 30 matches, for one row of the roster. */
 export async function lookupRosterCard(name: string, matchWindow = 20, sessionStart = 0): Promise<RosterCard> {
-  const card = await remembered(`row|${name.trim().toLowerCase()}|${matchWindow}|${sessionStart}`, async () => {
-    const loaded = await loadRosterCard(name, matchWindow, sessionStart);
-    return loaded.card.missing ? undefined : { value: loaded.card, playerId: loaded.playerId };
-  });
+  const card = await remembered(
+    `row|${name.trim().toLowerCase()}|${matchWindow}|${sessionStart}`,
+    async () => {
+      const loaded = await loadRosterCard(name, matchWindow, sessionStart);
+      return loaded.card.missing ? undefined : { value: loaded.card, playerId: loaded.playerId };
+    },
+    async (kept, playerId) => {
+      const rating = await currentRating(playerId);
+      return rating ? { ...kept, ...rating } : kept;
+    }
+  );
   return card ?? (await loadRosterCard(name, matchWindow, sessionStart)).card;
 }
 

@@ -270,7 +270,7 @@ function fakeFaceit() {
   return { state, fetcher };
 }
 
-test('a player who has not finished a match is not read again in full: one cheap check replaces three calls', async () => {
+test('a player who has not finished a match keeps the match stats, while the ELO is read every refresh', async () => {
   let clock = 1_000;
   const { state, fetcher } = fakeFaceit();
   const cache = createFaceitCache({ now: () => clock, getKey: () => 'k', fetcher });
@@ -286,11 +286,11 @@ test('a player who has not finished a match is not read again in full: one cheap
     clock += 60_000;
     for (const target of targets) await cache.load(target);
   }
-  assert.deepEqual([state.calls.profile, state.calls.stats, state.calls.lifetime], [1, 1, 1]);
+  assert.deepEqual([state.calls.profile, state.calls.stats, state.calls.lifetime], [6, 1, 1]);
   assert.ok(state.calls.history <= 6, `${state.calls.history} history checks`);
 });
 
-test('after a new match the three reads are refreshed at once, and kept fresh for two minutes while ELO settles', async () => {
+test('after a new match the stats are read again, and kept fresh for two minutes while FACEIT settles', async () => {
   let clock = 1_000;
   const { state, fetcher } = fakeFaceit();
   const cache = createFaceitCache({ now: () => clock, getKey: () => 'k', fetcher });
@@ -306,14 +306,37 @@ test('after a new match the three reads are refreshed at once, and kept fresh fo
   assert.equal(state.calls.stats, 2);
   /* inside the settling window every refresh reads again */
   clock += 60_000;
-  await cache.load(profile);
-  assert.equal(state.calls.profile, 3);
+  await cache.load(stats);
+  assert.equal(state.calls.stats, 3);
   /* after it, the check finds nothing new and the answer is kept */
   clock += 3 * 60_000;
-  await cache.load(profile);
+  await cache.load(stats);
   clock += 60_000;
+  await cache.load(stats);
+  assert.ok(state.calls.stats <= 4);
+});
+
+test('ELO that FACEIT moves before the match is listed reaches the banner on the next 30-second read', async () => {
+  let clock = 1_000;
+  let elo = 3214;
+  const cache = createFaceitCache({
+    now: () => clock,
+    getKey: () => 'k',
+    pressure: () => 0,
+    fetcher: async (url) => {
+      const u = String(url);
+      if (u.includes('/history')) return { status: 200, text: async () => JSON.stringify({ items: [{ match_id: 'match-1' }] }) };
+      if (u.includes('/api/users/')) return { status: 200, text: async () => '{}' };
+      return { status: 200, text: async () => JSON.stringify({ player_id: id, nickname: 'X', games: { cs2: { faceit_elo: elo } } }) };
+    },
+  });
+  const profile = faceitTarget(`/api/faceit/v4/players/${id}`);
   await cache.load(profile);
-  assert.ok(state.calls.profile <= 4);
+  clock += 10 * 60_000;
+  await cache.load(profile);
+  elo = 3184;
+  clock += 31_000;
+  assert.equal(JSON.parse((await cache.load(profile)).body).games.cs2.faceit_elo, 3184);
 });
 
 test('an answer is never kept for more than ten minutes just because no match was seen', async () => {

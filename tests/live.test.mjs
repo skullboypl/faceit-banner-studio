@@ -362,3 +362,13 @@ test('Dev Admin is not a ghost on the live list, with or without a leftover sess
     await close();
   }
 });
+
+test('publicRanking takes the ELO from an OBS banner over a newer studio heartbeat of the same player', () => {
+  const playerId = '10b53a6d-5fc9-4095-920c-2953cfa62486';
+  const rows = publicRanking([
+    { info: { nickname: 'SkullBoy', playerId, elo: 3184, level: 10, style: 'lineup' }, lastSeen: 1_000 },
+    { info: { nickname: 'SkullBoy', playerId, elo: 3214, level: 10 }, lastSeen: 2_000 },
+  ]);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].elo, 3184);
+});

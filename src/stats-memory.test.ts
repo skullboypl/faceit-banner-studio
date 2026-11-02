@@ -53,7 +53,7 @@ const SESSION = new Date('2026-10-17T10:00:00Z');
 const start = () => SESSION;
 
 describe('getPlayerStats keeps what does not change, and checks with one request whether anything did', () => {
-  test('the second refresh with no new match costs one request, and gives the same player', async () => {
+  test('the second refresh with no new match reads only the newest match and the ELO, and gives the same player', async () => {
     const world = stubWorld();
     const getPlayerStats = await load();
     const first = await getPlayerStats(ID, 30, start(), false);
@@ -62,8 +62,17 @@ describe('getPlayerStats keeps what does not change, and checks with one request
     world.calls.length = 0;
     vi.setSystemTime(Date.now() + MINUTE);
     const second = await getPlayerStats(ID, 30, start(), false);
-    expect(world.calls).toEqual(['history']);
+    expect(world.calls).toEqual(['history', 'profile']);
     expect(second).toEqual(first);
+  });
+
+  test('ELO that moves before FACEIT lists the match still shows on the next refresh', async () => {
+    const world = stubWorld();
+    const getPlayerStats = await load();
+    await getPlayerStats(ID, 30, start(), false);
+    vi.setSystemTime(Date.now() + MINUTE);
+    world.elo = 1970;
+    expect((await getPlayerStats(ID, 30, start(), false))?.elo).toBe(1970);
   });
 
   test('a new match refreshes everything at once, and the next minute still checks in full while ELO settles', async () => {
@@ -84,7 +93,7 @@ describe('getPlayerStats keeps what does not change, and checks with one request
     world.calls.length = 0;
     vi.setSystemTime(Date.now() + 3 * MINUTE);
     await getPlayerStats(ID, 30, start(), false);
-    expect(world.calls).toEqual(['history']);
+    expect(world.calls).toEqual(['history', 'profile']);
   });
 
   test('nothing is kept longer than ten minutes', async () => {
@@ -128,13 +137,13 @@ describe('getPlayerStats keeps what does not change, and checks with one request
     world.calls.length = 0;
     vi.setSystemTime(Date.now() + 2 * MINUTE);
     const again = await (await load())(ID, 30, start(), false);
-    expect(world.calls).toEqual(['history']);
+    expect(world.calls).toEqual(['history', 'profile']);
     expect(again).toEqual(first);
   });
 });
 
 describe('lookupRosterCard keeps a roster row the same way', () => {
-  test('a row with no new match for its player costs one request', async () => {
+  test('a row with no new match for its player reads only the newest match and the ELO', async () => {
     const world = stubWorld();
     const { lookupRosterCard } = await import('../widget/src/utils/faceit_util');
     const first = await lookupRosterCard('tester', 30, start().getTime());
@@ -142,7 +151,7 @@ describe('lookupRosterCard keeps a roster row the same way', () => {
     world.calls.length = 0;
     vi.setSystemTime(Date.now() + MINUTE);
     const second = await lookupRosterCard('tester', 30, start().getTime());
-    expect(world.calls).toEqual(['history']);
+    expect(world.calls).toEqual(['history', 'profile']);
     expect(second).toEqual(first);
   });
 
