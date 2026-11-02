@@ -28,7 +28,8 @@ import { StudioBrand } from '../components/StudioBrand.tsx';
 import { LiveRanking } from '../live/LiveRanking.tsx';
 import { TwitchStreamers } from '../live/TwitchStreamers.tsx';
 import { StreamerPage } from '../live/StreamerPage.tsx';
-import { parseStreamerPath } from '../live/streamer-seo';
+import { StreamerRanking } from '../live/StreamerRanking.tsx';
+import { isStreamerRankingPath, parseStreamerPath } from '../live/streamer-seo';
 import { TimelineIcon } from '../assets/icons/tabler/TimelineIcon.tsx';
 import { ShareIcon } from '../assets/icons/tabler/ShareIcon.tsx';
 import { BrandTwitchIcon } from '../assets/icons/tabler/BrandTwitchIcon.tsx';
@@ -75,7 +76,16 @@ import {
   type BannerCatalog,
 } from '../../shared/banner-catalog.mjs';
 import { getPlayerProfile } from '../../widget/src/utils/faceit_util.ts';
-import { formatMenuCount, getLiveBoard, LIVE_LIST_REFRESH_MS, subscribeLiveStreamerCount, subscribeOnlineCount } from '../utils/presence.ts';
+import {
+  FACEIT_PLAYER_ID,
+  formatMenuCount,
+  getLiveBoard,
+  LIVE_LIST_REFRESH_MS,
+  startStudioPresenceHeartbeat,
+  studioPresenceInfo,
+  subscribeLiveStreamerCount,
+  subscribeOnlineCount,
+} from '../utils/presence.ts';
 
 export { LanguageContext, SettingsContext } from './contexts.ts';
 
@@ -137,7 +147,8 @@ export const Generator = () => {
   const pathname = useLocation().pathname;
   const onLive = pathname === '/live';
   const streamerSlug = parseStreamerPath(pathname);
-  const onStreamers = pathname === '/streamers' || Boolean(streamerSlug);
+  const onStreamerRanking = isStreamerRankingPath(pathname);
+  const onStreamers = pathname === '/streamers' || onStreamerRanking || Boolean(streamerSlug);
   const onPublicPage = onLive || onStreamers;
   const [liveStreamerCount, setLiveStreamerCount] = useState<number | null>(null);
   const [onlineBannerCount, setOnlineBannerCount] = useState<number | null>(null);
@@ -278,6 +289,31 @@ export const Generator = () => {
   }, [language]);
 
   const session = useSession();
+  const studioPresence = useRef<(() => ReturnType<typeof studioPresenceInfo>) | null>(null);
+  studioPresence.current = () => {
+    const user = session.user;
+    if (!user) return undefined;
+    const viewingSelf =
+      String(getSetting('playerId') || '').toLowerCase() === user.guid.toLowerCase();
+    return studioPresenceInfo(
+      user,
+      viewingSelf
+        ? {
+            ...(typeof playerElo === 'number' && playerElo > 0 ? { elo: playerElo } : {}),
+            ...(playerCalibrating
+              ? { calibrating: true }
+              : typeof playerLevel === 'number' && playerLevel > 0
+                ? { level: playerLevel }
+                : {}),
+            ...(playerCountry ? { country: playerCountry } : {}),
+          }
+        : undefined
+    );
+  };
+  useEffect(() => {
+    if (!FACEIT_PLAYER_ID.test(session.user?.guid || '')) return;
+    return startStudioPresenceHeartbeat(() => studioPresence.current?.());
+  }, [session.user?.guid]);
   const [catalog, setCatalog] = useState<BannerCatalog>(defaultBannerCatalog);
   useEffect(() => {
     let cancel = false;
@@ -1054,12 +1090,12 @@ export const Generator = () => {
             >
               <div className="section-heading">
                 <h2 id="studio-settings-title">
-                  {onStreamers ? tl('streamers.title') : onLive ? tl('live.title') : showProfile ? tl('account.profile') : tabs[selectedTabIndex].name}
+                  {onStreamerRanking ? tl('streamers.analytics.title') : onStreamers ? tl('streamers.title') : onLive ? tl('live.title') : showProfile ? tl('account.profile') : tabs[selectedTabIndex].name}
                 </h2>
-                <span>{onStreamers ? tl('streamers.section_lead') : onLive ? tl('live.lead') : tl('studio.settings_hint')}</span>
+                <span>{onStreamerRanking ? tl('streamers.analytics.lead') : onStreamers ? tl('streamers.section_lead') : onLive ? tl('live.lead') : tl('studio.settings_hint')}</span>
               </div>
-              <div className="tab-content" key={streamerSlug || (onStreamers ? 'streamers' : onLive ? 'live' : showProfile ? 'profile' : selectedTabIndex)}>
-                {streamerSlug ? <StreamerPage slug={streamerSlug} /> : onStreamers ? <TwitchStreamers /> : onLive ? <LiveRanking /> : showProfile ? <ProfilePanel /> : tabs[selectedTabIndex].component}
+              <div className="tab-content" key={onStreamerRanking ? 'ranking' : streamerSlug || (onStreamers ? 'streamers' : onLive ? 'live' : showProfile ? 'profile' : selectedTabIndex)}>
+                {onStreamerRanking ? <StreamerRanking /> : streamerSlug ? <StreamerPage slug={streamerSlug} /> : onStreamers ? <TwitchStreamers /> : onLive ? <LiveRanking /> : showProfile ? <ProfilePanel /> : tabs[selectedTabIndex].component}
               </div>
             </section>
             {!onPublicPage && (showProfile || !WIDE_TAB_INDEXES.has(selectedTabIndex)) && (

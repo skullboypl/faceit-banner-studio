@@ -1,5 +1,10 @@
 const PRESENCE_ID_KEY = 'fcw_presence_id';
+const STUDIO_PRESENCE_ID_KEY = 'fcw_studio_presence_id';
 const HEARTBEAT_MS = 60_000;
+/** Wait for /api/auth/me before the first studio ping, and collapse focus bursts. */
+export const STUDIO_PRESENCE_DEBOUNCE_MS = 800;
+export const FACEIT_PLAYER_ID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Matches the server snapshot TTL. The menu count and the live list both use it. */
 export const PRESENCE_REFRESH_MS = 30_000;
 /** The live list is a saved copy on the server, so asking more often than once a minute gains nothing. */
@@ -59,16 +64,41 @@ export type PresenceInfo = {
   style?: string;
 };
 
-function getPresenceId() {
+function getPresenceId(key = PRESENCE_ID_KEY) {
   try {
-    const saved = localStorage.getItem(PRESENCE_ID_KEY);
+    const saved = localStorage.getItem(key);
     if (saved) return saved;
     const id = crypto.randomUUID().replace(/-/g, '');
-    localStorage.setItem(PRESENCE_ID_KEY, id);
+    localStorage.setItem(key, id);
     return id;
   } catch {
     return crypto.randomUUID().replace(/-/g, '');
   }
+}
+
+export function isFaceitPlayerId(value: string | null | undefined): value is string {
+  return typeof value === 'string' && FACEIT_PLAYER_ID.test(value.trim());
+}
+
+/** Studio heartbeat payload: FACEIT guid only. Dev Admin and leftover cookies produce nothing. */
+export function studioPresenceInfo(
+  user?: { guid?: string | null; nickname?: string | null } | null,
+  extras?: Pick<PresenceInfo, 'elo' | 'level' | 'country' | 'calibrating'>
+): PresenceInfo | undefined {
+  const guid = typeof user?.guid === 'string' ? user.guid.trim() : '';
+  if (!isFaceitPlayerId(guid)) return undefined;
+  const nickname = typeof user?.nickname === 'string' ? user.nickname.trim() : '';
+  return {
+    playerId: guid.toLowerCase(),
+    ...(nickname ? { nickname } : {}),
+    ...(typeof extras?.elo === 'number' ? { elo: extras.elo } : {}),
+    ...(extras?.calibrating === true
+      ? { calibrating: true }
+      : typeof extras?.level === 'number'
+        ? { level: extras.level }
+        : {}),
+    ...(extras?.country ? { country: extras.country } : {}),
+  };
 }
 
 export function startPresenceHeartbeat(readInfo?: () => PresenceInfo | undefined) {
@@ -92,6 +122,53 @@ export function startPresenceHeartbeat(readInfo?: () => PresenceInfo | undefined
   document.addEventListener('visibilitychange', onVisibility);
 
   return () => {
+    window.clearInterval(interval);
+    document.removeEventListener('visibilitychange', onVisibility);
+  };
+}
+
+/**
+ * Focused studio tab of a real FACEIT account. Same playerId as the session guid,
+ * so the live board shows one FACEIT row — never Dev Admin and never a nameless cookie.
+ */
+export function startStudioPresenceHeartbeat(readInfo: () => PresenceInfo | undefined) {
+  const id = getPresenceId(STUDIO_PRESENCE_ID_KEY);
+  let lastSent = 0;
+  let debounceTimer = 0;
+
+  const ping = () => {
+    const info = studioPresenceInfo(
+      { guid: readInfo()?.playerId, nickname: readInfo()?.nickname },
+      readInfo()
+    );
+    if (!info?.playerId) return;
+    if (document.visibilityState === 'hidden') return;
+    const now = Date.now();
+    if (lastSent && now - lastSent < STUDIO_PRESENCE_DEBOUNCE_MS) return;
+    lastSent = now;
+    void fetch('/api/presence', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, info }),
+      cache: 'no-store',
+      keepalive: true,
+    }).catch(() => undefined);
+  };
+
+  const schedule = () => {
+    window.clearTimeout(debounceTimer);
+    debounceTimer = window.setTimeout(ping, STUDIO_PRESENCE_DEBOUNCE_MS);
+  };
+
+  schedule();
+  const interval = window.setInterval(ping, HEARTBEAT_MS);
+  const onVisibility = () => {
+    if (document.visibilityState === 'visible') schedule();
+  };
+  document.addEventListener('visibilitychange', onVisibility);
+
+  return () => {
+    window.clearTimeout(debounceTimer);
     window.clearInterval(interval);
     document.removeEventListener('visibilitychange', onVisibility);
   };

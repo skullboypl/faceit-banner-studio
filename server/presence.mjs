@@ -23,7 +23,6 @@ import {
   kicksAmong,
   listStudioUsers,
   recordOnlineSample,
-  rememberStudioUser,
   resetStudioUsersForTests,
   touchStudioSession,
   twitchesAmong,
@@ -192,86 +191,32 @@ export function clearLiveBoard() {
   countCache = null;
 }
 
-function requestHost(req) {
-  const raw = String(req?.headers?.host || '');
-  if (raw.startsWith('[')) {
-    const end = raw.indexOf(']');
-    return end === -1 ? raw : raw.slice(1, end);
-  }
-  return raw.split(':')[0];
+/** FACEIT accounts currently signed in to the studio. Dev Admin is not a public live identity. */
+function liveStudioUsers(users) {
+  return users.filter((user) => PLAYER_ID.test(user.guid));
 }
 
-/** Local `dev:admin` only. Matches auth.mjs so Dev Admin can appear on the local live list. */
-function rememberLocalDevAdmin(req) {
-  if (process.env.DEV_ADMIN !== '1' || process.env.NODE_ENV === 'production') return;
-  const host = requestHost(req);
-  if (host !== 'localhost' && host !== '127.0.0.1' && host !== '::1') return;
-  rememberStudioUser({ guid: 'dev-admin', nickname: 'Dev Admin', avatar: null });
-}
-
-function studioInfo(user) {
-  const playerId = PLAYER_ID.test(user.guid) ? user.guid.toLowerCase() : '';
-  return sanitizeInfo({
-    nickname: user.nickname,
-    playerId,
-  });
-}
-
-/** Studio sessions that are not already represented by a widget heartbeat. */
-function countStudioOnly() {
-  const users = getStudioUsersSync();
-  if (!users.length) return 0;
-  const widgetIds = new Set();
-  const widgetNicks = new Set();
-  for (const entry of sessions.values()) {
-    if (entry.info?.playerId) widgetIds.add(entry.info.playerId);
-    if (entry.info?.nickname) widgetNicks.add(entry.info.nickname.toLowerCase());
-  }
-  let extra = 0;
-  for (const user of users) {
-    const id = PLAYER_ID.test(user.guid) ? user.guid : '';
-    if (id && widgetIds.has(id)) continue;
-    if (widgetNicks.has(String(user.nickname).toLowerCase())) continue;
-    extra += 1;
-  }
-  return extra;
-}
-
-function onlineTotal() {
-  return sessions.size + countStudioOnly();
-}
-
+/**
+ * Confirmed badge only. A leftover login cookie never adds a row or bumps the counter.
+ * Merge key is the FACEIT player UUID (session guid === widget playerId).
+ */
 function attachStudioUsers(board) {
-  const users = getStudioUsersSync();
-  const studioNicks = new Set(users.map((user) => String(user.nickname).toLowerCase()));
-  const names = new Set(board.players.map((player) => player.nickname.toLowerCase()));
-  const extras = [];
-  for (const user of users) {
-    const info = studioInfo(user);
-    if (!info?.nickname || names.has(info.nickname.toLowerCase())) continue;
-    names.add(info.nickname.toLowerCase());
-    extras.push({
-      nickname: info.nickname,
-      confirmed: true,
-      ...(PLAYER_ID.test(user.guid) ? { avatar: `/api/presence/avatar/${user.guid}` } : {}),
-    });
-  }
-  const players = extras.length ? [...board.players, ...extras] : board.players;
-  const marked = players.map((player) =>
-    studioNicks.has(player.nickname.toLowerCase()) ? { ...player, confirmed: true } : player
+  const studioNicks = new Set(
+    liveStudioUsers(getStudioUsersSync()).map((user) => String(user.nickname).toLowerCase())
   );
+  if (!studioNicks.size) return board;
   return {
     ...board,
-    players: marked.slice(0, 200),
-    ranked: marked.length,
-    online: board.online + extras.length,
+    players: board.players.map((player) =>
+      studioNicks.has(player.nickname.toLowerCase()) ? { ...player, confirmed: true } : player
+    ),
   };
 }
 
-/** Banners seen in the activity window, plus signed-in studio accounts (read in-process by the admin overview). */
+/** Heartbeats in the activity window. Idle studio cookies are not people. */
 export const getPresenceCount = () => {
   prune();
-  return onlineTotal();
+  return sessions.size;
 };
 
 const SAMPLE_MS = 60_000;
@@ -339,12 +284,11 @@ function rememberCount(online, at = Date.now()) {
 /** Cheap counter for the studio menu. Reuses the live-list snapshot when that one is still warm. */
 export function getPublicOnline() {
   if (fresh(boardCache)) {
-    const attached = attachStudioUsers(boardCache.body);
-    return { online: attached.online, windowSeconds: attached.windowSeconds };
+    return { online: boardCache.body.online, windowSeconds: boardCache.body.windowSeconds };
   }
   if (fresh(countCache)) return countCache.body;
   prune();
-  return rememberCount(onlineTotal());
+  return rememberCount(sessions.size);
 }
 
 async function buildLiveBoard() {
@@ -353,20 +297,8 @@ async function buildLiveBoard() {
   for (const entry of sessions.values()) {
     if (entry.info) entries.push({ info: { ...entry.info }, lastSeen: entry.lastSeen });
   }
-  const studio = await listStudioUsers();
+  const studio = liveStudioUsers(await listStudioUsers());
   const seenIds = new Set(entries.map((entry) => entry.info?.playerId).filter(Boolean));
-  const seenNicks = new Set(
-    entries.map((entry) => entry.info?.nickname?.toLowerCase()).filter(Boolean)
-  );
-  for (const user of studio) {
-    const info = studioInfo(user);
-    if (!info) continue;
-    if (info.playerId && seenIds.has(info.playerId)) continue;
-    if (info.nickname && seenNicks.has(info.nickname.toLowerCase())) continue;
-    if (info.playerId) seenIds.add(info.playerId);
-    if (info.nickname) seenNicks.add(info.nickname.toLowerCase());
-    entries.push({ info, lastSeen: Date.now() });
-  }
   /* Redis/Postgres snapshots first, so a slow FACEIT cannot blank nicks and ELO after a deploy. */
   await warmPlayerCache([...seenIds]);
   applyCachedProfiles(entries);
@@ -381,7 +313,7 @@ async function buildLiveBoard() {
   const signedIn = await verifiedAmong(entries.map((entry) => entry.info?.playerId));
   const kicks = await kicksAmong(entries.map((entry) => entry.info?.playerId));
   const twitches = await twitchesAmong(entries.map((entry) => entry.info?.playerId));
-  const studioIds = new Set(studio.map((user) => user.guid).filter((id) => PLAYER_ID.test(id)));
+  const studioIds = new Set(studio.map((user) => user.guid));
   const studioNicks = new Set(studio.map((user) => String(user.nickname).toLowerCase()));
   for (const entry of entries) {
     const id = entry.info?.playerId;
@@ -401,7 +333,7 @@ async function buildLiveBoard() {
   if (!filled && previousPlayers?.length) players = mergeLastGoodPlayers(players, previousPlayers);
   const at = Date.now();
   const body = {
-    online: onlineTotal(),
+    online: sessions.size,
     ranked: players.length,
     windowSeconds: ACTIVE_WINDOW_MS / 1000,
     players: players.slice(0, 200),
@@ -462,7 +394,6 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
     await hydratePresence();
     await hydrateStudioUsers();
     await touchStudioSession(req.headers.cookie);
-    rememberLocalDevAdmin(req);
 
     if (req.method === 'GET' && avatarId) {
       if (!avatarLimit(ip)) {

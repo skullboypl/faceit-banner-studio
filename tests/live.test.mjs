@@ -263,83 +263,95 @@ test('the live list body carries when it was made and for how long it is kept', 
   assert.equal(typeof body.cacheSeconds, 'number');
 });
 
-test('a signed-in studio session is listed without a widget ping, and an anonymous visitor is not', async () => {
+test('a leftover studio login is absent until a real FACEIT ping, and two sources of the same guid stay one row', async () => {
   const { createPresenceMiddleware, resetPresenceForTests } = await import('../server/presence.mjs');
   const { deleteSession, saveSession } = await import('../server/store.mjs');
   resetPresenceForTests();
   const { base, close } = await serve(createPresenceMiddleware({ unlimitedRate: true }));
   const guid = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
   const sid = 'ab'.repeat(24);
+  const beat = (id, info, ip) =>
+    fetch(`${base}/api/presence`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': ip },
+      body: JSON.stringify({ id, info }),
+    });
   try {
     const empty = await (await fetch(`${base}/api/presence/live`, { headers: { 'x-forwarded-for': '203.0.113.90' } })).json();
     assert.equal(empty.players.some((player) => player.nickname === 'StudioPlayer'), false);
     assert.equal(empty.players.some((player) => player.nickname === 'Dev Admin'), false);
 
     await saveSession(sid, { guid, nickname: 'StudioPlayer', avatar: null });
-    const board = await (await fetch(`${base}/api/presence/live`, { headers: { 'x-forwarded-for': '203.0.113.91' } })).json();
-    const row = board.players.find((player) => player.nickname === 'StudioPlayer');
-    assert.equal(row?.confirmed, true);
-    assert.equal('playerId' in (row || {}), false);
-    assert.equal(board.online >= 1, true);
+    const idle = await (await fetch(`${base}/api/presence/live`, { headers: { 'x-forwarded-for': '203.0.113.91' } })).json();
+    assert.equal(idle.players.some((player) => player.nickname === 'StudioPlayer'), false);
+    assert.equal(idle.online, 0);
 
     const count = await (await fetch(`${base}/api/presence`, { headers: { 'x-forwarded-for': '203.0.113.92' } })).json();
-    assert.equal(count.online >= 1, true);
+    assert.equal(count.online, 0);
 
-    await deleteSession(sid);
-    const loggedOut = await (await fetch(`${base}/api/presence/live`, { headers: { 'x-forwarded-for': '203.0.113.93' } })).json();
-    assert.equal(loggedOut.players.some((player) => player.nickname === 'StudioPlayer'), false);
-
-    await saveSession(sid, { guid, nickname: 'StudioPlayer', avatar: null });
     assert.equal(
-      (
-        await fetch(`${base}/api/presence`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.98' },
-          body: JSON.stringify({
-            id: 'studiowidgetheart01',
-            info: { nickname: 'StudioPlayer', playerId: guid, elo: 2400, level: 8, country: 'pl' },
-          }),
-        })
-      ).status,
+      (await beat('studiowidgetheart01', { nickname: 'StudioPlayer', playerId: guid, elo: 2400, level: 8, country: 'pl' }, '203.0.113.98')).status,
+      200
+    );
+    assert.equal(
+      (await beat('studiotabheartbeat01', { nickname: 'StudioPlayer', playerId: guid, elo: 2410, level: 8, country: 'pl' }, '203.0.113.99')).status,
       200
     );
     const mixed = await (await fetch(`${base}/api/presence/live`, { headers: { 'x-forwarded-for': '203.0.113.94' } })).json();
-    const richer = mixed.players.find((player) => player.nickname === 'StudioPlayer');
-    assert.equal(richer?.elo, 2400);
-    assert.equal(richer?.level, 8);
-    assert.equal(richer?.country, 'pl');
-    assert.equal(richer?.confirmed, true);
-    assert.equal(mixed.players.filter((player) => player.nickname === 'StudioPlayer').length, 1);
+    const rows = mixed.players.filter((player) => player.nickname === 'StudioPlayer');
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0]?.elo, 2410);
+    assert.equal(rows[0]?.level, 8);
+    assert.equal(rows[0]?.country, 'pl');
+    assert.equal(rows[0]?.confirmed, true);
+    assert.equal('playerId' in rows[0], false);
+    assert.equal(mixed.online, 2);
 
     await deleteSession(sid);
     const afterLogout = await (await fetch(`${base}/api/presence/live`, { headers: { 'x-forwarded-for': '203.0.113.95' } })).json();
-    const still = afterLogout.players.find((player) => player.nickname === 'StudioPlayer');
-    assert.equal(still?.elo, 2400);
-    assert.equal(afterLogout.players.filter((player) => player.nickname === 'StudioPlayer').length, 1);
+    const still = afterLogout.players.filter((player) => player.nickname === 'StudioPlayer');
+    assert.equal(still.length, 1);
+    assert.equal(still[0]?.elo, 2410);
   } finally {
     resetPresenceForTests();
     await close();
   }
 });
 
-test('local Dev Admin appears on the live list, and a logged-out board stays empty', async () => {
+test('Dev Admin is not a ghost on the live list, with or without a leftover session', async () => {
   const { createPresenceMiddleware, resetPresenceForTests } = await import('../server/presence.mjs');
+  const { saveSession } = await import('../server/store.mjs');
   const prev = { dev: process.env.DEV_ADMIN, node: process.env.NODE_ENV };
   resetPresenceForTests();
   const { base, close } = await serve(createPresenceMiddleware({ unlimitedRate: true }));
+  const guid = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
   try {
-    delete process.env.DEV_ADMIN;
+    process.env.DEV_ADMIN = '1';
     process.env.NODE_ENV = 'development';
-    const empty = await (await fetch(`${base}/api/presence/live`, { headers: { 'x-forwarded-for': '203.0.113.96' } })).json();
-    assert.equal(empty.players.length, 0);
+    await saveSession('cd'.repeat(24), { guid: 'dev-admin', nickname: 'Dev Admin', avatar: null });
+    const empty = await (await fetch(`${base}/api/presence/live`, { headers: { host: '127.0.0.1', 'x-forwarded-for': '203.0.113.96' } })).json();
+    assert.equal(empty.players.some((player) => player.nickname === 'Dev Admin'), false);
     assert.equal(empty.online, 0);
 
-    process.env.DEV_ADMIN = '1';
+    assert.equal(
+      (
+        await fetch(`${base}/api/presence`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.97' },
+          body: JSON.stringify({
+            id: 'realfaceitheartbeat1',
+            info: { nickname: 'RealFaceit', playerId: guid, elo: 1800, level: 7, country: 'pl' },
+          }),
+        })
+      ).status,
+      200
+    );
+    await saveSession('ef'.repeat(24), { guid, nickname: 'RealFaceit', avatar: null });
     const board = await (await fetch(`${base}/api/presence/live`, { headers: { host: '127.0.0.1', 'x-forwarded-for': '203.0.113.97' } })).json();
-    const row = board.players.find((player) => player.nickname === 'Dev Admin');
-    assert.ok(row);
-    assert.equal(row.confirmed, true);
-    assert.equal('playerId' in row, false);
+    assert.equal(board.players.some((player) => player.nickname === 'Dev Admin'), false);
+    const real = board.players.filter((player) => player.nickname === 'RealFaceit');
+    assert.equal(real.length, 1);
+    assert.equal(real[0]?.confirmed, true);
     assert.equal(board.online, 1);
   } finally {
     if (prev.dev === undefined) delete process.env.DEV_ADMIN;
