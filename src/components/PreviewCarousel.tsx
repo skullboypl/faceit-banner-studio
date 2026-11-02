@@ -1,5 +1,5 @@
 import { Language, tl } from '../translations/translations.ts';
-import { MAP_ART, MAP_PREVIEW_IDS } from '../../widget/src/widget/map-art';
+import { MAP_ART, MAP_PREVIEW_IDS, mapStillLayers } from '../../widget/src/widget/map-art';
 
 export const PreviewCarousel = ({
   language,
@@ -28,7 +28,10 @@ export const PreviewCarousel = ({
             aria-pressed={previewBackground === id}
             onClick={() => setPreviewBackground(id)}
           >
-            <img src={MAP_ART[id]} alt="" />
+            <i
+              className="map-thumb"
+              style={{ backgroundImage: mapStillLayers(MAP_ART[id]) }}
+            />
             <span>{tl(language, `generator.preview.${id}`)}</span>
           </button>
         ))}

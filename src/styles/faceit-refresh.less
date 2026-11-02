@@ -765,7 +765,8 @@ html.generator {
     position: absolute;
     inset: 0;
     z-index: -2;
-    background-size: cover;
+    background-color: #141719;
+    background-size: cover, cover;
     background-position: center;
     animation: scene-enter 0.5s ease-out both;
   }
@@ -846,11 +847,13 @@ html.generator {
       border-color 0.2s,
       transform 0.2s,
       color 0.2s;
-    img {
+    .map-thumb {
       display: block;
       width: 100%;
       height: 38px;
-      object-fit: cover;
+      background-color: #202022;
+      background-size: cover, cover;
+      background-position: center;
       opacity: 0.6;
       transition:
         opacity 0.2s,
@@ -867,7 +870,7 @@ html.generator {
       border-color: #73737b;
       color: #fff;
     }
-    &:hover img {
+    &:hover .map-thumb {
       opacity: 1;
       transform: scale(1.05);
     }
@@ -876,7 +879,7 @@ html.generator {
       background: #302018;
       color: #fff;
     }
-    &[aria-pressed='true'] img {
+    &[aria-pressed='true'] .map-thumb {
       opacity: 1;
     }
     &[aria-pressed='true']:after {
@@ -1387,7 +1390,7 @@ html.generator {
     .map-options {
       gap: 6px;
     }
-    .map-options img {
+    .map-options .map-thumb {
       height: 32px;
     }
     .map-options span {
@@ -1457,7 +1460,7 @@ html.generator {
     .checkbox .check,
     .checkbox .check:after,
     .map-options button,
-    .map-options img,
+    .map-options .map-thumb,
     .settings button,
     .social-links a,
     .import-settings summary:before,

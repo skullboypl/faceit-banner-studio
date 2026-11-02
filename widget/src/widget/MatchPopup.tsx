@@ -360,7 +360,7 @@ export function MatchPopup({ preview, playerId, username, phase, options, transl
     if (percent !== undefined) (style as Record<string, string>)[`--fs-${key}`] = String(percent / 100);
   }
   const art = view.mapBg ? mapArt(match.map) : undefined;
-  const articleStyle = art ? ({ '--popup-map': `url(${art})` } as CSSProperties) : undefined;
+  const articleStyle = art ? ({ '--popup-map': `url("${art}")` } as CSSProperties) : undefined;
 
   const scoreNode =
     view.showScore &&

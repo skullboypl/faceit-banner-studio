@@ -155,8 +155,8 @@ describe('MatchPopup map background and avatars', () => {
 
   test('a map without artwork keeps the plain card', () => {
     // sample() always uses mirage, so this guards the lookup itself
-    expect(mapArt('mirage')).toBeTruthy();
-    expect(mapArt('de_mirage')).toBeTruthy();
+    expect(mapArt('mirage')).toBe('/previews/mirage.png');
+    expect(mapArt('de_mirage')).toBe('/previews/mirage.png');
     expect(mapArt('anubis')).toBeTruthy();
     expect(mapArt('de_inferno')).toBeTruthy();
     expect(mapArt('de_vertigo')).toBeTruthy();
@@ -165,6 +165,7 @@ describe('MatchPopup map background and avatars', () => {
     expect(mapArt('unknown-map')).toBeUndefined();
     expect(mapArt(undefined)).toBeUndefined();
     expect([...MAP_PREVIEW_IDS].sort()).toEqual(Object.keys(MAP_ART).sort());
+    expect(Object.values(MAP_ART).every((src) => src.startsWith('/previews/') && src.endsWith('.png'))).toBe(true);
     expect(MAP_PREVIEW_IDS).toEqual([
       'nuke',
       'mirage',

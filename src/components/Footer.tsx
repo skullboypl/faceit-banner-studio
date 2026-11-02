@@ -10,6 +10,7 @@ const GITHUB_REPO_URL =
 export const SKULL_YOUTUBE_URL = 'https://www.youtube.com/@skullboypl';
 export const SKULL_X_URL = 'https://x.com/skullboypl';
 export const SMOOTH_WIZARD_URL = 'https://smoothwizard.com/';
+export const SMOOTH_WIZARD_LOGO = '/brand/smoothwizard-logo.png';
 
 export const Footer = () => {
   const tl = useContext(LanguageContext);

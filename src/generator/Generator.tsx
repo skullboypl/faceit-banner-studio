@@ -20,8 +20,7 @@ import { StyleTab } from './tabs/StyleTab.tsx';
 import { StatisticsTab } from './tabs/StatisticsTab.tsx';
 import { GeneratedWidgetModal } from '../components/GeneratedWidgetModal.tsx';
 import { InfoBox } from '../components/InfoBox.tsx';
-import { Footer, SKULL_YOUTUBE_URL, SKULL_X_URL, SMOOTH_WIZARD_URL } from '../components/Footer.tsx';
-import smoothwizardLogo from '../assets/smoothwizard-logo.png';
+import { Footer, SKULL_YOUTUBE_URL, SKULL_X_URL, SMOOTH_WIZARD_LOGO, SMOOTH_WIZARD_URL } from '../components/Footer.tsx';
 import { CookieNotice } from '../components/CookieNotice.tsx';
 import { PreviewCarousel } from '../components/PreviewCarousel.tsx';
 import { StudioIcon } from '../components/StudioIcon.tsx';
@@ -35,7 +34,8 @@ import { BrandYoutubeIcon } from '../assets/icons/tabler/BrandYoutubeIcon.tsx';
 import { BrandXIcon } from '../assets/icons/tabler/BrandXIcon.tsx';
 import { BrandDiscordIcon } from '../assets/icons/tabler/BrandDiscordIcon.tsx';
 import { BrandTiktokIcon } from '../assets/icons/tabler/BrandTiktokIcon.tsx';
-import { MAP_ART } from '../../widget/src/widget/map-art';
+import { MAP_ART, mapStillLayers } from '../../widget/src/widget/map-art';
+import { hideBrokenStill, useReadyStill } from '../components/SafeStill.tsx';
 import { useSearchParams } from 'react-router-dom';
 import {
   SettingValue,
@@ -118,6 +118,7 @@ export const Generator = () => {
     )
   );
   const [previewBackground, setPreviewBackground] = useState<string>('ancient');
+  const sceneStill = useReadyStill(PREVIEW_BACKGROUNDS[previewBackground]);
   const [shareCopied, setShareCopied] = useState<boolean>(false);
   const [pngState, setPngState] = useState<'idle' | 'busy' | 'error'>('idle');
   const [pngAsk, setPngAsk] = useState(false);
@@ -736,7 +737,7 @@ export const Generator = () => {
       key={previewBackground}
       className="preview-scene"
       style={{
-        backgroundImage: `url(${PREVIEW_BACKGROUNDS[previewBackground]})`,
+        backgroundImage: mapStillLayers(sceneStill),
       }}
     />
     <span className="scene-label">
@@ -970,7 +971,7 @@ export const Generator = () => {
                 title={tl('generator.smoothwizard.title')}
                 aria-label={tl('generator.smoothwizard.title')}
               >
-                <img src={smoothwizardLogo} alt="" />
+                <img src={SMOOTH_WIZARD_LOGO} alt="" onError={hideBrokenStill} />
               </a>
               <a
                 className="sidebar-icon"
@@ -1291,7 +1292,7 @@ export const Generator = () => {
                       target={'_blank'}
                       rel={'noreferrer'}
                     >
-                      <img src={smoothwizardLogo} alt={'SmoothWizard'} />
+                      <img src={SMOOTH_WIZARD_LOGO} alt={'SmoothWizard'} onError={hideBrokenStill} />
                       <span>
                         <strong>{tl('generator.smoothwizard.title')}</strong>
                         <small>{tl('generator.smoothwizard.subtitle')}</small>

@@ -7,17 +7,21 @@ import { fileURLToPath } from 'node:url';
 import { createPresenceMiddleware, startOnlineHistory } from './server/presence.mjs';
 import { createAuthMiddleware } from './server/auth.mjs';
 import { createDevPreviewMiddleware } from './server/dev-preview.mjs';
+import { createStillFallbackMiddleware } from './server/still-fallback.mjs';
 
 function presenceDevPlugin(): Plugin {
+  const root = fileURLToPath(new URL('.', import.meta.url));
   return {
     name: 'presence-dev-api',
     configureServer(server) {
+      server.middlewares.use(createStillFallbackMiddleware(root));
       server.middlewares.use(createDevPreviewMiddleware());
       server.middlewares.use(createPresenceMiddleware());
       server.middlewares.use(createAuthMiddleware());
       startOnlineHistory();
     },
     configurePreviewServer(server) {
+      server.middlewares.use(createStillFallbackMiddleware(root));
       server.middlewares.use(createPresenceMiddleware());
       server.middlewares.use(createAuthMiddleware());
     },
