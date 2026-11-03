@@ -125,7 +125,8 @@
       "versus",
       "team",
       "split",
-      "popup"
+      "popup",
+      "scenes"
     ]
   },
   "modeMemory": {
@@ -461,6 +462,125 @@
     "min": 70,
     "max": 150
   },
+  "sceneKind": {
+    "type": "string",
+    "default": "starting",
+    "options": [
+      "starting",
+      "brb",
+      "ending"
+    ]
+  },
+  "sceneTitleStarting": {
+    "type": "string",
+    "default": "",
+    "regex": "^[^<>\\p{Cc}]{0,90}$",
+    "regexFlags": "u"
+  },
+  "sceneTitleBrb": {
+    "type": "string",
+    "default": "",
+    "regex": "^[^<>\\p{Cc}]{0,90}$",
+    "regexFlags": "u"
+  },
+  "sceneTitleEnding": {
+    "type": "string",
+    "default": "",
+    "regex": "^[^<>\\p{Cc}]{0,90}$",
+    "regexFlags": "u"
+  },
+  "sceneNoteStarting": {
+    "type": "string",
+    "default": "",
+    "regex": "^[^<>\\p{Cc}]{0,90}$",
+    "regexFlags": "u"
+  },
+  "sceneNoteBrb": {
+    "type": "string",
+    "default": "",
+    "regex": "^[^<>\\p{Cc}]{0,90}$",
+    "regexFlags": "u"
+  },
+  "sceneNoteEnding": {
+    "type": "string",
+    "default": "",
+    "regex": "^[^<>\\p{Cc}]{0,90}$",
+    "regexFlags": "u"
+  },
+  "sceneCountdown": {
+    "type": "number",
+    "default": 5,
+    "min": 0,
+    "max": 90
+  },
+  "sceneChat": {
+    "type": "boolean",
+    "default": true
+  },
+  "sceneChatSide": {
+    "type": "string",
+    "default": "right",
+    "options": [
+      "right",
+      "left"
+    ]
+  },
+  "sceneStats": {
+    "type": "boolean",
+    "default": true
+  },
+  "sceneAnimation": {
+    "type": "string",
+    "default": "aurora",
+    "options": [
+      "aurora",
+      "grid",
+      "embers",
+      "none"
+    ]
+  },
+  "sceneTwitch": {
+    "type": "string",
+    "default": "",
+    "regex": "^[\\p{L}\\p{N}_.\\-/@]{0,48}$",
+    "regexFlags": "u"
+  },
+  "sceneKick": {
+    "type": "string",
+    "default": "",
+    "regex": "^[\\p{L}\\p{N}_.\\-/@]{0,48}$",
+    "regexFlags": "u"
+  },
+  "sceneYoutube": {
+    "type": "string",
+    "default": "",
+    "regex": "^[\\p{L}\\p{N}_.\\-/@]{0,48}$",
+    "regexFlags": "u"
+  },
+  "sceneX": {
+    "type": "string",
+    "default": "",
+    "regex": "^[\\p{L}\\p{N}_.\\-/@]{0,48}$",
+    "regexFlags": "u"
+  },
+  "sceneInstagram": {
+    "type": "string",
+    "default": "",
+    "regex": "^[\\p{L}\\p{N}_.\\-/@]{0,48}$",
+    "regexFlags": "u"
+  },
+  "sceneTiktok": {
+    "type": "string",
+    "default": "",
+    "regex": "^[\\p{L}\\p{N}_.\\-/@]{0,48}$",
+    "regexFlags": "u"
+  },
+  "sceneDiscord": {
+    "type": "string",
+    "default": "",
+    "regex": "^[\\p{L}\\p{N}_.\\-/@]{0,48}$",
+    "regexFlags": "u"
+  },
   "popupPre": {
     "type": "boolean",
     "default": true
@@ -750,6 +870,11 @@
     "regex": "^[0-9a-fA-F]{3,8}$"
   },
   "splitsetAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "stageAccent": {
     "type": "string",
     "default": "ff5900",
     "regex": "^[0-9a-fA-F]{3,8}$"
@@ -1801,6 +1926,7 @@
       "sheet",
       "splitset",
       "livecard",
+      "stage",
       "normal",
       "animated",
       "compact",

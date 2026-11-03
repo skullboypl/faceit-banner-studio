@@ -12,6 +12,14 @@ import {
 } from '../../widget/src/widget/team-options';
 import { POPUP_ANIMATIONS, POPUP_LAYOUTS, POPUP_POSITIONS, POPUP_RANGES, POPUP_THEMES } from '../../widget/src/widget/popup-options';
 import {
+  SCENE_ANIMATIONS,
+  SCENE_CHAT_SIDES,
+  SCENE_HANDLE_REGEX,
+  SCENE_KINDS,
+  SCENE_RANGES,
+  SCENE_TEXT_REGEX,
+} from '../../widget/src/widget/scene-options';
+import {
   SPLIT_CHART_LOOKS,
   SPLIT_DATA_LOOKS,
   SPLIT_MOTION_LOOKS,
@@ -222,7 +230,7 @@ export const SETTINGS_DEFINITIONS = {
   widgetMode: {
     type: 'string',
     defaultValue: 'solo',
-    options: ['solo', 'versus', 'team', 'split', 'popup'],
+    options: ['solo', 'versus', 'team', 'split', 'popup', 'scenes'],
     query: ['mode'],
   },
   /** Other modes' working options. The live keys always belong to the current mode. */
@@ -616,6 +624,139 @@ export const SETTINGS_DEFINITIONS = {
     query: ['split_font'],
     requirements: [{ setting: 'widgetMode', value: 'split' }],
   },
+  /** Which scene the studio shows; each OBS link names its own scene. */
+  sceneKind: {
+    type: 'string',
+    defaultValue: 'starting',
+    options: [...SCENE_KINDS],
+    query: ['scene'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneTitleStarting: {
+    type: 'string',
+    defaultValue: '',
+    regex: SCENE_TEXT_REGEX,
+    query: ['scene_title_starting'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneTitleBrb: {
+    type: 'string',
+    defaultValue: '',
+    regex: SCENE_TEXT_REGEX,
+    query: ['scene_title_brb'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneTitleEnding: {
+    type: 'string',
+    defaultValue: '',
+    regex: SCENE_TEXT_REGEX,
+    query: ['scene_title_ending'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneNoteStarting: {
+    type: 'string',
+    defaultValue: '',
+    regex: SCENE_TEXT_REGEX,
+    query: ['scene_note_starting'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneNoteBrb: {
+    type: 'string',
+    defaultValue: '',
+    regex: SCENE_TEXT_REGEX,
+    query: ['scene_note_brb'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneNoteEnding: {
+    type: 'string',
+    defaultValue: '',
+    regex: SCENE_TEXT_REGEX,
+    query: ['scene_note_ending'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneCountdown: {
+    type: 'number',
+    defaultValue: 5,
+    min: SCENE_RANGES.countdown[0],
+    max: SCENE_RANGES.countdown[1],
+    query: ['scene_countdown'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneChat: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['scene_chat'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneChatSide: {
+    type: 'string',
+    defaultValue: 'right',
+    options: [...SCENE_CHAT_SIDES],
+    query: ['scene_chat_side'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneStats: {
+    type: 'boolean',
+    defaultValue: true,
+    query: ['scene_stats'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneAnimation: {
+    type: 'string',
+    defaultValue: 'aurora',
+    options: [...SCENE_ANIMATIONS],
+    query: ['scene_animation'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneTwitch: {
+    type: 'string',
+    defaultValue: '',
+    regex: SCENE_HANDLE_REGEX,
+    query: ['scene_twitch'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneKick: {
+    type: 'string',
+    defaultValue: '',
+    regex: SCENE_HANDLE_REGEX,
+    query: ['scene_kick'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneYoutube: {
+    type: 'string',
+    defaultValue: '',
+    regex: SCENE_HANDLE_REGEX,
+    query: ['scene_youtube'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneX: {
+    type: 'string',
+    defaultValue: '',
+    regex: SCENE_HANDLE_REGEX,
+    query: ['scene_x'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneInstagram: {
+    type: 'string',
+    defaultValue: '',
+    regex: SCENE_HANDLE_REGEX,
+    query: ['scene_instagram'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneTiktok: {
+    type: 'string',
+    defaultValue: '',
+    regex: SCENE_HANDLE_REGEX,
+    query: ['scene_tiktok'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneDiscord: {
+    type: 'string',
+    defaultValue: '',
+    regex: SCENE_HANDLE_REGEX,
+    query: ['scene_discord'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
   popupPre: {
     type: 'boolean',
     defaultValue: true,
@@ -981,6 +1122,13 @@ export const SETTINGS_DEFINITIONS = {
     "defaultValue": "ff5900",
     "query": ["splitset_accent"],
     "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "splitset" }],
+    "regex": HEX_REGEXP
+  },
+  "stageAccent": {
+    "type": "string",
+    "defaultValue": "ff5900",
+    "query": ["stage_accent"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "stage" }],
     "regex": HEX_REGEXP
   },
   "livecardAccent": {

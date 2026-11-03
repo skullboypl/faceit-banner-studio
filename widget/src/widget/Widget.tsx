@@ -115,6 +115,7 @@ import '../styles/avatar-presets.less';
 import '../styles/ticker-preset.less';
 import '../styles/versus-preset.less';
 import '../styles/modes-preset.less';
+import '../styles/scene-screen.less';
 import '../styles/solo-extra.less';
 import '../styles/stats-extra.less';
 import '../styles/promo-2026.less';
@@ -128,6 +129,8 @@ import { TeamBanner } from './TeamBanner';
 import { SPLIT_PARTS, SplitBanner } from './SplitBanner';
 import { readSplitOptions } from './split-options';
 import { MatchPopup } from './MatchPopup';
+import { SceneScreen } from './SceneScreen';
+import { readSceneOptions, SCENE_KINDS, type SceneKind } from './scene-options';
 import { readPopupOptions } from './popup-options';
 import { readTeamOptions, teamRecommendedWidth } from './team-options';
 import { SettingsContext } from '../../../src/generator/Generator.tsx';
@@ -386,6 +389,9 @@ export const Widget = ({
   const splitLimits =
     splitPart === 'radar' || splitPart === 'camera' ? SPLIT_PARTS[splitPart] : undefined;
   const isPopup = SETTINGS.get('widgetMode') === 'popup';
+  const isScenes = SETTINGS.get('widgetMode') === 'scenes';
+  /* The popup and the scenes are full-screen sources: their frame is always the whole 1920 x 1080 */
+  const isFullFrame = isPopup || isScenes;
   const isSoloExtra = ['slab', 'gauge', 'card', 'reel', 'ribbon', 'tower', 'dials', 'marquee'].includes(resolvedStyle);
 
   /* Banner sizing: AUTO follows the OBS browser window, manual uses own values */
@@ -406,16 +412,16 @@ export const Widget = ({
     ? resolveBannerSize({
         style: resolvedStyle,
         /* The popup is a full-screen overlay: its frame is always the whole 1920 x 1080 source */
-        widthMode: splitLimits || isPopup || isThumb ? 'recommended' : (SETTINGS.get('bannerWidthMode') as BannerSizeMode),
+        widthMode: splitLimits || isFullFrame || isThumb ? 'recommended' : (SETTINGS.get('bannerWidthMode') as BannerSizeMode),
         width: SETTINGS.get('bannerWidth'),
         heightMode: isThumb
           ? 'recommended'
-          : splitLimits || isPopup
+          : splitLimits || isFullFrame
             ? 'manual'
             : (SETTINGS.get('bannerHeightMode') as BannerSizeMode),
         recommendedWidth: splitLimits
           ? splitLimits.width
-          : isPopup
+          : isFullFrame
             ? 1920
             : isTeam
               ? teamRecommendedWidth(
@@ -426,7 +432,7 @@ export const Widget = ({
               resolvedStyle,
               Boolean(SETTINGS.get('showStatistics'))
             ),
-        height: splitLimits ? splitLimits.height : isPopup ? 1080 : SETTINGS.get('bannerHeight'),
+        height: splitLimits ? splitLimits.height : isFullFrame ? 1080 : SETTINGS.get('bannerHeight'),
         limits: splitLimits,
         viewportWidth: previewLimits?.width ?? viewport.width,
         viewportHeight: previewLimits?.height ?? viewport.height,
@@ -881,6 +887,34 @@ export const Widget = ({
   }, [language, elo, startingElo, SETTINGS, sample]);
 
   const showStats = Boolean(SETTINGS.get('showStatistics'));
+
+  /* Full-screen scenes: the same player read as the banner, shaped for the scene card */
+  const sceneKind: SceneKind = SCENE_KINDS.find((kind) => kind === SETTINGS.get('sceneKind')) ?? 'starting';
+  const sceneData = {
+    username: username || previewUsername || '',
+    avatar: avatar || previewAvatar,
+    elo: sample ? 2450 : elo,
+    level: sample ? 10 : level,
+    calibrating,
+    ranking: !sample && ranking > 0 && ranking <= 1000 ? ranking : undefined,
+    levelIcon: getIcon(),
+    recent: {
+      kd: getStat(StatisticType.KD),
+      adr: getStat(StatisticType.ADR),
+      hs: getStat(StatisticType.HSPERCENT)?.replace('%', '') ?? null,
+      winRate: getStat(StatisticType.WINRATIO)?.replace('%', '') ?? null,
+      matches: avgMatches,
+    },
+    session: sample
+      ? { wins: 3, losses: 1, eloDiff: 24, kd: 1.24, form: ['W', 'W', 'L', 'W'] as ('W' | 'L')[] }
+      : {
+          wins,
+          losses,
+          eloDiff: startingElo ? elo - startingElo : 0,
+          kd: sessionCard && sessionCard.matches > 0 ? sessionCard.kd : null,
+          form: sessionForm,
+        },
+  };
   const showMatches = SETTINGS.get('showWinsLosses') !== false;
   const showBannerHeader = !SETTINGS.get('hideBannerHeader');
   const hasStatsToShow =
@@ -2361,12 +2395,20 @@ export const Widget = ({
           } as CSSProperties
         }
       >
-        {/* The studio preview stays quiet until the streamer asks for the welcome; the OBS source plays it on load. */}
-        <UpdateIntro enabled={Boolean(SETTINGS.get('showUpdateIntro')) && (!preview || introReplay > 0)} language={language} replay={introReplay} />
+        {/* The studio preview stays quiet until the streamer asks for the welcome; the OBS source plays it on load. A full-screen scene never shows it: it would cover the scene. */}
+        <UpdateIntro enabled={Boolean(SETTINGS.get('showUpdateIntro')) && !isScenes && (!preview || introReplay > 0)} language={language} replay={introReplay} />
         <div
           className={`widget ${SETTINGS.get('useBannerAsBackground') || SETTINGS.get('useAvatarAsBackground') ? 'banner' : ''}`}
         >
-          {isPopup ? (
+          {isScenes ? (
+            <SceneScreen
+              preview={preview || isThumb}
+              kind={sceneKind}
+              options={readSceneOptions((key) => SETTINGS.get(key as SettingKey))}
+              data={sceneData}
+              translate={translate}
+            />
+          ) : isPopup ? (
             <MatchPopup
               preview={preview || isThumb}
               playerId={String(SETTINGS.get('playerId') || '')}

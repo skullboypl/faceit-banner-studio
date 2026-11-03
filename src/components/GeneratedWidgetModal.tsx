@@ -2,6 +2,7 @@ import { Language, tl } from '../translations/translations.ts';
 import { Dispatch, ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { broadcastPresets } from '../../widget/src/styles/styles';
 import { SPLIT_PARTS } from '../../widget/src/widget/SplitBanner';
+import { SCENE_KINDS } from '../../widget/src/widget/scene-options';
 import { readTeamOptions, teamRecommendedWidth } from '../../widget/src/widget/team-options';
 import { settingsFromQuery } from '../settings/query-values';
 
@@ -67,20 +68,30 @@ export const GeneratedWidgetModal = ({
   const [previewSize, setPreviewSize] = useState('recommended');
   const [copiedLabel, setCopiedLabel] = useState<string>();
   const query = url ? new URL(url).searchParams : undefined;
-  const isSplitLink = query?.get('mode') === 'split';
+  const isScenesLink = query?.get('mode') === 'scenes';
+  /* Split and the scenes are sets: one OBS source per part, each with its own link */
+  const isSplitLink = query?.get('mode') === 'split' || isScenesLink;
+  const linkHelp = isScenesLink ? 'scenes.links.help' : 'split.links.help';
   const splitLinks =
-    url && isSplitLink
-      ? (['radar', 'camera'] as const).map((part) => {
+    url && isScenesLink
+      ? SCENE_KINDS.map((kind) => {
           const next = new URL(url);
-          next.searchParams.set('part', part);
-          return {
-            part,
-            href: next.toString(),
-            width: SPLIT_PARTS[part].width,
-            height: SPLIT_PARTS[part].height,
-          };
+          next.searchParams.set('scene', kind);
+          return { part: kind, label: `scenes.kind.${kind}`, href: next.toString(), width: 1920, height: 1080 };
         })
-      : undefined;
+      : url && isSplitLink
+        ? (['radar', 'camera'] as const).map((part) => {
+            const next = new URL(url);
+            next.searchParams.set('part', part);
+            return {
+              part,
+              label: `split.link.${part}`,
+              href: next.toString(),
+              width: SPLIT_PARTS[part].width,
+              height: SPLIT_PARTS[part].height,
+            };
+          })
+        : undefined;
   const preset =
     query?.get('design') === '2026'
       ? broadcastPresets.find((entry) => entry.id === query.get('style'))
@@ -236,11 +247,11 @@ export const GeneratedWidgetModal = ({
 
         {splitLinks ? (
           <div className="split-links">
-            <p>{tl(language, 'split.links.help')}</p>
+            <p>{tl(language, linkHelp)}</p>
             {splitLinks.map((entry, index) => (
               <div className="split-link" key={entry.part}>
                 <div className="obs-size-head">
-                  <strong>{tl(language, `split.link.${entry.part}`)}</strong>
+                  <strong>{tl(language, entry.label)}</strong>
                   <span className="obs-size-value">
                     {entry.width} × {entry.height}
                   </span>
@@ -266,7 +277,7 @@ export const GeneratedWidgetModal = ({
                   <FitFrame width={entry.width} height={entry.height}>
                     {(fit) => (
                       <iframe
-                        title={tl(language, `split.link.${entry.part}`)}
+                        title={tl(language, entry.label)}
                         src={`${entry.href}&presence=off`}
                         style={{
                           border: 0,

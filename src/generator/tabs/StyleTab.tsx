@@ -209,7 +209,7 @@ export const StyleTab = ({
           <PresetCards mode={String(settings.get('widgetMode') || 'solo')} />
         )}
         {settings.get('bannerDesign') === '2026' && settings.get('widgetMode') === 'popup' && <PopupLayoutPicker />}
-        {settings.get('widgetMode') !== 'popup' && <BannerSizeControls />}
+        {settings.get('widgetMode') !== 'popup' && settings.get('widgetMode') !== 'scenes' && <BannerSizeControls />}
         {ui.radius && <BannerRadiusControl />}
         <div className={'setting'}>
           <div className={'flex style-mode-row'}>

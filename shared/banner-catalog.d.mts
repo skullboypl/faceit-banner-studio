@@ -1,4 +1,4 @@
-export const BANNER_MODES: readonly ['solo', 'versus', 'team', 'split', 'popup'];
+export const BANNER_MODES: readonly ['solo', 'versus', 'team', 'split', 'popup', 'scenes'];
 export type BannerCatalogMode = (typeof BANNER_MODES)[number];
 export type BannerCatalog = Record<BannerCatalogMode, boolean>;
 export function defaultBannerCatalog(): BannerCatalog;

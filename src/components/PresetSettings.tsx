@@ -22,7 +22,7 @@ export function PresetSettings() {
       </select>
     </div>
   );
-  if (['lineup', 'sheet', 'splitset', 'livecard'].includes(style)) {
+  if (['lineup', 'sheet', 'splitset', 'livecard', 'stage'].includes(style)) {
     return (
       <div className="settings preset-options">
         <h3 className="card-heading">{tl('preset.settings', [tl(`style.${style}`)])}</h3>

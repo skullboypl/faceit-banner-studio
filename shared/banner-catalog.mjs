@@ -1,9 +1,9 @@
 /** Modes the configurator can offer. A hidden mode still renders an existing widget. */
-export const BANNER_MODES = ['solo', 'versus', 'team', 'split', 'popup'];
+export const BANNER_MODES = ['solo', 'versus', 'team', 'split', 'popup', 'scenes'];
 
 /** Fresh installs show only the two original modes until an admin opens the rest. */
 export function defaultBannerCatalog() {
-  return { solo: true, versus: true, team: false, split: false, popup: false };
+  return { solo: true, versus: true, team: false, split: false, popup: false, scenes: false };
 }
 
 /** Keep only known modes. Missing keys stay on the default. */

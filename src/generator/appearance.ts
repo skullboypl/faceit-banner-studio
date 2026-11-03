@@ -21,7 +21,7 @@ const ALL: AppearanceControls = { radius: true, scheme: true, font: true, fontSi
  * carry their own theme, so hiding what does nothing keeps the tab honest.
  */
 export function appearanceFor(mode: string): AppearanceControls {
-  if (mode === 'popup') {
+  if (mode === 'popup' || mode === 'scenes') {
     return { radius: false, scheme: false, font: true, fontSizes: false, iconScale: false, surface: false };
   }
   if (mode === 'team' || mode === 'split') {
@@ -46,6 +46,8 @@ export type SettingsControls = {
 /** Which Settings-tab cards and options apply to a widget mode. */
 export function settingsFor(mode: string): SettingsControls {
   if (mode === 'popup') return { elements: false, autoWidth: false, session: false };
+  /* The end-of-stream scene sums up the session, so its saving stays a choice */
+  if (mode === 'scenes') return { elements: false, autoWidth: false, session: true };
   if (mode === 'team' || mode === 'split' || mode === 'versus') return { elements: false, autoWidth: true, session: false };
   return { elements: true, autoWidth: true, session: true };
 }

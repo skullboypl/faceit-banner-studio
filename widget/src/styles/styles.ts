@@ -39,6 +39,7 @@ export const styles: {
   { id: 'sheet', modernOnly: true },
   { id: 'splitset', modernOnly: true },
   { id: 'livecard', modernOnly: true },
+  { id: 'stage', modernOnly: true },
   // dotychczasowe
   { id: 'normal' },
   { id: 'animated' },
@@ -86,7 +87,7 @@ export const broadcastPresets: readonly {
   /** Two-player banner, offered only in VERSUS mode. */
   versus?: boolean;
   /** Roster, split set, or match popup. Solo layouts leave this empty. */
-  group?: 'team' | 'split' | 'popup';
+  group?: 'team' | 'split' | 'popup' | 'scenes';
 }[] = [
   { id: 'prime', width: 540, height: 250 },
   { id: 'showcase', width: 500, height: 180, animated: true },
@@ -123,9 +124,10 @@ export const broadcastPresets: readonly {
   { id: 'sheet', width: 680, height: 300, group: 'team' },
   { id: 'splitset', width: 300, height: 300, square: true, group: 'split' },
   { id: 'livecard', width: 1920, height: 1080, group: 'popup' },
+  { id: 'stage', width: 1920, height: 1080, animated: true, group: 'scenes' },
 ];
 
-export type BannerMode = 'solo' | 'versus' | 'team' | 'split' | 'popup';
+export type BannerMode = 'solo' | 'versus' | 'team' | 'split' | 'popup' | 'scenes';
 
 export const isVersusStyle = (style: string) =>
   broadcastPresets.some((preset) => preset.id === style && preset.versus);

@@ -16,6 +16,7 @@ import { switchBannerMode, type BannerMode } from '../../settings/mode-memory.ts
 import { UserIcon } from '../../assets/icons/tabler/UserIcon.tsx';
 import { StudioIcon } from '../../components/StudioIcon.tsx';
 import { PopupOptions } from '../../components/PopupOptions.tsx';
+import { SceneOptions } from '../../components/SceneOptions';
 import { OverrideNotice } from '../../components/ProfileImages.tsx';
 import { TeamOptionsPanel } from '../../components/ModeOptions.tsx';
 import { SplitOptionsPanel } from '../../components/SplitOptions.tsx';
@@ -262,7 +263,7 @@ export const MainTab = ({
               onClick={() => switchMode(entry)}
             >
               <span className="design-switch-mark" aria-hidden="true">
-                {entry === 'solo' ? '1' : entry === 'versus' ? 'VS' : entry === 'team' ? '10' : entry === 'split' ? 'R+' : '●'}
+                {entry === 'solo' ? '1' : entry === 'versus' ? 'VS' : entry === 'team' ? '10' : entry === 'split' ? 'R+' : entry === 'scenes' ? 'FS' : '●'}
               </span>
               <span className="design-switch-text">
                 <strong>{tl(`mode.${entry}`)}</strong>
@@ -456,6 +457,7 @@ export const MainTab = ({
         </div>
       </div>
       {mode === 'popup' && <PopupOptions />}
+      {mode === 'scenes' && <SceneOptions />}
       {mode === 'team' && <TeamOptionsPanel />}
       {mode === 'split' && <SplitOptionsPanel />}
       {ui.elements && (

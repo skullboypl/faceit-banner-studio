@@ -47,7 +47,7 @@ export function previewIconTransform(scale: number, subject: PreviewSubject | nu
  */
 export function previewFrame(get: Get): PreviewFrame {
   const mode = get('widgetMode');
-  if (mode === 'popup') return { width: 1920, height: 1080 };
+  if (mode === 'popup' || mode === 'scenes') return { width: 1920, height: 1080 };
   if (mode === 'split') return { width: 300, height: 300 };
   const style = resolveBannerStyle(String(get('style')), String(get('bannerDesign')));
   const preset = broadcastPresets.find((entry) => entry.id === style);
@@ -104,7 +104,7 @@ export function previewUrl(get: Get, languageId: string, origin: string): string
     thumb: true,
     ...(mode === 'popup' ? { popup_preview: 'pre' } : {}),
     ...(mode === 'split' ? { part: 'radar' } : {}),
-    ...(mode === 'popup'
+    ...(mode === 'popup' || mode === 'scenes'
       ? {}
       : { banner_width_mode: 'recommended', banner_height_mode: 'recommended' }),
   };

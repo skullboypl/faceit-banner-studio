@@ -21,6 +21,8 @@ const schema = Object.fromEntries(
         ...(definition.max !== undefined && { max: definition.max }),
         ...(definition.options && { options: definition.options }),
         ...(definition.regex && { regex: definition.regex.source }),
+        /* Unicode classes like \p{L} only mean something with the u flag */
+        ...(definition.regex?.flags && { regexFlags: definition.regex.flags }),
       },
     ]
   )

@@ -25,7 +25,8 @@ const SQL = `
     ('versus', TRUE),
     ('team', FALSE),
     ('split', FALSE),
-    ('popup', FALSE)
+    ('popup', FALSE),
+    ('scenes', FALSE)
   ON CONFLICT (mode) DO NOTHING;
 `;
 

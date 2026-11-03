@@ -57,7 +57,7 @@ function validateValue(key, definition, value) {
   if (definition.options && !definition.options.some((option) => normalize(option) === normalize(value))) {
     return `${key}: not an allowed option`;
   }
-  if (definition.regex && typeof value === 'string' && !new RegExp(definition.regex).test(value)) {
+  if (definition.regex && typeof value === 'string' && !new RegExp(definition.regex, definition.regexFlags || '').test(value)) {
     return `${key}: does not match the required format`;
   }
   return null;

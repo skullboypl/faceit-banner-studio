@@ -12,6 +12,7 @@ const LABELS: Record<BannerCatalogMode, { title: string; text: string }> = {
   team: { title: 'Skład', text: 'Lista do 10 graczy.' },
   split: { title: 'Split', text: 'Dwa linki: radar i pasek pod kamerkę.' },
   popup: { title: 'Popup', text: 'Karta meczu na środku ekranu.' },
+  scenes: { title: 'Pełny ekran', text: 'Sceny: zaraz zaczynamy, zaraz wracam i koniec streama.' },
 };
 
 export function AdminCatalog() {

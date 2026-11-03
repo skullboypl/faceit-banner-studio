@@ -13,6 +13,7 @@ const FALLBACK_STYLE: Record<BannerMode, string> = {
   team: 'lineup',
   split: 'splitset',
   popup: 'livecard',
+  scenes: 'stage',
 };
 
 const scopedKeys = () =>

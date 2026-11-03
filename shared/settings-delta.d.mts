@@ -1,6 +1,6 @@
 export type SettingsSchema = Record<
   string,
-  { type: string; default?: unknown; min?: number; max?: number; options?: unknown[]; regex?: string }
+  { type: string; default?: unknown; min?: number; max?: number; options?: unknown[]; regex?: string; regexFlags?: string }
 >;
 export type ValidationResult = { ok: true } | { ok: false; errors: string[] };
 

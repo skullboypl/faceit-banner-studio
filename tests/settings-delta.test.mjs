@@ -65,3 +65,10 @@ test('rejects non-object input', () => {
 test('accepts a valid delta', () => {
   assert.deepEqual(validateDelta({ bannerRadius: 20, bannerWidthMode: 'auto' }, schema), { ok: true });
 });
+
+test('scene texts and handles are checked with their unicode flag, so letters like p and c pass', () => {
+  assert.equal(validateDelta({ sceneTitleBrb: 'Pizza i chwila przerwy', sceneTwitch: 'skullboypl', sceneDiscord: 'discord.gg/abc' }, schema).ok, true);
+  const bad = validateDelta({ sceneTitleBrb: '<b>hi</b>', sceneX: 'two words' }, schema);
+  assert.equal(bad.ok, false);
+  assert.equal(bad.errors.length, 2);
+});
