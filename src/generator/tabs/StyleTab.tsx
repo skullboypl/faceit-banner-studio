@@ -3,6 +3,7 @@ import {
   resolveBannerStyle,
   styles,
 } from '../../../widget/src/styles/styles';
+import { SceneLookOptions } from '../../components/SceneOptions';
 import { ColorPicker } from '../../components/ColorPicker.tsx';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { Checkbox } from '../../components/Checkbox.tsx';
@@ -203,6 +204,8 @@ export const StyleTab = ({
             : tl('generator.theme.design.help')}
         </p>
       </div>
+      {/* Scenes have their own look cards below; none of these controls applies to them */}
+      {settings.get('widgetMode') !== 'scenes' && (
       <div className={'settings'}>
         <h3 className="card-heading">{tl('studio.appearance')}</h3>
         {settings.get('bannerDesign') === '2026' && (
@@ -402,7 +405,9 @@ export const StyleTab = ({
           </div>
         )}
       </div>
+      )}
 
+      {settings.get('widgetMode') === 'scenes' && <SceneLookOptions />}
       {settings.get('widgetMode') === 'popup' ? (
         <PopupLookOptions />
       ) : settings.get('widgetMode') === 'split' ? (

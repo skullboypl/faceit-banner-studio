@@ -10,7 +10,7 @@ export type SceneAnimation = (typeof SCENE_ANIMATIONS)[number];
  * How the scene is built around the streamer. `classic` is a title with a small card; the others put the player and
  * their ELO in the middle of the scene, each with its own motion.
  */
-export const SCENE_THEMES = ['classic', 'spotlight', 'neon', 'holo', 'broadcast'] as const;
+export const SCENE_THEMES = ['spotlight', 'holo', 'neon', 'broadcast', 'classic'] as const;
 export type SceneTheme = (typeof SCENE_THEMES)[number];
 /** The themes with the heaviest motion, marked in the studio. */
 export const SCENE_WOW_THEMES: readonly SceneTheme[] = ['spotlight', 'neon', 'holo'];
@@ -54,7 +54,26 @@ export type SceneChatSide = (typeof SCENE_CHAT_SIDES)[number];
 export const SCENE_SOCIALS = ['twitch', 'kick', 'youtube', 'x', 'instagram', 'tiktok', 'discord'] as const;
 export type SceneSocial = (typeof SCENE_SOCIALS)[number];
 
-export const SCENE_RANGES = { countdown: [0, 90] as [number, number] };
+export const SCENE_CHAT_STYLES = ['glass', 'solid', 'outline', 'none'] as const;
+export type SceneChatStyle = (typeof SCENE_CHAT_STYLES)[number];
+
+/** How fast the loops run: the backgrounds, the rays, the floating card and the ticker. */
+export const SCENE_MOTIONS = ['calm', 'normal', 'lively'] as const;
+export type SceneMotion = (typeof SCENE_MOTIONS)[number];
+/** Duration multiplier of each tempo: a calm scene runs its loops slower. */
+export const SCENE_MOTION_FACTOR: Record<SceneMotion, number> = { calm: 1.8, normal: 1, lively: 0.6 };
+
+export const SCENE_RANGES = {
+  countdown: [0, 90] as [number, number],
+  /** Size of everything on the scene, in percent. */
+  scale: [70, 130] as [number, number],
+  title: [60, 140] as [number, number],
+  /** Width of the chat panel, in percent of a 16:9 frame. */
+  chatWidth: [18, 40] as [number, number],
+  /** How much the background is darkened, in percent. */
+  dim: [0, 80] as [number, number],
+  mapBlur: [0, 24] as [number, number],
+};
 
 /** Text a streamer types for a title or a note: no markup, no control characters. */
 export const SCENE_TEXT_REGEX = /^[^<>\p{Cc}]{0,90}$/u;
@@ -73,6 +92,15 @@ export type SceneOptions = {
   animation: SceneAnimation;
   theme: SceneTheme;
   parts: ReadonlySet<ScenePart>;
+  scale: number;
+  titleScale: number;
+  chatWidth: number;
+  chatStyle: SceneChatStyle;
+  motion: SceneMotion;
+  dim: number;
+  /** A CS2 map still behind the scene, or '' for none. */
+  map: string;
+  mapBlur: number;
   socials: { kind: SceneSocial; handle: string }[];
 };
 
@@ -80,6 +108,14 @@ type Get = (key: string) => unknown;
 
 const pick = <T extends string>(list: readonly T[], value: unknown, fallback: T): T =>
   list.find((entry) => entry === value) ?? fallback;
+
+/** A whole number inside the range, or the fallback. */
+const within = (value: unknown, [min, max]: [number, number], fallback: number) => {
+  const number = Number(value);
+  return value === undefined || value === null || value === '' || !Number.isFinite(number)
+    ? fallback
+    : Math.min(max, Math.max(min, Math.round(number)));
+};
 
 const text = (value: unknown) => (typeof value === 'string' && SCENE_TEXT_REGEX.test(value) ? value.trim() : '');
 
@@ -102,13 +138,21 @@ export function readSceneOptions(get: Get): SceneOptions {
     kind: pick(SCENE_KINDS, get('sceneKind'), 'starting'),
     titles: per('Title'),
     notes: per('Note'),
-    countdown: Number.isFinite(countdown) ? Math.min(SCENE_RANGES.countdown[1], Math.max(0, Math.round(countdown))) : 5,
+    countdown: within(countdown, SCENE_RANGES.countdown, 5),
     chat: get('sceneChat') !== false,
     chatSide: pick(SCENE_CHAT_SIDES, get('sceneChatSide'), 'right'),
     stats: get('sceneStats') !== false,
     animation: pick(SCENE_ANIMATIONS, get('sceneAnimation'), 'aurora'),
     theme: pick(SCENE_THEMES, get('sceneTheme'), 'spotlight'),
     parts: readSceneParts(get('sceneParts')),
+    scale: within(get('sceneScale'), SCENE_RANGES.scale, 100),
+    titleScale: within(get('sceneTitleScale'), SCENE_RANGES.title, 100),
+    chatWidth: within(get('sceneChatWidth'), SCENE_RANGES.chatWidth, 27),
+    chatStyle: pick(SCENE_CHAT_STYLES, get('sceneChatStyle'), 'glass'),
+    motion: pick(SCENE_MOTIONS, get('sceneMotion'), 'normal'),
+    dim: within(get('sceneDim'), SCENE_RANGES.dim, 0),
+    map: typeof get('sceneMap') === 'string' && /^[a-z0-9]{0,16}$/.test(String(get('sceneMap'))) ? String(get('sceneMap')) : '',
+    mapBlur: within(get('sceneMapBlur'), SCENE_RANGES.mapBlur, 6),
     socials: SCENE_SOCIALS.map((kind) => ({ kind, handle: cleanHandle(get(sceneSocialKey(kind))) })).filter((entry) => entry.handle),
   };
 }

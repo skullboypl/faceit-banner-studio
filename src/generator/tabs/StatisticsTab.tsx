@@ -5,6 +5,7 @@ import { LanguageContext, SettingsContext } from '../Generator.tsx';
 import { Checkbox } from '../../components/Checkbox.tsx';
 import { resolveBannerStyle } from '../../../widget/src/styles/styles';
 import { refreshSeconds } from '../../../widget/src/utils/refresh';
+import { SceneStatsOptions } from '../../components/SceneOptions';
 
 export enum StatisticType {
   KILLS = 'KILLS',
@@ -42,6 +43,7 @@ export const StatisticsTab = () => {
     !(settings.get('bannerDesign') === '2026' && resolveBannerStyle(settings.get('style'), '2026') === 'ticker');
   return (
     <>
+      {settings.get('widgetMode') === 'scenes' && <SceneStatsOptions />}
       {slots && (
         <div className={'settings'}>
           <h3 className="card-heading">{tl('studio.stat_slots')}</h3>

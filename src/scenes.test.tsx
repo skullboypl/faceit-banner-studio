@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { SceneScreen, type SceneData } from '../widget/src/widget/SceneScreen';
 import {
   SCENE_PARTS,
+  SCENE_THEMES,
   cleanHandle,
   formatCountdown,
   levelProgress,
@@ -192,6 +193,42 @@ describe('themes and parts', () => {
   test('an unknown starting ELO hides the ELO change instead of showing zero', () => {
     const view = draw('ending', options(), data({ session: { wins: 2, losses: 0, eloDiff: null, kd: null, form: ['W', 'W'] } }));
     expect([...view.querySelectorAll('.scene-group')[0].querySelectorAll('.scene-cell small')].map((label) => label.textContent)).toEqual(['scene.record']);
+  });
+});
+
+describe('look options', () => {
+  test('sizes, chat panel, tempo, dimmer and map are read and clamped', () => {
+    const values: Record<string, unknown> = {
+      sceneScale: 500,
+      sceneTitleScale: 10,
+      sceneChatWidth: 33,
+      sceneChatStyle: 'outline',
+      sceneMotion: 'lively',
+      sceneDim: 35,
+      sceneMap: 'mirage',
+      sceneMapBlur: 99,
+    };
+    const read = readSceneOptions((key) => values[key]);
+    expect(read).toMatchObject({ scale: 130, titleScale: 60, chatWidth: 33, chatStyle: 'outline', motion: 'lively', dim: 35, map: 'mirage', mapBlur: 24 });
+    expect(readSceneOptions((key) => (key === 'sceneMap' ? '../x' : undefined)).map).toBe('');
+    expect(readSceneOptions(() => undefined)).toMatchObject({ theme: 'spotlight', scale: 100, chatStyle: 'glass', motion: 'normal', dim: 0, map: '' });
+  });
+
+  test('the scene carries the sizes and tempo as variables, with the map and dimmer behind it', () => {
+    const view = draw('starting', options({ scale: 120, titleScale: 80, chatWidth: 30, chatStyle: 'none', motion: 'calm', dim: 40, map: 'nuke' }));
+    const frame = view.querySelector<HTMLElement>('.scene-frame');
+    expect(frame?.style.getPropertyValue('--k')).toBe('1.2');
+    expect(frame?.style.getPropertyValue('--tk')).toBe('0.8');
+    expect(frame?.style.getPropertyValue('--chat-w')).toBe('30');
+    expect(frame?.style.getPropertyValue('--m')).toBe('1.8');
+    expect(view.querySelector('.scene-screen')?.className).toContain('chat-style--none');
+    expect(view.querySelector<HTMLElement>('.scene-map')?.style.backgroundImage).toContain('nuke');
+    expect(view.querySelector<HTMLElement>('.scene-dim')?.style.opacity).toBe('0.4');
+  });
+
+  test('the theme list leads with the most striking ones', () => {
+    expect(SCENE_THEMES[0]).toBe('spotlight');
+    expect(SCENE_THEMES.at(-1)).toBe('classic');
   });
 });
 
