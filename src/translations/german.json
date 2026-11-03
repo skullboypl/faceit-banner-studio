@@ -1190,13 +1190,12 @@
   "scenes.theme.panel.tagline": "Alles in einer dunklen Spalte",
   "scenes.theme.bar": "Leiste",
   "scenes.theme.bar.tagline": "Großer Titel und eine Leiste mit deinen Zahlen",
-  "chat.stats.mine": "Deine Aufrufe",
+  "chat.stats.all": "Alle Aufrufe",
   "chat.stats.today": "Heute",
   "chat.stats.top": "Am häufigsten",
-  "chat.stats.site": "Ganze Seite",
+  "chat.stats.channels": "Kanäle mit Befehlen",
   "chat.stats.calls": "Aufrufe",
   "chat.stats.calls_title": "{{0}} Aufrufe von {{1}}",
   "chat.stats.today_short": "+{{0}} heute",
-  "chat.stats.hint": "Jeder Aufruf deiner Befehle über einen Bot zählt. Die Vorschau im Studio zählt nicht.",
-  "chat.stats.no_nick": "Gib oben den Standardnamen ein, um die Aufrufe deiner Befehle zu zählen."
+  "chat.stats.hint": "Aufrufe dieser Befehle auf allen Kanälen, die sie nutzen, zusammen für die ganze Seite. Die Vorschau im Studio zählt nicht."
 }

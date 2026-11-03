@@ -1190,13 +1190,12 @@
   "scenes.theme.panel.tagline": "Her şey tek bir koyu sütunda",
   "scenes.theme.bar": "Şerit",
   "scenes.theme.bar.tagline": "Büyük başlık ve sayılarının olduğu tek şerit",
-  "chat.stats.mine": "Senin çağrıların",
+  "chat.stats.all": "Tüm çağrılar",
   "chat.stats.today": "Bugün",
   "chat.stats.top": "En çok",
-  "chat.stats.site": "Tüm site",
+  "chat.stats.channels": "Komut kullanan kanallar",
   "chat.stats.calls": "çağrı",
   "chat.stats.calls_title": "{{1}} için {{0}} çağrı",
   "chat.stats.today_short": "bugün +{{0}}",
-  "chat.stats.hint": "Komutlarının bot üzerinden her çağrısı sayılır. Stüdyodaki önizleme sayılmaz.",
-  "chat.stats.no_nick": "Komutlarının çağrılarını saymak için yukarıda varsayılan kullanıcı adını yaz."
+  "chat.stats.hint": "Bu komutların, onları kullanan tüm kanallardaki çağrıları, tüm site için toplanır. Stüdyodaki önizleme sayılmaz."
 }

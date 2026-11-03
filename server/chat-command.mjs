@@ -12,7 +12,7 @@ import { createChatStats } from './chat-stats.mjs';
  * Bots print the body as it is and ignore the status, so every answer, errors included, is a 200 with a sentence.
  */
 export const CHAT_COMMAND_PATH = '/api/faceit/elo';
-/** How often the commands were used: GET …/stats?nick=streamer answers JSON for the studio. */
+/** How often the commands were used across the whole site: GET …/stats answers JSON for the studio. */
 export const CHAT_STATS_PATH = '/api/faceit/elo/stats';
 /** StreamElements and Nightbot cut a reply after 400 characters. */
 export const CHAT_REPLY_MAX = 380;
@@ -346,9 +346,8 @@ export async function handleChatCommand(req, res, { unlimitedRate = false, read 
       res.end(JSON.stringify({ error: req.method !== 'GET' ? 'method_not_allowed' : 'rate_limited' }));
       return true;
     }
-    const owner = chatNick(url.searchParams.get('nick')).toLowerCase();
     res.statusCode = 200;
-    res.end(JSON.stringify({ owner, ...(await stats.read(owner)) }));
+    res.end(JSON.stringify(await stats.read()));
     return true;
   }
   if (pathname !== CHAT_COMMAND_PATH) return false;

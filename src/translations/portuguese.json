@@ -1190,13 +1190,12 @@
   "scenes.theme.panel.tagline": "Tudo em uma coluna escura",
   "scenes.theme.bar": "Faixa",
   "scenes.theme.bar.tagline": "Título grande e uma faixa com seus números",
-  "chat.stats.mine": "Seus usos",
+  "chat.stats.all": "Todos os usos",
   "chat.stats.today": "Hoje",
   "chat.stats.top": "Mais usado",
-  "chat.stats.site": "Site inteiro",
+  "chat.stats.channels": "Canais com comandos",
   "chat.stats.calls": "usos",
   "chat.stats.calls_title": "{{0}} usos de {{1}}",
   "chat.stats.today_short": "+{{0}} hoje",
-  "chat.stats.hint": "Conta cada uso dos seus comandos por um bot. A prévia do estúdio não conta.",
-  "chat.stats.no_nick": "Defina o nick padrão acima para contar os usos dos seus comandos."
+  "chat.stats.hint": "Usos destes comandos em todos os canais que os usam, somados para o site inteiro. A prévia do estúdio não conta."
 }

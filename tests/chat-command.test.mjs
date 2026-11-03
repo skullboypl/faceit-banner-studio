@@ -219,11 +219,13 @@ test('map names lose the de_ prefix, and averages of nothing are nothing', () =>
 const KINDS = ['elo', 'last', 'kd', 'avg', 'live'];
 const DAY = new Date('2026-11-03T20:00:00Z');
 
-/** A Redis double: hashes, the bump-if-present script, and multi with hset/expire. */
+/** A Redis double: hashes and strings, the bump-if-present script, and multi with hset/set/expire. */
 function fakeRedis() {
   const hashes = new Map();
+  const strings = new Map();
   const client = {
     hashes,
+    strings,
     eval: async (_script, count, ...rest) => {
       const keys = rest.slice(0, count);
       const kind = rest[count];
@@ -234,18 +236,19 @@ function fakeRedis() {
       return 1;
     },
     hgetall: async (key) => ({ ...(hashes.get(key) ?? {}) }),
+    get: async (key) => strings.get(key) ?? null,
     multi() {
       const ops = [];
       const batch = {
         hset: (key, values) => (ops.push(() => hashes.set(key, Object.fromEntries(Object.entries(values).map(([k, v]) => [k, String(v)])))), batch),
+        set: (key, value) => (ops.push(() => strings.set(key, value)), batch),
         expire: () => batch,
         exec: async () => ops.forEach((op) => op()),
       };
       return batch;
     },
   };
-  let up = true;
-  return { client, call: async (run) => (up ? run(client) : undefined), down: () => (up = false) };
+  return { client, call: async (run) => run(client) };
 }
 
 /** A Postgres double holding chat_command_counts rows, answering the few statements the counters send. */
@@ -272,8 +275,12 @@ function fakePostgres() {
         });
         return { rows: [] };
       }
-      if (sql.includes('AND day')) return { rows: sum((owner, day) => owner === params[0] && day === params[1]) };
-      if (sql.includes('WHERE owner')) return { rows: sum((owner) => owner === params[0]) };
+      if (sql.includes('COUNT(*)')) {
+        const owners = new Set([...rows.keys()].map((key) => key.split('|')[0]).filter(Boolean));
+        params[0].forEach((owner) => owners.add(owner));
+        return { rows: [{ n: owners.size }] };
+      }
+      if (sql.includes('WHERE day')) return { rows: sum((_owner, day) => day === params[0]) };
       return { rows: sum(() => true) };
     },
   };
@@ -294,7 +301,7 @@ function manualTimers() {
   return { set: (run) => (waiting.push(run), { unref() {} }), fire: () => waiting.splice(0).forEach((run) => run()) };
 }
 
-test('calls wait in memory and reach Postgres in one write per flush', async () => {
+test('calls from every channel add up for the whole site and reach Postgres in one write', async () => {
   const redis = fakeRedis();
   const pg = fakePostgres();
   const timers = manualTimers();
@@ -311,11 +318,22 @@ test('calls wait in memory and reach Postgres in one write per flush', async () 
   assert.equal(pg.writes, 1);
   assert.equal(pg.rows.get('skullboy|2026-11-03|elo'), 2);
   assert.equal(pg.rows.get('|2026-11-03|elo'), 1);
-  const read = await stats.read('skullboy');
+  const read = await stats.read();
   assert.deepEqual(read.total, { elo: 4, last: 0, kd: 0, avg: 0, live: 1 });
-  assert.deepEqual(read.mine, { elo: 2, last: 0, kd: 0, avg: 0, live: 1 });
-  assert.deepEqual(read.today, { elo: 2, last: 0, kd: 0, avg: 0, live: 1 });
+  assert.deepEqual(read.today, { elo: 4, last: 0, kd: 0, avg: 0, live: 1 });
+  assert.equal(read.channels, 2);
   assert.equal(chatDay(new Date('2026-11-03T23:59:00Z')), '2026-11-03');
+});
+
+test('yesterday counts in the total but not in today', async () => {
+  const pg = fakePostgres();
+  pg.rows.set('skullboy|2026-11-02|elo', 10);
+  const stats = createChatStats({ kinds: KINDS, redis: async () => undefined, postgres: pg.call, now: () => DAY, setTimer: () => null });
+  await stats.record('elo', 'other');
+  const read = await stats.read();
+  assert.equal(read.total.elo, 11);
+  assert.equal(read.today.elo, 1);
+  assert.equal(read.channels, 2);
 });
 
 test('Redis caches the sums: a missing key is rebuilt from Postgres plus the calls still waiting, then bumped live', async () => {
@@ -325,17 +343,18 @@ test('Redis caches the sums: a missing key is rebuilt from Postgres plus the cal
   const stats = createChatStats({ kinds: KINDS, redis: redis.call, postgres: pg.call, now: () => DAY, setTimer: () => null });
   await stats.record('elo', 'skullboy');
   /* Not in Postgres yet, and no cache: the read counts the waiting call too */
-  assert.equal((await stats.read('skullboy')).mine.elo, 41);
-  assert.equal(redis.client.hashes.get('fb:chatcmd2:owner:skullboy').elo, '41');
+  assert.equal((await stats.read()).total.elo, 41);
+  assert.equal(redis.client.hashes.get('fb:chatcmd2:total').elo, '41');
+  assert.equal(redis.client.strings.get('fb:chatcmd2:channels'), '1');
   /* With the key warm, a new call bumps the cache without asking Postgres */
-  await stats.record('elo', 'skullboy');
-  assert.equal(redis.client.hashes.get('fb:chatcmd2:owner:skullboy').elo, '42');
-  assert.equal((await stats.read('skullboy')).mine.elo, 42);
+  await stats.record('elo', 'someone');
+  assert.equal(redis.client.hashes.get('fb:chatcmd2:total').elo, '42');
+  assert.equal((await stats.read()).total.elo, 42);
   /* A call does not create a key: an evicted cache cannot come back as a lone "1" */
   redis.client.hashes.clear();
   await stats.record('kd', 'skullboy');
   assert.equal(redis.client.hashes.size, 0);
-  assert.equal((await stats.read('skullboy')).mine.kd, 1);
+  assert.equal((await stats.read()).total.kd, 1);
 });
 
 test('a failed write keeps the calls for the next one', async () => {
@@ -352,15 +371,16 @@ test('a failed write keeps the calls for the next one', async () => {
 });
 
 test('with Redis and Postgres both down the counters live in memory', async () => {
-  const stats = createChatStats({ kinds: KINDS, redis: async () => undefined, postgres: async () => undefined, setTimer: () => null });
+  const stats = createChatStats({ kinds: KINDS, redis: async () => undefined, postgres: async () => undefined, now: () => DAY, setTimer: () => null });
   await stats.record('kd', 'skullboy');
-  const read = await stats.read('skullboy');
-  assert.equal(read.mine.kd, 1);
-  assert.equal(read.total.kd, 1);
-  assert.deepEqual((await stats.read('')).mine, { elo: 0, last: 0, kd: 0, avg: 0, live: 0 });
+  await stats.record('kd', 'other');
+  const read = await stats.read();
+  assert.equal(read.total.kd, 2);
+  assert.equal(read.today.kd, 2);
+  assert.equal(read.channels, 2);
 });
 
-test('the endpoint counts bot calls, skips the studio preview and serves the numbers as JSON', async () => {
+test('the endpoint counts bot calls, skips the studio preview and serves the site numbers as JSON', async () => {
   const { read } = fakeRead();
   const stats = createChatStats({ kinds: KINDS, redis: async () => undefined, postgres: async () => undefined, setTimer: () => null });
   const response = () => {
@@ -369,15 +389,15 @@ test('the endpoint counts bot calls, skips the studio preview and serves the num
   };
   const call = (url) => handleChatCommand({ url, method: 'GET', headers: {}, socket: {} }, response(), { unlimitedRate: true, read, stats });
   await call('/api/faceit/elo?default=SkullBoy&nick=');
-  await call('/api/faceit/elo?type=kd&default=SkullBoy&nick=other');
+  await call('/api/faceit/elo?type=kd&default=Another&nick=other');
   await call('/api/faceit/elo?default=SkullBoy&preview=1&nick=');
   await new Promise((resolve) => setImmediate(resolve));
   const res = response();
-  assert.equal(await handleChatCommand({ url: '/api/faceit/elo/stats?nick=@SkullBoy', method: 'GET', headers: {}, socket: {} }, res, { unlimitedRate: true, stats }), true);
+  assert.equal(await handleChatCommand({ url: '/api/faceit/elo/stats', method: 'GET', headers: {}, socket: {} }, res, { unlimitedRate: true, stats }), true);
   assert.match(res.headers['content-type'], /^application\/json/);
   const body = JSON.parse(res.body);
-  assert.equal(body.owner, 'skullboy');
-  assert.equal(body.mine.elo, 1);
-  assert.equal(body.mine.kd, 1);
-  assert.equal(body.total.elo, 1);
+  assert.deepEqual(body.total, { elo: 1, last: 0, kd: 1, avg: 0, live: 0 });
+  assert.equal(body.today.elo, 1);
+  assert.equal(body.channels, 2);
+  assert.equal('mine' in body, false);
 });

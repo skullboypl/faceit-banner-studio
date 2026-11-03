@@ -1190,13 +1190,12 @@
   "scenes.theme.panel.tagline": "Tout dans une colonne sombre",
   "scenes.theme.bar": "Bandeau",
   "scenes.theme.bar.tagline": "Grand titre et un bandeau avec tes chiffres",
-  "chat.stats.mine": "Tes appels",
+  "chat.stats.all": "Tous les appels",
   "chat.stats.today": "Aujourd'hui",
   "chat.stats.top": "Le plus utilisé",
-  "chat.stats.site": "Tout le site",
+  "chat.stats.channels": "Chaînes qui les utilisent",
   "chat.stats.calls": "appels",
   "chat.stats.calls_title": "{{0}} appels de {{1}}",
   "chat.stats.today_short": "+{{0}} aujourd'hui",
-  "chat.stats.hint": "Chaque appel de tes commandes par un bot compte. L'aperçu du studio ne compte pas.",
-  "chat.stats.no_nick": "Indique le pseudo par défaut ci-dessus pour compter les appels de tes commandes."
+  "chat.stats.hint": "Appels de ces commandes sur toutes les chaînes qui les utilisent, additionnés pour tout le site. L'aperçu du studio ne compte pas."
 }

@@ -155,11 +155,11 @@ export const ChatCommandTab = ({ username, studioLanguage }: { username: string;
     };
   }, [previewOptions, testNick]);
 
-  /* How often each command was called, for this streamer and for the whole site */
+  /* How often each command was called across the whole site */
   useEffect(() => {
     let alive = true;
     const load = () =>
-      fetch(chatStatsUrl(window.location.origin, saved.nick), { cache: 'no-store' })
+      fetch(chatStatsUrl(window.location.origin), { cache: 'no-store' })
         .then((response) => (response.ok ? response.json() : null))
         .then((body: ChatStats | null) => {
           if (alive && body?.total) setStats(body);
@@ -172,7 +172,7 @@ export const ChatCommandTab = ({ username, studioLanguage }: { username: string;
       window.clearTimeout(first);
       window.clearInterval(again);
     };
-  }, [saved.nick]);
+  }, []);
 
   const copy = useCallback(async (value: string, label: string) => {
     try {
@@ -195,10 +195,9 @@ export const ChatCommandTab = ({ username, studioLanguage }: { username: string;
   const number = new Intl.NumberFormat(studioLanguage);
   const compact = new Intl.NumberFormat(studioLanguage, { notation: 'compact', maximumFractionDigits: 1 });
   const short = (value: number) => (value >= 10_000 ? compact.format(value) : number.format(value));
-  const hasOwner = Boolean(cleanChatNick(saved.nick));
-  const mineTotal = sumChatStats(stats?.mine);
-  const busiest = Math.max(1, ...CHAT_KINDS.map((kind) => stats?.mine[kind] ?? 0));
-  const top = stats && mineTotal > 0 ? CHAT_KINDS.reduce((best, kind) => ((stats.mine[kind] ?? 0) > (stats.mine[best] ?? 0) ? kind : best), CHAT_KINDS[0]) : null;
+  const allCalls = sumChatStats(stats?.total);
+  const busiest = Math.max(1, ...CHAT_KINDS.map((kind) => stats?.total[kind] ?? 0));
+  const top = stats && allCalls > 0 ? CHAT_KINDS.reduce((best, kind) => ((stats.total[kind] ?? 0) > (stats.total[best] ?? 0) ? kind : best), CHAT_KINDS[0]) : null;
 
   return (
     <div className="chat-tab">
@@ -210,23 +209,23 @@ export const ChatCommandTab = ({ username, studioLanguage }: { username: string;
         <p className="chat-lead">{tl('chat.intro', [nameOf('elo')])}</p>
         <div className="chat-stats" aria-live="polite">
           <div className="chat-stat">
-            <span>{tl('chat.stats.mine')}</span>
-            <b title={number.format(mineTotal)}>{hasOwner && stats ? short(mineTotal) : '—'}</b>
+            <span>{tl('chat.stats.all')}</span>
+            <b title={number.format(allCalls)}>{stats ? short(allCalls) : '—'}</b>
           </div>
           <div className="chat-stat">
             <span>{tl('chat.stats.today')}</span>
-            <b>{hasOwner && stats ? short(sumChatStats(stats.today)) : '—'}</b>
+            <b>{stats ? short(sumChatStats(stats.today)) : '—'}</b>
           </div>
           <div className="chat-stat">
             <span>{tl('chat.stats.top')}</span>
             <b className="is-command">{top ? `!${nameOf(top)}` : '—'}</b>
           </div>
           <div className="chat-stat is-site">
-            <span>{tl('chat.stats.site')}</span>
-            <b title={stats ? number.format(sumChatStats(stats.total)) : ''}>{stats ? short(sumChatStats(stats.total)) : '—'}</b>
+            <span>{tl('chat.stats.channels')}</span>
+            <b>{stats ? short(stats.channels) : '—'}</b>
           </div>
         </div>
-        <p className="chat-stats-hint">{hasOwner ? tl('chat.stats.hint') : tl('chat.stats.no_nick')}</p>
+        <p className="chat-stats-hint">{tl('chat.stats.hint')}</p>
         <div className="design-switch chat-bot-switch" role="group" aria-label={tl('chat.bot')}>
           {CHAT_BOTS.map((bot) => (
             <button key={bot} type="button" className="design-switch-option" aria-pressed={saved.bot === bot} onClick={() => update({ bot })}>
@@ -286,12 +285,12 @@ export const ChatCommandTab = ({ username, studioLanguage }: { username: string;
                   <h3 id={`chat-card-${kind}`}>!{nameOf(kind)}</h3>
                   <p>{tl(`chat.kind.${kind}`)}</p>
                 </div>
-                {hasOwner && stats && (
-                  <div className="chat-card-count" title={tl('chat.stats.calls_title', [number.format(stats.mine[kind] ?? 0), `!${nameOf(kind)}`])}>
-                    <b>{short(stats.mine[kind] ?? 0)}</b>
+                {stats && (
+                  <div className="chat-card-count" title={tl('chat.stats.calls_title', [number.format(stats.total[kind] ?? 0), `!${kind}`])}>
+                    <b>{short(stats.total[kind] ?? 0)}</b>
                     <small>{tl('chat.stats.calls')}</small>
                     {(stats.today[kind] ?? 0) > 0 && <em>{tl('chat.stats.today_short', [short(stats.today[kind] ?? 0)])}</em>}
-                    <i style={{ '--share': (stats.mine[kind] ?? 0) / busiest } as CSSProperties} aria-hidden="true" />
+                    <i style={{ '--share': (stats.total[kind] ?? 0) / busiest } as CSSProperties} aria-hidden="true" />
                   </div>
                 )}
                 <button type="button" className="chat-card-try" aria-label={`${tl('chat.try')} !${nameOf(kind)}`} title={tl('chat.try')} onClick={() => showPreview(kind)}>

@@ -50,11 +50,10 @@ export function chatCommandUrl({ origin, nick, cmd, lang, show, kind = 'elo', pr
   return `${origin.replace(/\/$/, '')}${CHAT_COMMAND_PATH}?${params.toString()}&nick=`;
 }
 
-/** Counters of the commands: the whole site, and the streamer whose nickname the commands answer by default. */
-export type ChatStats = Record<'total' | 'mine' | 'today', Record<ChatKind, number>>;
+/** Counters of the commands for the whole site: every channel's calls together, all time and today. */
+export type ChatStats = { total: Record<ChatKind, number>; today: Record<ChatKind, number>; channels: number };
 
-export const chatStatsUrl = (origin: string, nick: string) =>
-  `${origin.replace(/\/$/, '')}${CHAT_COMMAND_PATH}/stats?nick=${encodeURIComponent(cleanChatNick(nick))}`;
+export const chatStatsUrl = (origin: string) => `${origin.replace(/\/$/, '')}${CHAT_COMMAND_PATH}/stats`;
 
 /** Sum of the counters of every command. */
 export const sumChatStats = (counts: Partial<Record<ChatKind, number>> | undefined) =>

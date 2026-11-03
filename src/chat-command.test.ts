@@ -32,7 +32,7 @@ describe('chat command', () => {
   test('the studio preview is marked so it is not counted, and the counters have their own address', () => {
     expect(chatCommandUrl({ ...options, preview: true })).toContain('&preview=1&nick=');
     expect(chatCommandUrl(options)).not.toContain('preview');
-    expect(chatStatsUrl('https://faceitbanner.vxh.pl/', '@SkullBoy')).toBe('https://faceitbanner.vxh.pl/api/faceit/elo/stats?nick=SkullBoy');
+    expect(chatStatsUrl('https://faceitbanner.vxh.pl/')).toBe('https://faceitbanner.vxh.pl/api/faceit/elo/stats');
     expect(sumChatStats({ elo: 3, last: 1, kd: 0, avg: 2, live: 4 })).toBe(10);
     expect(sumChatStats(undefined)).toBe(0);
   });

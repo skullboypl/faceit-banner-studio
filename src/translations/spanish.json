@@ -1190,13 +1190,12 @@
   "scenes.theme.panel.tagline": "Todo en una columna oscura",
   "scenes.theme.bar": "Franja",
   "scenes.theme.bar.tagline": "Título grande y una franja con tus números",
-  "chat.stats.mine": "Tus usos",
+  "chat.stats.all": "Todos los usos",
   "chat.stats.today": "Hoy",
   "chat.stats.top": "Más usado",
-  "chat.stats.site": "Todo el sitio",
+  "chat.stats.channels": "Canales con comandos",
   "chat.stats.calls": "usos",
   "chat.stats.calls_title": "{{0}} usos de {{1}}",
   "chat.stats.today_short": "+{{0}} hoy",
-  "chat.stats.hint": "Cuenta cada uso de tus comandos a través de un bot. La vista previa del estudio no cuenta.",
-  "chat.stats.no_nick": "Pon arriba el nick por defecto para contar los usos de tus comandos."
+  "chat.stats.hint": "Usos de estos comandos en todos los canales que los usan, sumados para todo el sitio. La vista previa del estudio no cuenta."
 }
