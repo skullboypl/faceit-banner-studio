@@ -205,6 +205,47 @@ html.generator .preview-stage:has([data-layout='stage']) {
   }
 }
 
+.scene-rays {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 260cqw;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--accent) 22%, transparent) 0deg 7deg, transparent 7deg 22deg);
+  mask: radial-gradient(closest-side, #000 8%, transparent 62%);
+  animation: scene-spin 70s linear infinite;
+}
+.scene-waves {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 200%;
+  height: 58%;
+  animation: scene-waves 16s linear infinite;
+}
+.scene-wave {
+  fill: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.scene-wave--b {
+  fill: color-mix(in srgb, var(--accent) 14%, #7a2bff22);
+  animation: scene-bob 7s ease-in-out infinite alternate;
+}
+.scene-wave--c {
+  fill: color-mix(in srgb, var(--accent) 30%, #00000055);
+  animation: scene-bob 9s ease-in-out infinite alternate-reverse;
+}
+@keyframes scene-waves {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes scene-bob {
+  to {
+    transform: translateY(4%);
+  }
+}
+
 /* Main column */
 .scene-main {
   grid-area: main;
@@ -354,46 +395,46 @@ html.generator .preview-stage:has([data-layout='stage']) {
   }
 }
 
-/* Player card and socials */
-.scene-foot {
+/* The player: shared parts, placed and dressed by each theme below */
+.scene-player {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  gap: 4cqh;
+  min-width: 0;
+  animation: scene-in 0.9s 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.scene-player-id {
+  display: flex;
+  align-items: center;
   gap: 2.6cqh;
   min-width: 0;
 }
-.scene-card {
-  display: flex;
-  align-items: stretch;
-  gap: 3cqh;
-  max-width: 100%;
-  padding: 2.4cqh 3cqh;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 2cqh;
-  box-shadow: 0 2cqh 5cqh rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(14px);
-  animation: scene-in 0.9s 0.75s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-.scene-card-player {
-  display: flex;
-  align-items: center;
-  gap: 2cqh;
-  min-width: 0;
-}
 .scene-avatar {
+  position: relative;
   display: grid;
   flex: none;
   place-items: center;
-  width: 9cqh;
-  height: 9cqh;
+  width: var(--avatar, 12cqh);
+  aspect-ratio: 1;
+}
+.scene-avatar-ring {
+  position: absolute;
+  inset: -0.9cqh;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--accent), color-mix(in srgb, var(--accent) 20%, transparent) 40%, var(--accent) 70%, color-mix(in srgb, var(--accent) 30%, #fff) 85%, var(--accent));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 0.6cqh), #000 calc(100% - 0.55cqh));
+  animation: scene-spin 6s linear infinite;
+}
+.scene-avatar-photo {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   border-radius: 50%;
   background: #1e1e22;
-  box-shadow:
-    0 0 0 0.4cqh #09090b,
-    0 0 0 0.75cqh var(--accent);
-  font-size: 4cqh;
+  font-size: calc(var(--avatar, 12cqh) * 0.42);
   font-weight: 800;
   img {
     width: 100%;
@@ -401,63 +442,125 @@ html.generator .preview-stage:has([data-layout='stage']) {
     object-fit: cover;
   }
 }
-.scene-card-name {
+.scene-avatar-level {
+  position: absolute;
+  right: -0.6cqh;
+  bottom: -0.6cqh;
   display: grid;
-  gap: 0.6cqh;
-  min-width: 0;
-  strong {
-    font-size: 3.4cqh;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
-.scene-card-elo {
-  display: flex;
-  align-items: center;
-  gap: 1cqh;
-  b {
-    font-size: 3.4cqh;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-    color: var(--accent);
-  }
-  small {
-    font-size: 1.6cqh;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-  }
-  em {
-    padding: 0.3cqh 0.9cqh;
-    font-size: 1.6cqh;
-    font-style: normal;
-    font-weight: 700;
-    color: var(--ink);
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 0.8cqh;
-  }
-}
-.scene-level {
-  display: inline-grid;
-  width: 4cqh;
-  height: 4cqh;
+  width: calc(var(--avatar, 12cqh) * 0.36);
+  aspect-ratio: 1;
+  padding: 0.3cqh;
+  border-radius: 50%;
+  background: #09090b;
   svg,
   img {
     width: 100%;
     height: 100%;
   }
 }
-.scene-card-stats {
-  display: grid;
-  align-content: center;
-  gap: 1cqh;
-  padding-left: 3cqh;
-  border-left: 1px solid var(--line);
+.scene-elo-level {
+  display: inline-grid;
+  width: 0.8em;
+  height: 0.8em;
+  svg,
+  img {
+    width: 100%;
+    height: 100%;
+  }
 }
-.scene-card-label {
+@keyframes scene-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+.scene-player-text {
+  display: grid;
+  gap: 0.8cqh;
+  min-width: 0;
+}
+.scene-player-name {
+  font-size: var(--name, 3.6cqh);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.scene-elo {
+  display: flex;
+  align-items: baseline;
+  gap: 1.2cqh;
+  font-size: var(--elo, 6cqh);
+  line-height: 1;
+  b {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+    color: var(--accent);
+  }
+  small {
+    font-size: 0.32em;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+  em {
+    align-self: center;
+    padding: 0.4cqh 1cqh;
+    font-size: 0.3em;
+    font-style: normal;
+    font-weight: 800;
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 0.8cqh;
+  }
+}
+.scene-progress {
+  display: grid;
+  gap: 0.7cqh;
+  width: var(--bar, 32cqh);
+  i {
+    position: relative;
+    height: 0.9cqh;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      transform-origin: 0 50%;
+      transform: scaleX(var(--p));
+      border-radius: inherit;
+      background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 55%, #fff), var(--accent));
+      box-shadow: 0 0 1.4cqh color-mix(in srgb, var(--accent) 70%, transparent);
+      animation: scene-fill 1.6s 1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+  }
+  span {
+    font-size: 1.5cqh;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+}
+@keyframes scene-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+.scene-groups {
+  display: flex;
+  gap: 3.4cqh;
+  min-width: 0;
+}
+.scene-group {
+  display: grid;
+  align-content: start;
+  gap: 1.1cqh;
+  min-width: 0;
+}
+.scene-group-label {
   font-size: 1.5cqh;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -469,10 +572,11 @@ html.generator .preview-stage:has([data-layout='stage']) {
   gap: 3cqh;
 }
 .scene-cell {
+  position: relative;
   display: grid;
   gap: 0.2cqh;
   b {
-    font-size: 3.6cqh;
+    font-size: var(--cell, 3.6cqh);
     font-weight: 800;
     line-height: 1.05;
     font-variant-numeric: tabular-nums;
@@ -481,6 +585,7 @@ html.generator .preview-stage:has([data-layout='stage']) {
     font-size: 1.5cqh;
     font-weight: 600;
     color: var(--muted);
+    white-space: nowrap;
   }
   &.is-up b {
     color: #3ddc84;
@@ -501,6 +606,8 @@ html.generator .preview-stage:has([data-layout='stage']) {
     font-style: normal;
     font-weight: 800;
     border-radius: 0.6cqh;
+    animation: scene-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+    animation-delay: calc(1.2s + var(--i) * 0.07s);
   }
   .is-win {
     color: #0b1f13;
@@ -509,6 +616,12 @@ html.generator .preview-stage:has([data-layout='stage']) {
   .is-loss {
     color: #2a0b0b;
     background: #ff5a5a;
+  }
+}
+@keyframes scene-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
   }
 }
 .scene-socials {
@@ -646,6 +759,499 @@ html.generator .preview-stage:has([data-layout='stage']) {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* ── Themes ─────────────────────────────────────────────────────────────── */
+
+/* Classic: the title leads, the player sits in a card at the bottom */
+.scene-theme--classic {
+  .scene-player {
+    align-self: flex-start;
+    max-width: 100%;
+    padding: 2.6cqh 3.2cqh;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 2cqh;
+    box-shadow: 0 2cqh 5cqh rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(14px);
+    --avatar: 10cqh;
+    --elo: 5cqh;
+    --bar: 26cqh;
+  }
+  .scene-groups {
+    padding-left: 3.4cqh;
+    border-left: 1px solid var(--line);
+  }
+}
+
+/* Spotlight: the streamer in the middle, under turning light, the ELO counting up */
+.scene-theme--spotlight {
+  .scene-main {
+    align-items: center;
+    gap: 2.4cqh;
+    text-align: center;
+  }
+  .scene-head {
+    align-items: center;
+    gap: 1.4cqh;
+  }
+  .scene-title {
+    justify-content: center;
+    font-size: 7.6cqh;
+  }
+  .scene-note {
+    font-size: 2.4cqh;
+  }
+  .scene-timer {
+    margin-top: 0.4cqh;
+    padding: 1.2cqh 2.6cqh;
+    b {
+      font-size: 5.4cqh;
+    }
+  }
+  .scene-player {
+    flex-direction: column;
+    gap: 2cqh;
+    --avatar: 17cqh;
+    --name: 3.4cqh;
+    --elo: 9cqh;
+    --bar: 42cqh;
+    --cell: 3.2cqh;
+  }
+  .scene-player-id {
+    flex-direction: column;
+    gap: 1.4cqh;
+  }
+  .scene-player-text {
+    justify-items: center;
+  }
+  .scene-elo b {
+    background: linear-gradient(180deg, #fff 20%, var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 3cqh color-mix(in srgb, var(--accent) 55%, transparent));
+  }
+  .scene-avatar-ring {
+    inset: -1.4cqh;
+    mask: radial-gradient(farthest-side, transparent calc(100% - 1cqh), #000 calc(100% - 0.9cqh));
+    filter: drop-shadow(0 0 2cqh var(--accent));
+  }
+  .scene-avatar::after {
+    content: '';
+    position: absolute;
+    inset: -4cqh;
+    z-index: -1;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 55%, transparent), transparent);
+    animation: scene-breathe 3.2s ease-in-out infinite alternate;
+  }
+  .scene-groups {
+    justify-content: center;
+    padding: 1.4cqh 3cqh;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 2cqh;
+    backdrop-filter: blur(12px);
+  }
+  .scene-group {
+    justify-items: center;
+  }
+  .scene-socials {
+    justify-content: center;
+  }
+}
+.scene-spot-rays {
+  position: absolute;
+  left: 50%;
+  top: 11cqh;
+  z-index: -1;
+  width: 120cqh;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  animation: scene-spin 40s linear infinite;
+  mask: radial-gradient(closest-side, #000 20%, transparent 70%);
+  i {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 6cqh;
+    height: 50%;
+    translate: -50% 0;
+    transform-origin: 50% 100%;
+    rotate: var(--r);
+    background: linear-gradient(0deg, transparent, color-mix(in srgb, var(--accent) 32%, transparent));
+    clip-path: polygon(30% 100%, 70% 100%, 100% 0, 0 0);
+  }
+}
+@keyframes scene-breathe {
+  from {
+    opacity: 0.45;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 0.9;
+    transform: scale(1.06);
+  }
+}
+
+/* Neon: dark glass, glowing edges, a glitching title and scanlines */
+.scene-theme--neon {
+  --cyan: #2ff3ff;
+  background: #050507;
+  .scene-title span {
+    position: relative;
+    color: #fff;
+    background: none;
+    -webkit-background-clip: border-box;
+    background-clip: border-box;
+    text-shadow:
+      0 0 1.2cqh color-mix(in srgb, var(--accent) 80%, transparent),
+      0 0 4cqh color-mix(in srgb, var(--accent) 50%, transparent);
+    animation:
+      scene-word 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both,
+      scene-flicker 5s 1.4s steps(1) infinite;
+    animation-delay: calc(0.12s + var(--i) * 0.09s), calc(1.4s + var(--i) * 0.4s);
+    &::before,
+    &::after {
+      content: attr(data-text);
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    &::before {
+      color: var(--cyan);
+      text-shadow: none;
+      clip-path: inset(0 0 60% 0);
+      animation: scene-glitch-a 3.4s steps(1) infinite;
+    }
+    &::after {
+      color: var(--accent);
+      text-shadow: none;
+      clip-path: inset(55% 0 0 0);
+      animation: scene-glitch-b 2.9s steps(1) infinite;
+    }
+  }
+  .scene-badge,
+  .scene-timer,
+  .scene-player {
+    background: rgba(8, 8, 12, 0.72);
+    border: 1px solid color-mix(in srgb, var(--cyan) 55%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent) inset,
+      0 0 2.4cqh color-mix(in srgb, var(--cyan) 30%, transparent),
+      0 0 5cqh color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  .scene-timer b,
+  .scene-elo b {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--cyan);
+    text-shadow:
+      0 0 1cqh var(--cyan),
+      0 0 3.4cqh color-mix(in srgb, var(--cyan) 60%, transparent);
+  }
+  .scene-player {
+    align-self: flex-start;
+    padding: 3cqh 3.6cqh;
+    border-radius: 1.2cqh;
+    --avatar: 13cqh;
+    --elo: 8cqh;
+    --bar: 34cqh;
+  }
+  .scene-avatar-ring {
+    background: conic-gradient(var(--cyan), var(--accent), var(--cyan));
+  }
+  .scene-progress i::after {
+    background: linear-gradient(90deg, var(--cyan), var(--accent));
+  }
+  .scene-groups {
+    padding-left: 3.4cqh;
+    border-left: 1px dashed color-mix(in srgb, var(--cyan) 45%, transparent);
+  }
+  .scene-chat {
+    border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
+    box-shadow: 0 0 3cqh color-mix(in srgb, var(--cyan) 18%, transparent);
+  }
+}
+.scene-scanlines {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 4px);
+  mix-blend-mode: overlay;
+  animation: scene-scan 8s linear infinite;
+}
+@keyframes scene-scan {
+  to {
+    background-position: 0 40cqh;
+  }
+}
+@keyframes scene-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  2% {
+    opacity: 0.55;
+  }
+  3% {
+    opacity: 1;
+  }
+  41% {
+    opacity: 0.8;
+  }
+  42% {
+    opacity: 1;
+  }
+}
+@keyframes scene-glitch-a {
+  0%,
+  86%,
+  100% {
+    transform: none;
+    opacity: 0;
+  }
+  87% {
+    transform: translate(-0.6cqh, -0.2cqh);
+    opacity: 0.9;
+  }
+  90% {
+    transform: translate(0.8cqh, 0.1cqh);
+    opacity: 0.9;
+  }
+  93% {
+    transform: translate(-0.3cqh, 0);
+    opacity: 0.7;
+  }
+}
+@keyframes scene-glitch-b {
+  0%,
+  78%,
+  100% {
+    transform: none;
+    opacity: 0;
+  }
+  79% {
+    transform: translate(0.7cqh, 0.2cqh);
+    opacity: 0.85;
+  }
+  83% {
+    transform: translate(-0.6cqh, 0);
+    opacity: 0.85;
+  }
+}
+
+/* Holo: a floating 3D card with a holographic rim and a light sweep */
+.scene-theme--holo {
+  .scene-main {
+    perspective: 140cqh;
+  }
+  .scene-player {
+    align-self: flex-start;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2.6cqh;
+    padding: 3.4cqh 4cqh;
+    border-radius: 2.6cqh;
+    background:
+      linear-gradient(var(--panel), var(--panel)) padding-box,
+      conic-gradient(from var(--holo-angle, 0deg), #ff5900, #ffd36b, #6bffd8, #6b8bff, #e46bff, #ff5900) border-box;
+    border: 0.35cqh solid transparent;
+    box-shadow:
+      0 4cqh 9cqh rgba(0, 0, 0, 0.5),
+      0 0 6cqh color-mix(in srgb, var(--accent) 22%, transparent);
+    backdrop-filter: blur(16px);
+    overflow: hidden;
+    transform-style: preserve-3d;
+    animation:
+      scene-in 0.9s 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both,
+      scene-float 7s 1.6s ease-in-out infinite alternate,
+      scene-holo 6s linear infinite;
+    --avatar: 13cqh;
+    --elo: 8.4cqh;
+    --bar: 40cqh;
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -40%;
+      background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.16) 48%, rgba(255, 255, 255, 0.04) 52%, transparent 60%);
+      transform: translateX(-60%);
+      animation: scene-sweep 5.5s 1.8s ease-in-out infinite;
+      pointer-events: none;
+    }
+  }
+  .scene-elo b {
+    background: linear-gradient(90deg, #ffd36b, var(--accent), #e46bff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+@property --holo-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes scene-holo {
+  to {
+    --holo-angle: 360deg;
+  }
+}
+@keyframes scene-float {
+  from {
+    transform: rotateY(-12deg) rotateX(5deg) translateY(0);
+  }
+  to {
+    transform: rotateY(6deg) rotateX(-3deg) translateY(-1.2cqh);
+  }
+}
+@keyframes scene-sweep {
+  0%,
+  55% {
+    transform: translateX(-60%);
+  }
+  100% {
+    transform: translateX(60%);
+  }
+}
+
+/* Broadcast: a sports channel look, slanted plates, growing bars and a ticker */
+.scene-theme--broadcast {
+  padding-bottom: 12cqh;
+  .scene-badge {
+    border-radius: 0;
+    transform: skewX(-12deg);
+    background: var(--accent);
+    border: 0;
+    color: #fff;
+    > * {
+      transform: skewX(12deg);
+    }
+    i {
+      background: #fff;
+    }
+    b {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+  }
+  .scene-title {
+    position: relative;
+    padding: 1.4cqh 3cqh 1.8cqh;
+    font-style: italic;
+    background: linear-gradient(90deg, rgba(10, 10, 12, 0.85), rgba(10, 10, 12, 0.35));
+    border-left: 1cqh solid var(--accent);
+    clip-path: polygon(0 0, 100% 0, calc(100% - 3cqh) 100%, 0 100%);
+    animation: scene-wipe 0.8s 0.1s cubic-bezier(0.7, 0, 0.2, 1) both;
+    span {
+      background: none;
+      -webkit-background-clip: border-box;
+      background-clip: border-box;
+      color: #fff;
+    }
+  }
+  .scene-timer {
+    border-radius: 0;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 2cqh) 100%, 0 100%);
+    padding-right: 4.6cqh;
+  }
+  .scene-player {
+    align-self: flex-start;
+    align-items: stretch;
+    gap: 0;
+    background: rgba(10, 10, 12, 0.82);
+    border-left: 1cqh solid var(--accent);
+    clip-path: polygon(0 0, 100% 0, calc(100% - 3cqh) 100%, 0 100%);
+    animation: scene-wipe 0.9s 0.5s cubic-bezier(0.7, 0, 0.2, 1) both;
+    --avatar: 11cqh;
+    --elo: 6.4cqh;
+    --bar: 28cqh;
+  }
+  .scene-player-id {
+    padding: 2.4cqh 3cqh;
+  }
+  .scene-groups {
+    padding: 2.4cqh 6cqh 2.4cqh 3cqh;
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .scene-cell {
+    min-width: 11cqh;
+    padding-bottom: 1.2cqh;
+  }
+  .scene-cell-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 0.6cqh;
+    background: rgba(255, 255, 255, 0.1);
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      transform-origin: 0 50%;
+      transform: scaleX(var(--fill));
+      background: var(--accent);
+      animation: scene-fill 1.2s 1.3s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+  }
+  .scene-chat {
+    border-radius: 0;
+    border-top: 0.6cqh solid var(--accent);
+  }
+}
+@keyframes scene-wipe {
+  from {
+    clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+  }
+}
+.scene-ticker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  height: 7cqh;
+  background: rgba(8, 8, 10, 0.92);
+  border-top: 0.4cqh solid var(--accent);
+  animation: scene-in 0.7s 1.1s both;
+}
+.scene-ticker-tag {
+  display: grid;
+  flex: none;
+  place-items: center;
+  padding: 0 3cqh 0 2.6cqh;
+  font-size: 2.2cqh;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: #fff;
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 2cqh) 100%, 0 100%);
+}
+.scene-ticker-track {
+  flex: 1;
+  overflow: hidden;
+  mask: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.scene-ticker-run {
+  display: flex;
+  width: max-content;
+  height: 100%;
+  align-items: center;
+  animation: scene-ticker 32s linear infinite;
+  span {
+    padding: 0 3.6cqh;
+    font-size: 2.3cqh;
+    font-weight: 700;
+    white-space: nowrap;
+    border-right: 1px solid var(--line);
+  }
+}
+@keyframes scene-ticker {
+  to {
+    transform: translateX(-50%);
   }
 }
 

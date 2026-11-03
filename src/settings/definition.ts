@@ -16,8 +16,11 @@ import {
   SCENE_CHAT_SIDES,
   SCENE_HANDLE_REGEX,
   SCENE_KINDS,
+  SCENE_PARTS,
+  SCENE_PARTS_REGEX,
   SCENE_RANGES,
   SCENE_TEXT_REGEX,
+  SCENE_THEMES,
 } from '../../widget/src/widget/scene-options';
 import {
   SPLIT_CHART_LOOKS,
@@ -699,6 +702,21 @@ export const SETTINGS_DEFINITIONS = {
     type: 'boolean',
     defaultValue: true,
     query: ['scene_stats'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  sceneTheme: {
+    type: 'string',
+    defaultValue: 'spotlight',
+    options: [...SCENE_THEMES],
+    query: ['scene_theme'],
+    requirements: [{ setting: 'widgetMode', value: 'scenes' }],
+  },
+  /** Comma list of what the scenes show; "none" when everything is off. */
+  sceneParts: {
+    type: 'string',
+    defaultValue: SCENE_PARTS.join(','),
+    regex: SCENE_PARTS_REGEX,
+    query: ['scene_parts'],
     requirements: [{ setting: 'widgetMode', value: 'scenes' }],
   },
   sceneAnimation: {

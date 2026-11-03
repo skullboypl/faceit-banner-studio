@@ -26,8 +26,8 @@ export function widgetQueryParams(get: (key: SettingKey) => unknown, languageId:
     }
     const value = get(setting as SettingKey);
     if (value === undefined) return;
-    /* A scene text or social left empty is the default: the link stays short without it */
-    if (value === '' && setting.startsWith('scene')) return;
+    /* A scene option left at its default reads back the same without it, so the link stays short */
+    if (setting.startsWith('scene') && (value === '' || value === definition.defaultValue)) return;
 
     if (setting === 'customInlineCSS') {
       const inlineCss = String(value || '').trim();

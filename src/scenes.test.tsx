@@ -2,9 +2,13 @@ import { act, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { SceneScreen, type SceneData } from '../widget/src/widget/SceneScreen';
 import {
+  SCENE_PARTS,
   cleanHandle,
   formatCountdown,
+  levelProgress,
   readSceneOptions,
+  readSceneParts,
+  writeSceneParts,
   sceneHasCountdown,
   socialAddress,
   type SceneOptions,
@@ -105,14 +109,15 @@ describe('SceneScreen', () => {
     });
     expect(view.querySelector('.scene-timer')?.classList.contains('is-done')).toBe(true);
     expect(view.querySelector('.scene-timer b')?.textContent).toBe('scene.countdown.done.starting');
-    expect(view.querySelector('.scene-card-label')?.textContent).toBe('scene.recent:20');
+    expect(view.querySelector('.scene-group-label')?.textContent).toBe('scene.recent:20');
   });
 
   test('the end of the stream sums up the session and has no timer', () => {
     const view = draw('ending');
     expect(view.querySelector('.scene-timer')).toBeNull();
-    expect(view.querySelector('.scene-card-label')?.textContent).toBe('scene.today');
-    expect([...view.querySelectorAll('.scene-cell b')].map((cell) => cell.textContent)).toEqual(['3–1', '+41', '1.32']);
+    /* The session leads, the recent averages follow */
+    expect([...view.querySelectorAll('.scene-group-label')].map((label) => label.textContent)).toEqual(['scene.today', 'scene.recent:20']);
+    expect([...view.querySelectorAll('.scene-group')[0].querySelectorAll('.scene-cell b')].map((cell) => cell.textContent)).toEqual(['3–1', '+41', '1.32']);
     expect(view.querySelectorAll('.scene-form i')).toHaveLength(4);
   });
 
@@ -130,8 +135,63 @@ describe('SceneScreen', () => {
 
   test('no FACEIT card until the player has loaded, and socials link to their sites', () => {
     const view = draw('starting', options({ socials: [{ kind: 'twitch', handle: 'skullboypl' }] }), data({ elo: 0 }));
-    expect(view.querySelector('.scene-card')).toBeNull();
+    expect(view.querySelector('.scene-player')).toBeNull();
     expect(view.querySelector('.scene-socials small')?.textContent).toBe('twitch.tv/skullboypl');
+  });
+});
+
+describe('themes and parts', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  test('parts round-trip, an empty choice is stored as none and read back as nothing', () => {
+    expect(readSceneParts(undefined).size).toBe(SCENE_PARTS.length);
+    expect(writeSceneParts(new Set())).toBe('none');
+    expect(readSceneParts('none').size).toBe(0);
+    expect([...readSceneParts('kd,bogus,avatar')]).toEqual(['avatar', 'kd']);
+    expect(writeSceneParts(new Set(['kd', 'avatar']))).toBe('avatar,kd');
+  });
+
+  test('level progress counts to the next level and is full at 10', () => {
+    expect(levelProgress(1600, 8)).toEqual({ progress: (1600 - 1531) / (1751 - 1531), toNext: 151, nextLevel: 9 });
+    expect(levelProgress(3184, 10)).toEqual({ progress: 1, toNext: null, nextLevel: null });
+    expect(levelProgress(0, 0).progress).toBe(0);
+  });
+
+  test('every theme draws the player, and the ELO counts up to its value', () => {
+    for (const theme of ['classic', 'spotlight', 'neon', 'holo', 'broadcast'] as const) {
+      const view = draw('starting', options({ theme }));
+      expect(view.querySelector('.scene-screen')?.getAttribute('data-theme')).toBe(theme);
+      const elo = view.querySelector('.scene-elo b');
+      expect(Number(elo?.textContent)).toBeLessThan(3184);
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      });
+      expect(elo?.textContent).toBe('3184');
+    }
+  });
+
+  test('spotlight has light rays, broadcast a ticker with bars, neon scanlines', () => {
+    expect(draw('starting', options({ theme: 'spotlight' })).querySelectorAll('.scene-spot-rays i').length).toBeGreaterThan(8);
+    const broadcast = draw('starting', options({ theme: 'broadcast', socials: [{ kind: 'kick', handle: 'skullboypl' }] }));
+    expect(broadcast.querySelector('.scene-ticker-run')?.textContent).toContain('kick.com/skullboypl');
+    expect(broadcast.querySelectorAll('.scene-cell-bar').length).toBe(4);
+    expect(broadcast.querySelector('.scene-socials')).toBeNull();
+    expect(draw('brb', options({ theme: 'neon' })).querySelector('.scene-scanlines')).not.toBeNull();
+  });
+
+  test('parts switched off disappear from the scene', () => {
+    const view = draw('ending', options({ parts: readSceneParts('kd,record,badge') }));
+    expect(view.querySelector('.scene-avatar')).toBeNull();
+    expect(view.querySelector('.scene-progress')).toBeNull();
+    expect(view.querySelector('.scene-form')).toBeNull();
+    expect(view.querySelector('.scene-note')).toBeNull();
+    expect([...view.querySelectorAll('.scene-cell small')].map((label) => label.textContent)).toEqual(['scene.record', 'K/D']);
+  });
+
+  test('an unknown starting ELO hides the ELO change instead of showing zero', () => {
+    const view = draw('ending', options(), data({ session: { wins: 2, losses: 0, eloDiff: null, kd: null, form: ['W', 'W'] } }));
+    expect([...view.querySelectorAll('.scene-group')[0].querySelectorAll('.scene-cell small')].map((label) => label.textContent)).toEqual(['scene.record']);
   });
 });
 
@@ -155,8 +215,10 @@ describe('scenes mode wiring', () => {
     };
     const get = (key: SettingKey) => (key in values ? values[key] : SETTINGS_DEFINITIONS[key].defaultValue);
     const params = widgetQueryParams(get, 'pl');
-    expect(params).toMatchObject({ mode: 'scenes', scene: 'brb', scene_title_brb: 'Pizza time', scene_twitch: 'skullboypl', scene_countdown: 5 });
+    expect(params).toMatchObject({ mode: 'scenes', scene: 'brb', scene_title_brb: 'Pizza time', scene_twitch: 'skullboypl' });
     expect(params).not.toHaveProperty('scene_title_starting');
+    expect(params).not.toHaveProperty('scene_countdown');
+    expect(params).not.toHaveProperty('scene_parts');
     expect(params).not.toHaveProperty('scene_kick');
   });
 });

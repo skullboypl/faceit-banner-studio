@@ -3,8 +3,49 @@ export const SCENE_KINDS = ['starting', 'brb', 'ending'] as const;
 export type SceneKind = (typeof SCENE_KINDS)[number];
 
 /** Moving backgrounds. `none` keeps the scene still, for slow PCs or a calm look. */
-export const SCENE_ANIMATIONS = ['aurora', 'grid', 'embers', 'none'] as const;
+export const SCENE_ANIMATIONS = ['aurora', 'grid', 'embers', 'rays', 'waves', 'none'] as const;
 export type SceneAnimation = (typeof SCENE_ANIMATIONS)[number];
+
+/**
+ * How the scene is built around the streamer. `classic` is a title with a small card; the others put the player and
+ * their ELO in the middle of the scene, each with its own motion.
+ */
+export const SCENE_THEMES = ['classic', 'spotlight', 'neon', 'holo', 'broadcast'] as const;
+export type SceneTheme = (typeof SCENE_THEMES)[number];
+/** The themes with the heaviest motion, marked in the studio. */
+export const SCENE_WOW_THEMES: readonly SceneTheme[] = ['spotlight', 'neon', 'holo'];
+
+/** What a scene can show. The title and the ELO always stay. */
+export const SCENE_PARTS = [
+  'badge',
+  'note',
+  'timer',
+  'avatar',
+  'level',
+  'rank',
+  'progress',
+  'kd',
+  'adr',
+  'hs',
+  'winrate',
+  'record',
+  'elochange',
+  'sessionkd',
+  'form',
+  'socials',
+] as const;
+export type ScenePart = (typeof SCENE_PARTS)[number];
+/** The parts grouped the way the studio lists them. */
+export const SCENE_PART_GROUPS: { group: 'head' | 'player' | 'recent' | 'session' | 'extra'; parts: ScenePart[] }[] = [
+  { group: 'head', parts: ['badge', 'note', 'timer'] },
+  { group: 'player', parts: ['avatar', 'level', 'rank', 'progress'] },
+  { group: 'recent', parts: ['kd', 'adr', 'hs', 'winrate'] },
+  { group: 'session', parts: ['record', 'elochange', 'sessionkd', 'form'] },
+  { group: 'extra', parts: ['socials'] },
+];
+/** Stored when every part is switched off: an empty value would read back as the default. */
+export const SCENE_PARTS_NONE = 'none';
+export const SCENE_PARTS_REGEX = /^[a-z,]{0,200}$/;
 
 export const SCENE_CHAT_SIDES = ['right', 'left'] as const;
 export type SceneChatSide = (typeof SCENE_CHAT_SIDES)[number];
@@ -30,6 +71,8 @@ export type SceneOptions = {
   chatSide: SceneChatSide;
   stats: boolean;
   animation: SceneAnimation;
+  theme: SceneTheme;
+  parts: ReadonlySet<ScenePart>;
   socials: { kind: SceneSocial; handle: string }[];
 };
 
@@ -64,6 +107,8 @@ export function readSceneOptions(get: Get): SceneOptions {
     chatSide: pick(SCENE_CHAT_SIDES, get('sceneChatSide'), 'right'),
     stats: get('sceneStats') !== false,
     animation: pick(SCENE_ANIMATIONS, get('sceneAnimation'), 'aurora'),
+    theme: pick(SCENE_THEMES, get('sceneTheme'), 'spotlight'),
+    parts: readSceneParts(get('sceneParts')),
     socials: SCENE_SOCIALS.map((kind) => ({ kind, handle: cleanHandle(get(sceneSocialKey(kind))) })).filter((entry) => entry.handle),
   };
 }
@@ -103,3 +148,30 @@ export function formatCountdown(ms: number): string {
 
 /** Only the timer scenes count down; the end of a stream has nothing to wait for. */
 export const sceneHasCountdown = (kind: SceneKind, minutes: number) => kind !== 'ending' && minutes > 0;
+
+/** The parts switched on, from the stored list. A missing value shows everything; "none" shows nothing. */
+export function readSceneParts(value: unknown): ReadonlySet<ScenePart> {
+  if (typeof value !== 'string' || value === '') return new Set(SCENE_PARTS);
+  if (value === SCENE_PARTS_NONE) return new Set();
+  const asked = value.split(',');
+  return new Set(SCENE_PARTS.filter((part) => asked.includes(part)));
+}
+
+/** The stored list for a set of parts, in the fixed order. */
+export function writeSceneParts(parts: ReadonlySet<ScenePart>): string {
+  const list = SCENE_PARTS.filter((part) => parts.has(part));
+  return list.length ? list.join(',') : SCENE_PARTS_NONE;
+}
+
+/** Lowest ELO of each FACEIT level, 1 to 10. */
+const LEVEL_FLOORS = [100, 501, 751, 901, 1051, 1201, 1351, 1531, 1751, 2001];
+
+/** How far the player is through their level, and how much ELO the next one needs. Level 10 is full. */
+export function levelProgress(elo: number, level: number): { progress: number; toNext: number | null; nextLevel: number | null } {
+  if (!(level >= 1)) return { progress: 0, toNext: null, nextLevel: null };
+  if (level >= 10) return { progress: 1, toNext: null, nextLevel: null };
+  const floor = LEVEL_FLOORS[level - 1] ?? 100;
+  const next = LEVEL_FLOORS[level] ?? floor;
+  const progress = next > floor ? Math.min(1, Math.max(0, (elo - floor) / (next - floor))) : 0;
+  return { progress, toNext: Math.max(0, next - elo), nextLevel: level + 1 };
+}

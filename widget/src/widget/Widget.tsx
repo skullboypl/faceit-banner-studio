@@ -266,6 +266,9 @@ function readSessionStart(playerId: string, saveSession: boolean) {
   return { startDate: new Date(now), expired: true };
 }
 
+/** How far back a scene looks for today's matches when no banner session is running. */
+const SCENE_LOOKBACK_MS = 12 * 60 * 60_000;
+
 const percentToFontScale = (value: number) => {
   const clamped = Math.max(0, Math.min(100, value));
   return 0.5 + clamped / 100;
@@ -329,6 +332,8 @@ export const Widget = ({
   const [elo, setElo] = useState(0);
   const [wins, setWins] = useState(0);
   const [sessionStart, setSessionStart] = useState(0);
+  /** The session started on this load, so the ELO it started from is not known. */
+  const [sessionFresh, setSessionFresh] = useState(true);
   const [losses, setLosses] = useState(0);
   const [sessionForm, setSessionForm] = useState<('W' | 'L')[]>([]);
   const [previewLive, setPreviewLive] = useState(false);
@@ -641,8 +646,11 @@ export const Widget = ({
      * a restarted OBS keeps wins, losses and the ELO change for 2 hours after the
      * widget was last open. After that, or for another player, it starts from zero.
      */
-    const { startDate, expired: sessionExpired } = readSessionStart(playerId, Boolean(saveSession));
+    const { startDate: savedStart, expired: sessionExpired } = readSessionStart(playerId, Boolean(saveSession));
+    /* A scene with no running session (often the end scene, loaded last) looks back over the day instead of from now */
+    const startDate = isScenes && sessionExpired ? new Date(Date.now() - SCENE_LOOKBACK_MS) : savedStart;
     setSessionStart(startDate.getTime());
+    setSessionFresh(sessionExpired);
     const extendSession = () => {
       if (!saveSession) return;
       localStorage.setItem(
@@ -910,7 +918,7 @@ export const Widget = ({
       : {
           wins,
           losses,
-          eloDiff: startingElo ? elo - startingElo : 0,
+          eloDiff: !sessionFresh && startingElo ? elo - startingElo : null,
           kd: sessionCard && sessionCard.matches > 0 ? sessionCard.kd : null,
           form: sessionForm,
         },

@@ -529,6 +529,22 @@
     "type": "boolean",
     "default": true
   },
+  "sceneTheme": {
+    "type": "string",
+    "default": "spotlight",
+    "options": [
+      "classic",
+      "spotlight",
+      "neon",
+      "holo",
+      "broadcast"
+    ]
+  },
+  "sceneParts": {
+    "type": "string",
+    "default": "badge,note,timer,avatar,level,rank,progress,kd,adr,hs,winrate,record,elochange,sessionkd,form,socials",
+    "regex": "^[a-z,]{0,200}$"
+  },
   "sceneAnimation": {
     "type": "string",
     "default": "aurora",
@@ -536,6 +552,8 @@
       "aurora",
       "grid",
       "embers",
+      "rays",
+      "waves",
       "none"
     ]
   },

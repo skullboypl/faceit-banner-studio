@@ -6,13 +6,19 @@ import {
   SCENE_CHAT_SIDES,
   SCENE_HANDLE_REGEX,
   SCENE_KINDS,
+  SCENE_PART_GROUPS,
   SCENE_RANGES,
   SCENE_SOCIALS,
   SCENE_TEXT_REGEX,
+  SCENE_THEMES,
+  SCENE_WOW_THEMES,
   type SceneKind,
+  type ScenePart,
   type SceneSocial,
+  readSceneParts,
   sceneSocialKey,
   sceneTextKey,
+  writeSceneParts,
 } from '../../widget/src/widget/scene-options';
 import { Checkbox } from './Checkbox';
 import { StudioIcon, type IconName } from './StudioIcon';
@@ -48,9 +54,47 @@ export function SceneOptions() {
   const setText = (name: string, value: string, pattern: RegExp) => {
     if (pattern.test(value)) settings.set(key(name), value);
   };
+  const parts = readSceneParts(settings.get('sceneParts'));
+  const togglePart = (part: ScenePart) => {
+    const next = new Set(parts);
+    if (next.has(part)) next.delete(part);
+    else next.add(part);
+    settings.set('sceneParts', writeSceneParts(next));
+  };
 
   return (
     <>
+      <div className="settings scene-options">
+        <h3 className="card-heading">
+          <StudioIcon name="palette" />
+          {tl('scenes.theme')}
+        </h3>
+        <div className="design-switch scene-themes" role="group" aria-label={tl('scenes.theme')}>
+          {SCENE_THEMES.map((theme) => (
+            <button
+              key={theme}
+              type="button"
+              className="design-switch-option"
+              aria-pressed={settings.get('sceneTheme') === theme}
+              onClick={() => settings.set('sceneTheme', theme)}
+            >
+              <span className={`scene-theme-thumb is-${theme}`} aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span className="design-switch-text">
+                <strong>
+                  {tl(`scenes.theme.${theme}`)}
+                  {SCENE_WOW_THEMES.includes(theme) && <em className="anim-chip">WOW</em>}
+                </strong>
+                <small>{tl(`scenes.theme.${theme}.tagline`)}</small>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="settings scene-options">
         <h3 className="card-heading">
           <StudioIcon name="monitor" />
@@ -135,6 +179,22 @@ export function SceneOptions() {
             </div>
           )}
           <Checkbox text={tl('scenes.stats')} setting={'sceneStats'} />
+        </div>
+        <div className="setting scene-parts">
+          <p>{tl('scenes.parts')}</p>
+          {SCENE_PART_GROUPS.map(({ group, parts: groupParts }) => (
+            <div className="scene-part-group" key={group}>
+              <span>{tl(`scenes.parts.${group}`)}</span>
+              <div className="scene-part-chips" role="group" aria-label={tl(`scenes.parts.${group}`)}>
+                {groupParts.map((part) => (
+                  <button key={part} type="button" className="scene-part-chip" aria-pressed={parts.has(part)} onClick={() => togglePart(part)}>
+                    <StudioIcon name={parts.has(part) ? 'check' : 'plus'} />
+                    {tl(`scenes.part.${part}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
         <div className="setting">
           <p>{tl('scenes.animation')}</p>
