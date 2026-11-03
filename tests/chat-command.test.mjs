@@ -217,49 +217,142 @@ test('map names lose the de_ prefix, and averages of nothing are nothing', () =>
 });
 
 const KINDS = ['elo', 'last', 'kd', 'avg', 'live'];
+const DAY = new Date('2026-11-03T20:00:00Z');
 
-/** A Redis double with the few hash calls the counters use. */
+/** A Redis double: hashes, the bump-if-present script, and multi with hset/expire. */
 function fakeRedis() {
   const hashes = new Map();
   const client = {
     hashes,
+    eval: async (_script, count, ...rest) => {
+      const keys = rest.slice(0, count);
+      const kind = rest[count];
+      for (const key of keys) {
+        const bag = hashes.get(key);
+        if (bag) bag[kind] = String(Number(bag[kind] ?? 0) + 1);
+      }
+      return 1;
+    },
+    hgetall: async (key) => ({ ...(hashes.get(key) ?? {}) }),
     multi() {
       const ops = [];
       const batch = {
-        hincrby: (key, field, by) => (ops.push(() => {
-          const bag = hashes.get(key) ?? {};
-          bag[field] = String(Number(bag[field] ?? 0) + by);
-          hashes.set(key, bag);
-        }), batch),
+        hset: (key, values) => (ops.push(() => hashes.set(key, Object.fromEntries(Object.entries(values).map(([k, v]) => [k, String(v)])))), batch),
         expire: () => batch,
         exec: async () => ops.forEach((op) => op()),
       };
       return batch;
     },
-    hgetall: async (key) => ({ ...(hashes.get(key) ?? {}) }),
   };
-  return { client, call: async (run) => run(client) };
+  let up = true;
+  return { client, call: async (run) => (up ? run(client) : undefined), down: () => (up = false) };
 }
 
-test('commands are counted for the site, for the streamer and for the streamer today', async () => {
+/** A Postgres double holding chat_command_counts rows, answering the few statements the counters send. */
+function fakePostgres() {
+  const rows = new Map();
+  let up = true;
+  let writes = 0;
+  const sum = (filter) => {
+    const out = new Map();
+    for (const [key, n] of rows) {
+      const [owner, day, kind] = key.split('|');
+      if (filter(owner, day)) out.set(kind, (out.get(kind) ?? 0) + n);
+    }
+    return [...out].map(([kind, n]) => ({ kind, n: String(n) }));
+  };
+  const pool = {
+    query: async (sql, params = []) => {
+      if (sql.startsWith('INSERT')) {
+        writes += 1;
+        const [owners, days, kinds, counts] = params;
+        owners.forEach((owner, index) => {
+          const key = `${owner}|${days[index]}|${kinds[index]}`;
+          rows.set(key, (rows.get(key) ?? 0) + counts[index]);
+        });
+        return { rows: [] };
+      }
+      if (sql.includes('AND day')) return { rows: sum((owner, day) => owner === params[0] && day === params[1]) };
+      if (sql.includes('WHERE owner')) return { rows: sum((owner) => owner === params[0]) };
+      return { rows: sum(() => true) };
+    },
+  };
+  return {
+    rows,
+    get writes() {
+      return writes;
+    },
+    call: async (run) => (up ? run(pool) : undefined),
+    down: () => (up = false),
+    upAgain: () => (up = true),
+  };
+}
+
+/** Timers the test fires by hand. */
+function manualTimers() {
+  const waiting = [];
+  return { set: (run) => (waiting.push(run), { unref() {} }), fire: () => waiting.splice(0).forEach((run) => run()) };
+}
+
+test('calls wait in memory and reach Postgres in one write per flush', async () => {
   const redis = fakeRedis();
-  const stats = createChatStats({ kinds: KINDS, redis: redis.call, now: () => new Date('2026-11-03T20:00:00Z') });
+  const pg = fakePostgres();
+  const timers = manualTimers();
+  const stats = createChatStats({ kinds: KINDS, redis: redis.call, postgres: pg.call, now: () => DAY, setTimer: timers.set });
   await stats.record('elo', 'skullboy');
   await stats.record('elo', 'skullboy');
   await stats.record('live', 'skullboy');
   await stats.record('elo', 'someone');
   await stats.record('elo', '');
   await stats.record('bogus', 'skullboy');
+  assert.equal(pg.writes, 0);
+  timers.fire();
+  await stats.flush();
+  assert.equal(pg.writes, 1);
+  assert.equal(pg.rows.get('skullboy|2026-11-03|elo'), 2);
+  assert.equal(pg.rows.get('|2026-11-03|elo'), 1);
   const read = await stats.read('skullboy');
   assert.deepEqual(read.total, { elo: 4, last: 0, kd: 0, avg: 0, live: 1 });
   assert.deepEqual(read.mine, { elo: 2, last: 0, kd: 0, avg: 0, live: 1 });
   assert.deepEqual(read.today, { elo: 2, last: 0, kd: 0, avg: 0, live: 1 });
-  assert.ok(redis.client.hashes.has('fb:chatcmd:day:2026-11-03:skullboy'));
   assert.equal(chatDay(new Date('2026-11-03T23:59:00Z')), '2026-11-03');
 });
 
-test('without Redis the counters live in memory', async () => {
-  const stats = createChatStats({ kinds: KINDS, redis: async () => undefined });
+test('Redis caches the sums: a missing key is rebuilt from Postgres plus the calls still waiting, then bumped live', async () => {
+  const redis = fakeRedis();
+  const pg = fakePostgres();
+  pg.rows.set('skullboy|2026-11-01|elo', 40);
+  const stats = createChatStats({ kinds: KINDS, redis: redis.call, postgres: pg.call, now: () => DAY, setTimer: () => null });
+  await stats.record('elo', 'skullboy');
+  /* Not in Postgres yet, and no cache: the read counts the waiting call too */
+  assert.equal((await stats.read('skullboy')).mine.elo, 41);
+  assert.equal(redis.client.hashes.get('fb:chatcmd2:owner:skullboy').elo, '41');
+  /* With the key warm, a new call bumps the cache without asking Postgres */
+  await stats.record('elo', 'skullboy');
+  assert.equal(redis.client.hashes.get('fb:chatcmd2:owner:skullboy').elo, '42');
+  assert.equal((await stats.read('skullboy')).mine.elo, 42);
+  /* A call does not create a key: an evicted cache cannot come back as a lone "1" */
+  redis.client.hashes.clear();
+  await stats.record('kd', 'skullboy');
+  assert.equal(redis.client.hashes.size, 0);
+  assert.equal((await stats.read('skullboy')).mine.kd, 1);
+});
+
+test('a failed write keeps the calls for the next one', async () => {
+  const pg = fakePostgres();
+  const stats = createChatStats({ kinds: KINDS, redis: async () => undefined, postgres: pg.call, now: () => DAY, setTimer: () => null });
+  await stats.record('avg', 'skullboy');
+  pg.down();
+  await stats.flush();
+  assert.equal(pg.rows.size, 0);
+  pg.upAgain();
+  await stats.record('avg', 'skullboy');
+  await stats.flush();
+  assert.equal(pg.rows.get('skullboy|2026-11-03|avg'), 2);
+});
+
+test('with Redis and Postgres both down the counters live in memory', async () => {
+  const stats = createChatStats({ kinds: KINDS, redis: async () => undefined, postgres: async () => undefined, setTimer: () => null });
   await stats.record('kd', 'skullboy');
   const read = await stats.read('skullboy');
   assert.equal(read.mine.kd, 1);
@@ -269,7 +362,7 @@ test('without Redis the counters live in memory', async () => {
 
 test('the endpoint counts bot calls, skips the studio preview and serves the numbers as JSON', async () => {
   const { read } = fakeRead();
-  const stats = createChatStats({ kinds: KINDS, redis: async () => undefined });
+  const stats = createChatStats({ kinds: KINDS, redis: async () => undefined, postgres: async () => undefined, setTimer: () => null });
   const response = () => {
     const res = { headers: {}, statusCode: 0, body: '', setHeader: (name, value) => (res.headers[name.toLowerCase()] = value), end: (body) => (res.body = body) };
     return res;

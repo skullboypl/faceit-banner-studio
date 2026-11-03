@@ -149,6 +149,13 @@ async function getPostgres() {
           PRIMARY KEY (slug, ts)
         );
         CREATE INDEX IF NOT EXISTS idx_streamer_samples_slug_ts ON streamer_samples (slug, ts DESC);
+        CREATE TABLE IF NOT EXISTS chat_command_counts (
+          owner VARCHAR(40) NOT NULL,
+          day DATE NOT NULL,
+          kind VARCHAR(16) NOT NULL,
+          n BIGINT NOT NULL DEFAULT 0,
+          PRIMARY KEY (owner, day, kind)
+        );
       `);
       return pool;
     })

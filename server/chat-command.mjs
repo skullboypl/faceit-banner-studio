@@ -330,6 +330,9 @@ const limit = createRateLimiter({ perMinute: 600 });
 
 const sharedStats = createChatStats({ kinds: CHAT_KINDS });
 
+/** Writes the calls still waiting for Postgres; the server calls it before it stops. */
+export const flushChatStats = () => sharedStats.flush();
+
 /** Serves the chat command and its counters. Returns false when the path is neither. */
 export async function handleChatCommand(req, res, { unlimitedRate = false, read = readFaceit, stats = sharedStats } = {}) {
   const url = new URL(req.url || '/', 'http://localhost');

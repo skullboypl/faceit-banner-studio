@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { createPresenceMiddleware, hydratePresence, startOnlineHistory } from './presence.mjs';
 import { createStreamersMiddleware } from './streamers.mjs';
 import { createAuthMiddleware } from './auth.mjs';
+import { flushChatStats } from './chat-command.mjs';
 import { faceitKeySource } from './faceit-gate.mjs';
 import { fail, log, startSummary } from './log.mjs';
 
@@ -37,6 +38,11 @@ process.on('unhandledRejection', (error) => {
   fail('error', `kept running after a rejection: ${error?.stack || error}`);
 });
 
-const shutdown = () => server.close(() => process.exit(0));
+/* The chat command counters wait up to half a minute for Postgres: write them before stopping */
+const shutdown = () => {
+  void Promise.resolve(flushChatStats())
+    .catch(() => undefined)
+    .finally(() => server.close(() => process.exit(0)));
+};
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
