@@ -1197,5 +1197,20 @@
   "chat.stats.calls": "volání",
   "chat.stats.calls_title": "{{0}} volání {{1}}",
   "chat.stats.today_short": "+{{0}} dnes",
-  "chat.stats.hint": "Volání těchto příkazů na všech kanálech, které je používají, sečtená za celý web. Náhled ve studiu se nepočítá."
+  "chat.stats.hint": "Volání těchto příkazů na všech kanálech, které je používají, sečtená za celý web. Náhled ve studiu se nepočítá.",
+  "xmas.title": "Vánoční ozdoby",
+  "xmas.help": "Ve výchozím stavu vypnuté. Fungují v každém režimu banneru, v OBS i v náhledu.",
+  "xmas.lights": "Vánoční světýlka nahoře",
+  "xmas.colors": "Barvy světýlek",
+  "xmas.colors.classic": "Klasické",
+  "xmas.colors.warm": "Teplá bílá",
+  "xmas.colors.faceit": "FACEIT",
+  "xmas.colors.ice": "Ledové",
+  "xmas.snow": "Padající sníh",
+  "xmas.amount": "Množství sněhu",
+  "xmas.amount.light": "Málo",
+  "xmas.amount.medium": "Středně",
+  "xmas.amount.heavy": "Hodně",
+  "xmas.cap": "Sníh na horním okraji",
+  "xmas.frost": "Ojíněné rohy"
 }

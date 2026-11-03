@@ -1197,5 +1197,20 @@
   "chat.stats.calls": "usos",
   "chat.stats.calls_title": "{{0}} usos de {{1}}",
   "chat.stats.today_short": "+{{0}} hoje",
-  "chat.stats.hint": "Usos destes comandos em todos os canais que os usam, somados para o site inteiro. A prévia do estúdio não conta."
+  "chat.stats.hint": "Usos destes comandos em todos os canais que os usam, somados para o site inteiro. A prévia do estúdio não conta.",
+  "xmas.title": "Enfeites de Natal",
+  "xmas.help": "Desligados por padrão. Funcionam em todos os modos de banner, no OBS e na prévia.",
+  "xmas.lights": "Pisca-pisca no topo",
+  "xmas.colors": "Cores das luzes",
+  "xmas.colors.classic": "Clássicas",
+  "xmas.colors.warm": "Branco quente",
+  "xmas.colors.faceit": "FACEIT",
+  "xmas.colors.ice": "Gelo",
+  "xmas.snow": "Neve caindo",
+  "xmas.amount": "Quantidade de neve",
+  "xmas.amount.light": "Pouca",
+  "xmas.amount.medium": "Média",
+  "xmas.amount.heavy": "Muita",
+  "xmas.cap": "Neve na borda de cima",
+  "xmas.frost": "Cantos congelados"
 }

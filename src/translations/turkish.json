@@ -1197,5 +1197,20 @@
   "chat.stats.calls": "çağrı",
   "chat.stats.calls_title": "{{1}} için {{0}} çağrı",
   "chat.stats.today_short": "bugün +{{0}}",
-  "chat.stats.hint": "Bu komutların, onları kullanan tüm kanallardaki çağrıları, tüm site için toplanır. Stüdyodaki önizleme sayılmaz."
+  "chat.stats.hint": "Bu komutların, onları kullanan tüm kanallardaki çağrıları, tüm site için toplanır. Stüdyodaki önizleme sayılmaz.",
+  "xmas.title": "Yılbaşı süsleri",
+  "xmas.help": "Varsayılan olarak kapalı. Her banner modunda, OBS'te ve önizlemede çalışır.",
+  "xmas.lights": "Üstte yılbaşı ışıkları",
+  "xmas.colors": "Işık renkleri",
+  "xmas.colors.classic": "Klasik",
+  "xmas.colors.warm": "Sıcak beyaz",
+  "xmas.colors.faceit": "FACEIT",
+  "xmas.colors.ice": "Buz",
+  "xmas.snow": "Yağan kar",
+  "xmas.amount": "Kar miktarı",
+  "xmas.amount.light": "Az",
+  "xmas.amount.medium": "Orta",
+  "xmas.amount.heavy": "Çok",
+  "xmas.cap": "Üst kenarda kar",
+  "xmas.frost": "Buzlu köşeler"
 }

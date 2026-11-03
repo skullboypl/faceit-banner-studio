@@ -4,6 +4,7 @@ import {
   styles,
 } from '../../../widget/src/styles/styles';
 import { SceneLookOptions } from '../../components/SceneOptions';
+import { SeasonalOptions } from '../../components/SeasonalOptions';
 import { ColorPicker } from '../../components/ColorPicker.tsx';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { Checkbox } from '../../components/Checkbox.tsx';
@@ -408,6 +409,7 @@ export const StyleTab = ({
       )}
 
       {settings.get('widgetMode') === 'scenes' && <SceneLookOptions />}
+      <SeasonalOptions />
       {settings.get('widgetMode') === 'popup' ? (
         <PopupLookOptions />
       ) : settings.get('widgetMode') === 'split' ? (

@@ -1237,5 +1237,20 @@
   "chat.stats.calls": "calls",
   "chat.stats.calls_title": "{{0}} calls of {{1}}",
   "chat.stats.today_short": "+{{0}} today",
-  "chat.stats.hint": "Calls of these commands on every channel that uses them, added up for the whole site. The studio preview does not count."
+  "chat.stats.hint": "Calls of these commands on every channel that uses them, added up for the whole site. The studio preview does not count.",
+  "xmas.title": "Christmas extras",
+  "xmas.help": "Off by default. They work on every banner mode, in OBS and in the preview.",
+  "xmas.lights": "Christmas lights along the top",
+  "xmas.colors": "Light colours",
+  "xmas.colors.classic": "Classic",
+  "xmas.colors.warm": "Warm white",
+  "xmas.colors.faceit": "FACEIT",
+  "xmas.colors.ice": "Ice",
+  "xmas.snow": "Falling snow",
+  "xmas.amount": "Amount of snow",
+  "xmas.amount.light": "Light",
+  "xmas.amount.medium": "Medium",
+  "xmas.amount.heavy": "Heavy",
+  "xmas.cap": "Snow on the top edge",
+  "xmas.frost": "Frosted corners"
 }

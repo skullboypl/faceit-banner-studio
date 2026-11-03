@@ -1197,5 +1197,20 @@
   "chat.stats.calls": "appels",
   "chat.stats.calls_title": "{{0}} appels de {{1}}",
   "chat.stats.today_short": "+{{0}} aujourd'hui",
-  "chat.stats.hint": "Appels de ces commandes sur toutes les chaînes qui les utilisent, additionnés pour tout le site. L'aperçu du studio ne compte pas."
+  "chat.stats.hint": "Appels de ces commandes sur toutes les chaînes qui les utilisent, additionnés pour tout le site. L'aperçu du studio ne compte pas.",
+  "xmas.title": "Décorations de Noël",
+  "xmas.help": "Désactivées par défaut. Elles marchent dans tous les modes de bannière, dans OBS et dans l'aperçu.",
+  "xmas.lights": "Guirlande lumineuse en haut",
+  "xmas.colors": "Couleurs des lumières",
+  "xmas.colors.classic": "Classiques",
+  "xmas.colors.warm": "Blanc chaud",
+  "xmas.colors.faceit": "FACEIT",
+  "xmas.colors.ice": "Glace",
+  "xmas.snow": "Neige qui tombe",
+  "xmas.amount": "Quantité de neige",
+  "xmas.amount.light": "Peu",
+  "xmas.amount.medium": "Moyen",
+  "xmas.amount.heavy": "Beaucoup",
+  "xmas.cap": "Neige sur le bord du haut",
+  "xmas.frost": "Coins givrés"
 }

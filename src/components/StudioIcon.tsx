@@ -30,7 +30,8 @@ export type IconName =
   | 'gauge'
   | 'broadcast'
   | 'copy'
-  | 'bot';
+  | 'bot'
+  | 'snowflake';
 
 const paths: Record<IconName, string> = {
   settings: 'M4 7h9m4 0h3M4 17h3m4 0h9M13 4v6M7 14v6',
@@ -66,6 +67,7 @@ const paths: Record<IconName, string> = {
   broadcast: 'M12 12h.01M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8',
   copy: 'M9 9h11v11H9zM5 15H4V4h11v1',
   bot: 'M8 8h8a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-5a3 3 0 0 1 3-3ZM12 4v4M9.5 13.5h.01M14.5 13.5h.01',
+  snowflake: 'M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5M4 10.4l3.4.9-.9 3.4M20 13.6l-3.4-.9.9-3.4M4.9 15.6l2.5-2.3-2.3-2.5M19.1 8.4l-2.5 2.3 2.3 2.5',
 };
 
 export const StudioIcon = ({ name }: { name: IconName }) => (

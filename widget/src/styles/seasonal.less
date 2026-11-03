@@ -1,0 +1,173 @@
+/* Christmas extras over any banner: frost, snow, a snow cap and a string of lights. Sizes follow --decor-scale. */
+
+.seasonal-decor {
+  --s: var(--decor-scale, 1);
+  --c1: #ff3b3b;
+  --c2: #ffd23b;
+  --c3: #3bd16f;
+  --c4: #3b8bff;
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  container-type: size;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: inherit;
+}
+.seasonal-decor.colors-warm {
+  --c1: #ffcf7a;
+  --c2: #ffb347;
+  --c3: #ffe3a3;
+  --c4: #ffc56b;
+}
+.seasonal-decor.colors-faceit {
+  --c1: #ff5500;
+  --c2: #ffffff;
+  --c3: #ff8a3d;
+  --c4: #ffd0b0;
+}
+.seasonal-decor.colors-ice {
+  --c1: #bfe9ff;
+  --c2: #ffffff;
+  --c3: #8fd3ff;
+  --c4: #d9f3ff;
+}
+
+/* Frost: icy corners, brightest at the edges */
+.xmas-frost {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 0 0, rgba(220, 240, 255, 0.38), transparent calc(42px * var(--s))),
+    radial-gradient(circle at 100% 0, rgba(220, 240, 255, 0.32), transparent calc(36px * var(--s))),
+    radial-gradient(circle at 0 100%, rgba(220, 240, 255, 0.28), transparent calc(34px * var(--s))),
+    radial-gradient(circle at 100% 100%, rgba(220, 240, 255, 0.38), transparent calc(44px * var(--s)));
+  mix-blend-mode: screen;
+}
+
+/* Snow: flakes fall the whole height of the banner and sway a little */
+.xmas-snow {
+  position: absolute;
+  inset: 0;
+  i {
+    position: absolute;
+    top: calc(-8px * var(--s));
+    left: var(--x);
+    width: calc(var(--size) * var(--s));
+    height: calc(var(--size) * var(--s));
+    border-radius: 50%;
+    background: #fff;
+    opacity: var(--alpha);
+    box-shadow: 0 0 calc(3px * var(--s)) rgba(255, 255, 255, 0.8);
+    animation:
+      xmas-fall var(--fall) linear var(--delay) infinite,
+      xmas-sway var(--sway) ease-in-out var(--delay) infinite alternate;
+  }
+}
+@keyframes xmas-fall {
+  to {
+    top: calc(100cqh + 8px * var(--s));
+  }
+}
+@keyframes xmas-sway {
+  from {
+    transform: translateX(calc(-6px * var(--s)));
+  }
+  to {
+    transform: translateX(calc(6px * var(--s)));
+  }
+}
+
+/* Snow cap: a lumpy white band resting on the top edge */
+.xmas-cap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: calc(9px * var(--s));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 10' preserveAspectRatio='none'%3E%3Cpath d='M0 0h60v4c-3 0-4 4-8 4s-5-3-9-3-4 5-9 5-5-4-9-4-5 3-9 3S2 4 0 4z' fill='%23fdfeff'/%3E%3C/svg%3E");
+  background-size: calc(60px * var(--s)) 100%;
+  background-repeat: repeat-x;
+  filter: drop-shadow(0 calc(1px * var(--s)) calc(1.5px * var(--s)) rgba(0, 20, 50, 0.35));
+}
+
+/* Lights: a wire in scallops with one bulb hanging from each dip */
+.xmas-lights {
+  --tile: calc(26px * var(--s));
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(-2px * var(--s));
+  height: calc(22px * var(--s));
+}
+.has-cap .xmas-lights {
+  top: calc(3px * var(--s));
+}
+.xmas-wire {
+  position: absolute;
+  inset: 0 0 auto;
+  height: calc(10px * var(--s));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 10'%3E%3Cpath d='M0 2Q13 11 26 2' fill='none' stroke='%231d2a1f' stroke-width='1.4'/%3E%3C/svg%3E");
+  background-size: var(--tile) 100%;
+  background-repeat: repeat-x;
+}
+.xmas-bulbs {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--tile);
+  i {
+    position: relative;
+    justify-self: center;
+    margin-top: calc(6px * var(--s));
+    width: calc(7px * var(--s));
+    height: calc(11px * var(--s));
+    border-radius: 50% 50% 46% 46% / 40% 40% 60% 60%;
+    background: var(--bulb);
+    box-shadow:
+      0 0 calc(5px * var(--s)) var(--bulb),
+      0 0 calc(12px * var(--s)) color-mix(in srgb, var(--bulb) 55%, transparent);
+    animation: xmas-twinkle var(--twinkle) ease-in-out var(--twinkle-delay) infinite alternate;
+    &::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: calc(-3px * var(--s));
+      width: calc(4px * var(--s));
+      height: calc(3.5px * var(--s));
+      translate: -50% 0;
+      border-radius: calc(1px * var(--s));
+      background: #2b2f2a;
+    }
+  }
+  i:nth-child(4n + 1) {
+    --bulb: var(--c1);
+  }
+  i:nth-child(4n + 2) {
+    --bulb: var(--c2);
+  }
+  i:nth-child(4n + 3) {
+    --bulb: var(--c3);
+  }
+  i:nth-child(4n + 4) {
+    --bulb: var(--c4);
+  }
+}
+@keyframes xmas-twinkle {
+  from {
+    opacity: 0.5;
+    filter: saturate(0.7) brightness(0.8);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seasonal-decor *,
+  .seasonal-decor *::before {
+    animation: none !important;
+  }
+}

@@ -116,6 +116,7 @@ import '../styles/ticker-preset.less';
 import '../styles/versus-preset.less';
 import '../styles/modes-preset.less';
 import '../styles/scene-screen.less';
+import '../styles/seasonal.less';
 import '../styles/solo-extra.less';
 import '../styles/stats-extra.less';
 import '../styles/promo-2026.less';
@@ -130,6 +131,8 @@ import { SPLIT_PARTS, SplitBanner } from './SplitBanner';
 import { readSplitOptions } from './split-options';
 import { MatchPopup } from './MatchPopup';
 import { SceneScreen } from './SceneScreen';
+import { SeasonalDecor } from './SeasonalDecor';
+import { readXmasOptions } from './seasonal';
 import { readSceneOptions, SCENE_KINDS, type SceneKind } from './scene-options';
 import { readPopupOptions } from './popup-options';
 import { readTeamOptions, teamRecommendedWidth } from './team-options';
@@ -2405,6 +2408,8 @@ export const Widget = ({
       >
         {/* The studio preview stays quiet until the streamer asks for the welcome; the OBS source plays it on load. A full-screen scene never shows it: it would cover the scene. */}
         <UpdateIntro enabled={Boolean(SETTINGS.get('showUpdateIntro')) && !isScenes && (!preview || introReplay > 0)} language={language} replay={introReplay} />
+        {/* Christmas extras: off unless the streamer turns them on; larger on the 1920 x 1080 sources */}
+        <SeasonalDecor options={readXmasOptions((key) => SETTINGS.get(key as SettingKey))} scale={isFullFrame ? 2.4 : 1} />
         <div
           className={`widget ${SETTINGS.get('useBannerAsBackground') || SETTINGS.get('useAvatarAsBackground') ? 'banner' : ''}`}
         >

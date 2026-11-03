@@ -1197,5 +1197,20 @@
   "chat.stats.calls": "Aufrufe",
   "chat.stats.calls_title": "{{0}} Aufrufe von {{1}}",
   "chat.stats.today_short": "+{{0}} heute",
-  "chat.stats.hint": "Aufrufe dieser Befehle auf allen Kanälen, die sie nutzen, zusammen für die ganze Seite. Die Vorschau im Studio zählt nicht."
+  "chat.stats.hint": "Aufrufe dieser Befehle auf allen Kanälen, die sie nutzen, zusammen für die ganze Seite. Die Vorschau im Studio zählt nicht.",
+  "xmas.title": "Weihnachtsdeko",
+  "xmas.help": "Standardmäßig aus. Funktioniert in jedem Banner-Modus, in OBS und in der Vorschau.",
+  "xmas.lights": "Lichterkette oben",
+  "xmas.colors": "Farben der Lichter",
+  "xmas.colors.classic": "Klassisch",
+  "xmas.colors.warm": "Warmweiß",
+  "xmas.colors.faceit": "FACEIT",
+  "xmas.colors.ice": "Eis",
+  "xmas.snow": "Fallender Schnee",
+  "xmas.amount": "Schneemenge",
+  "xmas.amount.light": "Wenig",
+  "xmas.amount.medium": "Mittel",
+  "xmas.amount.heavy": "Viel",
+  "xmas.cap": "Schnee auf der Oberkante",
+  "xmas.frost": "Vereiste Ecken"
 }

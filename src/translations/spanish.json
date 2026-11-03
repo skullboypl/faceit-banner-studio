@@ -1197,5 +1197,20 @@
   "chat.stats.calls": "usos",
   "chat.stats.calls_title": "{{0}} usos de {{1}}",
   "chat.stats.today_short": "+{{0}} hoy",
-  "chat.stats.hint": "Usos de estos comandos en todos los canales que los usan, sumados para todo el sitio. La vista previa del estudio no cuenta."
+  "chat.stats.hint": "Usos de estos comandos en todos los canales que los usan, sumados para todo el sitio. La vista previa del estudio no cuenta.",
+  "xmas.title": "Adornos navideños",
+  "xmas.help": "Desactivados por defecto. Funcionan en todos los modos de banner, en OBS y en la vista previa.",
+  "xmas.lights": "Luces navideñas arriba",
+  "xmas.colors": "Colores de las luces",
+  "xmas.colors.classic": "Clásicas",
+  "xmas.colors.warm": "Blanco cálido",
+  "xmas.colors.faceit": "FACEIT",
+  "xmas.colors.ice": "Hielo",
+  "xmas.snow": "Nieve cayendo",
+  "xmas.amount": "Cantidad de nieve",
+  "xmas.amount.light": "Poca",
+  "xmas.amount.medium": "Media",
+  "xmas.amount.heavy": "Mucha",
+  "xmas.cap": "Nieve en el borde superior",
+  "xmas.frost": "Esquinas escarchadas"
 }

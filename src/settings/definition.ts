@@ -25,6 +25,7 @@ import {
   SCENE_THEMES,
 } from '../../widget/src/widget/scene-options';
 import { MAP_PREVIEW_IDS } from '../../widget/src/widget/map-art';
+import { XMAS_LIGHT_COLORS, XMAS_SNOW_AMOUNTS } from '../../widget/src/widget/seasonal';
 import {
   SPLIT_CHART_LOOKS,
   SPLIT_DATA_LOOKS,
@@ -232,6 +233,39 @@ export const SETTINGS_DEFINITIONS = {
     "defaultValue": false,
     "query": ["ticker_last_hs"],
     "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "ticker" }]
+  },
+  /** Christmas extras, for every banner mode; all off by default. */
+  xmasLights: {
+    type: 'boolean',
+    defaultValue: false,
+    query: ['xmas_lights'],
+  },
+  xmasLightColors: {
+    type: 'string',
+    defaultValue: 'classic',
+    options: [...XMAS_LIGHT_COLORS],
+    query: ['xmas_colors'],
+  },
+  xmasSnow: {
+    type: 'boolean',
+    defaultValue: false,
+    query: ['xmas_snow'],
+  },
+  xmasSnowAmount: {
+    type: 'string',
+    defaultValue: 'medium',
+    options: [...XMAS_SNOW_AMOUNTS],
+    query: ['xmas_snow_amount'],
+  },
+  xmasCap: {
+    type: 'boolean',
+    defaultValue: false,
+    query: ['xmas_cap'],
+  },
+  xmasFrost: {
+    type: 'boolean',
+    defaultValue: false,
+    query: ['xmas_frost'],
   },
   widgetMode: {
     type: 'string',

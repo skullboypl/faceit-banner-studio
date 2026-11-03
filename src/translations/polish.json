@@ -1237,5 +1237,20 @@
   "chat.stats.calls": "wywołań",
   "chat.stats.calls_title": "{{0}} wywołań {{1}}",
   "chat.stats.today_short": "+{{0}} dziś",
-  "chat.stats.hint": "Wywołania tych komend na wszystkich kanałach, które ich używają, liczone razem dla całej strony. Podgląd w studiu się nie liczy."
+  "chat.stats.hint": "Wywołania tych komend na wszystkich kanałach, które ich używają, liczone razem dla całej strony. Podgląd w studiu się nie liczy.",
+  "xmas.title": "Świąteczne dodatki",
+  "xmas.help": "Domyślnie wyłączone. Działają w każdym trybie banera, w OBS i w podglądzie.",
+  "xmas.lights": "Lampki choinkowe u góry",
+  "xmas.colors": "Kolory lampek",
+  "xmas.colors.classic": "Klasyczne",
+  "xmas.colors.warm": "Ciepłe białe",
+  "xmas.colors.faceit": "FACEIT",
+  "xmas.colors.ice": "Lodowe",
+  "xmas.snow": "Padający śnieg",
+  "xmas.amount": "Ilość śniegu",
+  "xmas.amount.light": "Mało",
+  "xmas.amount.medium": "Średnio",
+  "xmas.amount.heavy": "Dużo",
+  "xmas.cap": "Śnieg na górnej krawędzi",
+  "xmas.frost": "Oszronione rogi"
 }
