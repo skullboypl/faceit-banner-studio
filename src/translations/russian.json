@@ -1181,5 +1181,13 @@
   "scenes.chat_style.none": "Без рамки",
   "scenes.chat_width": "Ширина чата",
   "scenes.scale": "Размер элементов",
-  "scenes.title_scale": "Размер заголовка"
+  "scenes.title_scale": "Размер заголовка",
+  "scenes.theme.minimal": "Минимал",
+  "scenes.theme.minimal.tagline": "Чёрный фон, без рамок, тонкие линии",
+  "scenes.theme.mono": "Моно",
+  "scenes.theme.mono.tagline": "Серые панели, цвет только для уровня и результатов",
+  "scenes.theme.panel": "Панель",
+  "scenes.theme.panel.tagline": "Всё в одной тёмной колонке",
+  "scenes.theme.bar": "Полоса",
+  "scenes.theme.bar.tagline": "Большой заголовок и одна полоса с вашими числами"
 }

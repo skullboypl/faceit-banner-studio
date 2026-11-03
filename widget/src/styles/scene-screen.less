@@ -853,6 +853,240 @@ html.generator .preview-stage:has([data-layout='stage']) {
 
 /* ── Themes ─────────────────────────────────────────────────────────────── */
 
+/* Clean dark themes: flat near-black, solid surfaces, colour only where it means something */
+.scene-theme--minimal,
+.scene-theme--mono,
+.scene-theme--panel,
+.scene-theme--bar {
+  --panel: #121214;
+  --line: #26262a;
+  --muted: #a7a7ae;
+  .scene-bg {
+    background: #0a0a0b;
+  }
+  .scene-blob {
+    opacity: 0.08;
+  }
+  .scene-vignette {
+    display: none;
+  }
+  .scene-title {
+    text-shadow: none;
+  }
+  .scene-badge,
+  .scene-timer,
+  .scene-chat {
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+  .scene-chat {
+    background: #101012;
+    border-color: var(--line);
+    border-radius: calc(0.8 * var(--u));
+  }
+  .scene-elo b {
+    color: #fff;
+  }
+}
+
+/* Minimal: sentence-case title, no boxes, thin rules and plenty of room */
+.scene-theme--minimal {
+  .scene-badge {
+    padding: 0;
+    background: none;
+    border: 0;
+    i {
+      animation: none;
+    }
+    font-size: calc(1.6 * var(--u));
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    b {
+      border: 0;
+      padding-left: calc(0.6 * var(--u));
+    }
+  }
+  .scene-title {
+    font-size: calc(9.5 * var(--u) * var(--tk, 1));
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    text-transform: none;
+  }
+  .scene-note {
+    font-size: calc(2.6 * var(--u));
+  }
+  .scene-timer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: calc(0.6 * var(--u));
+    padding: 0;
+    background: none;
+    border: 0;
+    small {
+      font-size: calc(1.5 * var(--u));
+    }
+    b {
+      font-size: calc(6 * var(--u));
+      font-weight: 700;
+    }
+  }
+  .scene-player {
+    align-self: stretch;
+    gap: calc(4 * var(--u));
+    padding-top: calc(3 * var(--u));
+    border-top: 1px solid var(--line);
+    --avatar: calc(9 * var(--u));
+    --name: calc(2.8 * var(--u));
+    --elo: calc(5.4 * var(--u));
+    --bar: calc(26 * var(--u));
+    --cell: calc(3 * var(--u));
+  }
+  .scene-avatar-ring {
+    inset: calc(-0.6 * var(--u));
+  }
+  .scene-groups {
+    gap: calc(5 * var(--u));
+  }
+  .scene-socials b {
+    font-weight: 600;
+  }
+}
+
+/* Mono: grey surfaces and white type; only the level and the results carry colour */
+.scene-theme--mono {
+  --accent: #e6e6ea;
+  .scene-badge {
+    background: var(--panel);
+    border-color: var(--line);
+    border-radius: calc(0.6 * var(--u));
+    i {
+      background: #fff;
+      animation: none;
+    }
+    b {
+      color: #fff;
+    }
+  }
+  .scene-title {
+    font-size: calc(10.5 * var(--u) * var(--tk, 1));
+  }
+  .scene-timer {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: calc(0.6 * var(--u));
+  }
+  .scene-player {
+    align-self: flex-start;
+    max-width: 100%;
+    padding: calc(2.6 * var(--u)) calc(3 * var(--u));
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: calc(0.8 * var(--u));
+    --avatar: calc(10 * var(--u));
+    --elo: calc(5.6 * var(--u));
+    --bar: calc(28 * var(--u));
+  }
+  .scene-groups {
+    padding-left: calc(3.4 * var(--u));
+    border-left: 1px solid var(--line);
+  }
+  .scene-social-icon {
+    color: #fff;
+    background: #1c1c1f;
+    box-shadow: none;
+    border-color: var(--line);
+  }
+}
+
+/* Panel: everything in one dark column, sections split by rules */
+.scene-theme--panel {
+  .scene-main {
+    justify-content: flex-start;
+    gap: 0;
+    padding: calc(4.4 * var(--u)) calc(4.8 * var(--u));
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: calc(1 * var(--u));
+  }
+  .scene-head {
+    gap: calc(1.8 * var(--u));
+    padding-bottom: calc(3.4 * var(--u));
+  }
+  .scene-badge {
+    padding: 0;
+    background: none;
+    border: 0;
+    b {
+      border-color: var(--line);
+    }
+  }
+  .scene-title {
+    font-size: calc(8.4 * var(--u) * var(--tk, 1));
+  }
+  .scene-timer {
+    padding: calc(1.2 * var(--u)) calc(2.2 * var(--u));
+    background: #1a1a1d;
+    border: 0;
+    border-radius: calc(0.6 * var(--u));
+    b {
+      font-size: calc(5 * var(--u));
+    }
+  }
+  .scene-player {
+    padding: calc(3.4 * var(--u)) 0;
+    border-top: 1px solid var(--line);
+    --avatar: calc(10 * var(--u));
+    --elo: calc(5.6 * var(--u));
+    --bar: calc(28 * var(--u));
+  }
+  .scene-socials {
+    margin-top: auto;
+    padding-top: calc(3 * var(--u));
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* Bar: a big title, then one solid strip with the player and the numbers side by side */
+.scene-theme--bar {
+  .scene-title {
+    font-size: calc(11 * var(--u) * var(--tk, 1));
+  }
+  .scene-timer {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: calc(0.6 * var(--u));
+  }
+  .scene-badge {
+    background: var(--panel);
+    border-color: var(--line);
+  }
+  .scene-player {
+    align-self: stretch;
+    gap: 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left: calc(0.6 * var(--u)) solid var(--level);
+    border-radius: calc(0.6 * var(--u));
+    --avatar: calc(8.6 * var(--u));
+    --name: calc(2.8 * var(--u));
+    --elo: calc(5 * var(--u));
+    --bar: calc(22 * var(--u));
+    --cell: calc(3 * var(--u));
+  }
+  .scene-player-id {
+    padding: calc(2.4 * var(--u)) calc(3 * var(--u));
+  }
+  .scene-groups {
+    flex: 1 1 auto;
+    gap: 0;
+  }
+  .scene-group {
+    padding: calc(2.4 * var(--u)) calc(3 * var(--u));
+    border-left: 1px solid var(--line);
+  }
+}
+
 /* Classic: the title leads, the player sits in a card at the bottom */
 .scene-theme--classic {
   .scene-player {

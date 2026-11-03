@@ -1181,5 +1181,13 @@
   "scenes.chat_style.none": "Sans cadre",
   "scenes.chat_width": "Largeur du chat",
   "scenes.scale": "Taille de tout",
-  "scenes.title_scale": "Taille du titre"
+  "scenes.title_scale": "Taille du titre",
+  "scenes.theme.minimal": "Minimal",
+  "scenes.theme.minimal.tagline": "Noir, sans cadres, filets fins",
+  "scenes.theme.mono": "Mono",
+  "scenes.theme.mono.tagline": "Surfaces grises, couleur seulement pour le niveau et les résultats",
+  "scenes.theme.panel": "Panneau",
+  "scenes.theme.panel.tagline": "Tout dans une colonne sombre",
+  "scenes.theme.bar": "Bandeau",
+  "scenes.theme.bar.tagline": "Grand titre et un bandeau avec tes chiffres"
 }

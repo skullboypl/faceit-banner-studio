@@ -1221,5 +1221,13 @@
   "scenes.chat_style.none": "No frame",
   "scenes.chat_width": "Chat width",
   "scenes.scale": "Size of everything",
-  "scenes.title_scale": "Title size"
+  "scenes.title_scale": "Title size",
+  "scenes.theme.minimal": "Minimal",
+  "scenes.theme.minimal.tagline": "Black, no boxes, thin rules",
+  "scenes.theme.mono": "Mono",
+  "scenes.theme.mono.tagline": "Grey surfaces, colour only for level and results",
+  "scenes.theme.panel": "Panel",
+  "scenes.theme.panel.tagline": "Everything in one dark column",
+  "scenes.theme.bar": "Bar",
+  "scenes.theme.bar.tagline": "Big title and one strip with your numbers"
 }

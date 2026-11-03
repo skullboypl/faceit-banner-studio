@@ -10,7 +10,7 @@ export type SceneAnimation = (typeof SCENE_ANIMATIONS)[number];
  * How the scene is built around the streamer. The ids stay as they were stored in links:
  * spotlight is "Centre", holo is "Card", neon is "HUD".
  */
-export const SCENE_THEMES = ['spotlight', 'holo', 'broadcast', 'neon', 'classic'] as const;
+export const SCENE_THEMES = ['spotlight', 'minimal', 'mono', 'panel', 'bar', 'holo', 'broadcast', 'neon', 'classic'] as const;
 export type SceneTheme = (typeof SCENE_THEMES)[number];
 
 /** What a scene can show. The title and the ELO always stay. */

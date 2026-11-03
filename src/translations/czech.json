@@ -1181,5 +1181,13 @@
   "scenes.chat_style.none": "Bez rámečku",
   "scenes.chat_width": "Šířka chatu",
   "scenes.scale": "Velikost prvků",
-  "scenes.title_scale": "Velikost nadpisu"
+  "scenes.title_scale": "Velikost nadpisu",
+  "scenes.theme.minimal": "Minimal",
+  "scenes.theme.minimal.tagline": "Černé pozadí, bez rámečků, tenké linky",
+  "scenes.theme.mono": "Mono",
+  "scenes.theme.mono.tagline": "Šedé plochy, barva jen pro úroveň a výsledky",
+  "scenes.theme.panel": "Panel",
+  "scenes.theme.panel.tagline": "Vše v jednom tmavém sloupci",
+  "scenes.theme.bar": "Pruh",
+  "scenes.theme.bar.tagline": "Velký nadpis a jeden pruh s tvými čísly"
 }

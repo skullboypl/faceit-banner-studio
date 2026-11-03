@@ -160,7 +160,7 @@ describe('themes and parts', () => {
   });
 
   test('every theme draws the player, and the ELO counts up to its value', () => {
-    for (const theme of ['classic', 'spotlight', 'neon', 'holo', 'broadcast'] as const) {
+    for (const theme of SCENE_THEMES) {
       const view = draw('starting', options({ theme }));
       expect(view.querySelector('.scene-screen')?.getAttribute('data-theme')).toBe(theme);
       const elo = view.querySelector('.scene-elo b');
@@ -232,7 +232,7 @@ describe('look options', () => {
   });
 
   test('the theme list leads with the most readable ones', () => {
-    expect(SCENE_THEMES).toEqual(['spotlight', 'holo', 'broadcast', 'neon', 'classic']);
+    expect(SCENE_THEMES).toEqual(['spotlight', 'minimal', 'mono', 'panel', 'bar', 'holo', 'broadcast', 'neon', 'classic']);
   });
 });
 

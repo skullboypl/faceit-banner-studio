@@ -1181,5 +1181,13 @@
   "scenes.chat_style.none": "Çerçevesiz",
   "scenes.chat_width": "Sohbet genişliği",
   "scenes.scale": "Tüm öğelerin boyutu",
-  "scenes.title_scale": "Başlık boyutu"
+  "scenes.title_scale": "Başlık boyutu",
+  "scenes.theme.minimal": "Minimal",
+  "scenes.theme.minimal.tagline": "Siyah, kutusuz, ince çizgiler",
+  "scenes.theme.mono": "Mono",
+  "scenes.theme.mono.tagline": "Gri yüzeyler, renk yalnızca seviye ve sonuçlarda",
+  "scenes.theme.panel": "Panel",
+  "scenes.theme.panel.tagline": "Her şey tek bir koyu sütunda",
+  "scenes.theme.bar": "Şerit",
+  "scenes.theme.bar.tagline": "Büyük başlık ve sayılarının olduğu tek şerit"
 }

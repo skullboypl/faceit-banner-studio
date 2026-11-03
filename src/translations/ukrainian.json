@@ -1181,5 +1181,13 @@
   "scenes.chat_style.none": "Без рамки",
   "scenes.chat_width": "Ширина чату",
   "scenes.scale": "Розмір елементів",
-  "scenes.title_scale": "Розмір заголовка"
+  "scenes.title_scale": "Розмір заголовка",
+  "scenes.theme.minimal": "Мінімал",
+  "scenes.theme.minimal.tagline": "Чорний фон, без рамок, тонкі лінії",
+  "scenes.theme.mono": "Моно",
+  "scenes.theme.mono.tagline": "Сірі панелі, колір лише для рівня й результатів",
+  "scenes.theme.panel": "Панель",
+  "scenes.theme.panel.tagline": "Усе в одній темній колонці",
+  "scenes.theme.bar": "Смуга",
+  "scenes.theme.bar.tagline": "Великий заголовок і одна смуга з вашими числами"
 }

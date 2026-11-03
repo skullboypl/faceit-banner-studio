@@ -1181,5 +1181,13 @@
   "scenes.chat_style.none": "Sin marco",
   "scenes.chat_width": "Ancho del chat",
   "scenes.scale": "Tamaño de todo",
-  "scenes.title_scale": "Tamaño del título"
+  "scenes.title_scale": "Tamaño del título",
+  "scenes.theme.minimal": "Minimal",
+  "scenes.theme.minimal.tagline": "Negro, sin cajas, líneas finas",
+  "scenes.theme.mono": "Mono",
+  "scenes.theme.mono.tagline": "Superficies grises, color solo para nivel y resultados",
+  "scenes.theme.panel": "Panel",
+  "scenes.theme.panel.tagline": "Todo en una columna oscura",
+  "scenes.theme.bar": "Franja",
+  "scenes.theme.bar.tagline": "Título grande y una franja con tus números"
 }

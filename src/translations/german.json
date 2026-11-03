@@ -1181,5 +1181,13 @@
   "scenes.chat_style.none": "Ohne Rahmen",
   "scenes.chat_width": "Chat-Breite",
   "scenes.scale": "Größe aller Elemente",
-  "scenes.title_scale": "Titelgröße"
+  "scenes.title_scale": "Titelgröße",
+  "scenes.theme.minimal": "Minimal",
+  "scenes.theme.minimal.tagline": "Schwarz, ohne Kästen, feine Linien",
+  "scenes.theme.mono": "Mono",
+  "scenes.theme.mono.tagline": "Graue Flächen, Farbe nur für Level und Ergebnisse",
+  "scenes.theme.panel": "Panel",
+  "scenes.theme.panel.tagline": "Alles in einer dunklen Spalte",
+  "scenes.theme.bar": "Leiste",
+  "scenes.theme.bar.tagline": "Großer Titel und eine Leiste mit deinen Zahlen"
 }
