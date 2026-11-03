@@ -13,7 +13,6 @@ import {
   SCENE_SOCIALS,
   SCENE_TEXT_REGEX,
   SCENE_THEMES,
-  SCENE_WOW_THEMES,
   type SceneKind,
   type ScenePart,
   type SceneSocial,
@@ -189,10 +188,7 @@ export function SceneLookOptions() {
                 <i />
               </span>
               <span className="design-switch-text">
-                <strong>
-                  {tl(`scenes.theme.${theme}`)}
-                  {SCENE_WOW_THEMES.includes(theme) && <em className="anim-chip">WOW</em>}
-                </strong>
+                <strong>{tl(`scenes.theme.${theme}`)}</strong>
                 <small>{tl(`scenes.theme.${theme}.tagline`)}</small>
               </span>
             </button>

@@ -64,7 +64,6 @@ type Cell = {
 };
 
 const EMBERS = 26;
-const RAYS = 14;
 const TICK_MS = 1000;
 const COUNT_MS = 1400;
 const COUNT_STEP_MS = 30;
@@ -400,19 +399,12 @@ function Player({
 
   return (
     <section className="scene-player" aria-label={data.username}>
-      {theme === 'spotlight' && (
-        <div className="scene-spot-rays" aria-hidden="true">
-          {Array.from({ length: RAYS }, (_, index) => (
-            <i
-              key={index}
-              style={{ '--r': `${(360 / RAYS) * index}deg` } as CSSProperties}
-            />
-          ))}
-        </div>
-      )}
       <div className="scene-player-id">
         {parts.has('avatar') && (
-          <span className="scene-avatar">
+          <span
+            className="scene-avatar"
+            style={{ '--p': data.calibrating ? 0 : progress } as CSSProperties}
+          >
             <i className="scene-avatar-ring" aria-hidden="true" />
             <span className="scene-avatar-photo">
               {data.avatar ? (
@@ -548,9 +540,6 @@ export function SceneScreen({
           mapBlur={options.mapBlur}
           dim={options.dim}
         />
-        {theme === 'neon' && (
-          <i className="scene-scanlines" aria-hidden="true" />
-        )}
         <main className="scene-main">
           <div className="scene-head">
             {parts.has('badge') && (

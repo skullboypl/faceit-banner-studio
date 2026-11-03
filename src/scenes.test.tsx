@@ -172,13 +172,18 @@ describe('themes and parts', () => {
     }
   });
 
-  test('spotlight has light rays, broadcast a ticker with bars, neon scanlines', () => {
-    expect(draw('starting', options({ theme: 'spotlight' })).querySelectorAll('.scene-spot-rays i').length).toBeGreaterThan(8);
+  test('broadcast runs a ticker with bars and leaves the socials to it', () => {
     const broadcast = draw('starting', options({ theme: 'broadcast', socials: [{ kind: 'kick', handle: 'skullboypl' }] }));
     expect(broadcast.querySelector('.scene-ticker-run')?.textContent).toContain('kick.com/skullboypl');
     expect(broadcast.querySelectorAll('.scene-cell-bar').length).toBe(4);
     expect(broadcast.querySelector('.scene-socials')).toBeNull();
-    expect(draw('brb', options({ theme: 'neon' })).querySelector('.scene-scanlines')).not.toBeNull();
+  });
+
+  test('the avatar ring shows how far the player is through the level', () => {
+    const view = draw('starting', options(), data({ elo: 1600, level: 8 }));
+    expect(view.querySelector<HTMLElement>('.scene-avatar')?.style.getPropertyValue('--p')).toBe(String((1600 - 1531) / (1751 - 1531)));
+    const calibrating = draw('starting', options(), data({ calibrating: true }));
+    expect(calibrating.querySelector<HTMLElement>('.scene-avatar')?.style.getPropertyValue('--p')).toBe('0');
   });
 
   test('parts switched off disappear from the scene', () => {
@@ -226,9 +231,8 @@ describe('look options', () => {
     expect(view.querySelector<HTMLElement>('.scene-dim')?.style.opacity).toBe('0.4');
   });
 
-  test('the theme list leads with the most striking ones', () => {
-    expect(SCENE_THEMES[0]).toBe('spotlight');
-    expect(SCENE_THEMES.at(-1)).toBe('classic');
+  test('the theme list leads with the most readable ones', () => {
+    expect(SCENE_THEMES).toEqual(['spotlight', 'holo', 'broadcast', 'neon', 'classic']);
   });
 });
 

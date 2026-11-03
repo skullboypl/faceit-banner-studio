@@ -7,13 +7,11 @@ export const SCENE_ANIMATIONS = ['aurora', 'grid', 'embers', 'rays', 'waves', 'n
 export type SceneAnimation = (typeof SCENE_ANIMATIONS)[number];
 
 /**
- * How the scene is built around the streamer. `classic` is a title with a small card; the others put the player and
- * their ELO in the middle of the scene, each with its own motion.
+ * How the scene is built around the streamer. The ids stay as they were stored in links:
+ * spotlight is "Centre", holo is "Card", neon is "HUD".
  */
-export const SCENE_THEMES = ['spotlight', 'holo', 'neon', 'broadcast', 'classic'] as const;
+export const SCENE_THEMES = ['spotlight', 'holo', 'broadcast', 'neon', 'classic'] as const;
 export type SceneTheme = (typeof SCENE_THEMES)[number];
-/** The themes with the heaviest motion, marked in the studio. */
-export const SCENE_WOW_THEMES: readonly SceneTheme[] = ['spotlight', 'neon', 'holo'];
 
 /** What a scene can show. The title and the ELO always stay. */
 export const SCENE_PARTS = [

@@ -58,10 +58,12 @@ html.generator .preview-stage:has([data-layout='stage']) {
   --u0: ~'min(1cqh, 0.5625cqw)';
   --u: calc(var(--u0) * var(--k, 1));
   --accent: var(--preset-accent, #ff5900);
-  --ink: #f6f3f0;
-  --muted: #a8a19c;
-  --panel: rgba(18, 18, 21, 0.62);
-  --line: rgba(255, 255, 255, 0.09);
+  --ink: #ffffff;
+  --muted: #c6c0bb;
+  --panel: rgba(14, 14, 17, 0.88);
+  --line: rgba(255, 255, 255, 0.12);
+  /* FACEIT level colour, set on the widget frame like on every banner */
+  --level: var(--faceit-level, #fe1f00);
   position: relative;
   container-type: size;
   display: grid;
@@ -109,7 +111,7 @@ html.generator .preview-stage:has([data-layout='stage']) {
   aspect-ratio: 1;
   border-radius: 50%;
   filter: blur(9cqw);
-  opacity: 0.55;
+  opacity: 0.32;
   will-change: transform;
 }
 .scene-blob--a {
@@ -121,16 +123,16 @@ html.generator .preview-stage:has([data-layout='stage']) {
 .scene-blob--b {
   right: -18cqw;
   bottom: calc(-46 * var(--u));
-  background: color-mix(in srgb, var(--accent) 45%, #7a2bff);
-  opacity: 0.38;
+  background: color-mix(in srgb, var(--accent) 55%, #000);
+  opacity: 0.25;
   animation: scene-drift-b calc(28s * var(--m, 1)) ease-in-out infinite alternate;
 }
 .scene-blob--c {
   top: calc(26 * var(--u));
   left: 38cqw;
   width: 34cqw;
-  background: color-mix(in srgb, var(--accent) 35%, #ffb347);
-  opacity: 0.22;
+  background: color-mix(in srgb, var(--accent) 60%, #000);
+  opacity: 0.12;
   animation: scene-drift-c calc(19s * var(--m, 1)) ease-in-out infinite alternate;
 }
 @keyframes scene-drift-a {
@@ -327,12 +329,10 @@ html.generator .preview-stage:has([data-layout='stage']) {
   text-transform: uppercase;
   text-wrap: balance;
   overflow-wrap: break-word;
+  color: #fff;
+  text-shadow: 0 calc(0.3 * var(--u)) calc(2 * var(--u)) rgba(0, 0, 0, 0.45);
   span {
     display: inline-block;
-    background: linear-gradient(180deg, #fff 30%, color-mix(in srgb, var(--accent) 30%, #d9d2cc));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
     animation: scene-word 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
     animation-delay: calc(0.12s + var(--i) * 0.09s);
   }
@@ -430,12 +430,12 @@ html.generator .preview-stage:has([data-layout='stage']) {
   aspect-ratio: 1;
 }
 .scene-avatar-ring {
+  /* The ring is the level: filled as far as the player is through it, in the level colour */
   position: absolute;
   inset: calc(-0.9 * var(--u));
   border-radius: 50%;
-  background: conic-gradient(from 0deg, var(--accent), color-mix(in srgb, var(--accent) 20%, transparent) 40%, var(--accent) 70%, color-mix(in srgb, var(--accent) 30%, #fff) 85%, var(--accent));
+  background: conic-gradient(var(--level) calc(var(--p, 1) * 360deg), rgba(255, 255, 255, 0.14) 0);
   mask: radial-gradient(farthest-side, transparent calc(100% - calc(0.6 * var(--u))), #000 calc(100% - calc(0.55 * var(--u))));
-  animation: scene-spin calc(6s * var(--m, 1)) linear infinite;
 }
 .scene-avatar-photo {
   display: grid;
@@ -468,6 +468,10 @@ html.generator .preview-stage:has([data-layout='stage']) {
     width: 100%;
     height: 100%;
   }
+}
+.scene-avatar-level,
+.scene-elo-level {
+  color: var(--level);
 }
 .scene-elo-level {
   display: inline-grid;
@@ -543,8 +547,7 @@ html.generator .preview-stage:has([data-layout='stage']) {
       transform-origin: 0 50%;
       transform: scaleX(var(--p));
       border-radius: inherit;
-      background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 55%, #fff), var(--accent));
-      box-shadow: 0 0 calc(1.4 * var(--u)) color-mix(in srgb, var(--accent) 70%, transparent);
+      background: var(--level);
       animation: scene-fill 1.6s 1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
     }
   }
@@ -871,7 +874,7 @@ html.generator .preview-stage:has([data-layout='stage']) {
   }
 }
 
-/* Spotlight: the streamer in the middle, under turning light, the ELO counting up */
+/* Centre: the streamer in the middle, the level ring around the avatar, plain readable numbers */
 .scene-theme--spotlight {
   .scene-main {
     align-items: center;
@@ -913,293 +916,127 @@ html.generator .preview-stage:has([data-layout='stage']) {
     justify-items: center;
   }
   .scene-elo b {
-    background: linear-gradient(180deg, #fff 20%, var(--accent));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 0 calc(3 * var(--u)) color-mix(in srgb, var(--accent) 55%, transparent));
-  }
-  .scene-avatar-ring {
-    inset: calc(-1.4 * var(--u));
-    mask: radial-gradient(farthest-side, transparent calc(100% - calc(1 * var(--u))), #000 calc(100% - calc(0.9 * var(--u))));
-    filter: drop-shadow(0 0 calc(2 * var(--u)) var(--accent));
-  }
-  .scene-avatar::after {
-    content: '';
-    position: absolute;
-    inset: calc(-4 * var(--u));
-    z-index: -1;
-    border-radius: 50%;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 55%, transparent), transparent);
-    animation: scene-breathe calc(3.2s * var(--m, 1)) ease-in-out infinite alternate;
+    color: #fff;
   }
   .scene-groups {
     justify-content: center;
-    padding: calc(1.4 * var(--u)) calc(3 * var(--u));
+    gap: 0;
+    padding: calc(1.6 * var(--u)) 0;
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: calc(2 * var(--u));
-    backdrop-filter: blur(12px);
+    border-radius: calc(1.6 * var(--u));
   }
   .scene-group {
     justify-items: center;
+    padding: 0 calc(3 * var(--u));
+  }
+  .scene-group + .scene-group {
+    border-left: 1px solid var(--line);
   }
   .scene-socials {
     justify-content: center;
   }
 }
-.scene-spot-rays {
-  position: absolute;
-  left: 50%;
-  top: calc(11 * var(--u));
-  z-index: -1;
-  width: calc(120 * var(--u));
-  aspect-ratio: 1;
-  translate: -50% -50%;
-  animation: scene-spin calc(40s * var(--m, 1)) linear infinite;
-  mask: radial-gradient(closest-side, #000 20%, transparent 70%);
-  i {
-    position: absolute;
-    left: 50%;
-    top: 0;
-    width: calc(6 * var(--u));
-    height: 50%;
-    translate: -50% 0;
-    transform-origin: 50% 100%;
-    rotate: var(--r);
-    background: linear-gradient(0deg, transparent, color-mix(in srgb, var(--accent) 32%, transparent));
-    clip-path: polygon(30% 100%, 70% 100%, 100% 0, 0 0);
+
+/* Card: a profile card like the one on FACEIT, a level stripe on top and the numbers in tiles */
+.scene-theme--holo {
+  .scene-player {
+    align-self: flex-start;
+    flex-direction: column;
+    align-items: stretch;
+    gap: calc(2.4 * var(--u));
+    max-width: 100%;
+    padding: calc(3 * var(--u)) calc(3.4 * var(--u));
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-top: calc(0.6 * var(--u)) solid var(--level);
+    border-radius: calc(1.6 * var(--u));
+    box-shadow: 0 calc(2 * var(--u)) calc(5 * var(--u)) rgba(0, 0, 0, 0.4);
+    --avatar: calc(12 * var(--u));
+    --elo: calc(7 * var(--u));
+    --bar: calc(36 * var(--u));
+    --cell: calc(3.2 * var(--u));
   }
-}
-@keyframes scene-breathe {
-  from {
-    opacity: 0.45;
-    transform: scale(0.92);
+  .scene-elo b {
+    color: #fff;
   }
-  to {
-    opacity: 0.9;
-    transform: scale(1.06);
+  .scene-groups {
+    gap: calc(2.4 * var(--u));
+  }
+  .scene-cells {
+    gap: calc(1 * var(--u));
+  }
+  .scene-cell {
+    min-width: calc(11 * var(--u));
+    padding: calc(1.2 * var(--u)) calc(1.6 * var(--u));
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: calc(1 * var(--u));
   }
 }
 
-/* Neon: dark glass, glowing edges, a glitching title and scanlines */
+/* HUD: the CS2 HUD look, corner brackets, straight edges and fixed-width numbers */
 .scene-theme--neon {
-  --cyan: #2ff3ff;
-  background: #050507;
-  .scene-title span {
-    position: relative;
-    color: #fff;
-    background: none;
-    -webkit-background-clip: border-box;
-    background-clip: border-box;
-    text-shadow:
-      0 0 calc(1.2 * var(--u)) color-mix(in srgb, var(--accent) 80%, transparent),
-      0 0 calc(4 * var(--u)) color-mix(in srgb, var(--accent) 50%, transparent);
-    animation:
-      scene-word 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both,
-      scene-flicker 5s 1.4s steps(1) infinite;
-    animation-delay: calc(0.12s + var(--i) * 0.09s), calc(1.4s + var(--i) * 0.4s);
-    &::before,
-    &::after {
-      content: attr(data-text);
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-    }
-    &::before {
-      color: var(--cyan);
-      text-shadow: none;
-      clip-path: inset(0 0 60% 0);
-      animation: scene-glitch-a 3.4s steps(1) infinite;
-    }
-    &::after {
-      color: var(--accent);
-      text-shadow: none;
-      clip-path: inset(55% 0 0 0);
-      animation: scene-glitch-b 2.9s steps(1) infinite;
-    }
-  }
+  --bracket: calc(2.4 * var(--u));
+  --stroke: calc(0.3 * var(--u));
   .scene-badge,
   .scene-timer,
-  .scene-player {
-    background: rgba(8, 8, 12, 0.72);
-    border: 1px solid color-mix(in srgb, var(--cyan) 55%, transparent);
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent) inset,
-      0 0 calc(2.4 * var(--u)) color-mix(in srgb, var(--cyan) 30%, transparent),
-      0 0 calc(5 * var(--u)) color-mix(in srgb, var(--accent) 22%, transparent);
+  .scene-player,
+  .scene-chat {
+    border-radius: 0;
+    border: 1px solid var(--line);
+    background:
+      linear-gradient(var(--accent), var(--accent)) top left / var(--bracket) var(--stroke) no-repeat,
+      linear-gradient(var(--accent), var(--accent)) top left / var(--stroke) var(--bracket) no-repeat,
+      linear-gradient(var(--accent), var(--accent)) bottom right / var(--bracket) var(--stroke) no-repeat,
+      linear-gradient(var(--accent), var(--accent)) bottom right / var(--stroke) var(--bracket) no-repeat,
+      rgba(10, 10, 12, 0.9);
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+  .scene-timer {
+    border-left: 1px solid var(--line);
   }
   .scene-timer b,
+  .scene-elo b,
+  .scene-cell b {
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
   .scene-elo b {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    color: var(--cyan);
-    text-shadow:
-      0 0 calc(1 * var(--u)) var(--cyan),
-      0 0 calc(3.4 * var(--u)) color-mix(in srgb, var(--cyan) 60%, transparent);
+    color: #fff;
   }
   .scene-player {
     align-self: flex-start;
     padding: calc(3 * var(--u)) calc(3.6 * var(--u));
-    border-radius: calc(1.2 * var(--u));
-    --avatar: calc(13 * var(--u));
-    --elo: calc(8 * var(--u));
+    --avatar: calc(12 * var(--u));
+    --elo: calc(7.4 * var(--u));
     --bar: calc(34 * var(--u));
   }
-  .scene-avatar-ring {
-    background: conic-gradient(var(--cyan), var(--accent), var(--cyan));
+  .scene-avatar-photo {
+    border-radius: calc(0.6 * var(--u));
   }
-  .scene-progress i::after {
-    background: linear-gradient(90deg, var(--cyan), var(--accent));
+  .scene-avatar-ring {
+    display: none;
+  }
+  .scene-avatar {
+    outline: calc(0.4 * var(--u)) solid var(--level);
+    outline-offset: calc(0.4 * var(--u));
+  }
+  .scene-progress i {
+    border-radius: 0;
+  }
+  .scene-group-label,
+  .scene-badge,
+  .scene-timer small {
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
   }
   .scene-groups {
     padding-left: calc(3.4 * var(--u));
-    border-left: 1px dashed color-mix(in srgb, var(--cyan) 45%, transparent);
+    border-left: 1px solid var(--line);
   }
-  .scene-chat {
-    border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
-    box-shadow: 0 0 calc(3 * var(--u)) color-mix(in srgb, var(--cyan) 18%, transparent);
-  }
-}
-.scene-scanlines {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 4px);
-  mix-blend-mode: overlay;
-  animation: scene-scan calc(8s * var(--m, 1)) linear infinite;
-}
-@keyframes scene-scan {
-  to {
-    background-position: 0 calc(40 * var(--u));
-  }
-}
-@keyframes scene-flicker {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  2% {
-    opacity: 0.55;
-  }
-  3% {
-    opacity: 1;
-  }
-  41% {
-    opacity: 0.8;
-  }
-  42% {
-    opacity: 1;
-  }
-}
-@keyframes scene-glitch-a {
-  0%,
-  86%,
-  100% {
-    transform: none;
-    opacity: 0;
-  }
-  87% {
-    transform: translate(calc(-0.6 * var(--u)), calc(-0.2 * var(--u)));
-    opacity: 0.9;
-  }
-  90% {
-    transform: translate(calc(0.8 * var(--u)), calc(0.1 * var(--u)));
-    opacity: 0.9;
-  }
-  93% {
-    transform: translate(calc(-0.3 * var(--u)), 0);
-    opacity: 0.7;
-  }
-}
-@keyframes scene-glitch-b {
-  0%,
-  78%,
-  100% {
-    transform: none;
-    opacity: 0;
-  }
-  79% {
-    transform: translate(calc(0.7 * var(--u)), calc(0.2 * var(--u)));
-    opacity: 0.85;
-  }
-  83% {
-    transform: translate(calc(-0.6 * var(--u)), 0);
-    opacity: 0.85;
-  }
-}
-
-/* Holo: a floating 3D card with a holographic rim and a light sweep */
-.scene-theme--holo {
-  .scene-main {
-    perspective: calc(140 * var(--u));
-  }
-  .scene-player {
-    align-self: flex-start;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: calc(2.6 * var(--u));
-    padding: calc(3.4 * var(--u)) calc(4 * var(--u));
-    border-radius: calc(2.6 * var(--u));
-    background:
-      linear-gradient(var(--panel), var(--panel)) padding-box,
-      conic-gradient(from var(--holo-angle, 0deg), #ff5900, #ffd36b, #6bffd8, #6b8bff, #e46bff, #ff5900) border-box;
-    border: calc(0.35 * var(--u)) solid transparent;
-    box-shadow:
-      0 calc(4 * var(--u)) calc(9 * var(--u)) rgba(0, 0, 0, 0.5),
-      0 0 calc(6 * var(--u)) color-mix(in srgb, var(--accent) 22%, transparent);
-    backdrop-filter: blur(16px);
-    overflow: hidden;
-    transform-style: preserve-3d;
-    animation:
-      scene-in 0.9s 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both,
-      scene-float 7s 1.6s ease-in-out infinite alternate,
-      scene-holo 6s linear infinite;
-    --avatar: calc(13 * var(--u));
-    --elo: calc(8.4 * var(--u));
-    --bar: calc(40 * var(--u));
-    &::after {
-      content: '';
-      position: absolute;
-      inset: -40%;
-      background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.16) 48%, rgba(255, 255, 255, 0.04) 52%, transparent 60%);
-      transform: translateX(-60%);
-      animation: scene-sweep calc(5.5s * var(--m, 1)) 1.8s ease-in-out infinite;
-      pointer-events: none;
-    }
-  }
-  .scene-elo b {
-    background: linear-gradient(90deg, #ffd36b, var(--accent), #e46bff);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-}
-@property --holo-angle {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 0deg;
-}
-@keyframes scene-holo {
-  to {
-    --holo-angle: 360deg;
-  }
-}
-@keyframes scene-float {
-  from {
-    transform: rotateY(-12deg) rotateX(5deg) translateY(0);
-  }
-  to {
-    transform: rotateY(6deg) rotateX(-3deg) translateY(calc(-1.2 * var(--u)));
-  }
-}
-@keyframes scene-sweep {
-  0%,
-  55% {
-    transform: translateX(-60%);
-  }
-  100% {
-    transform: translateX(60%);
+  .scene-chat header {
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
   }
 }
 
