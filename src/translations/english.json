@@ -1229,5 +1229,14 @@
   "scenes.theme.panel": "Panel",
   "scenes.theme.panel.tagline": "Everything in one dark column",
   "scenes.theme.bar": "Bar",
-  "scenes.theme.bar.tagline": "Big title and one strip with your numbers"
+  "scenes.theme.bar.tagline": "Big title and one strip with your numbers",
+  "chat.stats.mine": "Your calls",
+  "chat.stats.today": "Today",
+  "chat.stats.top": "Most used",
+  "chat.stats.site": "Whole site",
+  "chat.stats.calls": "calls",
+  "chat.stats.calls_title": "{{0}} calls of {{1}}",
+  "chat.stats.today_short": "+{{0}} today",
+  "chat.stats.hint": "Every call of your commands through a bot counts. The studio preview does not.",
+  "chat.stats.no_nick": "Set the default nickname above to count the calls of your commands."
 }

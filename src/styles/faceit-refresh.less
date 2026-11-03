@@ -1483,6 +1483,98 @@ html.generator {
     color: @studio-muted;
     max-width: 72ch;
   }
+  .chat-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0 0 6px;
+  }
+  .chat-stat {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    padding: 12px 14px;
+    background: #101011;
+    border: 1px solid @studio-line;
+    border-radius: 8px;
+    span {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: @studio-muted;
+    }
+    b {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      color: #f4f4f4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    b.is-command {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 20px;
+      color: @studio-orange;
+    }
+    &.is-site b {
+      color: #c9c4c0;
+    }
+  }
+  .chat-stats-hint {
+    margin: 0 0 14px;
+    font-size: 11px;
+    color: @studio-muted;
+  }
+  .chat-card-count {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: baseline;
+    column-gap: 6px;
+    flex: none;
+    padding: 4px 0 8px;
+    text-align: right;
+    b {
+      grid-column: 1 / -1;
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      color: #f4f4f4;
+    }
+    small {
+      font-size: 11px;
+      color: @studio-muted;
+    }
+    em {
+      font-size: 11px;
+      font-style: normal;
+      font-weight: 700;
+      color: #3ddc84;
+    }
+    i {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      border-radius: 2px;
+      background: #232326;
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        transform-origin: 0 50%;
+        transform: scaleX(var(--share, 0));
+        background: @studio-orange;
+        transition: transform 0.4s ease;
+      }
+    }
+  }
   .chat-bot-switch {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     margin: 0 0 14px;
@@ -1826,6 +1918,9 @@ html.generator {
       grid-template-columns: minmax(0, 1fr);
     }
     .chat-bot-switch {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .chat-stats {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }

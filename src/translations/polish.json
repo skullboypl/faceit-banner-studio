@@ -1229,5 +1229,14 @@
   "scenes.theme.panel": "Panel",
   "scenes.theme.panel.tagline": "Wszystko w jednej ciemnej kolumnie",
   "scenes.theme.bar": "Pasek",
-  "scenes.theme.bar.tagline": "Duży tytuł i jedna belka z Twoimi liczbami"
+  "scenes.theme.bar.tagline": "Duży tytuł i jedna belka z Twoimi liczbami",
+  "chat.stats.mine": "Twoje wywołania",
+  "chat.stats.today": "Dzisiaj",
+  "chat.stats.top": "Najczęściej",
+  "chat.stats.site": "Cała strona",
+  "chat.stats.calls": "wywołań",
+  "chat.stats.calls_title": "{{0}} wywołań {{1}}",
+  "chat.stats.today_short": "+{{0}} dziś",
+  "chat.stats.hint": "Liczy się każde wywołanie Twoich komend przez bota. Podgląd w studiu się nie liczy.",
+  "chat.stats.no_nick": "Ustaw wyżej domyślny nick, żeby liczyć wywołania Twoich komend."
 }

@@ -23,6 +23,8 @@ export type ChatCommandOptions = {
   kind?: ChatKind;
   lang: ChatLanguage;
   show: ChatPart[];
+  /** The studio's own preview: answered like a bot call, but not counted. */
+  preview?: boolean;
 };
 
 export const CHAT_COMMAND_PATH = '/api/faceit/elo';
@@ -34,7 +36,7 @@ export const cleanCommandName = (value: string) => value.replace(/^!+/, '').repl
 export const cleanChatNick = (value: string) => value.trim().replace(/^@+/, '').split(/\s+/)[0]?.slice(0, 36) ?? '';
 
 /** The address a bot reads. The viewer's text goes after `nick=`, so it is always the last parameter. */
-export function chatCommandUrl({ origin, nick, cmd, lang, show, kind = 'elo' }: ChatCommandOptions) {
+export function chatCommandUrl({ origin, nick, cmd, lang, show, kind = 'elo', preview = false }: ChatCommandOptions) {
   const params = new URLSearchParams();
   if (kind !== 'elo') params.set('type', kind);
   params.set('lang', lang);
@@ -44,8 +46,19 @@ export function chatCommandUrl({ origin, nick, cmd, lang, show, kind = 'elo' }: 
   if (name && name !== kind) params.set('cmd', name);
   const fallback = cleanChatNick(nick);
   if (fallback) params.set('default', fallback);
+  if (preview) params.set('preview', '1');
   return `${origin.replace(/\/$/, '')}${CHAT_COMMAND_PATH}?${params.toString()}&nick=`;
 }
+
+/** Counters of the commands: the whole site, and the streamer whose nickname the commands answer by default. */
+export type ChatStats = Record<'total' | 'mine' | 'today', Record<ChatKind, number>>;
+
+export const chatStatsUrl = (origin: string, nick: string) =>
+  `${origin.replace(/\/$/, '')}${CHAT_COMMAND_PATH}/stats?nick=${encodeURIComponent(cleanChatNick(nick))}`;
+
+/** Sum of the counters of every command. */
+export const sumChatStats = (counts: Partial<Record<ChatKind, number>> | undefined) =>
+  CHAT_KINDS.reduce((sum, kind) => sum + (Number(counts?.[kind]) || 0), 0);
 
 /** The reply text to paste into the bot. Each bot gets the viewer's words URL-encoded at the end of the address. */
 export function chatCommandReply(bot: ChatBot, options: ChatCommandOptions) {

@@ -3,6 +3,7 @@ import { clientIp } from '../shared/client-ip.mjs';
 import { readFaceit } from './faceit-proxy.mjs';
 import { count } from './log.mjs';
 import { averageElo, matchPhase } from '../shared/banner-modes.mjs';
+import { createChatStats } from './chat-stats.mjs';
 
 /**
  * Chat commands for bots (StreamElements, Nightbot, Fossabot and any bot that can read a URL):
@@ -11,6 +12,8 @@ import { averageElo, matchPhase } from '../shared/banner-modes.mjs';
  * Bots print the body as it is and ignore the status, so every answer, errors included, is a 200 with a sentence.
  */
 export const CHAT_COMMAND_PATH = '/api/faceit/elo';
+/** How often the commands were used: GET …/stats?nick=streamer answers JSON for the studio. */
+export const CHAT_STATS_PATH = '/api/faceit/elo/stats';
 /** StreamElements and Nightbot cut a reply after 400 characters. */
 export const CHAT_REPLY_MAX = 380;
 export const CHAT_LANGUAGES = ['en', 'pl', 'de', 'uk', 'ru', 'tr', 'pt', 'es', 'fr', 'cs'];
@@ -71,12 +74,17 @@ export function chatRequest(rawUrl) {
   const show = url.searchParams.has('show') ? CHAT_PARTS.filter((part) => asked.includes(part)) : DEFAULT_PARTS;
   const kind = CHAT_KINDS.includes(url.searchParams.get('type') ?? '') ? url.searchParams.get('type') : 'elo';
   const cmd = (url.searchParams.get('cmd') ?? '').replace(/[^\p{L}\p{N}_-]/gu, '').slice(0, 24) || kind;
+  const owner = chatNick(url.searchParams.get('default')).toLowerCase();
   return {
     nick: chatNick(url.searchParams.get('nick')) || chatNick(url.searchParams.get('default')),
     lang,
     show,
     cmd,
     kind,
+    /** The streamer whose command this is: the nickname it answers when a viewer types none. */
+    owner,
+    /** The studio preview asks too; those answers are not counted. */
+    preview: url.searchParams.get('preview') === '1',
   };
 }
 
@@ -320,9 +328,26 @@ export async function chatReply({ nick, lang, show = DEFAULT_PARTS, cmd = 'elo',
 /** Bots answer for many channels from a few addresses, and every answer is cached: a generous limit per address. */
 const limit = createRateLimiter({ perMinute: 600 });
 
-/** Serves the chat command. Returns false when the path is not this one. */
-export async function handleChatCommand(req, res, { unlimitedRate = false, read = readFaceit } = {}) {
-  const pathname = new URL(req.url || '/', 'http://localhost').pathname;
+const sharedStats = createChatStats({ kinds: CHAT_KINDS });
+
+/** Serves the chat command and its counters. Returns false when the path is neither. */
+export async function handleChatCommand(req, res, { unlimitedRate = false, read = readFaceit, stats = sharedStats } = {}) {
+  const url = new URL(req.url || '/', 'http://localhost');
+  const pathname = url.pathname;
+  if (pathname === CHAT_STATS_PATH) {
+    const ip = clientIp(req.headers, req.socket?.remoteAddress, Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS) || 1));
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store');
+    if (req.method !== 'GET' || (!unlimitedRate && !limit(ip))) {
+      res.statusCode = req.method !== 'GET' ? 405 : 429;
+      res.end(JSON.stringify({ error: req.method !== 'GET' ? 'method_not_allowed' : 'rate_limited' }));
+      return true;
+    }
+    const owner = chatNick(url.searchParams.get('nick')).toLowerCase();
+    res.statusCode = 200;
+    res.end(JSON.stringify({ owner, ...(await stats.read(owner)) }));
+    return true;
+  }
   if (pathname !== CHAT_COMMAND_PATH) return false;
   const send = (status, body) => {
     res.statusCode = status;
@@ -344,5 +369,6 @@ export async function handleChatCommand(req, res, { unlimitedRate = false, read 
   }
   count(`chat.${request.kind}`);
   send(200, await chatReply(request, read));
+  if (!request.preview) void stats.record(request.kind, request.owner).catch(() => undefined);
   return true;
 }

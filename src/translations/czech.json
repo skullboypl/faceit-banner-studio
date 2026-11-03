@@ -1189,5 +1189,14 @@
   "scenes.theme.panel": "Panel",
   "scenes.theme.panel.tagline": "Vše v jednom tmavém sloupci",
   "scenes.theme.bar": "Pruh",
-  "scenes.theme.bar.tagline": "Velký nadpis a jeden pruh s tvými čísly"
+  "scenes.theme.bar.tagline": "Velký nadpis a jeden pruh s tvými čísly",
+  "chat.stats.mine": "Tvoje volání",
+  "chat.stats.today": "Dnes",
+  "chat.stats.top": "Nejčastěji",
+  "chat.stats.site": "Celý web",
+  "chat.stats.calls": "volání",
+  "chat.stats.calls_title": "{{0}} volání {{1}}",
+  "chat.stats.today_short": "+{{0}} dnes",
+  "chat.stats.hint": "Počítá se každé volání tvých příkazů přes bota. Náhled ve studiu se nepočítá.",
+  "chat.stats.no_nick": "Nahoře nastav výchozí přezdívku, aby se počítala volání tvých příkazů."
 }

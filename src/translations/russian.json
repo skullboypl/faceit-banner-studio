@@ -1189,5 +1189,14 @@
   "scenes.theme.panel": "Панель",
   "scenes.theme.panel.tagline": "Всё в одной тёмной колонке",
   "scenes.theme.bar": "Полоса",
-  "scenes.theme.bar.tagline": "Большой заголовок и одна полоса с вашими числами"
+  "scenes.theme.bar.tagline": "Большой заголовок и одна полоса с вашими числами",
+  "chat.stats.mine": "Ваши вызовы",
+  "chat.stats.today": "Сегодня",
+  "chat.stats.top": "Чаще всего",
+  "chat.stats.site": "Весь сайт",
+  "chat.stats.calls": "вызовов",
+  "chat.stats.calls_title": "{{0}} вызовов {{1}}",
+  "chat.stats.today_short": "+{{0}} сегодня",
+  "chat.stats.hint": "Считается каждый вызов ваших команд через бота. Предпросмотр в студии не считается.",
+  "chat.stats.no_nick": "Укажите выше ник по умолчанию, чтобы считать вызовы ваших команд."
 }

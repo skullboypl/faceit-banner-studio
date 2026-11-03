@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { chatCommandReply, chatCommandUrl, cleanCommandName, nightbotChatLine, type ChatCommandOptions } from './generator/chat-command';
+import { chatCommandReply, chatCommandUrl, chatStatsUrl, cleanCommandName, nightbotChatLine, sumChatStats, type ChatCommandOptions } from './generator/chat-command';
 
 const options: ChatCommandOptions = { origin: 'https://faceitbanner.vxh.pl/', nick: 'SkullBoy', cmd: 'elo', lang: 'pl', show: ['last', 'rank'] };
 
@@ -27,5 +27,13 @@ describe('chat command', () => {
   test('Nightbot can add the command from chat, and the command name stays a plain word', () => {
     expect(nightbotChatLine({ ...options, cmd: '!faceit' })).toMatch(/^!commands add !faceit \$\(urlfetch /);
     expect(cleanCommandName('!!el o<>')).toBe('elo');
+  });
+
+  test('the studio preview is marked so it is not counted, and the counters have their own address', () => {
+    expect(chatCommandUrl({ ...options, preview: true })).toContain('&preview=1&nick=');
+    expect(chatCommandUrl(options)).not.toContain('preview');
+    expect(chatStatsUrl('https://faceitbanner.vxh.pl/', '@SkullBoy')).toBe('https://faceitbanner.vxh.pl/api/faceit/elo/stats?nick=SkullBoy');
+    expect(sumChatStats({ elo: 3, last: 1, kd: 0, avg: 2, live: 4 })).toBe(10);
+    expect(sumChatStats(undefined)).toBe(0);
   });
 });

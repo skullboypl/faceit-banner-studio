@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { LanguageContext } from '../contexts';
 import { Checkbox } from '../../components/Checkbox.tsx';
 import { InfoBox } from '../../components/InfoBox.tsx';
@@ -13,8 +13,11 @@ import {
   type ChatKind,
   type ChatLanguage,
   type ChatPart,
+  type ChatStats,
   chatCommandReply,
   chatCommandUrl,
+  chatStatsUrl,
+  sumChatStats,
   cleanChatNick,
   cleanCommandName,
   nightbotChatLine,
@@ -24,6 +27,9 @@ import { languages } from '../../translations/translations';
 const STORAGE_KEY = 'fcw_chat_command';
 const PREVIEW_DEBOUNCE_MS = 600;
 const COPIED_MS = 1200;
+/** The counters move with every chat command: read them again now and then while the tab is open. */
+const STATS_REFRESH_MS = 60_000;
+const STATS_DEBOUNCE_MS = 500;
 
 type Names = Record<ChatKind, string>;
 type Saved = { nick: string; names: Names; lang: ChatLanguage; show: ChatPart[]; bot: ChatBot };
@@ -104,6 +110,7 @@ export const ChatCommandTab = ({ username, studioLanguage }: { username: string;
   const [testNick, setTestNick] = useState('');
   const [preview, setPreview] = useState<string | null>(null);
   const [copied, setCopied] = useState('');
+  const [stats, setStats] = useState<ChatStats | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
   const update = useCallback((patch: Partial<Saved>) => {
@@ -137,7 +144,7 @@ export const ChatCommandTab = ({ username, studioLanguage }: { username: string;
     const controller = new AbortController();
     setPreview(null);
     const timer = window.setTimeout(() => {
-      fetch(`${chatCommandUrl(previewOptions)}${encodeURIComponent(cleanChatNick(testNick))}`, { cache: 'no-store', signal: controller.signal })
+      fetch(`${chatCommandUrl({ ...previewOptions, preview: true })}${encodeURIComponent(cleanChatNick(testNick))}`, { cache: 'no-store', signal: controller.signal })
         .then((response) => response.text())
         .then(setPreview)
         .catch(() => undefined);
@@ -147,6 +154,25 @@ export const ChatCommandTab = ({ username, studioLanguage }: { username: string;
       controller.abort();
     };
   }, [previewOptions, testNick]);
+
+  /* How often each command was called, for this streamer and for the whole site */
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      fetch(chatStatsUrl(window.location.origin, saved.nick), { cache: 'no-store' })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((body: ChatStats | null) => {
+          if (alive && body?.total) setStats(body);
+        })
+        .catch(() => undefined);
+    const first = window.setTimeout(load, STATS_DEBOUNCE_MS);
+    const again = window.setInterval(load, STATS_REFRESH_MS);
+    return () => {
+      alive = false;
+      window.clearTimeout(first);
+      window.clearInterval(again);
+    };
+  }, [saved.nick]);
 
   const copy = useCallback(async (value: string, label: string) => {
     try {
@@ -166,6 +192,13 @@ export const ChatCommandTab = ({ username, studioLanguage }: { username: string;
   if (!tl) return null;
 
   const viewerLine = `!${nameOf(previewKind)}${cleanChatNick(testNick) ? ` ${cleanChatNick(testNick)}` : ''}`;
+  const number = new Intl.NumberFormat(studioLanguage);
+  const compact = new Intl.NumberFormat(studioLanguage, { notation: 'compact', maximumFractionDigits: 1 });
+  const short = (value: number) => (value >= 10_000 ? compact.format(value) : number.format(value));
+  const hasOwner = Boolean(cleanChatNick(saved.nick));
+  const mineTotal = sumChatStats(stats?.mine);
+  const busiest = Math.max(1, ...CHAT_KINDS.map((kind) => stats?.mine[kind] ?? 0));
+  const top = stats && mineTotal > 0 ? CHAT_KINDS.reduce((best, kind) => ((stats.mine[kind] ?? 0) > (stats.mine[best] ?? 0) ? kind : best), CHAT_KINDS[0]) : null;
 
   return (
     <div className="chat-tab">
@@ -175,6 +208,25 @@ export const ChatCommandTab = ({ username, studioLanguage }: { username: string;
           {tl('chat.setup')}
         </h3>
         <p className="chat-lead">{tl('chat.intro', [nameOf('elo')])}</p>
+        <div className="chat-stats" aria-live="polite">
+          <div className="chat-stat">
+            <span>{tl('chat.stats.mine')}</span>
+            <b title={number.format(mineTotal)}>{hasOwner && stats ? short(mineTotal) : '—'}</b>
+          </div>
+          <div className="chat-stat">
+            <span>{tl('chat.stats.today')}</span>
+            <b>{hasOwner && stats ? short(sumChatStats(stats.today)) : '—'}</b>
+          </div>
+          <div className="chat-stat">
+            <span>{tl('chat.stats.top')}</span>
+            <b className="is-command">{top ? `!${nameOf(top)}` : '—'}</b>
+          </div>
+          <div className="chat-stat is-site">
+            <span>{tl('chat.stats.site')}</span>
+            <b title={stats ? number.format(sumChatStats(stats.total)) : ''}>{stats ? short(sumChatStats(stats.total)) : '—'}</b>
+          </div>
+        </div>
+        <p className="chat-stats-hint">{hasOwner ? tl('chat.stats.hint') : tl('chat.stats.no_nick')}</p>
         <div className="design-switch chat-bot-switch" role="group" aria-label={tl('chat.bot')}>
           {CHAT_BOTS.map((bot) => (
             <button key={bot} type="button" className="design-switch-option" aria-pressed={saved.bot === bot} onClick={() => update({ bot })}>
@@ -234,6 +286,14 @@ export const ChatCommandTab = ({ username, studioLanguage }: { username: string;
                   <h3 id={`chat-card-${kind}`}>!{nameOf(kind)}</h3>
                   <p>{tl(`chat.kind.${kind}`)}</p>
                 </div>
+                {hasOwner && stats && (
+                  <div className="chat-card-count" title={tl('chat.stats.calls_title', [number.format(stats.mine[kind] ?? 0), `!${nameOf(kind)}`])}>
+                    <b>{short(stats.mine[kind] ?? 0)}</b>
+                    <small>{tl('chat.stats.calls')}</small>
+                    {(stats.today[kind] ?? 0) > 0 && <em>{tl('chat.stats.today_short', [short(stats.today[kind] ?? 0)])}</em>}
+                    <i style={{ '--share': (stats.mine[kind] ?? 0) / busiest } as CSSProperties} aria-hidden="true" />
+                  </div>
+                )}
                 <button type="button" className="chat-card-try" aria-label={`${tl('chat.try')} !${nameOf(kind)}`} title={tl('chat.try')} onClick={() => showPreview(kind)}>
                   <StudioIcon name="eye" />
                   <span>{tl('chat.try')}</span>

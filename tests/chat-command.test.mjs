@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CHAT_REPLY_MAX, chatNick, chatReply, chatRequest, handleChatCommand, mapName, recentAverages, recentForm } from '../server/chat-command.mjs';
 import { faceitTarget } from '../server/faceit-proxy.mjs';
+import { chatDay, createChatStats } from '../server/chat-stats.mjs';
 
 const id = '10b53a6d-5fc9-4095-920c-2953cfa62486';
 const ok = (body) => ({ status: 200, body: JSON.stringify(body) });
@@ -36,14 +37,26 @@ test('a chat nick is the first word without the @, and junk is not a nick', () =
 });
 
 test('the request falls back to the streamer nick, English and the default parts', () => {
-  assert.deepEqual(chatRequest('/api/faceit/elo?nick=&default=SkullBoy'), { nick: 'SkullBoy', lang: 'en', show: ['rank', 'last'], cmd: 'elo', kind: 'elo' });
+  assert.deepEqual(chatRequest('/api/faceit/elo?nick=&default=SkullBoy'), {
+    nick: 'SkullBoy',
+    lang: 'en',
+    show: ['rank', 'last'],
+    cmd: 'elo',
+    kind: 'elo',
+    owner: 'skullboy',
+    preview: false,
+  });
   assert.deepEqual(chatRequest('/api/faceit/elo?nick=%40other&default=SkullBoy&lang=pl&show=kd,bogus&cmd=faceit'), {
     nick: 'other',
     lang: 'pl',
     show: ['kd'],
     cmd: 'faceit',
     kind: 'elo',
+    owner: 'skullboy',
+    preview: false,
   });
+  assert.equal(chatRequest('/api/faceit/elo?nick=x&preview=1').preview, true);
+  assert.equal(chatRequest('/api/faceit/elo?nick=x').owner, '');
   assert.equal(chatRequest('/api/faceit/elo?type=live').kind, 'live');
   assert.equal(chatRequest('/api/faceit/elo?type=live').cmd, 'live');
   assert.equal(chatRequest('/api/faceit/elo?type=drop').kind, 'elo');
@@ -201,4 +214,77 @@ test('map names lose the de_ prefix, and averages of nothing are nothing', () =>
   assert.equal(mapName('de_mirage'), 'Mirage');
   assert.equal(mapName(''), '');
   assert.equal(recentAverages([]), null);
+});
+
+const KINDS = ['elo', 'last', 'kd', 'avg', 'live'];
+
+/** A Redis double with the few hash calls the counters use. */
+function fakeRedis() {
+  const hashes = new Map();
+  const client = {
+    hashes,
+    multi() {
+      const ops = [];
+      const batch = {
+        hincrby: (key, field, by) => (ops.push(() => {
+          const bag = hashes.get(key) ?? {};
+          bag[field] = String(Number(bag[field] ?? 0) + by);
+          hashes.set(key, bag);
+        }), batch),
+        expire: () => batch,
+        exec: async () => ops.forEach((op) => op()),
+      };
+      return batch;
+    },
+    hgetall: async (key) => ({ ...(hashes.get(key) ?? {}) }),
+  };
+  return { client, call: async (run) => run(client) };
+}
+
+test('commands are counted for the site, for the streamer and for the streamer today', async () => {
+  const redis = fakeRedis();
+  const stats = createChatStats({ kinds: KINDS, redis: redis.call, now: () => new Date('2026-11-03T20:00:00Z') });
+  await stats.record('elo', 'skullboy');
+  await stats.record('elo', 'skullboy');
+  await stats.record('live', 'skullboy');
+  await stats.record('elo', 'someone');
+  await stats.record('elo', '');
+  await stats.record('bogus', 'skullboy');
+  const read = await stats.read('skullboy');
+  assert.deepEqual(read.total, { elo: 4, last: 0, kd: 0, avg: 0, live: 1 });
+  assert.deepEqual(read.mine, { elo: 2, last: 0, kd: 0, avg: 0, live: 1 });
+  assert.deepEqual(read.today, { elo: 2, last: 0, kd: 0, avg: 0, live: 1 });
+  assert.ok(redis.client.hashes.has('fb:chatcmd:day:2026-11-03:skullboy'));
+  assert.equal(chatDay(new Date('2026-11-03T23:59:00Z')), '2026-11-03');
+});
+
+test('without Redis the counters live in memory', async () => {
+  const stats = createChatStats({ kinds: KINDS, redis: async () => undefined });
+  await stats.record('kd', 'skullboy');
+  const read = await stats.read('skullboy');
+  assert.equal(read.mine.kd, 1);
+  assert.equal(read.total.kd, 1);
+  assert.deepEqual((await stats.read('')).mine, { elo: 0, last: 0, kd: 0, avg: 0, live: 0 });
+});
+
+test('the endpoint counts bot calls, skips the studio preview and serves the numbers as JSON', async () => {
+  const { read } = fakeRead();
+  const stats = createChatStats({ kinds: KINDS, redis: async () => undefined });
+  const response = () => {
+    const res = { headers: {}, statusCode: 0, body: '', setHeader: (name, value) => (res.headers[name.toLowerCase()] = value), end: (body) => (res.body = body) };
+    return res;
+  };
+  const call = (url) => handleChatCommand({ url, method: 'GET', headers: {}, socket: {} }, response(), { unlimitedRate: true, read, stats });
+  await call('/api/faceit/elo?default=SkullBoy&nick=');
+  await call('/api/faceit/elo?type=kd&default=SkullBoy&nick=other');
+  await call('/api/faceit/elo?default=SkullBoy&preview=1&nick=');
+  await new Promise((resolve) => setImmediate(resolve));
+  const res = response();
+  assert.equal(await handleChatCommand({ url: '/api/faceit/elo/stats?nick=@SkullBoy', method: 'GET', headers: {}, socket: {} }, res, { unlimitedRate: true, stats }), true);
+  assert.match(res.headers['content-type'], /^application\/json/);
+  const body = JSON.parse(res.body);
+  assert.equal(body.owner, 'skullboy');
+  assert.equal(body.mine.elo, 1);
+  assert.equal(body.mine.kd, 1);
+  assert.equal(body.total.elo, 1);
 });
