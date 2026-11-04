@@ -1253,5 +1253,11 @@
   "xmas.amount.heavy": "Dużo",
   "xmas.cap": "Śnieg na górnej krawędzi",
   "xmas.drift": "Zaspa śniegu na dolnej krawędzi",
-  "xmas.frost": "Oszronione rogi"
+  "xmas.frost": "Oszronione rogi",
+  "xmas.notice.badge": "Nowość",
+  "xmas.notice.title": "Dodatki świąteczne",
+  "xmas.notice.body": "Lampki, padający śnieg, śnieg na krawędziach i oszronione rogi na każdym banerze. Wyłączone, dopóki ich nie włączysz.",
+  "xmas.notice.open": "Pokaż opcje",
+  "xmas.notice.later": "Później",
+  "xmas.notice.close": "Zamknij"
 }

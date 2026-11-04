@@ -1213,5 +1213,11 @@
   "xmas.amount.heavy": "Çok",
   "xmas.cap": "Üst kenarda kar",
   "xmas.drift": "Alt kenarda kar yığını",
-  "xmas.frost": "Buzlu köşeler"
+  "xmas.frost": "Buzlu köşeler",
+  "xmas.notice.badge": "Yeni",
+  "xmas.notice.title": "Yılbaşı süsleri",
+  "xmas.notice.body": "Her banner için ışıklar, yağan kar, kenarlarda kar ve buzlu köşeler. Siz açana kadar kapalı.",
+  "xmas.notice.open": "Seçenekleri göster",
+  "xmas.notice.later": "Sonra",
+  "xmas.notice.close": "Kapat"
 }

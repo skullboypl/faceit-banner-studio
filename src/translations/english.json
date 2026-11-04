@@ -1253,5 +1253,11 @@
   "xmas.amount.heavy": "Heavy",
   "xmas.cap": "Snow on the top edge",
   "xmas.drift": "Snow piled on the bottom edge",
-  "xmas.frost": "Frosted corners"
+  "xmas.frost": "Frosted corners",
+  "xmas.notice.badge": "New",
+  "xmas.notice.title": "Christmas extras",
+  "xmas.notice.body": "Lights, falling snow, snow on the edges and frosted corners for every banner. Off until you switch them on.",
+  "xmas.notice.open": "Show options",
+  "xmas.notice.later": "Later",
+  "xmas.notice.close": "Close"
 }

@@ -1213,5 +1213,11 @@
   "xmas.amount.heavy": "Hodně",
   "xmas.cap": "Sníh na horním okraji",
   "xmas.drift": "Závěj na spodním okraji",
-  "xmas.frost": "Ojíněné rohy"
+  "xmas.frost": "Ojíněné rohy",
+  "xmas.notice.badge": "Novinka",
+  "xmas.notice.title": "Vánoční doplňky",
+  "xmas.notice.body": "Světýlka, padající sníh, sníh na okrajích a ojíněné rohy pro každý banner. Vypnuté, dokud je nezapneš.",
+  "xmas.notice.open": "Zobrazit volby",
+  "xmas.notice.later": "Později",
+  "xmas.notice.close": "Zavřít"
 }

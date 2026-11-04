@@ -2884,6 +2884,168 @@ a.donate-link:hover { background: #271a12; border-color: #ff6b18; }
   }
 }
 
+/* Studio only: the Christmas extras bubble, bottom right, clear of the cookie bar on the left */
+.seasonal-notice {
+  position: fixed;
+  z-index: 46;
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: min(360px, calc(100vw - 36px));
+  margin: 0;
+  padding: 18px 16px 14px;
+  overflow: hidden;
+  background: #151516;
+  border: 1px solid #2b2b2e;
+  border-radius: 12px;
+  box-shadow: 0 14px 36px #00000080;
+  color: #c4c4cb;
+  font-size: 13px;
+  line-height: 1.45;
+  animation: seasonal-notice-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.seasonal-notice-bulbs {
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 40px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  i {
+    width: 5px;
+    height: 7px;
+    margin-top: -1px;
+    border-radius: 0 0 3px 3px;
+    background: var(--bulb);
+    box-shadow: 0 0 6px var(--bulb);
+    &:nth-child(4n + 1) { --bulb: #ff3b3b; }
+    &:nth-child(4n + 2) { --bulb: #ffd23b; }
+    &:nth-child(4n + 3) { --bulb: #3bd16f; }
+    &:nth-child(4n + 4) { --bulb: #3b8bff; }
+  }
+}
+.seasonal-notice-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #bfe9ff14;
+  border: 1px solid #bfe9ff26;
+  color: #bfe9ff;
+  svg { width: 18px; height: 18px; }
+}
+.seasonal-notice-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-right: 18px;
+  small {
+    display: block;
+    color: #ff9a62;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  strong {
+    display: block;
+    margin-top: 1px;
+    color: #f2f2f5;
+    font-size: 14.5px;
+  }
+  p {
+    margin: 4px 0 0;
+    text-wrap: pretty;
+  }
+}
+.seasonal-notice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  button {
+    width: auto;
+    margin: 0;
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+}
+.seasonal-notice-open {
+  border: 0;
+  background: #ff5900;
+  color: #fff;
+  &:hover { background: #ff6d1f; }
+}
+.seasonal-notice-later {
+  border: 1px solid #2f2f33;
+  background: transparent;
+  color: #c4c4cb;
+  &:hover { border-color: #45454b; color: #f2f2f5; }
+}
+.seasonal-notice-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #8a8a92;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  &:hover { background: #ffffff0f; color: #f2f2f5; }
+}
+.seasonal-notice button:focus-visible {
+  outline: 2px solid #ff9a62;
+  outline-offset: 2px;
+}
+@keyframes seasonal-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+/* The extras card glows for a moment after the bubble's button brings you to it */
+.seasonal-options.is-spotlit {
+  animation: seasonal-spotlight 2.2s ease-out;
+}
+@keyframes seasonal-spotlight {
+  0%, 35% {
+    box-shadow: 0 0 0 2px #bfe9ff, 0 0 24px #bfe9ff55;
+  }
+  100% {
+    box-shadow: 0 0 0 2px transparent, 0 0 24px transparent;
+  }
+}
+@media (max-width: 700px) {
+  .seasonal-notice {
+    left: 10px;
+    right: 10px;
+    top: calc(10px + env(safe-area-inset-top));
+    bottom: auto;
+    width: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seasonal-notice,
+  .seasonal-options.is-spotlit {
+    animation: none;
+  }
+}
+
 @import './admin.less';
 
 

@@ -1213,5 +1213,11 @@
   "xmas.amount.heavy": "Mucha",
   "xmas.cap": "Nieve en el borde superior",
   "xmas.drift": "Nieve acumulada en el borde inferior",
-  "xmas.frost": "Esquinas escarchadas"
+  "xmas.frost": "Esquinas escarchadas",
+  "xmas.notice.badge": "Nuevo",
+  "xmas.notice.title": "Extras navideños",
+  "xmas.notice.body": "Luces, nieve que cae, nieve en los bordes y esquinas escarchadas para cualquier banner. Apagados hasta que los actives.",
+  "xmas.notice.open": "Ver opciones",
+  "xmas.notice.later": "Más tarde",
+  "xmas.notice.close": "Cerrar"
 }

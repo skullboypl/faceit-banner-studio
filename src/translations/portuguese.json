@@ -1213,5 +1213,11 @@
   "xmas.amount.heavy": "Muita",
   "xmas.cap": "Neve na borda de cima",
   "xmas.drift": "Neve acumulada na borda de baixo",
-  "xmas.frost": "Cantos congelados"
+  "xmas.frost": "Cantos congelados",
+  "xmas.notice.badge": "Novidade",
+  "xmas.notice.title": "Extras de Natal",
+  "xmas.notice.body": "Luzes, neve a cair, neve nas bordas e cantos gelados para qualquer banner. Desligados até os ativares.",
+  "xmas.notice.open": "Ver opções",
+  "xmas.notice.later": "Mais tarde",
+  "xmas.notice.close": "Fechar"
 }

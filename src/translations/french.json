@@ -1213,5 +1213,11 @@
   "xmas.amount.heavy": "Beaucoup",
   "xmas.cap": "Neige sur le bord du haut",
   "xmas.drift": "Congère sur le bord du bas",
-  "xmas.frost": "Coins givrés"
+  "xmas.frost": "Coins givrés",
+  "xmas.notice.badge": "Nouveau",
+  "xmas.notice.title": "Extras de Noël",
+  "xmas.notice.body": "Guirlande, neige qui tombe, neige sur les bords et coins givrés pour chaque bannière. Désactivés tant que tu ne les actives pas.",
+  "xmas.notice.open": "Voir les options",
+  "xmas.notice.later": "Plus tard",
+  "xmas.notice.close": "Fermer"
 }

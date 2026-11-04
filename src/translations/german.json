@@ -1213,5 +1213,11 @@
   "xmas.amount.heavy": "Viel",
   "xmas.cap": "Schnee auf der Oberkante",
   "xmas.drift": "Schneewehe an der Unterkante",
-  "xmas.frost": "Vereiste Ecken"
+  "xmas.frost": "Vereiste Ecken",
+  "xmas.notice.badge": "Neu",
+  "xmas.notice.title": "Weihnachtsextras",
+  "xmas.notice.body": "Lichterkette, Schneefall, Schnee an den Kanten und vereiste Ecken für jedes Banner. Aus, bis du sie einschaltest.",
+  "xmas.notice.open": "Optionen zeigen",
+  "xmas.notice.later": "Später",
+  "xmas.notice.close": "Schließen"
 }

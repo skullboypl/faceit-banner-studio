@@ -23,6 +23,7 @@ import { GeneratedWidgetModal } from '../components/GeneratedWidgetModal.tsx';
 import { InfoBox } from '../components/InfoBox.tsx';
 import { Footer, SKULL_YOUTUBE_URL, SKULL_X_URL, SMOOTH_WIZARD_LOGO, SMOOTH_WIZARD_URL } from '../components/Footer.tsx';
 import { CookieNotice } from '../components/CookieNotice.tsx';
+import { SeasonalNotice } from '../components/SeasonalNotice.tsx';
 import { PreviewCarousel } from '../components/PreviewCarousel.tsx';
 import { StudioIcon } from '../components/StudioIcon.tsx';
 import { StudioBrand } from '../components/StudioBrand.tsx';
@@ -96,6 +97,7 @@ const PINNED_TABS = 3;
 /** Catalog and feedback need the whole width, so they hide the widget preview. */
 const WIDE_TAB_INDEXES = new Set([4, 5, 6]);
 const TAB_ICONS = ['settings', 'palette', 'stats', 'cloud', 'layers', 'message', 'terminal'] as const;
+const STYLE_TAB_INDEX = TAB_ICONS.indexOf('palette');
 const PREVIEW_BACKGROUNDS = MAP_ART;
 
 export const Generator = () => {
@@ -267,6 +269,20 @@ export const Generator = () => {
       document.getElementById('root')?.scrollTo({ top: 0 });
     }
   }, [navigate, onPublicPage]);
+  /** The Christmas bubble's button: the Style tab, scrolled to the extras card, which glows for a moment. */
+  const openSeasonalOptions = useCallback(() => {
+    selectTab(STYLE_TAB_INDEX);
+    setTimeout(() => {
+      const card = document.querySelector<HTMLElement>('.seasonal-options');
+      if (!card) return;
+      const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      card.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'center' });
+      card.classList.remove('is-spotlit');
+      void card.offsetWidth;
+      card.classList.add('is-spotlit');
+      setTimeout(() => card.classList.remove('is-spotlit'), 2200);
+    }, 150);
+  }, [selectTab]);
   const openProfile = useCallback(() => {
     setCompactSidebarOpen(false);
     navigate('/?panel=profile');
@@ -1363,6 +1379,7 @@ export const Generator = () => {
           </main>
           <Footer />
           <CookieNotice />
+          {!onPublicPage && <SeasonalNotice onOpen={openSeasonalOptions} />}
         </div>
       </SettingsContext.Provider>
     </LanguageContext.Provider>
