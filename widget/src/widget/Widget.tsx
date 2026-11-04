@@ -21,7 +21,7 @@ import {
   languages,
   tl,
 } from '../../../src/translations/translations.ts';
-import { getPlayerStats, SessionCard, UNKNOWN_PLACE, VerifiedBadgeType } from '../utils/faceit_util.ts';
+import { getPlayerStats, isKnownPlace, SessionCard, UNKNOWN_PLACE, VerifiedBadgeType } from '../utils/faceit_util.ts';
 import { sessionLine } from './session-line.ts';
 import { readTickerCells } from './ticker-options.ts';
 import { refreshSeconds } from '../utils/refresh.ts';
@@ -828,8 +828,10 @@ export const Widget = ({
           if (!sample && !winsPercent) return null;
           return `${sample ? '50' : winsPercent}%`;
         case StatisticType.RANKING:
-          if (!sample && !ranking) return null;
-          return `#${sample ? 999 : ranking}`;
+          if (sample) return '#999';
+          /* 0 is still loading; a player FACEIT gives no place gets a dash, never the stand-in number */
+          if (!ranking) return null;
+          return isKnownPlace(ranking) ? `#${ranking}` : '—';
         case StatisticType.WINSTREAK:
           return `${sample ? 5 : winStreak}`;
         case StatisticType.ENTRYRATE:
@@ -1386,7 +1388,7 @@ export const Widget = ({
           )}
           <div className={'ticker-right'}>
             <img className={'flag'} src={`https://flagcdn.com/${flagCode}.svg`} alt={flagCode} />
-            {!calibrating && <span>#{countryPlace || '?'}</span>}
+            {!calibrating && countryPlace < UNKNOWN_PLACE && <span>#{countryPlace || '?'}</span>}
           </div>
         </div>
         <div className={'ticker-page'} key={page.id}>

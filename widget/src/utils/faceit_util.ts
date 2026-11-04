@@ -142,6 +142,10 @@ export const getVerifiedBadgeType = (profile: {
 /** Stands in for a place FACEIT did not give (calibrating, outside the list, or a failed lookup); never drawn. */
 export const UNKNOWN_PLACE = 999999;
 
+/** A real place to print: 0 is still loading, UNKNOWN_PLACE is no place at all. */
+export const isKnownPlace = (place: number | undefined): place is number =>
+  Number.isInteger(place) && (place as number) >= 1 && (place as number) < UNKNOWN_PLACE;
+
 export async function getPlayerRankingPosition(
   id: string,
   region: string,
@@ -152,13 +156,10 @@ export async function getPlayerRankingPosition(
   );
   if (response.ok) {
     const data = (await response.json()) as V4RankingResponse;
-    /* Only the regional top 1000 is a challenger place; a place in a country can be any number. */
-    const last = country ? Infinity : 1000;
-    if (Number.isInteger(data.position) && (data.position as number) >= 1 && (data.position as number) <= last) {
-      return data.position;
-    }
+    /* The real place, in the region or the country. Whether it is a challenger place (top 1000) is the banner's call. */
+    if (isKnownPlace(data.position)) return data.position;
     const item = data.items?.find((i) => i.player_id === id);
-    return item && item.position >= 1 && item.position <= last ? item.position : undefined;
+    return item && isKnownPlace(item.position) ? item.position : undefined;
   } else {
     console.error(
       `Failed to fetch ranking: ${response.status} ${await response.text()}`

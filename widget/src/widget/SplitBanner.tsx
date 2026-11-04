@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { LevelMark } from '../components/LevelMark';
 import type { BannerSizeLimits } from '../utils/banner_size';
+import { isKnownPlace } from '../utils/faceit_util';
 import {
   SPLIT_AXIS_LABEL,
   SPLIT_AXIS_MAX,
@@ -277,7 +278,7 @@ function CameraPlate({ options, stats, username, avatar, elo, level, ranking, ca
                   ) : (
                     show('elo') && <b>{elo > 0 ? elo : '—'}</b>
                   )}
-                  {show('rank') && !calibrating && <small>{ranking > 0 ? `#${ranking}` : '—'}</small>}
+                  {show('rank') && !calibrating && <small>{isKnownPlace(ranking) ? `#${ranking}` : '—'}</small>}
                   {show('elo') && !calibrating && !show('rank') && <small>ELO</small>}
                 </p>
               )}
