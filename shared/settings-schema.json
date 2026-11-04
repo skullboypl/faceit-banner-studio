@@ -148,6 +148,10 @@
     "type": "boolean",
     "default": false
   },
+  "xmasDrift": {
+    "type": "boolean",
+    "default": false
+  },
   "xmasFrost": {
     "type": "boolean",
     "default": false

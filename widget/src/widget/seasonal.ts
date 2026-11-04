@@ -1,4 +1,4 @@
-/** Christmas extras any banner can wear: lights along the top, falling snow, a snow cap and frosted corners. All off by default. */
+/** Christmas extras any banner can wear: lights along the top, falling snow, snow on the top and bottom edges and frosted corners. All off by default. */
 export const XMAS_LIGHT_COLORS = ['classic', 'warm', 'faceit', 'ice'] as const;
 export type XmasLightColors = (typeof XMAS_LIGHT_COLORS)[number];
 
@@ -17,6 +17,8 @@ export type XmasOptions = {
   snow: boolean;
   amount: XmasSnowAmount;
   cap: boolean;
+  /** A snow drift piled along the bottom edge */
+  drift: boolean;
   frost: boolean;
 };
 
@@ -29,9 +31,10 @@ export function readXmasOptions(get: (key: string) => unknown): XmasOptions {
     snow: get('xmasSnow') === true,
     amount: pick(XMAS_SNOW_AMOUNTS, get('xmasSnowAmount'), 'medium'),
     cap: get('xmasCap') === true,
+    drift: get('xmasDrift') === true,
     frost: get('xmasFrost') === true,
   };
 }
 
 /** True when at least one extra is switched on, so nothing is drawn for everyone else. */
-export const xmasActive = (options: XmasOptions) => options.lights || options.snow || options.cap || options.frost;
+export const xmasActive = (options: XmasOptions) => options.lights || options.snow || options.cap || options.drift || options.frost;

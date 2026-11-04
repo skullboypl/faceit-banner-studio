@@ -1252,5 +1252,6 @@
   "xmas.amount.medium": "Medium",
   "xmas.amount.heavy": "Heavy",
   "xmas.cap": "Snow on the top edge",
+  "xmas.drift": "Snow piled on the bottom edge",
   "xmas.frost": "Frosted corners"
 }

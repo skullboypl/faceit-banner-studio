@@ -40,6 +40,7 @@ export function SeasonalDecor({ options, scale = 1 }: { options: XmasOptions; sc
         </div>
       )}
       {options.cap && <i className="xmas-cap" />}
+      {options.drift && <i className="xmas-drift" />}
       {options.lights && (
         <div className="xmas-lights">
           <i className="xmas-wire" />

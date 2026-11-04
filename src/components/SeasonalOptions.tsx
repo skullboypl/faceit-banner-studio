@@ -4,7 +4,7 @@ import { XMAS_LIGHT_COLORS, XMAS_SNOW_AMOUNTS } from '../../widget/src/widget/se
 import { Checkbox } from './Checkbox';
 import { StudioIcon } from './StudioIcon';
 
-/** Look tab, every mode: Christmas lights, snow, a snow cap and frost on the banner. All off until switched on. */
+/** Look tab, every mode: Christmas lights, snow, snow on the top and bottom edges and frost on the banner. All off until switched on. */
 export function SeasonalOptions() {
   const tl = useContext(LanguageContext);
   const settings = useContext(SettingsContext);
@@ -45,6 +45,7 @@ export function SeasonalOptions() {
           </div>
         )}
         <Checkbox text={tl('xmas.cap')} setting={'xmasCap'} />
+        <Checkbox text={tl('xmas.drift')} setting={'xmasDrift'} />
         <Checkbox text={tl('xmas.frost')} setting={'xmasFrost'} />
       </div>
     </div>

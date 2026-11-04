@@ -262,6 +262,11 @@ export const SETTINGS_DEFINITIONS = {
     defaultValue: false,
     query: ['xmas_cap'],
   },
+  xmasDrift: {
+    type: 'boolean',
+    defaultValue: false,
+    query: ['xmas_drift'],
+  },
   xmasFrost: {
     type: 'boolean',
     defaultValue: false,

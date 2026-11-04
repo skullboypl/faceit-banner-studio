@@ -10,11 +10,11 @@ const read = (values: Record<string, unknown>) => readXmasOptions((key) => value
 
 describe('Christmas extras', () => {
   test('everything is off by default, in the settings and in the reader', () => {
-    for (const key of ['xmasLights', 'xmasSnow', 'xmasCap', 'xmasFrost'] as const) {
+    for (const key of ['xmasLights', 'xmasSnow', 'xmasCap', 'xmasDrift', 'xmasFrost'] as const) {
       expect(SETTINGS_DEFINITIONS[key].defaultValue).toBe(false);
     }
     const options = read({});
-    expect(options).toEqual({ lights: false, colors: 'classic', snow: false, amount: 'medium', cap: false, frost: false });
+    expect(options).toEqual({ lights: false, colors: 'classic', snow: false, amount: 'medium', cap: false, drift: false, frost: false });
     expect(xmasActive(options)).toBe(false);
     expect(render(<SeasonalDecor options={options} />).container.innerHTML).toBe('');
   });
@@ -34,6 +34,18 @@ describe('Christmas extras', () => {
     expect(capOnly.querySelector('.xmas-cap')).not.toBeNull();
     expect(capOnly.querySelector('.xmas-frost')).not.toBeNull();
     expect(capOnly.querySelector('.xmas-snow')).toBeNull();
+    expect(capOnly.querySelector('.xmas-drift')).toBeNull();
+  });
+
+  test('the snow drift on the bottom edge is an extra of its own', () => {
+    const options = read({ xmasDrift: true });
+    expect(xmasActive(options)).toBe(true);
+    const view = render(<SeasonalDecor options={options} />).container;
+    expect(view.querySelector('.xmas-drift')).not.toBeNull();
+    expect(view.querySelector('.xmas-cap')).toBeNull();
+    const values: Record<string, unknown> = { xmasDrift: true };
+    const get = (key: SettingKey) => (key in values ? values[key] : SETTINGS_DEFINITIONS[key].defaultValue);
+    expect(widgetQueryParams(get, 'pl')).toMatchObject({ xmas_drift: true });
   });
 
   test('the OBS link carries only the extras that are on', () => {

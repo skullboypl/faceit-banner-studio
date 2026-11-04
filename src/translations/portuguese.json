@@ -1212,5 +1212,6 @@
   "xmas.amount.medium": "Média",
   "xmas.amount.heavy": "Muita",
   "xmas.cap": "Neve na borda de cima",
+  "xmas.drift": "Neve acumulada na borda de baixo",
   "xmas.frost": "Cantos congelados"
 }
