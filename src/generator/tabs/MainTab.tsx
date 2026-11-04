@@ -191,6 +191,8 @@ export const MainTab = ({
 
   const settingsLive = useRef(settings);
   settingsLive.current = settings;
+  /* A cloud sync, reset or import can clear the player while the nick stays; look it up again then */
+  const playerIdMissing = !settings?.get('playerId');
 
   useEffect(() => {
     const current = settingsLive.current;
@@ -232,6 +234,7 @@ export const MainTab = ({
   }, [
     username,
     tl,
+    playerIdMissing,
     setPlayerAvatar,
     setPlayerBanner,
     setPlayerCountry,

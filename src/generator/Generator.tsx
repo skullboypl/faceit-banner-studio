@@ -334,6 +334,8 @@ export const Generator = () => {
   const applyCloudSettings = useCallback(
     (cloud: Partial<Settings>) => {
       for (const [key, value] of Object.entries(cloud)) {
+        /* A save without a player must not wipe the one found for the nick, or the next OBS link has no player_id */
+        if (key === 'playerId' && !value) continue;
         setSetting(key as SettingKey, value as never);
       }
     },
@@ -385,13 +387,25 @@ export const Generator = () => {
     [getSetting, language]
   );
 
-  const generateWidgetURL = useCallback(() => {
+  const generateWidgetURL = useCallback(async () => {
     const params = buildSettingsQueryParams();
+    /* Without player_id the OBS page has nobody to read: no stats and no theme. Find the player for the nick first. */
+    if (!params.player_id && username.trim()) {
+      /* Never keep the button waiting: after 5 s the link goes out as it is */
+      const profile = await Promise.race([
+        getPlayerProfile(username.trim()).catch(() => undefined),
+        new Promise<undefined>((resolve) => setTimeout(resolve, 5000)),
+      ]);
+      if (profile?.games?.cs2 && profile.player_id) {
+        setSetting('playerId', profile.player_id);
+        params.player_id = profile.player_id;
+      }
+    }
     setGeneratedURLMode('widget');
     setGeneratedURL(
       `${window.location.protocol}//${window.location.host}/widget/${jsonToQuery(params)}`
     );
-  }, [buildSettingsQueryParams]);
+  }, [buildSettingsQueryParams, username, setSetting]);
 
   const jsonToQuery = toQueryString;
 
@@ -1179,7 +1193,7 @@ export const Generator = () => {
                     <button
                       className="with-icon primary-action export-generate"
                       onClick={() => {
-                        generateWidgetURL();
+                        void generateWidgetURL();
                       }}
                     >
                       <TimelineIcon />

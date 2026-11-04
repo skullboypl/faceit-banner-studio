@@ -755,18 +755,6 @@ export const Widget = ({
       refreshDelay = 10;
     }
 
-    /* The studio page has its own document classes. Only the OBS page wears the theme. */
-    if (!preview) {
-      document
-        .getElementsByTagName('html')[0]
-        .classList.add(`${resolvedStyle}-theme`);
-      document
-        .getElementsByTagName('html')[0]
-        .classList.add(`${SETTINGS.get('colorScheme')}-scheme`);
-      if (SETTINGS.get('autoWidth'))
-        document.getElementsByTagName('html')[0].classList.add(`auto-width`);
-    }
-
     const interval = setInterval(
       getStats,
       1000 * refreshSeconds(SETTINGS.get('refreshInterval'))
@@ -775,18 +763,21 @@ export const Widget = ({
       cancelled = true;
       clearInterval(interval);
       window.removeEventListener('pagehide', extendSession);
-      if (!preview) {
-        document
-          .getElementsByTagName('html')[0]
-          .classList.remove(`${resolvedStyle}-theme`);
-        document
-          .getElementsByTagName('html')[0]
-          .classList.remove(`${SETTINGS.get('colorScheme')}-scheme`);
-        if (SETTINGS.get('autoWidth'))
-          document.getElementsByTagName('html')[0].classList.remove(`auto-width`);
-      }
     };
   }, [SETTINGS]);
+
+  /*
+   * The studio page has its own document classes. Only the OBS page wears the theme, and it wears it even before a
+   * player is known: the fonts and colours of the banner live on these classes.
+   */
+  useEffect(() => {
+    if (preview) return;
+    const html = document.documentElement;
+    const classes = [`${resolvedStyle}-theme`, `${SETTINGS.get('colorScheme')}-scheme`];
+    if (SETTINGS.get('autoWidth')) classes.push('auto-width');
+    html.classList.add(...classes);
+    return () => html.classList.remove(...classes);
+  }, [SETTINGS, preview, resolvedStyle]);
 
   /* Custom CSS */
   useEffect(() => {
