@@ -891,6 +891,7 @@ export const Widget = ({
   }, [language, elo, startingElo, SETTINGS, sample]);
 
   const showStats = Boolean(SETTINGS.get('showStatistics'));
+  const rankingInStats = showStats && stats.includes(StatisticType.RANKING);
 
   /* Full-screen scenes: the same player read as the banner, shaped for the scene card */
   const sceneKind: SceneKind = SCENE_KINDS.find((kind) => kind === SETTINGS.get('sceneKind')) ?? 'starting';
@@ -1211,7 +1212,9 @@ export const Widget = ({
           </p>
           {!calibrating && SETTINGS.get('showRanking') !== ShowRanking.DISABLED && (
             <p className={'ranking'}>
-              {(SETTINGS.get('showRanking') === ShowRanking.SHOW ||
+              {/* The Ranking statistic already shows the regional place; the header does not repeat it */}
+              {!rankingInStats &&
+                (SETTINGS.get('showRanking') === ShowRanking.SHOW ||
                 SETTINGS.get('showRanking') === ShowRanking.BOTH ||
                 (SETTINGS.get('showRanking') ===
                   ShowRanking.ONLY_WHEN_CHALLENGER &&
