@@ -117,6 +117,96 @@
     "type": "boolean",
     "default": false
   },
+  "tickerv2Accent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "tickerv2LevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "tickerv2LevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "tickerprofileAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "tickerprofileLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "tickerprofileLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "tickerextendedAccent": {
+    "type": "string",
+    "default": "e7002c",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "tickerextendedLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "tickerextendedLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "tickerslimAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "tickerslimLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "tickerslimLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "tickerformAccent": {
+    "type": "string",
+    "default": "3ddc84",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "tickerformLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "tickerformLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "tickerstackAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "tickerstackLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "tickerstackLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
   "xmasLights": {
     "type": "boolean",
     "default": false
@@ -2028,6 +2118,12 @@
       "halo",
       "pulse",
       "ticker",
+      "tickerv2",
+      "tickerprofile",
+      "tickerextended",
+      "tickerslim",
+      "tickerform",
+      "tickerstack",
       "slab",
       "gauge",
       "card",

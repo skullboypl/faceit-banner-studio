@@ -49,7 +49,8 @@ export type SettingDefinition = {
   max?: number;
   regex?: RegExp;
   query?: string[];
-  requirements?: { setting: string; value: SettingValue }[];
+  /** Every requirement must hold; a list of values means any one of them. */
+  requirements?: { setting: string; value: SettingValue | readonly SettingValue[] }[];
   hidden?: boolean;
   options?: SettingValue[];
   defaultValue: SettingValue;

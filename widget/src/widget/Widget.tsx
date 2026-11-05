@@ -24,6 +24,7 @@ import {
 import { getPlayerStats, isKnownPlace, SessionCard, UNKNOWN_PLACE, VerifiedBadgeType } from '../utils/faceit_util.ts';
 import { sessionLine } from './session-line.ts';
 import { readTickerCells } from './ticker-options.ts';
+import { TICKER_VARIANTS, isTickerFamily, tickerShowsBothPages } from './ticker-family.ts';
 import { refreshSeconds } from '../utils/refresh.ts';
 import {
   BannerSizeMode,
@@ -113,6 +114,7 @@ import '../styles/banner-2026.less';
 import '../styles/broadcast-presets.less';
 import '../styles/avatar-presets.less';
 import '../styles/ticker-preset.less';
+import '../styles/ticker-family.less';
 import '../styles/versus-preset.less';
 import '../styles/modes-preset.less';
 import '../styles/scene-screen.less';
@@ -390,6 +392,7 @@ export const Widget = ({
   const resolvedStyle = resolveBannerStyle(SETTINGS.get('style'), SETTINGS.get('bannerDesign'));
   const isDeckPreset = resolvedStyle === 'showcase' || resolvedStyle === 'spotlight';
   const isTicker = resolvedStyle === 'ticker';
+  const isTickerVariant = (TICKER_VARIANTS as readonly string[]).includes(resolvedStyle);
   const isVersus = isVersusStyle(resolvedStyle);
   const isTeam = SETTINGS.get('widgetMode') === 'team';
   const isSplit = SETTINGS.get('widgetMode') === 'split';
@@ -1081,14 +1084,14 @@ export const Widget = ({
 
   /* Ticker: alternates between "today" and "last matches" */
   useEffect(() => {
-    if (!isTicker || !SETTINGS.get('tickerAutoplay')) return;
+    if (!isTickerFamily(resolvedStyle) || tickerShowsBothPages(resolvedStyle) || !SETTINGS.get('tickerAutoplay')) return;
     const seconds = Math.max(3, Number(SETTINGS.get('tickerSeconds')) || 6);
     const interval = setInterval(
       () => setTickerPage((page) => (page + 1) % 2),
       seconds * 1000
     );
     return () => clearInterval(interval);
-  }, [isTicker, SETTINGS.get('tickerAutoplay'), SETTINGS.get('tickerSeconds')]);
+  }, [resolvedStyle, SETTINGS.get('tickerAutoplay'), SETTINGS.get('tickerSeconds')]);
 
   /** Share of the current level already earned, used as the avatar ring progress. */
   const levelProgress =
@@ -1310,7 +1313,8 @@ export const Widget = ({
     </div>
   );
 
-  const renderTicker = () => {
+  /** What every ticker layout reads: the head statistic, the places and the pages of cells. */
+  const tickerParts = () => {
     const headStat = SETTINGS.get('tickerHeadStat') as StatisticType;
     const showRank = sample || (ranking > 0 && ranking <= 1000);
     const flagCode = (country || previewCountry) || 'pl';
@@ -1355,6 +1359,11 @@ export const Widget = ({
       ...(showStats ? [{ id: 'last', title: translate('widget.ticker.last'), cells: chosen.last.map((id) => lastCell[id]) }] : []),
     ].filter((entry) => entry.cells.length > 0);
     const page = pages[tickerPage % Math.max(1, pages.length)] ?? { id: 'none', title: '', cells: [] };
+    return { headStat, showRank, flagCode, countryPlace, pages, page };
+  };
+
+  const renderTicker = () => {
+    const { headStat, showRank, flagCode, countryPlace, page } = tickerParts();
     return (
       <div className={'ticker'}>
         <div className={'ticker-head'}>
@@ -1400,6 +1409,229 @@ export const Widget = ({
             {page.cells}
           </div>
         </div>
+      </div>
+    );
+  };
+
+  /* The newer ticker layouts. They share the ticker's pages and settings; the original ticker above is untouched. */
+  const renderTickerVariant = () => {
+    const { headStat, showRank, flagCode, countryPlace, pages, page } = tickerParts();
+    const style = resolvedStyle;
+    const pageIndex = pages.length ? tickerPage % pages.length : 0;
+    const name = username || previewUsername || 'Player';
+    const picture = avatar || previewAvatar;
+    const headValue = getStat(headStat);
+    const headLabel = headStat === StatisticType.KD ? 'K/D' : translate(`widget.${headStat.toLowerCase()}`);
+    const rotating = Boolean(SETTINGS.get('tickerAutoplay')) && pages.length > 1 && !tickerShowsBothPages(style);
+    const seconds = Math.max(3, Number(SETTINGS.get('tickerSeconds')) || 6);
+
+    const levelMark = SETTINGS.get('showLevelIcon') !== false && (
+      <span
+        className={'tk-level'}
+        style={sample ? ({ '--faceit-level': 'var(--faceit-level-10)' } as CSSProperties) : undefined}
+      >
+        {sample ? levelIcons[9] : getIcon()}
+      </span>
+    );
+    const eloBlock = (
+      <span className={`tk-elo ${elo === 0 ? 'skeleton' : ''}`}>
+        <b>{String(elo)}</b>
+        {calibrating ? (
+          <small className={'elo-known'}>{translate('widget.elo_known')}</small>
+        ) : (
+          SETTINGS.get('showEloSuffix') !== false && <small>ELO</small>
+        )}
+        {SETTINGS.get('showEloDiff') && !calibrating && <em className={'tk-diff'}>{getEloDiff()}</em>}
+      </span>
+    );
+    const challenger = showRank && (
+      <span className={'tk-challenger'}>
+        <b>#{sample ? 17 : ranking}</b>
+      </span>
+    );
+    const place = (
+      <span className={'tk-place'}>
+        <img className={'flag'} src={`https://flagcdn.com/${flagCode}.svg`} alt={flagCode} />
+        {!calibrating && countryPlace < UNKNOWN_PLACE && <b>#{countryPlace || '?'}</b>}
+      </span>
+    );
+    const headPill = showStats && (
+      <span className={'tk-pill'}>
+        <b>{headValue || <span className={'skeleton'}>?.??</span>}</b>
+        <small>{headLabel}</small>
+      </span>
+    );
+    const dots = pages.length > 1 && !tickerShowsBothPages(style) && (
+      <span className={'tk-dots'} aria-hidden="true">
+        {pages.map((entry, index) => (
+          <i key={entry.id} className={index === pageIndex ? 'on' : ''}>
+            {index === pageIndex && rotating && <u key={`${entry.id}-${tickerPage}`} />}
+          </i>
+        ))}
+      </span>
+    );
+    const pageBlock = (extra = '') => (
+      <div className={`tk-page ${extra}`} key={page.id}>
+        <div className={'tk-page-head'}>
+          <p className={'ticker-title'}>{page.title}</p>
+          {dots}
+        </div>
+        <div className={'ticker-cells'} data-count={page.cells.length} style={{ '--cells': page.cells.length } as CSSProperties}>
+          {page.cells}
+        </div>
+      </div>
+    );
+    /* Share of the level already earned and the ELO still needed, for the bar under the head */
+    const nextLevelElo = level >= 1 && level < 10 ? Number(currentEloDistribution[1][2]) + 1 : 0;
+    const progress = (
+      <div className={'tk-progress'} aria-hidden="true">
+        <i style={{ width: `${Math.round((sample ? 0.64 : levelProgress) * 100)}%` }} />
+      </div>
+    );
+    const progressNote =
+      !calibrating && (sample || nextLevelElo > elo) ? (
+        <small className={'tk-next'}>{translate('widget.ticker.to_next', [String(sample ? 151 : nextLevelElo - elo)])}</small>
+      ) : null;
+    const frameStyle = { '--tk-seconds': `${seconds}s` } as CSSProperties;
+
+    if (style === 'tickerprofile') {
+      return (
+        <div className={'tk tk-profile'} style={frameStyle}>
+          <div className={'tk-who'}>
+            <span className={'tk-avatar'}>
+              {picture ? <img src={picture} alt="" /> : <span className={'tk-initial'}>{name.slice(0, 1).toUpperCase()}</span>}
+              {levelMark}
+            </span>
+            <div className={'tk-id'}>
+              <strong className={'tk-name'}>{name}</strong>
+              {eloBlock}
+              <div className={'tk-id-foot'}>
+                {place}
+                {challenger}
+              </div>
+            </div>
+          </div>
+          {pageBlock()}
+        </div>
+      );
+    }
+
+    if (style === 'tickerslim') {
+      return (
+        <div className={'tk tk-slim'} style={frameStyle}>
+          {levelMark}
+          {eloBlock}
+          <span className={'tk-sep'} aria-hidden="true" />
+          <div className={'tk-page'} key={page.id}>
+            <p className={'ticker-title'}>{page.title}</p>
+            <div className={'ticker-cells'} data-count={page.cells.length}>
+              {page.cells}
+            </div>
+          </div>
+          {dots}
+          <span className={'tk-sep'} aria-hidden="true" />
+          {challenger}
+          {place}
+        </div>
+      );
+    }
+
+    if (style === 'tickerstack') {
+      return (
+        <div className={'tk tk-stack'} style={frameStyle}>
+          <div className={'tk-stack-top'}>
+            {levelMark}
+            {eloBlock}
+          </div>
+          <div className={'tk-stack-meta'}>
+            {place}
+            {challenger}
+            {headPill}
+          </div>
+          {progress}
+          {pageBlock()}
+        </div>
+      );
+    }
+
+    if (style === 'tickerextended') {
+      return (
+        <div className={'tk tk-extended'} style={frameStyle}>
+          <div className={'tk-top'}>
+            {levelMark}
+            {eloBlock}
+            <span className={'tk-grow'} />
+            {headPill}
+            {challenger}
+            {place}
+          </div>
+          {progress}
+          <div className={'tk-rows'}>
+            {pages.map((entry) => (
+              <div className={'tk-row'} key={entry.id}>
+                <p className={'ticker-title'}>{entry.title}</p>
+                <div className={'ticker-cells'} data-count={entry.cells.length} style={{ '--cells': entry.cells.length } as CSSProperties}>
+                  {entry.cells}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (style === 'tickerform') {
+      const form = sample ? (['W', 'W', 'L', 'W', 'L', 'W'] as const) : sessionForm;
+      const slots = 10;
+      const recent = form.slice(-slots);
+      return (
+        <div className={'tk tk-form'} style={frameStyle}>
+          <div className={'tk-top'}>
+            {levelMark}
+            {eloBlock}
+            <span className={'tk-grow'} />
+            {headPill}
+            {challenger}
+            {place}
+          </div>
+          {pageBlock()}
+          <div className={'tk-formline'}>
+            <small>{translate('widget.ticker.form')}</small>
+            <span className={'tk-formdots'}>
+              {Array.from({ length: slots }, (_, index) => {
+                /* The newest result sits on the right; empty slots wait on the left */
+                const outcome = recent[index - (slots - recent.length)];
+                return <i key={index} className={outcome === 'W' ? 'win' : outcome === 'L' ? 'loss' : ''} />;
+              })}
+            </span>
+            {showMatches && (
+              <b className={'tk-record'}>
+                <span className={'win'}>{sample ? 4 : wins}</span>
+                <span aria-hidden="true">–</span>
+                <span className={'loss'}>{sample ? 2 : losses}</span>
+              </b>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    /* Ticker v2 */
+    return (
+      <div className={'tk tk-v2'} style={frameStyle}>
+        <div className={'tk-top'}>
+          {levelMark}
+          {eloBlock}
+          <span className={'tk-grow'} />
+          {headPill}
+          {challenger}
+          {place}
+        </div>
+        <div className={'tk-progress-line'}>
+          {progress}
+          {progressNote}
+        </div>
+        {pageBlock()}
       </div>
     );
   };
@@ -2456,6 +2688,8 @@ export const Widget = ({
             renderVersus()
           ) : isTicker ? (
             renderTicker()
+          ) : isTickerVariant ? (
+            renderTickerVariant()
           ) : isDeckPreset ? (
             <BroadcastDeck
               slides={deckSlides}

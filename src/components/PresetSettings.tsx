@@ -6,6 +6,7 @@ import { Checkbox } from './Checkbox';
 import { Statistic } from './Statistic';
 import { StatisticType } from '../generator/tabs/StatisticsTab';
 import { TICKER_LAST, TICKER_TODAY, tickerSettingKey } from '../../widget/src/widget/ticker-options';
+import { isTickerFamily, tickerShowsBothPages } from '../../widget/src/widget/ticker-family';
 
 export function PresetSettings() {
   const settings = useContext(SettingsContext);
@@ -73,7 +74,7 @@ export function PresetSettings() {
           <input id="preset-level-glow" type="range" min="2" max="20" step="1" value={Number(settings.get(key('LevelGlowStrength')))} onChange={(event) => settings.set(key('LevelGlowStrength'), Number(event.target.value))} />
         </div>
       )}
-      {!['rail', 'focus', 'orbit', 'halo', 'pulse', 'ticker', 'slab', 'gauge', 'card', 'reel', 'ribbon', 'tower', 'dials', 'marquee', 'prime'].includes(style) && select('RankPlace', 'rank_place', ['beside', 'under'])}
+      {!isTickerFamily(style) && !['rail', 'focus', 'orbit', 'halo', 'pulse', 'slab', 'gauge', 'card', 'reel', 'ribbon', 'tower', 'dials', 'marquee', 'prime'].includes(style) && select('RankPlace', 'rank_place', ['beside', 'under'])}
       {style === 'broadcast' && <>{select('Density', 'density', ['comfortable', 'compact'])}<Checkbox text={tl('preset.tiles')} setting={key('Tiles')} /></>}
       {style === 'rail' && <>{select('StatsPosition', 'stats_position', ['right', 'below'])}<Checkbox text={tl('preset.labels')} setting={key('ShowLabels')} /></>}
       {style === 'focus' && <>{select('StatsLayout', 'stats_layout', ['grid', 'rows'])}<Checkbox text={tl('preset.large_elo')} setting={key('LargeElo')} /></>}
@@ -90,18 +91,22 @@ export function PresetSettings() {
           <input id="preset-duration" type="range" min="2" max="20" step="1" value={Number(settings.get(key('Seconds')))} onChange={(event) => settings.set(key('Seconds'), Number(event.target.value))} />
         </div>
       </>}
-      {style === 'ticker' && <>
-        <Checkbox text={tl('preset.autoplay')} setting={key('Autoplay')} />
-        <div className="setting">
-          <label htmlFor="preset-duration">{tl('preset.duration', [String(settings.get(key('Seconds')))])}</label>
-          <input id="preset-duration" type="range" min="3" max="20" step="1" value={Number(settings.get(key('Seconds')))} onChange={(event) => settings.set(key('Seconds'), Number(event.target.value))} />
-        </div>
-        <div className="setting">
+      {/* Every ticker layout shares the ticker's pages, so these always read and write the ticker's own settings */}
+      {isTickerFamily(style) && <>
+        {!tickerShowsBothPages(style) && <>
+          <Checkbox text={tl('preset.autoplay')} setting={'tickerAutoplay'} />
+          <div className="setting">
+            <label htmlFor="preset-duration">{tl('preset.duration', [String(settings.get('tickerSeconds'))])}</label>
+            <input id="preset-duration" type="range" min="3" max="20" step="1" value={Number(settings.get('tickerSeconds'))} onChange={(event) => settings.set('tickerSeconds', Number(event.target.value))} />
+          </div>
+        </>}
+        {style !== 'tickerprofile' && style !== 'tickerslim' && <div className="setting">
           <label htmlFor="preset-head-stat">{tl('preset.head_stat')}</label>
-          <select id="preset-head-stat" value={String(settings.get(key('HeadStat')))} onChange={(event) => settings.set(key('HeadStat'), event.target.value as never)}>
+          <select id="preset-head-stat" value={String(settings.get('tickerHeadStat'))} onChange={(event) => settings.set('tickerHeadStat', event.target.value as never)}>
             {Object.values(StatisticType).map((value) => <option key={value} value={value}>{tl(`stat.${value.toLowerCase()}`)}</option>)}
           </select>
-        </div>
+        </div>}
+        {style !== 'ticker' && <p className="subtext">{tl('preset.ticker_shared')}</p>}
         <h4>{tl('preset.ticker_today')}</h4>
         {TICKER_TODAY.map((cell) => <Checkbox key={cell} text={tl(`preset.ticker_cell.${cell}`)} setting={tickerSettingKey('today', cell) as SettingKey} />)}
         <h4>{tl('preset.ticker_last')}</h4>

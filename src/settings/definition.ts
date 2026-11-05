@@ -26,6 +26,7 @@ import {
 } from '../../widget/src/widget/scene-options';
 import { MAP_PREVIEW_IDS } from '../../widget/src/widget/map-art';
 import { XMAS_LIGHT_COLORS, XMAS_SNOW_AMOUNTS } from '../../widget/src/widget/seasonal';
+import { TICKER_FAMILY } from '../../widget/src/widget/ticker-family';
 import {
   SPLIT_CHART_LOOKS,
   SPLIT_DATA_LOOKS,
@@ -152,7 +153,7 @@ export const SETTINGS_DEFINITIONS = {
     "type": "boolean",
     "defaultValue": true,
     "query": ["ticker_autoplay"],
-    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "ticker" }]
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": TICKER_FAMILY }]
   },
   "tickerSeconds": {
     "type": "number",
@@ -160,79 +161,205 @@ export const SETTINGS_DEFINITIONS = {
     "min": 3,
     "max": 20,
     "query": ["ticker_seconds"],
-    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "ticker" }]
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": TICKER_FAMILY }]
   },
   "tickerHeadStat": {
     "type": "statistic_type",
     "defaultValue": "KD",
     "query": ["ticker_head_stat"],
-    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "ticker" }]
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": TICKER_FAMILY }]
   },
   "tickerTodayWins": {
     "type": "boolean",
     "defaultValue": true,
     "query": ["ticker_today_wins"],
-    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "ticker" }]
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": TICKER_FAMILY }]
   },
   "tickerTodayLosses": {
     "type": "boolean",
     "defaultValue": true,
     "query": ["ticker_today_losses"],
-    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "ticker" }]
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": TICKER_FAMILY }]
   },
   "tickerTodayKillsAdr": {
     "type": "boolean",
     "defaultValue": true,
     "query": ["ticker_today_kills_adr"],
-    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "ticker" }]
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": TICKER_FAMILY }]
   },
   "tickerTodayKd": {
     "type": "boolean",
     "defaultValue": true,
     "query": ["ticker_today_kd"],
-    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "ticker" }]
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": TICKER_FAMILY }]
   },
   "tickerTodayKr": {
     "type": "boolean",
     "defaultValue": false,
     "query": ["ticker_today_kr"],
-    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "ticker" }]
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": TICKER_FAMILY }]
   },
   "tickerTodayHs": {
     "type": "boolean",
     "defaultValue": false,
     "query": ["ticker_today_hs"],
-    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "ticker" }]
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": TICKER_FAMILY }]
   },
   "tickerLastWinrate": {
     "type": "boolean",
     "defaultValue": true,
     "query": ["ticker_last_winrate"],
-    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "ticker" }]
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": TICKER_FAMILY }]
   },
   "tickerLastKillsAdr": {
     "type": "boolean",
     "defaultValue": true,
     "query": ["ticker_last_kills_adr"],
-    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "ticker" }]
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": TICKER_FAMILY }]
   },
   "tickerLastKd": {
     "type": "boolean",
     "defaultValue": true,
     "query": ["ticker_last_kd"],
-    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "ticker" }]
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": TICKER_FAMILY }]
   },
   "tickerLastKr": {
     "type": "boolean",
     "defaultValue": true,
     "query": ["ticker_last_kr"],
-    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "ticker" }]
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": TICKER_FAMILY }]
   },
   "tickerLastHs": {
     "type": "boolean",
     "defaultValue": false,
     "query": ["ticker_last_hs"],
-    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "ticker" }]
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": TICKER_FAMILY }]
+  },
+  "tickerv2Accent": {
+    "type": "string",
+    "defaultValue": "ff5900",
+    "query": ["ticker_v2_accent"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerv2" }],
+    "regex": HEX_REGEXP
+  },
+  "tickerv2LevelGlow": {
+    "type": "boolean",
+    "defaultValue": false,
+    "query": ["ticker_v2_level_glow"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerv2" }]
+  },
+  "tickerv2LevelGlowStrength": {
+    "type": "number",
+    "defaultValue": 8,
+    "min": 2,
+    "max": 20,
+    "query": ["ticker_v2_level_glow_strength"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerv2" }, { "setting": "tickerv2LevelGlow", "value": true }]
+  },
+  "tickerprofileAccent": {
+    "type": "string",
+    "defaultValue": "ff5900",
+    "query": ["ticker_profile_accent"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerprofile" }],
+    "regex": HEX_REGEXP
+  },
+  "tickerprofileLevelGlow": {
+    "type": "boolean",
+    "defaultValue": false,
+    "query": ["ticker_profile_level_glow"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerprofile" }]
+  },
+  "tickerprofileLevelGlowStrength": {
+    "type": "number",
+    "defaultValue": 8,
+    "min": 2,
+    "max": 20,
+    "query": ["ticker_profile_level_glow_strength"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerprofile" }, { "setting": "tickerprofileLevelGlow", "value": true }]
+  },
+  "tickerextendedAccent": {
+    "type": "string",
+    "defaultValue": "e7002c",
+    "query": ["ticker_extended_accent"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerextended" }],
+    "regex": HEX_REGEXP
+  },
+  "tickerextendedLevelGlow": {
+    "type": "boolean",
+    "defaultValue": false,
+    "query": ["ticker_extended_level_glow"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerextended" }]
+  },
+  "tickerextendedLevelGlowStrength": {
+    "type": "number",
+    "defaultValue": 8,
+    "min": 2,
+    "max": 20,
+    "query": ["ticker_extended_level_glow_strength"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerextended" }, { "setting": "tickerextendedLevelGlow", "value": true }]
+  },
+  "tickerslimAccent": {
+    "type": "string",
+    "defaultValue": "ff5900",
+    "query": ["ticker_slim_accent"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerslim" }],
+    "regex": HEX_REGEXP
+  },
+  "tickerslimLevelGlow": {
+    "type": "boolean",
+    "defaultValue": false,
+    "query": ["ticker_slim_level_glow"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerslim" }]
+  },
+  "tickerslimLevelGlowStrength": {
+    "type": "number",
+    "defaultValue": 8,
+    "min": 2,
+    "max": 20,
+    "query": ["ticker_slim_level_glow_strength"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerslim" }, { "setting": "tickerslimLevelGlow", "value": true }]
+  },
+  "tickerformAccent": {
+    "type": "string",
+    "defaultValue": "3ddc84",
+    "query": ["ticker_form_accent"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerform" }],
+    "regex": HEX_REGEXP
+  },
+  "tickerformLevelGlow": {
+    "type": "boolean",
+    "defaultValue": false,
+    "query": ["ticker_form_level_glow"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerform" }]
+  },
+  "tickerformLevelGlowStrength": {
+    "type": "number",
+    "defaultValue": 8,
+    "min": 2,
+    "max": 20,
+    "query": ["ticker_form_level_glow_strength"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerform" }, { "setting": "tickerformLevelGlow", "value": true }]
+  },
+  "tickerstackAccent": {
+    "type": "string",
+    "defaultValue": "ff5900",
+    "query": ["ticker_stack_accent"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerstack" }],
+    "regex": HEX_REGEXP
+  },
+  "tickerstackLevelGlow": {
+    "type": "boolean",
+    "defaultValue": false,
+    "query": ["ticker_stack_level_glow"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerstack" }]
+  },
+  "tickerstackLevelGlowStrength": {
+    "type": "number",
+    "defaultValue": 8,
+    "min": 2,
+    "max": 20,
+    "query": ["ticker_stack_level_glow_strength"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerstack" }, { "setting": "tickerstackLevelGlow", "value": true }]
   },
   /** Christmas extras, for every banner mode; all off by default. */
   xmasLights: {

@@ -1,0 +1,608 @@
+/* The newer ticker layouts. They reuse the ticker's cells (.ticker-cell, .ticker-title, .ticker-cells) and add their
+   own frame. The original ticker lives in ticker-preset.less and is not touched here. */
+@import 'themes/normal.less';
+
+.tickerv2-theme:extend(.normal-theme all) {
+  --auto-width: 500px;
+}
+.tickerprofile-theme:extend(.normal-theme all) {
+  --auto-width: 560px;
+}
+.tickerextended-theme:extend(.normal-theme all) {
+  --auto-width: 560px;
+}
+.tickerslim-theme:extend(.normal-theme all) {
+  --auto-width: 680px;
+}
+.tickerform-theme:extend(.normal-theme all) {
+  --auto-width: 500px;
+}
+.tickerstack-theme:extend(.normal-theme all) {
+  --auto-width: 260px;
+}
+
+@keyframes tk-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+@keyframes tk-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.wrapper.banner-design-2026[data-layout='tickerv2'],
+.wrapper.banner-design-2026[data-layout='tickerprofile'],
+.wrapper.banner-design-2026[data-layout='tickerextended'],
+.wrapper.banner-design-2026[data-layout='tickerslim'],
+.wrapper.banner-design-2026[data-layout='tickerform'],
+.wrapper.banner-design-2026[data-layout='tickerstack'] {
+  --banner-radius: 14px;
+  --border-width: 1px;
+  --text-shadow: transparent;
+  --tk-accent: var(--preset-accent, #ff5900);
+  --tk-line: rgba(255, 255, 255, 0.08);
+  --tk-win: #3ddc84;
+  --tk-loss: #ff5a5a;
+  border-radius: 15px;
+
+  .widget {
+    padding: 14px 18px 12px;
+    border-radius: 14px;
+    color: var(--text);
+    box-shadow: none;
+  }
+
+  .tk {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Shared pieces */
+  .tk-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .tk-grow {
+    flex: 1;
+  }
+  .tk-level svg.faceit-level {
+    display: block;
+    width: 30px;
+    height: 30px;
+    margin: 0;
+    * {
+      color: var(--faceit-level);
+    }
+  }
+  &[data-level-glow='on'] .tk-level svg.faceit-level {
+    overflow: visible;
+    filter: drop-shadow(0 0 var(--level-glow, 8px) var(--faceit-level));
+  }
+  .tk-elo {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    white-space: nowrap;
+    b {
+      font-family: 'Inter', 'DM Sans', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.6px;
+      line-height: 1;
+    }
+    small {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: var(--subtext);
+    }
+    .elo-known {
+      letter-spacing: 0;
+    }
+  }
+  .tk-diff {
+    font-style: normal;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .tk-pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--tk-line);
+    white-space: nowrap;
+    b {
+      font-size: 14px;
+      font-weight: 800;
+    }
+    small {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--subtext);
+    }
+  }
+  .tk-challenger {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 7px;
+    background: var(--tk-accent);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+  .tk-place {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    font-size: 15px;
+    font-weight: 700;
+    .flag {
+      height: 18px;
+      width: auto;
+      margin: 0;
+      border-radius: 3px;
+    }
+  }
+
+  .tk-progress {
+    position: relative;
+    flex: 1;
+    height: 4px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    i {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--tk-accent);
+      transition: width 0.6s ease;
+    }
+  }
+  .tk-next {
+    flex: 0 0 auto;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--subtext);
+    white-space: nowrap;
+  }
+  .tk-progress-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .tk-page {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    animation: tk-in 0.45s ease-out both;
+  }
+  .tk-page-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .ticker-title {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--subtext);
+  }
+  .tk-dots {
+    display: inline-flex;
+    gap: 4px;
+    i {
+      position: relative;
+      width: 14px;
+      height: 3px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      &.on {
+        background: rgba(255, 255, 255, 0.28);
+      }
+      &.on:not(:has(u)) {
+        background: var(--tk-accent);
+      }
+      u {
+        position: absolute;
+        inset: 0;
+        background: var(--tk-accent);
+        transform-origin: left;
+        animation: tk-fill var(--tk-seconds, 6s) linear both;
+      }
+    }
+  }
+
+  .ticker-cells {
+    display: grid;
+    grid-template-columns: repeat(var(--cells, 4), minmax(0, 1fr));
+    gap: 8px;
+    text-align: center;
+  }
+  .ticker-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    b {
+      font-size: 19px;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+    span {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--subtext);
+    }
+    &.win b,
+    &.win span {
+      color: var(--tk-win);
+    }
+    &.loss b,
+    &.loss span {
+      color: var(--tk-loss);
+    }
+  }
+}
+
+/* Ticker v2: the head, a level bar with the ELO still needed, then a page with its progress dots */
+.wrapper.banner-design-2026[data-layout='tickerv2'] {
+  .tk-v2 .ticker-cells {
+    padding-top: 2px;
+  }
+  .tk-v2 .ticker-cell {
+    padding: 6px 4px;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--tk-line);
+  }
+}
+
+/* Ticker Profile: the avatar with its level, the name and ELO, then the page */
+.wrapper.banner-design-2026[data-layout='tickerprofile'] {
+  .widget {
+    padding: 12px 16px;
+  }
+  .tk-profile {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+  .tk-who {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 0 0 auto;
+    max-width: 46%;
+    padding-right: 16px;
+    border-right: 1px solid var(--tk-line);
+  }
+  .tk-avatar {
+    position: relative;
+    flex: 0 0 auto;
+    width: 64px;
+    height: 64px;
+    img,
+    .tk-initial {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 0 0 2px var(--tk-accent);
+    }
+    .tk-initial {
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 26px;
+      font-weight: 800;
+    }
+    .tk-level {
+      position: absolute;
+      right: -6px;
+      bottom: -4px;
+      padding: 2px;
+      border-radius: 50%;
+      background: #141416;
+      svg.faceit-level {
+        width: 24px;
+        height: 24px;
+      }
+    }
+  }
+  .tk-id {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+  .tk-name {
+    overflow: hidden;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tk-elo b {
+    font-size: 22px;
+  }
+  .tk-id-foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    .tk-place {
+      font-size: 13px;
+      .flag {
+        height: 14px;
+      }
+    }
+    .tk-challenger {
+      padding: 1px 6px;
+      font-size: 11px;
+    }
+  }
+  .tk-page {
+    flex: 1;
+  }
+  .ticker-cells {
+    align-items: start;
+  }
+  .ticker-cell span {
+    text-wrap: balance;
+  }
+}
+
+/* Ticker Extended: both pages at once, one row each, with the title beside the numbers */
+.wrapper.banner-design-2026[data-layout='tickerextended'] {
+  .tk-extended {
+    gap: 9px;
+  }
+  .tk-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .tk-row {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--tk-line);
+    .ticker-title {
+      line-height: 1.25;
+      letter-spacing: 1.2px;
+      text-wrap: balance;
+    }
+  }
+  .ticker-cell b {
+    font-size: 17px;
+  }
+}
+
+/* Ticker Slim: one line under the camera */
+.wrapper.banner-design-2026[data-layout='tickerslim'] {
+  .widget {
+    padding: 8px 16px;
+  }
+  .tk-slim {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+  }
+  .tk-level svg.faceit-level {
+    width: 26px;
+    height: 26px;
+  }
+  .tk-elo b {
+    font-size: 22px;
+  }
+  .tk-sep {
+    flex: 0 0 auto;
+    width: 1px;
+    height: 24px;
+    background: var(--tk-line);
+  }
+  .tk-page {
+    flex: 1;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    animation-name: tk-in;
+  }
+  .ticker-title {
+    max-width: 70px;
+    line-height: 1.2;
+    white-space: normal;
+    letter-spacing: 1px;
+  }
+  .ticker-cells {
+    display: flex;
+    flex: 1;
+    justify-content: space-around;
+    gap: 14px;
+    min-width: 0;
+    overflow: hidden;
+  }
+  /* One line has room for three numbers; the rest wait for a wider layout */
+  .ticker-cell:nth-child(n + 4) {
+    display: none;
+  }
+  .ticker-cell {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 5px;
+    b {
+      font-size: 16px;
+    }
+  }
+  .tk-dots {
+    flex-direction: column;
+    gap: 3px;
+    i {
+      width: 3px;
+      height: 10px;
+    }
+    u {
+      transform-origin: top;
+      animation-name: tk-fill-down;
+    }
+  }
+  .tk-place {
+    font-size: 14px;
+    .flag {
+      height: 15px;
+    }
+  }
+  .tk-challenger {
+    font-size: 11.5px;
+    padding: 2px 6px;
+  }
+}
+@keyframes tk-fill-down {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* Ticker Form: the page, then today's results as dots and the record */
+.wrapper.banner-design-2026[data-layout='tickerform'] {
+  .tk-formline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--tk-line);
+    small {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--subtext);
+    }
+  }
+  .tk-formdots {
+    display: flex;
+    flex: 1;
+    gap: 5px;
+    i {
+      flex: 1;
+      max-width: 22px;
+      height: 8px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.08);
+      &.win {
+        background: var(--tk-win);
+      }
+      &.loss {
+        background: var(--tk-loss);
+      }
+    }
+  }
+  .tk-record {
+    display: inline-flex;
+    gap: 4px;
+    font-size: 15px;
+    font-weight: 800;
+    .win {
+      color: var(--tk-win);
+    }
+    .loss {
+      color: var(--tk-loss);
+    }
+  }
+}
+
+/* Ticker Stack: upright, for the side of the camera; the cells become rows */
+.wrapper.banner-design-2026[data-layout='tickerstack'] {
+  .widget {
+    padding: 16px;
+  }
+  .tk-stack {
+    gap: 12px;
+  }
+  .tk-stack-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    .tk-level svg.faceit-level {
+      width: 38px;
+      height: 38px;
+    }
+    .tk-elo {
+      flex-wrap: wrap;
+      b {
+        font-size: 32px;
+      }
+    }
+  }
+  .tk-stack-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .tk-progress {
+    flex: 0 0 auto;
+  }
+  .ticker-cells {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    text-align: left;
+  }
+  .ticker-cell {
+    flex-direction: row-reverse;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--tk-line);
+    &:last-child {
+      border-bottom: 0;
+    }
+    b {
+      font-size: 17px;
+    }
+    span {
+      font-size: 12px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wrapper.banner-design-2026 .tk-page,
+  .wrapper.banner-design-2026 .tk-dots u {
+    animation: none;
+  }
+}

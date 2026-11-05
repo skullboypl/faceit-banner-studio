@@ -21,7 +21,9 @@ export function widgetQueryParams(get: (key: SettingKey) => unknown, languageId:
     if (!definition.query || definition.query.length === 0) return;
     if (definition.requirements && definition.requirements.length !== 0) {
       for (const requirement of definition.requirements) {
-        if (get(requirement.setting as SettingKey) !== requirement.value) return;
+        const current = get(requirement.setting as SettingKey);
+        const allowed = requirement.value;
+        if (Array.isArray(allowed) ? !allowed.includes(current) : current !== allowed) return;
       }
     }
     const value = get(setting as SettingKey);

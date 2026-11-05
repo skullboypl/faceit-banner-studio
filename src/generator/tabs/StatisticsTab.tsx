@@ -1,4 +1,5 @@
 import { InfoBox } from '../../components/InfoBox.tsx';
+import { isTickerFamily } from '../../../widget/src/widget/ticker-family';
 import { useContext, useEffect } from 'react';
 import { Statistic } from '../../components/Statistic.tsx';
 import { LanguageContext, SettingsContext } from '../Generator.tsx';
@@ -40,7 +41,7 @@ export const StatisticsTab = () => {
   /* Only a solo banner fills the four slots; every other banner (and the ticker) has numbers of its own to choose */
   const slots =
     settings.get('widgetMode') === 'solo' &&
-    !(settings.get('bannerDesign') === '2026' && resolveBannerStyle(settings.get('style'), '2026') === 'ticker');
+    !(settings.get('bannerDesign') === '2026' && isTickerFamily(resolveBannerStyle(settings.get('style'), '2026')));
   return (
     <>
       {settings.get('widgetMode') === 'scenes' && <SceneStatsOptions />}
