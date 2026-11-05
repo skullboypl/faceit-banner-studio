@@ -439,7 +439,8 @@
     animation-name: tk-in;
   }
   .ticker-title {
-    max-width: 70px;
+    flex: 0 0 auto;
+    max-width: 100px;
     line-height: 1.2;
     white-space: normal;
     letter-spacing: 1px;
@@ -447,21 +448,29 @@
   .ticker-cells {
     display: flex;
     flex: 1;
-    justify-content: space-around;
-    gap: 14px;
+    gap: 12px;
     min-width: 0;
-    overflow: hidden;
   }
   /* One line has room for three numbers; the rest wait for a wider layout */
   .ticker-cell:nth-child(n + 4) {
     display: none;
   }
+  /* Equal shares, the number over its label: a long label wraps instead of running into the next number */
   .ticker-cell {
-    flex-direction: row;
-    align-items: baseline;
-    gap: 5px;
+    flex: 1 1 0;
+    align-items: center;
+    gap: 0;
+    min-width: 0;
     b {
       font-size: 16px;
+      line-height: 1.1;
+    }
+    span {
+      max-width: 100%;
+      font-size: 9.5px;
+      line-height: 1.1;
+      white-space: normal;
+      text-wrap: balance;
     }
   }
   .tk-dots {
