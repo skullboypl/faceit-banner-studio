@@ -27,7 +27,7 @@ export function SeasonalDecor({ options, scale = 1 }: { options: XmasOptions; sc
   return (
     <div
       className={`seasonal-decor colors-${options.colors}${options.cap ? ' has-cap' : ''}`}
-      style={{ '--decor-scale': scale } as CSSProperties}
+      style={{ '--decor-scale': scale, '--xmas-inset': `${options.inset}px` } as CSSProperties}
       aria-hidden="true"
       data-testid="seasonal-decor"
     >

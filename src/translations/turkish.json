@@ -1253,6 +1253,8 @@
   "xmas.cap": "Üst kenarda kar",
   "xmas.drift": "Alt kenarda kar yığını",
   "xmas.frost": "Buzlu köşeler",
+  "xmas.inset": "Süs boşluğu: {{0}} px",
+  "xmas.inset.help": "Işıkları, karı ve buzu kenarlardan içeri çeker, banner üzerinde düzgün dursunlar.",
   "xmas.notice.badge": "Yeni",
   "xmas.notice.title": "Yılbaşı süsleri",
   "xmas.notice.body": "Her banner için ışıklar, yağan kar, kenarlarda kar ve buzlu köşeler. Siz açana kadar kapalı.",

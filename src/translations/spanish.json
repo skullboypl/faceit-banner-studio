@@ -1253,6 +1253,8 @@
   "xmas.cap": "Nieve en el borde superior",
   "xmas.drift": "Nieve acumulada en el borde inferior",
   "xmas.frost": "Esquinas escarchadas",
+  "xmas.inset": "Margen de la capa: {{0}} px",
+  "xmas.inset.help": "Separa las luces, la nieve y la escarcha de los bordes para que queden bien sobre el banner.",
   "xmas.notice.badge": "Nuevo",
   "xmas.notice.title": "Extras navideños",
   "xmas.notice.body": "Luces, nieve que cae, nieve en los bordes y esquinas escarchadas para cualquier banner. Apagados hasta que los actives.",

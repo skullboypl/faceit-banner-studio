@@ -14,7 +14,7 @@ describe('Christmas extras', () => {
       expect(SETTINGS_DEFINITIONS[key].defaultValue).toBe(false);
     }
     const options = read({});
-    expect(options).toEqual({ lights: false, colors: 'classic', snow: false, amount: 'medium', cap: false, drift: false, frost: false });
+    expect(options).toEqual({ lights: false, colors: 'classic', snow: false, amount: 'medium', cap: false, drift: false, frost: false, inset: 0 });
     expect(xmasActive(options)).toBe(false);
     expect(render(<SeasonalDecor options={options} />).container.innerHTML).toBe('');
   });
@@ -35,6 +35,18 @@ describe('Christmas extras', () => {
     expect(capOnly.querySelector('.xmas-frost')).not.toBeNull();
     expect(capOnly.querySelector('.xmas-snow')).toBeNull();
     expect(capOnly.querySelector('.xmas-drift')).toBeNull();
+  });
+
+  test('the inset slider pulls the overlay in, stays inside its range and only goes in the link when set', () => {
+    expect(read({ xmasSnow: true, xmasInset: 12 }).inset).toBe(12);
+    expect(read({ xmasInset: 400 }).inset).toBe(40);
+    expect(read({ xmasInset: -5 }).inset).toBe(0);
+    expect(read({ xmasInset: 'x' }).inset).toBe(0);
+    const decor = render(<SeasonalDecor options={read({ xmasCap: true, xmasInset: 8 })} />).container.querySelector<HTMLElement>('.seasonal-decor');
+    expect(decor?.style.getPropertyValue('--xmas-inset')).toBe('8px');
+    const get = (values: Record<string, unknown>) => (key: SettingKey) => (key in values ? values[key] : SETTINGS_DEFINITIONS[key].defaultValue);
+    expect(widgetQueryParams(get({ xmasCap: true, xmasInset: 8 }), 'pl')).toMatchObject({ xmas_inset: 8 });
+    expect(widgetQueryParams(get({ xmasCap: true }), 'pl')).not.toHaveProperty('xmas_inset');
   });
 
   test('the snow drift on the bottom edge is an extra of its own', () => {

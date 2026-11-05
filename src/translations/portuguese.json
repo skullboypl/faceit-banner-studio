@@ -1253,6 +1253,8 @@
   "xmas.cap": "Neve na borda de cima",
   "xmas.drift": "Neve acumulada na borda de baixo",
   "xmas.frost": "Cantos congelados",
+  "xmas.inset": "Margem da camada: {{0}} px",
+  "xmas.inset.help": "Afasta as luzes, a neve e a geada das bordas para assentarem bem no banner.",
   "xmas.notice.badge": "Novidade",
   "xmas.notice.title": "Extras de Natal",
   "xmas.notice.body": "Luzes, neve a cair, neve nas bordas e cantos gelados para qualquer banner. Desligados até os ativares.",

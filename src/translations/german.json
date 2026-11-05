@@ -1253,6 +1253,8 @@
   "xmas.cap": "Schnee auf der Oberkante",
   "xmas.drift": "Schneewehe an der Unterkante",
   "xmas.frost": "Vereiste Ecken",
+  "xmas.inset": "Abstand der Deko: {{0}} px",
+  "xmas.inset.help": "Rückt Lichter, Schnee und Frost von den Kanten ein, damit sie sauber auf dem Banner sitzen.",
   "xmas.notice.badge": "Neu",
   "xmas.notice.title": "Weihnachtsextras",
   "xmas.notice.body": "Lichterkette, Schneefall, Schnee an den Kanten und vereiste Ecken für jedes Banner. Aus, bis du sie einschaltest.",

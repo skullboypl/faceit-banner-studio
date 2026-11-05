@@ -2790,6 +2790,9 @@ export const Widget = ({
               : 'off'
             : undefined
         }
+        /* Christmas extras on the edges, so dense layouts can make room for them */
+        data-xmas-top={SETTINGS.get('xmasLights') || SETTINGS.get('xmasCap') ? 'on' : undefined}
+        data-xmas-bottom={SETTINGS.get('xmasDrift') ? 'on' : undefined}
         data-level-glow={
           isBroadcastPreset
             ? SETTINGS.get(`${resolvedStyle}LevelGlow` as SettingKey)

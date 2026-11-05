@@ -7,7 +7,8 @@
   --c3: #3bd16f;
   --c4: #3b8bff;
   position: absolute;
-  inset: 0;
+  /* The inset slider pulls every extra in from the edges, scaled with the banner like the rest */
+  inset: calc(var(--xmas-inset, 0px) * var(--s));
   z-index: 30;
   container-type: size;
   overflow: hidden;

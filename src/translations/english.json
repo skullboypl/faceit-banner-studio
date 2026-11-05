@@ -1293,6 +1293,8 @@
   "xmas.cap": "Snow on the top edge",
   "xmas.drift": "Snow piled on the bottom edge",
   "xmas.frost": "Frosted corners",
+  "xmas.inset": "Overlay inset: {{0}} px",
+  "xmas.inset.help": "Pulls the lights, snow and frost in from the edges so they sit neatly on the banner.",
   "xmas.notice.badge": "New",
   "xmas.notice.title": "Christmas extras",
   "xmas.notice.body": "Lights, falling snow, snow on the edges and frosted corners for every banner. Off until you switch them on.",

@@ -108,6 +108,14 @@
     backdrop-filter: blur(10px) saturate(1.2);
   }
 
+  /* Lights or snow on the top edge, a drift on the bottom: the outer panels make room so no number sits under them */
+  &[data-xmas-top='on'] .ds-panel:first-child {
+    padding-top: 24px;
+  }
+  &[data-xmas-bottom='on'] .ds-panel:last-child {
+    padding-bottom: 18px;
+  }
+
   /* Main panel */
   .ds-main {
     flex-direction: column;

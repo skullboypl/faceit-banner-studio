@@ -1293,6 +1293,8 @@
   "xmas.cap": "Śnieg na górnej krawędzi",
   "xmas.drift": "Zaspa śniegu na dolnej krawędzi",
   "xmas.frost": "Oszronione rogi",
+  "xmas.inset": "Margines nakładki: {{0}} px",
+  "xmas.inset.help": "Odsuwa lampki, śnieg i szron od krawędzi, żeby ładnie leżały na banerze.",
   "xmas.notice.badge": "Nowość",
   "xmas.notice.title": "Dodatki świąteczne",
   "xmas.notice.body": "Lampki, padający śnieg, śnieg na krawędziach i oszronione rogi na każdym banerze. Wyłączone, dopóki ich nie włączysz.",

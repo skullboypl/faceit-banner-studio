@@ -1253,6 +1253,8 @@
   "xmas.cap": "Sníh na horním okraji",
   "xmas.drift": "Závěj na spodním okraji",
   "xmas.frost": "Ojíněné rohy",
+  "xmas.inset": "Odsazení překryvu: {{0}} px",
+  "xmas.inset.help": "Odsune světýlka, sníh a jinovatku od okrajů, aby pěkně seděly na banneru.",
   "xmas.notice.badge": "Novinka",
   "xmas.notice.title": "Vánoční doplňky",
   "xmas.notice.body": "Světýlka, padající sníh, sníh na okrajích a ojíněné rohy pro každý banner. Vypnuté, dokud je nezapneš.",

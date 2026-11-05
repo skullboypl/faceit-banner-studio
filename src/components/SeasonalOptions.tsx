@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { LanguageContext, SettingsContext } from '../generator/Generator';
-import { XMAS_LIGHT_COLORS, XMAS_SNOW_AMOUNTS } from '../../widget/src/widget/seasonal';
+import { XMAS_INSET_MAX, XMAS_LIGHT_COLORS, XMAS_SNOW_AMOUNTS, readXmasOptions, xmasActive } from '../../widget/src/widget/seasonal';
 import { Checkbox } from './Checkbox';
 import { StudioIcon } from './StudioIcon';
 
@@ -47,6 +47,21 @@ export function SeasonalOptions() {
         <Checkbox text={tl('xmas.cap')} setting={'xmasCap'} />
         <Checkbox text={tl('xmas.drift')} setting={'xmasDrift'} />
         <Checkbox text={tl('xmas.frost')} setting={'xmasFrost'} />
+        {xmasActive(readXmasOptions((key) => settings.get(key as never))) && (
+          <div className="setting xmas-inset">
+            <label htmlFor="xmas-inset">{tl('xmas.inset', [String(settings.get('xmasInset'))])}</label>
+            <input
+              id="xmas-inset"
+              type="range"
+              min="0"
+              max={XMAS_INSET_MAX}
+              step="1"
+              value={Number(settings.get('xmasInset')) || 0}
+              onChange={(event) => settings.set('xmasInset', Number(event.target.value))}
+            />
+            <p className="subtext">{tl('xmas.inset.help')}</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -25,7 +25,7 @@ import {
   SCENE_THEMES,
 } from '../../widget/src/widget/scene-options';
 import { MAP_PREVIEW_IDS } from '../../widget/src/widget/map-art';
-import { XMAS_LIGHT_COLORS, XMAS_SNOW_AMOUNTS } from '../../widget/src/widget/seasonal';
+import { XMAS_INSET_MAX, XMAS_LIGHT_COLORS, XMAS_SNOW_AMOUNTS } from '../../widget/src/widget/seasonal';
 import { TICKER_FAMILY } from '../../widget/src/widget/ticker-family';
 import { DISPLAY_LOOKS, DISPLAY_PANELS, MINI_LOOKS } from '../../widget/src/widget/display-options';
 import {
@@ -487,6 +487,13 @@ export const SETTINGS_DEFINITIONS = {
     type: 'boolean',
     defaultValue: false,
     query: ['xmas_drift'],
+  },
+  xmasInset: {
+    type: 'number',
+    defaultValue: 0,
+    min: 0,
+    max: XMAS_INSET_MAX,
+    query: ['xmas_inset'],
   },
   xmasFrost: {
     type: 'boolean',

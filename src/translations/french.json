@@ -1253,6 +1253,8 @@
   "xmas.cap": "Neige sur le bord du haut",
   "xmas.drift": "Congère sur le bord du bas",
   "xmas.frost": "Coins givrés",
+  "xmas.inset": "Marge de l'habillage : {{0}} px",
+  "xmas.inset.help": "Éloigne la guirlande, la neige et le givre des bords pour qu'ils tombent bien sur la bannière.",
   "xmas.notice.badge": "Nouveau",
   "xmas.notice.title": "Extras de Noël",
   "xmas.notice.body": "Guirlande, neige qui tombe, neige sur les bords et coins givrés pour chaque bannière. Désactivés tant que tu ne les actives pas.",
