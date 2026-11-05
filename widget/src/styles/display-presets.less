@@ -1,0 +1,320 @@
+/* Display-Split (panels with gaps) and Mini-Display (one small strip). */
+@import 'themes/normal.less';
+
+.displaysplit-theme:extend(.normal-theme all) {
+  --auto-width: 400px;
+}
+.minidisplay-theme:extend(.normal-theme all) {
+  --auto-width: 270px;
+}
+
+.wrapper.banner-design-2026[data-layout='displaysplit'],
+.wrapper.banner-design-2026[data-layout='minidisplay'] {
+  --banner-radius: 12px;
+  --text-shadow: transparent;
+  --ds-accent: var(--preset-accent, #ff5900);
+  --ds-win: #3ddc84;
+  --ds-loss: #ff5a5a;
+  --ds-line: rgba(255, 255, 255, 0.09);
+  --ds-fill: rgba(16, 17, 20, 0.78);
+  font-variant-numeric: tabular-nums;
+
+  .skeleton {
+    display: inline-block;
+    min-width: 1.4em;
+  }
+  svg.faceit-level * {
+    color: var(--faceit-level);
+  }
+  &[data-level-glow='on'] svg.faceit-level {
+    overflow: visible;
+    filter: drop-shadow(0 0 var(--level-glow, 8px) var(--faceit-level));
+  }
+}
+
+/* ---------- Display-Split ---------- */
+
+/* The panels carry their own fill, so the frame around them steps aside and the gaps show the scene */
+.wrapper.banner-design-2026[data-layout='displaysplit'] {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  &::before,
+  &::after {
+    display: none;
+  }
+  .widget {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--text);
+    &::before,
+    &::after {
+      display: none;
+    }
+  }
+
+  .ds {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+  .ds-panel {
+    display: flex;
+    min-width: 0;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: var(--ds-fill);
+    border: 1px solid var(--ds-line);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+  }
+  .ds-look-glass .ds-panel {
+    backdrop-filter: blur(10px) saturate(1.2);
+  }
+  .ds-look-solid {
+    --ds-fill: #131417;
+  }
+  .ds-look-outline {
+    --ds-fill: rgba(10, 10, 12, 0.35);
+    --ds-line: rgba(255, 255, 255, 0.22);
+    .ds-panel {
+      box-shadow: none;
+    }
+  }
+  /* One card: the same parts, divided by lines instead of gaps */
+  .ds-joined {
+    gap: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--ds-fill);
+    border: 1px solid var(--ds-line);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+    .ds-panel {
+      border: 0;
+      border-radius: 0;
+      background: none;
+      box-shadow: none;
+      backdrop-filter: none;
+    }
+    .ds-panel + .ds-panel {
+      border-top: 1px solid var(--ds-line);
+    }
+  }
+  .ds-joined.ds-look-glass {
+    backdrop-filter: blur(10px) saturate(1.2);
+  }
+
+  /* Main panel */
+  .ds-main {
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 12px;
+  }
+  .ds-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    min-width: 0;
+  }
+  .ds-id {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+  }
+  .ds-level svg.faceit-level {
+    display: block;
+    width: 42px;
+    height: 42px;
+    margin: 0;
+  }
+  .ds-elo {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    svg {
+      width: 16px;
+      height: 16px;
+      opacity: 0.85;
+    }
+    b {
+      font-family: 'Inter', 'DM Sans', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+  }
+  .ds-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, auto));
+    gap: 4px 16px;
+    text-align: center;
+  }
+  .ds-stat {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    b {
+      font-size: 21px;
+      font-weight: 800;
+      line-height: 1.05;
+    }
+    span {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      color: var(--subtext);
+    }
+  }
+  .ds-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .ds-bar {
+    height: 4px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    i {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #fff, var(--ds-accent));
+      transition: width 0.6s ease;
+    }
+  }
+  .ds-progress-text {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    span:last-child:not(:first-child) {
+      color: var(--subtext);
+      text-align: right;
+    }
+  }
+
+  /* Chips in the two lower panels */
+  .ds-multi,
+  .ds-foot {
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  .ds-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    white-space: nowrap;
+    small {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      color: var(--subtext);
+    }
+    b {
+      font-size: 13px;
+      font-weight: 800;
+    }
+  }
+  .ds-form {
+    display: inline-flex;
+    gap: 6px;
+    b {
+      font-size: 13px;
+      font-weight: 900;
+      &.win {
+        color: var(--ds-win);
+      }
+      &.loss {
+        color: var(--ds-loss);
+      }
+      &.idle {
+        color: var(--subtext);
+      }
+    }
+  }
+}
+
+/* ---------- Mini-Display ---------- */
+
+.wrapper.banner-design-2026[data-layout='minidisplay'] {
+  border-radius: 999px;
+  .widget {
+    padding: 6px 16px 6px 8px;
+    border-radius: 999px;
+    color: var(--text);
+    box-shadow: none;
+  }
+  .md {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    white-space: nowrap;
+  }
+  .md-level svg.faceit-level {
+    display: block;
+    width: 30px;
+    height: 30px;
+    margin: 0;
+  }
+  .md-elo {
+    margin-right: 4px;
+    font-family: 'Inter', 'DM Sans', sans-serif;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+  .md-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 17px;
+    font-weight: 800;
+    svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    &.win,
+    &.gain {
+      color: var(--ds-win);
+    }
+    &.loss {
+      color: var(--ds-loss);
+    }
+    &.even {
+      color: var(--subtext);
+    }
+  }
+}
+/* A flat strip with square ends and the accent along the left */
+.wrapper.banner-design-2026[data-layout='minidisplay']:has(.md-flat) {
+  border-radius: 6px;
+  .widget {
+    padding-left: 10px;
+    border-radius: 5px;
+  }
+  .md-flat {
+    padding-left: 10px;
+    border-left: 3px solid var(--ds-accent);
+  }
+}

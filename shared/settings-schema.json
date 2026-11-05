@@ -207,6 +207,81 @@
     "min": 2,
     "max": 20
   },
+  "displaysplitAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "displaysplitLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "displaysplitLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "displaysplitPanels": {
+    "type": "string",
+    "default": "split",
+    "options": [
+      "split",
+      "joined"
+    ]
+  },
+  "displaysplitLook": {
+    "type": "string",
+    "default": "glass",
+    "options": [
+      "glass",
+      "solid",
+      "outline"
+    ]
+  },
+  "displaysplitProgress": {
+    "type": "boolean",
+    "default": true
+  },
+  "displaysplitMulti": {
+    "type": "boolean",
+    "default": true
+  },
+  "displaysplitFooter": {
+    "type": "boolean",
+    "default": true
+  },
+  "minidisplayAccent": {
+    "type": "string",
+    "default": "ff5900",
+    "regex": "^[0-9a-fA-F]{3,8}$"
+  },
+  "minidisplayLevelGlow": {
+    "type": "boolean",
+    "default": false
+  },
+  "minidisplayLevelGlowStrength": {
+    "type": "number",
+    "default": 8,
+    "min": 2,
+    "max": 20
+  },
+  "minidisplayLook": {
+    "type": "string",
+    "default": "pill",
+    "options": [
+      "pill",
+      "flat"
+    ]
+  },
+  "minidisplayRecord": {
+    "type": "boolean",
+    "default": true
+  },
+  "minidisplayDiff": {
+    "type": "boolean",
+    "default": true
+  },
   "xmasLights": {
     "type": "boolean",
     "default": false
@@ -2124,6 +2199,8 @@
       "tickerslim",
       "tickerform",
       "tickerstack",
+      "displaysplit",
+      "minidisplay",
       "slab",
       "gauge",
       "card",

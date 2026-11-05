@@ -27,6 +27,7 @@ import {
 import { MAP_PREVIEW_IDS } from '../../widget/src/widget/map-art';
 import { XMAS_LIGHT_COLORS, XMAS_SNOW_AMOUNTS } from '../../widget/src/widget/seasonal';
 import { TICKER_FAMILY } from '../../widget/src/widget/ticker-family';
+import { DISPLAY_LOOKS, DISPLAY_PANELS, MINI_LOOKS } from '../../widget/src/widget/display-options';
 import {
   SPLIT_CHART_LOOKS,
   SPLIT_DATA_LOOKS,
@@ -360,6 +361,99 @@ export const SETTINGS_DEFINITIONS = {
     "max": 20,
     "query": ["ticker_stack_level_glow_strength"],
     "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "tickerstack" }, { "setting": "tickerstackLevelGlow", "value": true }]
+  },
+  "displaysplitAccent": {
+    "type": "string",
+    "defaultValue": "ff5900",
+    "query": ["display_split_accent"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "displaysplit" }],
+    "regex": HEX_REGEXP
+  },
+  "displaysplitLevelGlow": {
+    "type": "boolean",
+    "defaultValue": false,
+    "query": ["display_split_level_glow"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "displaysplit" }]
+  },
+  "displaysplitLevelGlowStrength": {
+    "type": "number",
+    "defaultValue": 8,
+    "min": 2,
+    "max": 20,
+    "query": ["display_split_level_glow_strength"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "displaysplit" }, { "setting": "displaysplitLevelGlow", "value": true }]
+  },
+  "displaysplitPanels": {
+    "type": "string",
+    "defaultValue": "split",
+    "options": [...DISPLAY_PANELS],
+    "query": ["display_split_panels"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "displaysplit" }]
+  },
+  "displaysplitLook": {
+    "type": "string",
+    "defaultValue": "glass",
+    "options": [...DISPLAY_LOOKS],
+    "query": ["display_split_look"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "displaysplit" }]
+  },
+  "displaysplitProgress": {
+    "type": "boolean",
+    "defaultValue": true,
+    "query": ["display_split_progress"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "displaysplit" }]
+  },
+  "displaysplitMulti": {
+    "type": "boolean",
+    "defaultValue": true,
+    "query": ["display_split_multi"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "displaysplit" }]
+  },
+  "displaysplitFooter": {
+    "type": "boolean",
+    "defaultValue": true,
+    "query": ["display_split_footer"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "displaysplit" }]
+  },
+  "minidisplayAccent": {
+    "type": "string",
+    "defaultValue": "ff5900",
+    "query": ["mini_display_accent"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "minidisplay" }],
+    "regex": HEX_REGEXP
+  },
+  "minidisplayLevelGlow": {
+    "type": "boolean",
+    "defaultValue": false,
+    "query": ["mini_display_level_glow"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "minidisplay" }]
+  },
+  "minidisplayLevelGlowStrength": {
+    "type": "number",
+    "defaultValue": 8,
+    "min": 2,
+    "max": 20,
+    "query": ["mini_display_level_glow_strength"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "minidisplay" }, { "setting": "minidisplayLevelGlow", "value": true }]
+  },
+  "minidisplayLook": {
+    "type": "string",
+    "defaultValue": "pill",
+    "options": [...MINI_LOOKS],
+    "query": ["mini_display_look"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "minidisplay" }]
+  },
+  "minidisplayRecord": {
+    "type": "boolean",
+    "defaultValue": true,
+    "query": ["mini_display_record"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "minidisplay" }]
+  },
+  "minidisplayDiff": {
+    "type": "boolean",
+    "defaultValue": true,
+    "query": ["mini_display_diff"],
+    "requirements": [{ "setting": "bannerDesign", "value": "2026" }, { "setting": "style", "value": "minidisplay" }]
   },
   /** Christmas extras, for every banner mode; all off by default. */
   xmasLights: {

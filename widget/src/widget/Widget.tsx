@@ -21,7 +21,8 @@ import {
   languages,
   tl,
 } from '../../../src/translations/translations.ts';
-import { getPlayerStats, isKnownPlace, SessionCard, UNKNOWN_PLACE, VerifiedBadgeType } from '../utils/faceit_util.ts';
+import { getPlayerStats, getRankingEloAt, isKnownPlace, nextMilestone, SessionCard, UNKNOWN_PLACE, VerifiedBadgeType } from '../utils/faceit_util.ts';
+import { DISPLAY_MULTI, type DisplayMulti } from './display-options.ts';
 import { sessionLine } from './session-line.ts';
 import { readTickerCells } from './ticker-options.ts';
 import { TICKER_VARIANTS, isTickerFamily, tickerShowsBothPages } from './ticker-family.ts';
@@ -115,6 +116,7 @@ import '../styles/broadcast-presets.less';
 import '../styles/avatar-presets.less';
 import '../styles/ticker-preset.less';
 import '../styles/ticker-family.less';
+import '../styles/display-presets.less';
 import '../styles/versus-preset.less';
 import '../styles/modes-preset.less';
 import '../styles/scene-screen.less';
@@ -360,6 +362,11 @@ export const Widget = ({
   const [entryRate, setEntryRate] = useState(0);
   const [utilityDamagePerRound, setUtilityDamagePerRound] = useState(0);
   const [flashSuccessRate, setFlashSuccessRate] = useState(0);
+  /** Display-Split: multi-kill sums over the averaged matches, lifetime sniper kills and the newest results. */
+  const [multiKills, setMultiKills] = useState<Record<DisplayMulti, number> | undefined>();
+  const [recentForm, setRecentForm] = useState<('W' | 'L')[]>([]);
+  /** ELO on the next regional milestone place (top 1000, 100, 10, 1), for "+X ELO to top N". */
+  const [milestoneElo, setMilestoneElo] = useState<{ place: number; elo: number } | undefined>();
   const [avgMatches, setAvgMatches] = useState(0);
   const [currentEloDistribution, setCurrentEloDistribution] = useState<
     [number, (string | number)[]]
@@ -393,6 +400,8 @@ export const Widget = ({
   const isDeckPreset = resolvedStyle === 'showcase' || resolvedStyle === 'spotlight';
   const isTicker = resolvedStyle === 'ticker';
   const isTickerVariant = (TICKER_VARIANTS as readonly string[]).includes(resolvedStyle);
+  const isDisplaySplit = resolvedStyle === 'displaysplit';
+  const isMiniDisplay = resolvedStyle === 'minidisplay';
   const isVersus = isVersusStyle(resolvedStyle);
   const isTeam = SETTINGS.get('widgetMode') === 'team';
   const isSplit = SETTINGS.get('widgetMode') === 'split';
@@ -721,6 +730,14 @@ export const Widget = ({
         setEntryRate(player.avg.entryRate);
         setUtilityDamagePerRound(player.avg.utilityDamagePerRound);
         setFlashSuccessRate(player.avg.flashSuccessRate);
+        setMultiKills({
+          aces: player.avg.aces ?? 0,
+          quadros: player.avg.quadros ?? 0,
+          triples: player.avg.triples ?? 0,
+          sniper: player.sniperKills ?? 0,
+          mvps: player.avg.mvps,
+        });
+        setRecentForm(player.recent ?? []);
 
         setRanking(player.calibrating ? UNKNOWN_PLACE : player.ranking);
         setCountryRanking(player.calibrating ? UNKNOWN_PLACE : player.countryRanking);
@@ -1313,6 +1330,19 @@ export const Widget = ({
     </div>
   );
 
+  /* Display-Split counts down to the next regional milestone (top 1000, 100, 10, 1): read that place's ELO */
+  const milestonePlace = isDisplaySplit && level === 10 && !calibrating && !sample ? nextMilestone(ranking) : undefined;
+  useEffect(() => {
+    if (!milestonePlace || !region) return;
+    let cancelled = false;
+    getRankingEloAt(region, milestonePlace).then((value) => {
+      if (!cancelled) setMilestoneElo(value ? { place: milestonePlace, elo: value } : undefined);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [milestonePlace, region]);
+
   /** What every ticker layout reads: the head statistic, the places and the pages of cells. */
   const tickerParts = () => {
     const headStat = SETTINGS.get('tickerHeadStat') as StatisticType;
@@ -1632,6 +1662,169 @@ export const Widget = ({
           {progressNote}
         </div>
         {pageBlock()}
+      </div>
+    );
+  };
+
+  /* Display-Split: the main panel (level, ELO, four numbers, progress), multi-kills, then HS, places and form */
+  const renderDisplaySplit = () => {
+    const panels = String(SETTINGS.get('displaysplitPanels') || 'split');
+    const look = String(SETTINGS.get('displaysplitLook') || 'glass');
+    const regionCode = (region || previewRegion || 'EU').toUpperCase();
+    const countryCode = (country || previewCountry || 'pl').toUpperCase();
+    const head: { label: string; value: string | null }[] = [
+      { label: 'ADR', value: getStat(StatisticType.ADR) },
+      { label: 'AVG', value: getStat(StatisticType.KILLS) },
+      { label: 'KD', value: getStat(StatisticType.KD) },
+      { label: 'KR', value: getStat(StatisticType.KR) },
+    ];
+    const multi: Record<DisplayMulti, number | undefined> = sample
+      ? { aces: 1, quadros: 19, triples: 45, sniper: 14, mvps: 88 }
+      : { aces: multiKills?.aces, quadros: multiKills?.quadros, triples: multiKills?.triples, sniper: multiKills?.sniper, mvps: multiKills?.mvps };
+    const multiLabel: Record<DisplayMulti, string> = { aces: 'ACE', quadros: 'QUADRO', triples: 'TRIPLE', sniper: 'SNIPER', mvps: 'MVP' };
+    const hs = sample ? '69.1%' : avgMatches && hsPercent ? `${(hsPercent / avgMatches).toFixed(1)}%` : null;
+    const regionPlace = sample ? 1 : ranking;
+    const countryPlace = sample ? 1 : countryRanking;
+    const place = (value: number) => (value === 0 ? null : isKnownPlace(value) ? `#${value}` : '—');
+    const form = sample ? (['W', 'L', 'W', 'W', 'W'] as const) : recentForm;
+
+    /* The bar: a level's share of its ELO range, or at level 10 the way to the next regional milestone */
+    let progressShare = levelProgress;
+    let progressLeft = translate('widget.display.level', [String(level || 1)]);
+    let progressRight: string | null = null;
+    if (sample) {
+      progressShare = 0.82;
+      progressLeft = translate('widget.display.top', ['10']);
+      progressRight = translate('widget.display.to_top', ['202', '1']);
+    } else if (calibrating) {
+      progressShare = 0;
+      progressLeft = translate('live.calibrating');
+    } else if (level >= 1 && level < 10) {
+      const next = Number(currentEloDistribution[1][2]) + 1;
+      if (next > elo) progressRight = translate('widget.display.to_level', [String(next - elo), String(level + 1)]);
+    } else if (level === 10 && isKnownPlace(ranking)) {
+      const tier = [1, 10, 100, 1000].find((milestone) => ranking <= milestone);
+      if (tier) progressLeft = translate('widget.display.top', [String(tier)]);
+      const target = milestoneElo && milestoneElo.place === nextMilestone(ranking) ? milestoneElo : undefined;
+      if (ranking === 1) {
+        progressShare = 1;
+        progressRight = `#1 ${regionCode}`;
+      } else if (target) {
+        progressShare = Math.min(1, Math.max(0, (elo - 2001) / Math.max(1, target.elo - 2001)));
+        progressRight = translate('widget.display.to_top', [String(Math.max(1, target.elo - elo)), String(target.place)]);
+      }
+    }
+
+    return (
+      <div className={`ds ds-${panels} ds-look-${look}`}>
+        <section className={'ds-panel ds-main'}>
+          <div className={'ds-head'}>
+            <div className={'ds-id'}>
+              {SETTINGS.get('showLevelIcon') !== false && (
+                <span className={'ds-level'} style={sample ? ({ '--faceit-level': 'var(--faceit-level-12)' } as CSSProperties) : undefined}>
+                  {sample ? levelIcons[11] : getIcon()}
+                </span>
+              )}
+              <span className={`ds-elo ${elo === 0 ? 'skeleton' : ''}`}>
+                <TimelineIcon />
+                <b>{String(sample ? 5098 : elo)}</b>
+              </span>
+            </div>
+            {showStats && (
+              <div className={'ds-stats'}>
+                {head.map((entry) => (
+                  <div className={'ds-stat'} key={entry.label}>
+                    <b>{entry.value ?? <span className={'skeleton'}>??</span>}</b>
+                    <span>{entry.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {SETTINGS.get('displaysplitProgress') !== false && (
+            <div className={'ds-progress'}>
+              <div className={'ds-bar'} aria-hidden="true">
+                <i style={{ width: `${Math.round(progressShare * 100)}%` }} />
+              </div>
+              <div className={'ds-progress-text'}>
+                <span>{progressLeft}</span>
+                {progressRight && <span>{progressRight}</span>}
+              </div>
+            </div>
+          )}
+        </section>
+        {showStats && SETTINGS.get('displaysplitMulti') !== false && (
+          <section className={'ds-panel ds-multi'}>
+            {DISPLAY_MULTI.map((key) => (
+              <span className={'ds-chip'} key={key}>
+                <small>{multiLabel[key]}:</small>
+                <b>{multi[key] ?? <span className={'skeleton'}>?</span>}</b>
+              </span>
+            ))}
+          </section>
+        )}
+        {SETTINGS.get('displaysplitFooter') !== false && (
+          <section className={'ds-panel ds-foot'}>
+            {showStats && (
+              <span className={'ds-chip'}>
+                <small>HS:</small>
+                <b>{hs ?? <span className={'skeleton'}>?</span>}</b>
+              </span>
+            )}
+            {!calibrating && (
+              <>
+                <span className={'ds-chip'}>
+                  <small>{regionCode}:</small>
+                  <b>{place(regionPlace) ?? <span className={'skeleton'}>?</span>}</b>
+                </span>
+                <span className={'ds-chip'}>
+                  <small>{countryCode}:</small>
+                  <b>{place(countryPlace) ?? <span className={'skeleton'}>?</span>}</b>
+                </span>
+              </>
+            )}
+            {showMatches && (
+              <span className={'ds-form'} aria-label={form.join(' ')}>
+                {form.length ? form.map((result, index) => (
+                  <b key={index} className={result === 'W' ? 'win' : 'loss'}>{result}</b>
+                )) : <b className={'idle'}>—</b>}
+              </span>
+            )}
+          </section>
+        )}
+      </div>
+    );
+  };
+
+  /* Mini-Display: level, ELO, today's wins and losses and the ELO change, in one small strip */
+  const renderMiniDisplay = () => {
+    const look = String(SETTINGS.get('minidisplayLook') || 'pill');
+    const diff = sample ? -7 : startingElo ? elo - startingElo : 0;
+    const tone = diff > 0 ? 'gain' : diff < 0 ? 'loss' : 'even';
+    return (
+      <div className={`md md-${look}`}>
+        {SETTINGS.get('showLevelIcon') !== false && <span className={'md-level'}>{getIcon()}</span>}
+        <b className={`md-elo ${elo === 0 ? 'skeleton' : ''}`}>{String(elo)}</b>
+        {showMatches && SETTINGS.get('minidisplayRecord') !== false && (
+          <>
+            <span className={'md-stat win'} aria-label={translate('widget.wins')}>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" /></svg>
+              {String(sample ? 1 : wins)}
+            </span>
+            <span className={'md-stat loss'} aria-label={translate('widget.losses')}>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" /></svg>
+              {String(sample ? 1 : losses)}
+            </span>
+          </>
+        )}
+        {SETTINGS.get('minidisplayDiff') !== false && !calibrating && (
+          <span className={`md-stat md-diff ${tone}`}>
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              {diff > 0 ? <path d="M2 12 6.5 7.5l3 3L14 5m0 0h-4m4 0v4" /> : diff < 0 ? <path d="M2 4l4.5 4.5 3-3L14 11m0 0h-4m4 0V7" /> : <path d="M2 8h12m0 0-3-3m3 3-3 3" />}
+            </svg>
+            {diff > 0 ? `+${diff}` : String(diff)}
+          </span>
+        )}
       </div>
     );
   };
@@ -2690,6 +2883,10 @@ export const Widget = ({
             renderTicker()
           ) : isTickerVariant ? (
             renderTickerVariant()
+          ) : isDisplaySplit ? (
+            renderDisplaySplit()
+          ) : isMiniDisplay ? (
+            renderMiniDisplay()
           ) : isDeckPreset ? (
             <BroadcastDeck
               slides={deckSlides}

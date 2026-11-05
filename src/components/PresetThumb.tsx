@@ -241,6 +241,30 @@ const DRAWINGS: Record<string, (d: Draw) => ReactNode> = {
       ))}
     </>
   ),
+  displaysplit: (d) => (
+    <>
+      {d.r(0.04, 0.05, 0.92, 0.5, '#23262d', 0.12)}
+      {d.c(0.12, 0.22, 0.09, '#f2c94c')}
+      {d.r(0.22, 0.16, 0.16, 0.12, LIGHT)}
+      {[0, 1, 2, 3].map((index) => d.r(0.48 + index * 0.12, 0.13, 0.08, 0.13, LIGHT))}
+      {d.r(0.08, 0.38, 0.6, 0.035, ACCENT, 0.5)}
+      {d.r(0.68, 0.38, 0.24, 0.035, DIM, 0.5)}
+      {d.r(0.04, 0.6, 0.92, 0.16, '#23262d', 0.25)}
+      {[0, 1, 2, 3, 4].map((index) => d.r(0.08 + index * 0.18, 0.65, 0.12, 0.06, MID))}
+      {d.r(0.04, 0.8, 0.92, 0.16, '#23262d', 0.25)}
+      {[0, 1, 2].map((index) => d.r(0.08 + index * 0.17, 0.85, 0.11, 0.06, MID))}
+      {[0, 1, 2, 3, 4].map((index) => d.r(0.66 + index * 0.055, 0.85, 0.035, 0.06, index === 1 ? RED : GREEN))}
+    </>
+  ),
+  minidisplay: (d) => (
+    <>
+      {d.c(0.1, 0.5, 0.3, ACCENT)}
+      {d.r(0.2, 0.3, 0.2, 0.4, LIGHT)}
+      {d.r(0.48, 0.32, 0.1, 0.36, GREEN)}
+      {d.r(0.63, 0.32, 0.1, 0.36, RED)}
+      {d.r(0.78, 0.32, 0.14, 0.36, RED)}
+    </>
+  ),
   slab: (d) => (
     <>
       {d.ring(0.08, 0.5, 0.3)}
@@ -519,7 +543,7 @@ const DRAWINGS: Record<string, (d: Draw) => ReactNode> = {
 /** Thumbnail of one banner layout, drawn at the banner's own proportions. */
 export function PresetThumb({ id, width, height }: { id: string; width: number; height: number }) {
   const d = make(width, height);
-  const round = id === 'halo' ? 0.5 : id === 'pulse' ? 0.5 : id === 'clash' ? 0.06 : 0.07;
+  const round = id === 'halo' || id === 'pulse' || id === 'minidisplay' ? 0.5 : id === 'clash' ? 0.06 : 0.07;
   return (
     <span className="preset-thumb" aria-hidden="true">
       <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">

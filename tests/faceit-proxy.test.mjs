@@ -396,3 +396,15 @@ test('a player read teaches the server where the pictures are, before they are a
   assert.equal(imageSource(player, 'avatar'), 'https://assets.faceit-cdn.net/p.jpg');
   assert.equal(imageSource(player, 'cover'), 'https://distribution.faceit-cdn.net/p-cover.jpg');
 });
+
+test('a region ladder is read only at the milestone places, one at a time, kept like the other rankings', () => {
+  const top = faceitTarget('/api/faceit/v4/rankings/games/cs2/regions/EU?offset=9&limit=1');
+  assert.equal(top.upstream, 'https://open.faceit.com/data/v4/rankings/games/cs2/regions/EU?offset=9&limit=1');
+  assert.equal(top.ttl, 10 * 60_000);
+  for (const offset of ['0', '99', '999']) {
+    assert.ok(faceitTarget(`/api/faceit/v4/rankings/games/cs2/regions/NA?offset=${offset}&limit=1`));
+  }
+  assert.equal(faceitTarget('/api/faceit/v4/rankings/games/cs2/regions/EU?offset=5&limit=1'), null);
+  assert.equal(faceitTarget('/api/faceit/v4/rankings/games/cs2/regions/EU?offset=0&limit=100'), null);
+  assert.equal(faceitTarget('/api/faceit/v4/rankings/games/cs2/regions/EU'), null);
+});

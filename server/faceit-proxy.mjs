@@ -32,6 +32,8 @@ const ALLOWED = [
   new RegExp(`^\\/players\\/${PLAYER}\\/history$`, 'i'),
   new RegExp(`^\\/players\\/${PLAYER}\\/active$`, 'i'),
   new RegExp(`^\\/rankings\\/games\\/cs2\\/regions\\/[A-Za-z0-9_-]{2,8}\\/players\\/${PLAYER}$`, 'i'),
+  /* One place of a region's ladder (1, 10, 100 or 1000), for "ELO to top N" */
+  /^\/rankings\/games\/cs2\/regions\/[A-Za-z0-9_-]{2,8}$/i,
   new RegExp(`^\\/matches\\/${MATCH}$`, 'i'),
   new RegExp(`^\\/matches\\/${MATCH}\\/stats$`, 'i'),
 ];
@@ -120,6 +122,12 @@ export function faceitTarget(rawUrl) {
     params.set('game', 'cs2');
     if (!keep('offset', intIn(parsed.searchParams.get('offset'), 0, 20))) return null;
     if (!keep('limit', intIn(parsed.searchParams.get('limit'), 1, 10))) return null;
+  } else if (/^\/rankings\/games\/cs2\/regions\/[A-Za-z0-9_-]{2,8}$/i.test(path)) {
+    /* Only the milestone places, one at a time, so every banner shares the same few cached answers */
+    const offset = parsed.searchParams.get('offset');
+    if (!['0', '9', '99', '999'].includes(offset || '') || parsed.searchParams.get('limit') !== '1') return null;
+    params.set('offset', offset);
+    params.set('limit', '1');
   } else if (path.includes('/rankings/')) {
     const country = parsed.searchParams.get('country');
     if (country) {

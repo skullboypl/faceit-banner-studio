@@ -98,7 +98,16 @@ interface FaceitPlayer {
     entryRate: number;
     utilityDamagePerRound: number;
     flashSuccessRate: number;
+    /** Sums over the same matches as the averages (not divided). Missing in readings stored before they existed. */
+    aces?: number;
+    quadros?: number;
+    triples?: number;
+    doubles?: number;
   };
+  /** Every sniper kill FACEIT counted for the player, lifetime. */
+  sniperKills?: number;
+  /** Results of the newest finished matches, newest first, at most five. */
+  recent?: ('W' | 'L')[];
 }
 
 /** Same-origin read. The server holds the FACEIT key and reuses a player for 15 seconds. */
@@ -326,6 +335,12 @@ function loadPlayerStats(
       let entryRate = 0;
       let utilityDamagePerRound = 0;
       let flashSuccessRate = 0;
+      let aces = 0;
+      let quadros = 0;
+      let triples = 0;
+      let doubles = 0;
+      let sniperKills = 0;
+      const recent: ('W' | 'L')[] = [];
 
       let matchesLength: number = 0;
       let session: SessionCard = { ...EMPTY_SESSION };
@@ -373,7 +388,15 @@ function loadPlayerStats(
             countWins();
           }
 
+          if (recent.length < 5 && (match.stats['Result'] === '1' || match.stats['Result'] === '0')) {
+            recent.push(match.stats['Result'] === '1' ? 'W' : 'L');
+          }
+
           if (i >= matchCount) continue;
+          aces += parseInt(match.stats['Penta Kills'] as string) || 0;
+          quadros += parseInt(match.stats['Quadro Kills'] as string) || 0;
+          triples += parseInt(match.stats['Triple Kills'] as string) || 0;
+          doubles += parseInt(match.stats['Double Kills'] as string) || 0;
           adr += parseFloat(match.stats['ADR'] as string);
           assists += parseInt(match.stats['Assists'] as string);
           mvps += parseInt(match.stats['MVPs'] as string);
@@ -403,6 +426,7 @@ function loadPlayerStats(
         entryRate = value('Entry Success Rate') * 100;
         utilityDamagePerRound = value('Utility Damage per Round');
         flashSuccessRate = value('Flash Success Rate') * 100;
+        sniperKills = value('Total Sniper Kills');
       }
 
       if (!calibrating) {
@@ -446,10 +470,37 @@ function loadPlayerStats(
           entryRate,
           utilityDamagePerRound,
           flashSuccessRate,
+          aces,
+          quadros,
+          triples,
+          doubles,
         },
+        sniperKills,
+        recent,
       });
     });
   });
+}
+
+/** The places a banner can count down to: the regional top 1000, 100, 10 and first place. */
+export const RANKING_MILESTONES = [1000, 100, 10, 1] as const;
+
+/** The next milestone above a regional place (3427 → 1000, 57 → 10), or undefined at first place or without a place. */
+export const nextMilestone = (place: number) =>
+  isKnownPlace(place) ? RANKING_MILESTONES.find((milestone) => milestone < place) : undefined;
+
+/** ELO of the player on one milestone place of a region; undefined when FACEIT does not say. */
+export async function getRankingEloAt(region: string, place: number): Promise<number | undefined> {
+  if (!(RANKING_MILESTONES as readonly number[]).includes(place) || !/^[A-Za-z0-9_-]{2,8}$/.test(region)) return undefined;
+  try {
+    const response = await faceitGet(`/rankings/games/cs2/regions/${region}?offset=${place - 1}&limit=1`);
+    if (!response.ok) return undefined;
+    const data = (await response.json()) as { items?: { faceit_elo?: number }[] };
+    const elo = data.items?.[0]?.faceit_elo;
+    return Number.isFinite(elo) && (elo as number) > 0 ? elo : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export function getPlayerID(username: string): Promise<string | undefined> {

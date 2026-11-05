@@ -39,3 +39,16 @@ describe('getPlayerRankingPosition', () => {
     expect(await getPlayerRankingPosition(ID, 'EU', 'pl')).toBeUndefined();
   });
 });
+
+describe('nextMilestone', () => {
+  test('counts down to the nearest milestone above the place', async () => {
+    const { nextMilestone } = await import('../widget/src/utils/faceit_util');
+    expect(nextMilestone(3427)).toBe(1000);
+    expect(nextMilestone(1000)).toBe(100);
+    expect(nextMilestone(57)).toBe(10);
+    expect(nextMilestone(2)).toBe(1);
+    expect(nextMilestone(1)).toBeUndefined();
+    expect(nextMilestone(0)).toBeUndefined();
+    expect(nextMilestone(999999)).toBeUndefined();
+  });
+});
