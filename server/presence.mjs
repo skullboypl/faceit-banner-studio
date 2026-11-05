@@ -18,6 +18,7 @@ import {
 import { count, once, warn } from './log.mjs';
 import { handleFaceitProxy } from './faceit-proxy.mjs';
 import { handleChatCommand } from './chat-command.mjs';
+import { handlePublicStats } from './public-stats.mjs';
 import {
   getStudioUsersSync,
   hydrateStudioUsers,
@@ -380,6 +381,7 @@ export function createPresenceMiddleware({ unlimitedRate = false } = {}) {
   const avatarLimit = unlimitedRate ? allow : createRateLimiter({ perMinute: 600 });
 
   return async (req, res, next) => {
+    if (await handlePublicStats(req, res, { unlimitedRate })) return;
     if (await handleFaceitProxy(req, res, { unlimitedRate })) return;
     if (await handleChatCommand(req, res, { unlimitedRate })) return;
     const pathname = new URL(req.url || '/', 'http://localhost').pathname;
