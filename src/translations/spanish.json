@@ -142,6 +142,7 @@
   "widget.update.short_title": "Actualización",
   "widget.update.description": "Inicio de sesión con FACEIT, banners guardados y un ranking de ELO en vivo.",
   "widget.update.date": "Actualizado:",
+  "widget.update.hides_in": "Desaparece en {{0}} s",
   "widget.winstreak": "Racha de victorias",
   "widget.entryrate": "Entry %",
   "widget.utility": "Utility / ronda",

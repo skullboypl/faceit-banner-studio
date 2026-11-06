@@ -142,6 +142,7 @@
   "widget.update.short_title": "Güncelleme",
   "widget.update.description": "FACEIT girişi, kayıtlı bannerlar ve canlı ELO sıralaması.",
   "widget.update.date": "Güncellendi:",
+  "widget.update.hides_in": "{{0}} sn içinde kapanır",
   "widget.winstreak": "Galibiyet serisi",
   "widget.entryrate": "Entry %",
   "widget.utility": "Utility / raunt",

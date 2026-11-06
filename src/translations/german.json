@@ -142,6 +142,7 @@
   "widget.update.short_title": "Update",
   "widget.update.description": "FACEIT-Login, gespeicherte Banner und eine Live-ELO-Rangliste.",
   "widget.update.date": "Aktualisiert:",
+  "widget.update.hides_in": "Verschwindet in {{0}} s",
   "widget.winstreak": "Siegesserie",
   "widget.entryrate": "Entry %",
   "widget.utility": "Utility / Runde",

@@ -142,6 +142,7 @@
   "widget.update.short_title": "Mise à jour",
   "widget.update.description": "Connexion FACEIT, bannières enregistrées et classement ELO en direct.",
   "widget.update.date": "Mis à jour :",
+  "widget.update.hides_in": "Disparaît dans {{0}} s",
   "widget.winstreak": "Série de victoires",
   "widget.entryrate": "Entry %",
   "widget.utility": "Utility / round",

@@ -142,6 +142,7 @@
   "widget.update.short_title": "Оновлення",
   "widget.update.description": "Вхід через FACEIT, збережені банери та рейтинг ELO наживо.",
   "widget.update.date": "Оновлено:",
+  "widget.update.hides_in": "Зникне через {{0}} с",
   "widget.winstreak": "Серія перемог",
   "widget.entryrate": "Entry %",
   "widget.utility": "Utility / раунд",

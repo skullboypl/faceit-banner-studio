@@ -155,6 +155,7 @@
   "widget.update.short_title": "Aktualizacja",
   "widget.update.description": "Konto FACEIT, zapisane banery i ranking ELO graczy na żywo.",
   "widget.update.date": "Aktualizacja:",
+  "widget.update.hides_in": "Zniknie za {{0}} s",
   "widget.winstreak": "Seria wygranych",
   "widget.entryrate": "Wejścia %",
   "widget.utility": "Utility / runda",

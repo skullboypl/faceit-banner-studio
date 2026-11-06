@@ -142,6 +142,7 @@
   "widget.update.short_title": "Aktualizace",
   "widget.update.description": "Přihlášení přes FACEIT, uložené bannery a živý žebříček ELO.",
   "widget.update.date": "Aktualizováno:",
+  "widget.update.hides_in": "Zmizí za {{0}} s",
   "widget.winstreak": "Série výher",
   "widget.entryrate": "Entry %",
   "widget.utility": "Utility / kolo",

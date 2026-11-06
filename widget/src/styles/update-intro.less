@@ -1,21 +1,30 @@
-// Absolute overlay: never changes the dimensions of existing OBS sources.
+// "What's new" toast. The outer layer is an absolute, click-through container that
+// never changes the size of an OBS source; the toast inside sizes itself from that
+// container (cqw / cqh), so every banner shape gets its own, readable version.
+//
+// UpdateIntro.tsx picks the variant class from the size the banner really has on
+// screen and passes --z, the banner's CSS zoom (0.4 – 2.5). Container units follow
+// the banner, while every `calc(Npx / var(--z))` floor keeps the text at least N real
+// pixels tall on the stream, also on the 40 % sizes.
+@intro-accent: #ff5a0a;
+@intro-accent-text: #ff9a5f;
+
 .wrapper > .banner-update-intro {
+  --z: 1;
   position: absolute;
   inset: 0;
   z-index: 20;
+  container-type: size;
   display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 16px 24px;
+  align-items: flex-end;
+  justify-content: flex-end;
   box-sizing: border-box;
   overflow: hidden;
   pointer-events: none;
-  border: 1px solid #39312c;
   border-radius: inherit;
-  background: linear-gradient(110deg, #26180f, #141414 48%, #101010);
-  color: #f5f5f5;
+  color: #f6f3f0;
   font-family: 'DM Sans', sans-serif;
-  animation: banner-intro-lifecycle var(--intro-duration) both;
+  text-align: left;
 
   // Isolate from the typography and animations of each legacy theme.
   * {
@@ -25,181 +34,270 @@
     font-family: inherit;
     color: inherit;
     filter: none;
+    text-shadow: none;
   }
 
-  .update-mark {
+  .update-toast {
+    --gap: clamp(4px, 3.5cqmin, 24px);
+    // Wide banners (default): 3 lines, about 4.9em tall and 20em wide, so 15cqh / 4.4cqw
+    // keeps it inside the banner while using most of it.
+    font-size: clamp(calc(11px / var(--z)), min(15cqh, 4.4cqw), 34px);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.7em;
+    margin: var(--gap);
+    max-width: calc(100cqw - 2 * var(--gap));
+    max-height: calc(100cqh - 2 * var(--gap));
+    padding: 0.6em 1em 0.65em 0.65em;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 0.8em;
+    background:
+      linear-gradient(100deg, rgba(255, 90, 10, 0.16), transparent 42%),
+      rgba(12, 11, 11, 0.97);
+    box-shadow:
+      0 0.5em 1.6em rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    animation: banner-intro-lifecycle var(--intro-duration) ease both;
+  }
+
+  // Countdown ring with the seconds left inside it.
+  .update-timer {
+    position: relative;
     display: grid;
     place-items: center;
-    flex: 0 0 46px;
-    height: 46px;
-    border: 1px solid #6b3417;
-    border-radius: 12px;
-    background: #ff590014;
-    color: #ff6a1b;
-    transform: rotate(-6deg);
+    flex: 0 0 auto;
+    width: 2.55em;
+    height: 2.55em;
     svg {
-      width: 29px;
-      height: 29px;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+      overflow: visible;
     }
+    circle {
+      fill: none;
+      stroke-width: 3.2;
+    }
+  }
+  .update-timer-track {
+    stroke: rgba(255, 255, 255, 0.13);
+  }
+  .update-timer-ring {
+    stroke: @intro-accent;
+    stroke-linecap: round;
+    stroke-dashoffset: 0;
+    animation: banner-intro-ring var(--intro-duration) linear both;
+  }
+  .update-timer-value {
+    position: relative;
+    font-size: 0.95em;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
   }
 
   .update-copy {
-    min-width: 0;
-    text-align: left;
-  }
-  .update-meta {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 5px;
-    color: #ff884c;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1px;
+    flex-direction: column;
+    gap: 0.18em;
+    min-width: 0;
+  }
+  .update-kicker {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6em;
+    font-size: max(calc(9px / var(--z)), 0.68em);
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .update-badge {
+    color: @intro-accent-text;
+    font-weight: 800;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
-    span:last-child {
-      color: #a7a29e;
-      letter-spacing: 0;
-    }
   }
-  .update-title {
-    font-size: 19px;
+  .update-version {
+    color: #c4bdb7;
     font-weight: 700;
-    line-height: 1.15;
-    letter-spacing: -0.4px;
-  }
-  .update-description {
-    margin-top: 5px;
-    max-width: 390px;
-    color: #bcb8b4;
-    font-size: 12px;
-    line-height: 1.4;
-  }
-  .update-date {
-    display: block;
-    margin-top: 8px;
-    color: #8e8985;
-    font-size: 10px;
     font-variant-numeric: tabular-nums;
   }
-  .update-countdown {
+  .update-title {
+    overflow: hidden;
+    color: #fff;
+    font-size: 1.16em;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .update-description {
+    display: none;
+    overflow: hidden;
+    color: #e1dcd8;
+    font-size: 0.8em;
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  .update-footer {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    margin-top: 0.1em;
+    font-size: max(calc(9px / var(--z)), 0.74em);
+    line-height: 1.25;
+    white-space: nowrap;
+  }
+  .update-date {
+    display: none;
+    color: #b3aca6;
+    font-variant-numeric: tabular-nums;
+  }
+  .update-site {
+    color: @intro-accent-text;
+    font-weight: 700;
+    text-decoration: none;
+    pointer-events: auto;
+    &:focus-visible {
+      outline: 2px solid @intro-accent-text;
+      outline-offset: 2px;
+    }
+  }
+  // Only used when the ring is too small to read (see --tiny).
+  .update-progress {
+    display: none;
     position: absolute;
-    bottom: 0;
     left: 0;
+    bottom: 0;
     width: 100%;
     height: 2px;
-    background: #ff5900;
+    background: @intro-accent;
     transform-origin: left;
-    animation: banner-intro-countdown var(--intro-duration) linear both;
+    animation: banner-intro-bar var(--intro-duration) linear both;
   }
 
-  &.banner-update-intro--compact {
-    padding: 8px 16px;
-    gap: 12px;
-    .update-mark {
-      flex-basis: 32px;
-      height: 32px;
-      border-radius: 8px;
-      svg {
-        width: 22px;
-        height: 22px;
-      }
-    }
-    .update-meta {
-      margin-bottom: 3px;
-      font-size: 9px;
-    }
-    .update-title {
-      font-size: 14px;
+  // Big banners: description and release date as well.
+  &.banner-update-intro--rich {
+    .update-toast {
+      font-size: clamp(calc(11px / var(--z)), min(11cqh, 4.4cqw), 34px);
     }
     .update-description {
-      display: none;
+      display: -webkit-box;
     }
     .update-date {
-      margin-top: 4px;
-      font-size: 10px;
+      display: inline;
+      &::after {
+        content: '·';
+        margin-left: 0.5em;
+      }
+    }
+    .update-title {
+      white-space: normal;
     }
   }
 
-  &.banner-update-intro--tiny {
-    padding: 3px 10px;
-    gap: 8px;
-    .update-mark,
-    .update-description,
-    .update-meta span:first-child,
-    .update-date span {
-      display: none;
-    }
-    .update-meta {
-      order: 1;
-      margin: 0;
-      font-size: 9px;
-    }
-    .update-date {
-      order: 2;
-    }
-    .update-copy {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 3px 8px;
+  // Tall, square and narrow banners (tower, focus, orbit, lineup, splitset…):
+  // centred along the bottom, sized from the width.
+  &.banner-update-intro--tall {
+    .update-toast {
+      margin-inline: auto;
+      font-size: clamp(calc(11px / var(--z)), min(12cqh, 6.2cqw), 30px);
+      max-width: calc(100cqw - 2 * var(--gap));
     }
     .update-title {
-      font-size: 11px;
-      letter-spacing: 0;
+      white-space: normal;
     }
-    .update-date {
+  }
+
+  // Low, wide banners (rail, slab, ribbon, edge, scoreboard…): two lines (badge + title)
+  // in larger text instead of three tiny ones.
+  &.banner-update-intro--compact {
+    .update-toast {
+      font-size: clamp(calc(11px / var(--z)), min(22cqh, 4.4cqw), 30px);
+      max-width: calc(100cqw - 2 * var(--gap));
+      padding: 0.5em 0.95em 0.55em 0.55em;
+    }
+    .update-timer {
+      width: 2.25em;
+      height: 2.25em;
+    }
+    .update-kicker {
+      font-size: max(calc(9px / var(--z)), 0.72em);
+    }
+    .update-version,
+    .update-footer {
+      display: none;
+    }
+  }
+
+  // Low banners and the 40 % sizes: one slim row along the bottom edge.
+  &.banner-update-intro--strip {
+    .update-toast {
+      --gap: calc(3px / var(--z));
+      font-size: clamp(calc(9px / var(--z)), 32cqh, calc(24px / var(--z)));
+      gap: 0.55em;
+      max-width: calc(100cqw - 2 * var(--gap));
+      padding: 0.3em 0.75em 0.3em 0.35em;
+      border-radius: 0.6em;
+    }
+    .update-timer {
+      width: 1.9em;
+      height: 1.9em;
+      circle {
+        stroke-width: 3.6;
+      }
+    }
+    .update-timer-value {
+      font-size: 0.8em;
+    }
+    .update-copy {
+      flex-direction: row;
+      align-items: baseline;
+      gap: 0.6em;
+    }
+    .update-kicker {
+      font-size: 0.75em;
+    }
+    .update-title {
+      font-size: 1em;
+    }
+    .update-footer {
       margin: 0;
-      font-size: 10px;
-      color: #bcb8b4;
+      font-size: 0.82em;
+    }
+  }
+  // Short strips: badge + version is enough, the long title would be cut.
+  &.banner-update-intro--narrow {
+    .update-title,
+    .update-footer {
+      display: none;
+    }
+  }
+  // Very small sources: the ring would be unreadable, a bar shows the time instead.
+  &.banner-update-intro--tiny {
+    .update-timer {
+      display: none;
+    }
+    .update-toast {
+      --gap: calc(2px / var(--z));
+      padding-left: 0.7em;
+    }
+    .update-progress {
+      display: block;
     }
   }
 }
 
-.wrapper > .banner-update-intro {
-  .update-footer {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 5px 16px;
-    margin-top: 8px;
-  }
-  .update-date {
-    margin: 0;
-  }
-  .update-site {
-    color: #ff9a62;
-    font-size: 11px;
-    font-weight: 700;
-    text-decoration: none;
-    pointer-events: auto;
-  }
-  .update-site:focus-visible {
-    outline: 2px solid #ff9a62;
-    outline-offset: 2px;
-  }
-  &.banner-update-intro--compact {
-    .update-footer {
-      margin-top: 5px;
-      gap: 4px 10px;
-    }
-    .update-site {
-      font-size: 10px;
-    }
-    .update-date {
-      margin: 0;
-    }
-  }
-  &.banner-update-intro--tiny {
-    .update-footer {
-      display: contents;
-    }
-    .update-site {
-      flex-basis: 100%;
-      order: 3;
-      font-size: 9px;
-    }
-  }
+// Round "pulse" banner: low and narrow, inside the circle and under the ELO.
+.wrapper[data-layout='pulse'] > .banner-update-intro .update-toast {
+  margin-bottom: 7cqh;
+  max-width: 70cqw;
+  font-size: clamp(calc(10px / var(--z)), 4.6cqw, 22px);
 }
 
 .wrapper.banner-load-enter {
@@ -218,19 +316,24 @@
 @keyframes banner-intro-lifecycle {
   0% {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(0.7em) scale(0.97);
   }
   7%,
-  88% {
+  92% {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
   100% {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(0.35em) scale(0.985);
   }
 }
-@keyframes banner-intro-countdown {
+@keyframes banner-intro-ring {
+  to {
+    stroke-dashoffset: calc(var(--ring-length) * 1px);
+  }
+}
+@keyframes banner-intro-bar {
   from {
     transform: scaleX(1);
   }
@@ -238,14 +341,22 @@
     transform: scaleX(0);
   }
 }
+@keyframes banner-intro-fade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  7%,
+  92% {
+    opacity: 1;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .wrapper.banner-load-enter {
     animation: none;
   }
-  .wrapper > .banner-update-intro {
-    animation: none;
-    .update-countdown {
-      animation: none;
-    }
+  // No movement, but the countdown keeps running: it carries information.
+  .wrapper > .banner-update-intro .update-toast {
+    animation-name: banner-intro-fade;
   }
 }
