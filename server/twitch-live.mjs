@@ -1,5 +1,6 @@
 /* global process, fetch, URL, AbortSignal, setTimeout, clearTimeout */
 import { redisCall } from './store.mjs';
+import { once, warn } from './log.mjs';
 
 const LOGIN = /^[a-z0-9_]{3,25}$/;
 const DEFAULT_TTL_SECONDS = 5 * 60;
@@ -115,10 +116,14 @@ export function createTwitchLookup({
             headers: { Authorization: `Bearer ${settings.key}` },
             signal: AbortSignal.timeout(10_000), cache: 'no-store', redirect: 'error',
           });
-          if (!response.ok) throw new Error('upstream_error');
-          const data = await response.json();
-          if (data?.ok === true && data.streams && typeof data.streams === 'object') streams = data.streams;
-        } catch { /* Unknown is never presented as offline. Retry after the normal TTL. */ }
+          const data = await response.json().catch(() => null);
+          if (!response.ok || data?.ok !== true) throw new Error(`${response.status} ${data?.error || 'upstream_error'}`);
+          if (data.streams && typeof data.streams === 'object') streams = data.streams;
+        } catch (error) {
+          /* Unknown is never presented as offline. Retry after the normal TTL; say why, or a broken API goes unnoticed. */
+          const reason = error?.message || 'failed';
+          if (once(`twitch-live:${reason}`, 5 * 60_000)) warn('twitch', `live status unavailable from ${settings.url} (${reason}): Twitch channels show without LIVE`);
+        }
         const save = [];
         const fetchedAt = now();
         for (const login of batch) {

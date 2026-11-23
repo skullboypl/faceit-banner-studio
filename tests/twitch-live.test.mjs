@@ -94,3 +94,13 @@ test('the stream list stays in redis for the stream TTL and another process reus
   await createTwitchLookup(options)(players.slice(0, 2));
   assert.equal(calls, 2);
 });
+
+test('a refused status API is logged with its reason instead of silently leaving every channel unknown', async (t) => {
+  const warned = t.mock.method(console, 'warn', () => {});
+  const lookup = lookupWith({ config, fetcher: async () => Response.json({ ok: false, error: 'misconfigured' }, { status: 503 }) });
+  const result = await lookup(players);
+  assert.ok(result.every((p) => p.twitchStatus.state === 'unknown'));
+  const lines = warned.mock.calls.map((call) => String(call.arguments[0]));
+  assert.ok(lines.some((line) => line.includes('503 misconfigured')), lines.join('\n'));
+  assert.ok(lines.every((line) => !line.includes('test-secret')));
+});
