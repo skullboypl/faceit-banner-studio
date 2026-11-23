@@ -31,7 +31,7 @@ RUN node deploy/preserve-live-assets.mjs
 # Accounts, saved banners and the feedback board. Nginx in the runtime image proxies /api/me and /api/posts here.
 RUN cd /app/web && pnpm install --frozen-lockfile && pnpm run build
 
-FROM nginx:1.27-alpine
+FROM nginx:1.30-alpine
 
 # Same key the widget uses, so a banner that only reports player_id can still be named on the live board.
 ARG VITE_FACEIT_API_KEY
